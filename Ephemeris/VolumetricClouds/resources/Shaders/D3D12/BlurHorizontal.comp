@@ -1,0 +1,51 @@
+/*
+* Copyright (c) 2018-2019 Confetti Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You may not use the material for commercial purposes.
+*
+*/
+
+#define MAX_WIDTH 1024
+
+Texture2D<float4> InputTex : register(t22);
+RWTexture2D<float4> OutputTex : register(u1);
+
+cbuffer RootConstantScreenSize : register(b7)
+{
+	uint width;
+	uint height;
+}
+
+groupshared half2 SharedData[MAX_WIDTH];
+
+[numthreads(MAX_WIDTH, 1, 1)]
+void main(uint3 GroupId : SV_GroupID, uint3 GroupThreadId : SV_GroupThreadID, uint GroupIndex: SV_GroupIndex)
+{
+	int groupIndex = GroupId.y;
+	int localIndex = GroupThreadId.x;
+	
+  float weight[3] = {0.68269, 0.157305, 0.00135};
+	//float weight[5] = {0.382928,	0.241732,	0.060598,	0.005977,	0.000229};
+	//float weight[10] =  { 0.158542,	0.146508,	0.115615,	0.07791,	0.044833,	0.02203,	0.009244,	0.003312,	0.001013,	0.000265 };
+
+  half4 CurrentPixelValue = InputTex.Load(int3(localIndex, groupIndex, 0) * 2).rgba;
+  SharedData[localIndex] = CurrentPixelValue.ra;
+
+	GroupMemoryBarrierWithGroupSync();
+
+	half2 resultColor = SharedData[localIndex] * weight[0];		
+
+	[unroll]
+	for (int i=1; i<3; i++)
+	{
+		float weihtValue = weight[i];
+		resultColor += SharedData[localIndex + i] * weihtValue; 
+		resultColor += SharedData[localIndex - i] * weihtValue;
+	}
+
+  //resultColor = lerp(resultColor, CurrentPixelValue.ra, CurrentPixelValue.a);
+
+	OutputTex[uint2(localIndex, groupIndex)] =  float4(resultColor.r, CurrentPixelValue.gb, resultColor.g);
+}

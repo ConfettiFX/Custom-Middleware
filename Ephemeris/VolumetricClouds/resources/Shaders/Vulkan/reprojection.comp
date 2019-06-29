@@ -1,0 +1,106 @@
+/*
+* Copyright (c) 2018-2019 Confetti Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You may not use the material for commercial purposes.
+*
+*/
+
+#version 450 core
+
+#extension GL_EXT_samplerless_texture_functions : enable
+
+
+layout(set = 0, binding = 0) uniform texture2D LowResCloudTexture;
+layout(set = 0, binding = 1) uniform texture2D PrevFrameTexture;
+layout(set = 0, binding = 3) uniform sampler BilinearClampSampler;
+layout(set = 0, binding = 4) uniform sampler PointClampSampler;
+layout(set = 0, binding = 5, rgba32f) uniform image2D DstTexture;
+layout(push_constant) uniform uniformGlobalInfoRootConstant_Block
+{
+    vec2 _Time;
+    vec2 screenSize;
+    vec4 lightDirection;
+    vec4 lightColorAndIntensity;
+    vec4 cameraPosition;
+    mat4 VP;
+    mat4 InvVP;
+    mat4 InvWorldToCamera;
+    mat4 prevVP;
+    mat4 LP;
+    float near;
+    float far;
+    float correctU;
+    float correctV;
+    vec4 ProjectionExtents;
+    uint lowResFrameIndex;
+    uint JitterX;
+    uint JitterY;
+    float exposure;
+    float decay;
+    float density;
+    float weight;
+    uint NUM_SAMPLES;
+    vec4 skyBetaR;
+    vec4 skyBetaV;
+    float turbidity;
+    float rayleigh;
+    float mieCoefficient;
+    float mieDirectionalG;
+}uniformGlobalInfoRootConstant;
+
+vec4 SamplePrev(vec4 worldPos, out float outOfBound)
+{
+    vec4 prevUV = ((uniformGlobalInfoRootConstant.prevVP)*(worldPos));
+    (prevUV /= vec4 ((prevUV).w));
+    ((prevUV).xy = vec2((((prevUV).x + float (1.0)) * float (0.5)), ((float (1.0) - (prevUV).y) * float (0.5))));
+    float oobmax = max((-(prevUV).x), (-(prevUV).y));
+    float oobmin = (max((prevUV).x, (prevUV).y) - float (1.0));
+    (outOfBound = step(float (0.0), max(oobmin, oobmax)));
+    return textureLod(sampler2D( PrevFrameTexture, BilinearClampSampler), vec2((prevUV).xy), float (0));
+}
+vec4 SampleCurrent(vec2 uv, vec2 _Jitter)
+{
+    (uv = (uv - ((_Jitter - vec2 (1.5)) * (vec2 (1.0) / (uniformGlobalInfoRootConstant.screenSize).xy))));
+    return textureLod(sampler2D( LowResCloudTexture, PointClampSampler), vec2(uv), float (0));
+}
+float CurrentCorrect(vec2 uv, vec2 jitter)
+{
+    vec2 texelRelativePos = mod((uv * (uniformGlobalInfoRootConstant.screenSize).xy), vec2 (4.0));
+    (texelRelativePos -= jitter);
+    vec2 valid = clamp((vec2 (2.0) * (vec2(0.5, 0.5) - abs((texelRelativePos - vec2(0.5, 0.5))))), 0.0, 1.0);
+    return ((valid).x * (valid).y);
+}
+#define THREAD_SIZE 16
+
+layout(local_size_x = THREAD_SIZE, local_size_y = THREAD_SIZE, local_size_z = 1) in;
+void HLSLmain(uvec3 GTid, uvec3 Gid, uvec3 DTid)
+{
+    vec2 ScreenUV;
+    ((ScreenUV).x = (float ((float ((DTid).x) + 0.5)) / (uniformGlobalInfoRootConstant.screenSize).x));
+    ((ScreenUV).y = (float ((float ((DTid).y) + 0.5)) / (uniformGlobalInfoRootConstant.screenSize).y));
+    float outOfBound;
+    vec2 _Jitter = vec2(float(uniformGlobalInfoRootConstant.JitterX), float(uniformGlobalInfoRootConstant.JitterY));
+    vec4 currSample = SampleCurrent(ScreenUV, _Jitter);
+    float depth = (currSample).b;
+    vec4 result = currSample;
+    vec3 ScreenNDC;
+    ((ScreenNDC).x = (((ScreenUV).x * float (2.0)) - float (1.0)));
+    ((ScreenNDC).y = (((float (1.0) - (ScreenUV).y) * float (2.0)) - float (1.0)));
+    vec3 vspos = (vec3((((ScreenNDC).xy * (uniformGlobalInfoRootConstant.ProjectionExtents).xy) + (uniformGlobalInfoRootConstant.ProjectionExtents).zw), 1.0) * vec3 (depth));
+    vec4 worldPos = ((uniformGlobalInfoRootConstant.InvWorldToCamera)*(vec4(vspos, 1.0)));
+    vec4 prevSample = SamplePrev(worldPos, outOfBound);
+    float correct = max((CurrentCorrect(ScreenUV, _Jitter) * 0.5), outOfBound);
+    imageStore(DstTexture, ivec2(ivec2((DTid).xy)), mix(vec4 (prevSample), vec4 (result), vec4 (correct)));
+}
+void main()
+{
+    uvec3 GTid;
+    GTid = gl_LocalInvocationID;
+    uvec3 Gid;
+    Gid = gl_WorkGroupID;
+    uvec3 DTid;
+    DTid = gl_GlobalInvocationID;
+    HLSLmain(GTid, Gid, DTid);
+}

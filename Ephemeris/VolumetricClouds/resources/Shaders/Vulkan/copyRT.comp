@@ -1,0 +1,33 @@
+/*
+* Copyright (c) 2018-2019 Confetti Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You may not use the material for commercial purposes.
+*
+*/
+
+#version 450 core
+
+#extension GL_EXT_samplerless_texture_functions : enable
+
+
+layout(set = 0, binding = 25) uniform texture2D SrcTexture;
+layout(set = 0, binding = 10, rgba32f) uniform image2D SavePrevTexture;
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+void HLSLmain(uvec3 GTid, uvec3 Gid, uvec3 DTid)
+{
+    ivec3 texcoords = ivec3((DTid).xy, 0);
+    imageStore(SavePrevTexture, ivec2(ivec2((DTid).xy)), texelFetch(SrcTexture, ivec2(texcoords).xy, (texcoords).z));
+}
+void main()
+{
+    uvec3 GTid;
+    GTid = gl_LocalInvocationID;
+    uvec3 Gid;
+    Gid = gl_WorkGroupID;
+    uvec3 DTid;
+    DTid = gl_GlobalInvocationID;
+    HLSLmain(GTid, Gid, DTid);
+}

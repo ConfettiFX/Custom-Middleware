@@ -1,0 +1,31 @@
+/*
+* Copyright (c) 2018-2019 Confetti Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You may not use the material for commercial purposes.
+*
+*/
+
+#version 450 core
+
+#extension GL_EXT_samplerless_texture_functions : enable
+
+
+layout(set = 1, binding = 0) uniform texture2D SrcTexture[128];
+layout(set = 0, binding = 0, rgba32f) uniform image3D DstTexture;
+#define THREAD_SIZE 32
+
+layout(local_size_x = THREAD_SIZE, local_size_y = THREAD_SIZE, local_size_z = 1) in;
+void HLSLmain(uvec3 GTid, uvec3 Gid)
+{
+    imageStore(DstTexture, ivec3(uvec3(((GTid).x + ((Gid).x * uint (THREAD_SIZE))), ((GTid).y + ((Gid).y * uint (THREAD_SIZE))), (Gid).z)), texelFetch(SrcTexture[Gid.z], ivec2(GTid.x + Gid.x * THREAD_SIZE, GTid.y + Gid.y * THREAD_SIZE), 0));
+}
+void main()
+{
+    uvec3 GTid;
+    GTid = gl_LocalInvocationID;
+    uvec3 Gid;
+    Gid = gl_WorkGroupID;
+    HLSLmain(GTid, Gid);
+}
