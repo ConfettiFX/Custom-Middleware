@@ -1,0 +1,19 @@
+/*
+* Copyright (c) 2018-2019 Confetti Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You may not use the material for commercial purposes.
+*
+*/
+
+Texture2D<float4> SrcTexture : register(t0, space1);
+RWTexture2D<float2> DstTexture : register(u0);
+
+[numthreads(16, 16, 1)]
+void main(uint3 GTid : SV_GroupThreadID, uint3 Gid : SV_GroupID, uint3 DTid : SV_DispatchThreadID)
+{
+	int3 texcoords = int3(DTid.xy, 0);		
+  float4 src = SrcTexture.Load(texcoords);
+	DstTexture[int2(DTid.xy)] = src.rb;
+}

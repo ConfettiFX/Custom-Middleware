@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Durango">
+      <Configuration>Release</Configuration>
+      <Platform>Durango</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Profile|Durango">
+      <Configuration>Profile</Configuration>
+      <Platform>Durango</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Durango">
+      <Configuration>Debug</Configuration>
+      <Platform>Durango</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\..\..\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lapi.h" />
+    <ClInclude Include="..\..\..\..\..\..\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lauxlib.h" />
+    <ClInclude Include="..\..\..\..\..\..\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lcode.h" />
+    <ClInclude Include="..\..\..\..\..\..\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lctype.h" />
+    <ClInclude Include="..\..\..\..\..\..\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\ldebug.h" />
+    <ClInclude Include="..\..\..\..\..\..\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\ldo.h" />
+    <ClInclude Include="..\..\..\..\..\..\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lfunc.h" />
+    <ClInclude Include="..\..\..\..\..\..\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lgc.h" />
+    <ClInclude Include="..\..\..\..\..\..\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\llex.h" />
+    <ClInclude Include="..\..\..\..\..\..\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\llimits.h" />
+    <ClInclude Include="..\..\..\..\..\..\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lmem.h" />
+    <ClInclude Include="..\..\..\..\..\..\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lobject.h" />
+    <ClInclude Include="..\..\..\..\..\..\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lopcodes.h" />
+    <ClInclude Include="..\..\..\..\..\..\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lparser.h" />
+    <ClInclude Include="..\..\..\..\..\..\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lprefix.h" />
+    <ClInclude Include="..\..\..\..\..\..\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lstate.h" />
+    <ClInclude Include="..\..\..\..\..\..\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lstring.h" />
+    <ClInclude Include="..\..\..\..\..\..\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\ltable.h" />
+    <ClInclude Include="..\..\..\..\..\..\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\ltm.h" />
+    <ClInclude Include="..\..\..\..\..\..\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lua.h" />
+    <ClInclude Include="..\..\..\..\..\..\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lua.hpp" />
+    <ClInclude Include="..\..\..\..\..\..\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\luaconf.h" />
+    <ClInclude Include="..\..\..\..\..\..\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lualib.h" />
+    <ClInclude Include="..\..\..\..\..\..\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lundump.h" />
+    <ClInclude Include="..\..\..\..\..\..\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lvm.h" />
+    <ClInclude Include="..\..\..\..\..\..\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lzio.h" />
+    <ClInclude Include="..\..\..\..\..\..\Middleware_3\LUA\LuaManagerCommon.h" />
+    <ClInclude Include="..\..\..\..\..\..\Middleware_3\LUA\LuaManagerImpl.h" />
+    <ClInclude Include="..\..\..\..\..\..\Middleware_3\LUA\LunaV.hpp" />
+    <ClInclude Include="..\..\..\..\The-Forge\Middleware_3\LUA\LuaManager.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lapi.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lauxlib.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lbaselib.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lbitlib.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lcode.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lcorolib.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lctype.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\ldblib.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\ldebug.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\ldo.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\ldump.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lfunc.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lgc.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\linit.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\liolib.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\llex.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lmathlib.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lmem.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\loadlib.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lobject.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lopcodes.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\loslib.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lparser.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lstate.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lstring.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lstrlib.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\ltable.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\ltablib.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\ltm.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lundump.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lutf8lib.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lvm.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\lua-5.3.5\src\lzio.c" />
+    <ClCompile Include="..\..\..\..\The-Forge\Middleware_3\LUA\LuaManager.cpp" />
+    <ClCompile Include="..\..\..\..\The-Forge\Middleware_3\LUA\LuaManagerImpl.cpp" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{1BE7CBD8-E473-41EE-99CF-666A76F41C6E}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>Samples_GLFW</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <ProjectName>LuaManager</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Durango'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <EmbedManifest>false</EmbedManifest>
+    <GenerateManifest>false</GenerateManifest>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|Durango'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <EmbedManifest>false</EmbedManifest>
+    <GenerateManifest>false</GenerateManifest>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Durango'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v141</PlatformToolset>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <EmbedManifest>false</EmbedManifest>
+    <GenerateManifest>false</GenerateManifest>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Durango'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Profile|Durango'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Durango'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">
+    <ReferencePath>$(Console_SdkLibPath);$(Console_SdkWindowsMetadataPath)</ReferencePath>
+    <LibraryPath>$(Console_SdkLibPath)</LibraryPath>
+    <LibraryWPath>$(Console_SdkLibPath);$(Console_SdkWindowsMetadataPath)</LibraryWPath>
+    <IncludePath>$(Console_SdkIncludeRoot)</IncludePath>
+    <ExecutablePath>$(Console_SdkRoot)bin;$(VCInstallDir)bin\x86_amd64;$(VCInstallDir)bin;$(WindowsSDK_ExecutablePath_x86);$(VSInstallDir)Common7\Tools\bin;$(VSInstallDir)Common7\tools;$(VSInstallDir)Common7\ide;$(ProgramFiles)\HTML Help Workshop;$(MSBuildToolsPath32);$(FxCopDir);$(PATH);</ExecutablePath>
+    <OutDir>$(ProjectDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)$(Platform)\$(Configuration)\Intermediate\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Profile|Durango'">
+    <ReferencePath>$(Console_SdkLibPath);$(Console_SdkWindowsMetadataPath)</ReferencePath>
+    <LibraryPath>$(Console_SdkLibPath)</LibraryPath>
+    <LibraryWPath>$(Console_SdkLibPath);$(Console_SdkWindowsMetadataPath)</LibraryWPath>
+    <IncludePath>$(Console_SdkIncludeRoot)</IncludePath>
+    <ExecutablePath>$(Console_SdkRoot)bin;$(VCInstallDir)bin\x86_amd64;$(VCInstallDir)bin;$(WindowsSDK_ExecutablePath_x86);$(VSInstallDir)Common7\Tools\bin;$(VSInstallDir)Common7\tools;$(VSInstallDir)Common7\ide;$(ProgramFiles)\HTML Help Workshop;$(MSBuildToolsPath32);$(FxCopDir);$(PATH);</ExecutablePath>
+    <OutDir>$(ProjectDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)$(Platform)\$(Configuration)\Intermediate\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Durango'">
+    <ReferencePath>$(Console_SdkLibPath);$(Console_SdkWindowsMetadataPath)</ReferencePath>
+    <LibraryPath>$(Console_SdkLibPath)</LibraryPath>
+    <LibraryWPath>$(Console_SdkLibPath);$(Console_SdkWindowsMetadataPath)</LibraryWPath>
+    <IncludePath>$(Console_SdkIncludeRoot)</IncludePath>
+    <ExecutablePath>$(Console_SdkRoot)bin;$(VCInstallDir)bin\x86_amd64;$(VCInstallDir)bin;$(WindowsSDK_ExecutablePath_x86);$(VSInstallDir)Common7\Tools\bin;$(VSInstallDir)Common7\tools;$(VSInstallDir)Common7\ide;$(ProgramFiles)\HTML Help Workshop;$(MSBuildToolsPath32);$(FxCopDir);$(PATH);</ExecutablePath>
+    <OutDir>$(ProjectDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)$(Platform)\$(Configuration)\Intermediate\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Durango'">
+    <Link>
+      <AdditionalDependencies>combase.lib;kernelx.lib;uuid.lib;</AdditionalDependencies>
+      <EntryPointSymbol>
+      </EntryPointSymbol>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
+    </Link>
+    <ClCompile>
+      <PrecompiledHeader />
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalUsingDirectories>$(Console_SdkPackagesRoot);$(Console_SdkWindowsMetadataPath);%(AdditionalUsingDirectories)</AdditionalUsingDirectories>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>NDEBUG;__WRL_NO_DEFAULT_LIB__;_LIB;%(PreprocessorDefinitions);DIRECT3D12</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <CompileAsWinRT>false</CompileAsWinRT>
+      <AdditionalOptions>/std:c++latest /d2Qvec-mathlib- /Wv:19.10.25000 %(AdditionalOptions)</AdditionalOptions>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Profile|Durango'">
+    <Link>
+      <AdditionalDependencies>combase.lib;kernelx.lib;uuid.lib;</AdditionalDependencies>
+      <EntryPointSymbol>
+      </EntryPointSymbol>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
+    </Link>
+    <ClCompile>
+      <PrecompiledHeader />
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <AdditionalUsingDirectories>$(Console_SdkPackagesRoot);$(Console_SdkWindowsMetadataPath);%(AdditionalUsingDirectories)</AdditionalUsingDirectories>
+      <Optimization>MaxSpeed</Optimization>
+      <PreprocessorDefinitions>NDEBUG;__WRL_NO_DEFAULT_LIB__;_LIB;PROFILE;%(PreprocessorDefinitions);DIRECT3D12</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <CompileAsWinRT>false</CompileAsWinRT>
+      <AdditionalOptions>/std:c++latest /d2Qvec-mathlib- /Wv:19.10.25000 %(AdditionalOptions)</AdditionalOptions>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <TreatWarningAsError>true</TreatWarningAsError>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Durango'">
+    <Link>
+      <AdditionalDependencies>combase.lib;kernelx.lib;uuid.lib;</AdditionalDependencies>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
+    </Link>
+    <ClCompile>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <PrecompiledHeader />
+      <MinimalRebuild>false</MinimalRebuild>
+      <AdditionalUsingDirectories>$(Console_SdkPackagesRoot);$(Console_SdkWindowsMetadataPath);%(AdditionalUsingDirectories)</AdditionalUsingDirectories>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_DEBUG;__WRL_NO_DEFAULT_LIB__;_LIB;%(PreprocessorDefinitions);DIRECT3D12</PreprocessorDefinitions>
+      <CompileAsWinRT>false</CompileAsWinRT>
+      <AdditionalOptions>/std:c++latest /d2Qvec-mathlib- /Wv:19.10.25000 %(AdditionalOptions)</AdditionalOptions>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <SupportJustMyCode>false</SupportJustMyCode>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties />
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>

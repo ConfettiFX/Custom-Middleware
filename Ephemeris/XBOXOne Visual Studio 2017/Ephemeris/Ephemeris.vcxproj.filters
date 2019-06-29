@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Image Include="Logo.png" />
+    <Image Include="SmallLogo.png" />
+    <Image Include="SplashScreen.png" />
+    <Image Include="StoreLogo.png" />
+    <Image Include="WideLogo.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <AppxManifest Include="Package.appxmanifest" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Sky">
+      <UniqueIdentifier>{08e53782-840d-487e-92a7-669a88f26264}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="VolumetricClouds">
+      <UniqueIdentifier>{8812f401-d3ed-49e9-ba77-216cbecb6aff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Terrain">
+      <UniqueIdentifier>{b7bf290e-cca4-4a3c-be72-513461dcae25}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\Sky\src\Sky.cpp">
+      <Filter>Sky</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\VolumetricClouds\src\VolumetricClouds.cpp">
+      <Filter>VolumetricClouds</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Terrain\src\Terrain.cpp">
+      <Filter>Terrain</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Sky\src\Ephemeris.cpp">
+      <Filter>Sky</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Sky\src\LocalTime.cpp">
+      <Filter>Sky</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Terrain\src\HeightData.cpp">
+      <Filter>Terrain</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

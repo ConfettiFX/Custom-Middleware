@@ -1,0 +1,42 @@
+/*
+* Copyright (c) 2018-2019 Confetti Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You may not use the material for commercial purposes.
+*
+*/
+
+struct Data
+{
+	uint mip;
+};
+
+ConstantBuffer<Data> RootConstant : register(b10);
+
+Texture2D<float> SrcTexture : register(t28);
+RWTexture2D<float> DstTexture : register(u30);
+
+//SamplerState pointClampSampler : register(s0);
+
+[numthreads(16, 16, 1)]
+void main(uint3 GTid : SV_GroupThreadID, uint3 Gid : SV_GroupID, uint3 DTid : SV_DispatchThreadID)
+{
+	int3 texcoords = int3(DTid.xy*2, RootConstant.mip);
+	float4 vTexels;
+
+	//vTexels = SrcTexture.Gather(pointClampSampler, texcoords);
+
+	
+	vTexels.x = SrcTexture.Load( texcoords, int2(0,0) );
+	vTexels.y = SrcTexture.Load( texcoords, int2(1,0) );
+	vTexels.z = SrcTexture.Load( texcoords, int2(0,1) );
+	vTexels.w = SrcTexture.Load( texcoords, int2(1,1) );
+	
+
+	float2 vTexels2 = max( vTexels.xy, vTexels.zw );
+
+	float fMaxDepth = max( vTexels2.x, vTexels2.y );
+
+	DstTexture[int2(DTid.xy)] = fMaxDepth;
+}

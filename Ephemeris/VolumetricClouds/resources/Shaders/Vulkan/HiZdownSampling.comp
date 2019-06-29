@@ -1,0 +1,50 @@
+/*
+* Copyright (c) 2018-2019 Confetti Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You may not use the material for commercial purposes.
+*
+*/
+
+#version 450 core
+
+#extension GL_EXT_samplerless_texture_functions : enable
+
+
+struct Data
+{
+    uint mip;
+};
+layout(push_constant) uniform RootConstant_Block
+{
+    uint mip;
+}RootConstant;
+
+layout(set = 0, binding = 25) uniform texture2D SrcTexture;
+layout(set = 0, binding = 30, r32f) uniform image2D DstTexture;
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+void HLSLmain(uvec3 GTid, uvec3 Gid, uvec3 DTid)
+{
+    ivec3 texcoords = ivec3(((DTid).xy * uvec2 (2)), (RootConstant).mip);
+    vec4 vTexels;
+
+    (vTexels).x = texelFetch(SrcTexture, (texcoords).xy + ivec2(0,0), 0).r;
+    (vTexels).y = texelFetch(SrcTexture, (texcoords).xy + ivec2(1,0), 0).r;
+    (vTexels).z = texelFetch(SrcTexture, (texcoords).xy + ivec2(0,1), 0).r;
+    (vTexels).w = texelFetch(SrcTexture, (texcoords).xy + ivec2(1,1), 0).r;
+    vec2 vTexels2 = max((vTexels).xy, (vTexels).zw);
+    float fMaxDepth = max((vTexels2).x, (vTexels2).y);
+    imageStore(DstTexture, ivec2(ivec2((DTid).xy)), vec4(fMaxDepth, 0.0, 0.0, 0.0));
+}
+void main()
+{
+    uvec3 GTid;
+    GTid = gl_LocalInvocationID;
+    uvec3 Gid;
+    Gid = gl_WorkGroupID;
+    uvec3 DTid;
+    DTid = gl_GlobalInvocationID;
+    HLSLmain(GTid, Gid, DTid);
+}

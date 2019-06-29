@@ -1,0 +1,41 @@
+/*
+* Copyright (c) 2018-2019 Confetti Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You may not use the material for commercial purposes.
+*
+*/
+
+struct Data
+{
+	uint mip;
+};
+
+ConstantBuffer<Data> RootConstant : register(b0);
+
+Texture3D<float4> SrcTexture : register(t0, space2);
+RWTexture3D<float4> DstTexture : register(u0, space3);
+
+[numthreads(1, 1, 1)]
+void main(uint3 GTid : SV_GroupThreadID, uint3 Gid : SV_GroupID)
+{
+
+	float4 result = float4(0.0, 0.0, 0.0, 0.0);
+
+	int iteration = pow(2, RootConstant.mip);
+
+	for(int x=0; x<iteration; x++)
+	{
+		for(int y=0; y<iteration; y++)
+		{
+			for(int z=0; z<iteration; z++)
+			{
+				result += SrcTexture[Gid * iteration + uint3(x, y, z)];
+			}
+		}
+	}
+
+	result /= (iteration*iteration*iteration);
+	DstTexture[Gid] = result;
+}

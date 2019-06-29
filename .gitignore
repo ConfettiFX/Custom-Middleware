@@ -1,0 +1,146 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Visual Studio
+**/.vs/
+**/.vscode/
+**/x64/
+**.vcxproj.user
+**.user
+**.log
+**.VC.db
+
+#  Visual Studio User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+##Xcode User settings
+xcuserdata/
+## compatibility with Xcode 8 and earlier (ignoring not required starting Xcode 9)
+*.xcscmblueprint
+*.xccheckout
+
+# General Apple
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Art
+Art/
+Art.zip
+PBR.zip
+# Examples_3/Unit_Tests/UnitTestResources/Textures/PBR/
+
+# Binary Shaders
+**/D3D12/Binary/
+**/Vulkan/Binary/
+**/Metal/Binary/
+**/D3D12/Compiled/
+
+# Automatically Generated Files
+**/Renderer/IRendererDLL.h
+**/Renderer/Renderer.cpp
+
+# Obj folders
+/**/obj/
+/**/bin/
+/**/macOS\ Xcode/Bin/
+/**/macOS\ Xcode/build/
+/**/macOS\ Xcode/*/build/
+
+# Nuget packages
+Tools/ShaderBuildCommand/packages/
+**/ThirdParty/OpenSource/hlslparser/Ext/ShaderTranslator/packages/
+
+# Linux / UbuntuCodeLite files
+Examples_3/Unit_Tests/UbuntuCodelite/.codelite/
+Examples_3/Unit_Tests/UbuntuCodelite/.build-debug/
+Examples_3/Unit_Tests/UbuntuCodelite/.build-release/
+Examples_3/Unit_Tests/UbuntuCodelite/*/*.mk
+Examples_3/Unit_Tests/UbuntuCodelite/*/*.txt
+Examples_3/Unit_Tests/UbuntuCodelite/Makefile
+Examples_3/Unit_Tests/UbuntuCodelite/*/Debug
+Examples_3/Unit_Tests/UbuntuCodelite/*/Release
+Examples_3/Unit_Tests_Animation/UbuntuCodelite/.codelite/
+Examples_3/Unit_Tests_Animation/UbuntuCodelite/.build-debug/
+Examples_3/Unit_Tests_Animation/UbuntuCodelite/.build-release/
+Examples_3/Unit_Tests_Animation/UbuntuCodelite/*/*.mk
+Examples_3/Unit_Tests_Animation/UbuntuCodelite/*/*.txt
+Examples_3/Unit_Tests_Animation/UbuntuCodelite/Makefile
+Examples_3/Unit_Tests_Animation/UbuntuCodelite/*/Debug
+Examples_3/Unit_Tests_Animation/UbuntuCodelite/*/Release
+Common_3/ThirdParty/OpenSource/gainput/Ubuntu/lib/gainput.txt
+Common_3/ThirdParty/OpenSource/gainput/Xbox/lib/Durango/
+Common_3/ThirdParty/OpenSource/ozz-animation/Xbox/src/animation/runtime/Durango/
+Common_3/ThirdParty/OpenSource/ozz-animation/Xbox/src/base/Durango/
+Common_3/Tools/AssetPipeline/Linux/.codelite/
+Common_3/Tools/AssetPipeline/Linux/.build-debug/
+Common_3/Tools/AssetPipeline/Linux/.build-release/
+Common_3/Tools/AssetPipeline/Linux/*/*.mk
+Common_3/Tools/AssetPipeline/Linux/*/*.txt
+Common_3/Tools/AssetPipeline/Linux/Makefile
+Common_3/Tools/AssetPipeline/Linux/Debug
+Common_3/Tools/AssetPipeline/Linux/Release
+
+# Generated animation files
+*.ozz
+/**/ThirdParty/OpenSource/ozz-animation/**/*.mk
+/**/Tools/AssetPipeline/Apple/Release/
+/**/Tools/AssetPipeline/Apple/Debug/
+
+#assimp ignores
+/**/ThirdParty/OpenSource/assimp/4.1.0/**/*.mk
+/**/ThirdParty/OpenSource/assimp/4.1.0/**/build/
+/**/ThirdParty/OpenSource/assimp/4.1.0/**/Build/
+/**/ThirdParty/OpenSource/assimp/4.1.0/**/test/
+/**/ThirdParty/OpenSource/assimp/4.1.0/**/tools/
+/**/ThirdParty/OpenSource/assimp/4.1.0/**/Temp/
+/**/ThirdParty/OpenSource/assimp/4.1.0/**/Bin/
+/**/ThirdParty/OpenSource/assimp/4.1.0/**/assimp.txt/
+/**/ThirdParty/OpenSource/assimp/4.1.0/**/Assimp.txt/
+
+The-Forge
