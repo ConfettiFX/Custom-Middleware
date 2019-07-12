@@ -11,7 +11,7 @@
 
 #include "../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/vector.h"
 #include "../../../The-Forge/Common_3/OS/Math/MathTypes.h"
-#include "../../../The-Forge/Common_3/OS/Interfaces/ILogManager.h"
+#include "../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
 
 
 class HeightData

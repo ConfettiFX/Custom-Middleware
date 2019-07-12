@@ -17,9 +17,9 @@
 //Interfaces
 #include "../../../The-Forge/Common_3/OS/Interfaces/ICameraController.h"
 #include "../../../The-Forge/Common_3/OS/Interfaces/IApp.h"
-#include "../../../The-Forge/Common_3/OS/Interfaces/ILogManager.h"
+#include "../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
 #include "../../../The-Forge/Common_3/OS/Interfaces/IFileSystem.h"
-#include "../../../The-Forge/Common_3/OS/Interfaces/ITimeManager.h"
+#include "../../../The-Forge/Common_3/OS/Interfaces/ITime.h"
 #include "../../../The-Forge/Middleware_3/UI/AppUI.h"
 #include "../../../The-Forge/Common_3/Renderer/IRenderer.h"
 #include "../../../The-Forge/Common_3/Renderer/ResourceLoader.h"
@@ -30,7 +30,7 @@
 //Math
 #include "../../../The-Forge/Common_3/OS/Math/MathTypes.h"
 
-#include "../../../The-Forge/Common_3/OS/Interfaces/IMemoryManager.h"
+#include "../../../The-Forge/Common_3/OS/Interfaces/IMemory.h"
 
 // Ephemeris BEGIN
 #include "../../VolumetricClouds/src/VolumetricClouds.h"

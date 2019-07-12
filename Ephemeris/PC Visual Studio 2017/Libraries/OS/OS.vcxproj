@@ -35,12 +35,13 @@
     <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Core\Timer.cpp" />
     <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Image\Image.cpp" />
     <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Input\InputSystem.cpp" />
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Logging\LogManager.cpp" />
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\MemoryTracking\MemoryTrackingManager.cpp" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Logging\Log.cpp" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\MemoryTracking\MemoryTracking.cpp" />
     <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsBase.cpp" />
     <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsFileSystem.cpp" />
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsLogManager.cpp" />
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsThreadManager.cpp" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsLog.cpp" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsThread.cpp" />
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsTime.cpp" />
     <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\allocator_forge.cpp" />
     <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\assert.cpp" />
     <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\EAStdC\EAMemory.cpp" />
@@ -84,7 +85,7 @@
     <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Interfaces\IPlatformEvents.h" />
     <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Interfaces\IThread.h" />
     <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Interfaces\ITimeManager.h" />
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Logging\LogManager.h" />
+    <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Logging\Log.h" />
     <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Math\MathTypes.h" />
     <ClInclude Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\imgui\imconfig.h" />
     <ClInclude Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\imgui\imgui.h" />
