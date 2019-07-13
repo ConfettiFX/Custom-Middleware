@@ -129,9 +129,6 @@
     <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Interfaces\ITimeManager.h">
       <Filter>OS\Interfaces</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Logging\LogManager.h">
-      <Filter>OS\Logging</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Math\MathTypes.h">
       <Filter>OS\Math</Filter>
     </ClInclude>
@@ -143,6 +140,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerUI.h">
       <Filter>OS\Profiler</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Logging\Log.h">
+      <Filter>OS\Logging</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -194,22 +194,10 @@
     <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Input\InputSystem.cpp">
       <Filter>OS\Input</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Logging\LogManager.cpp">
-      <Filter>OS\Logging</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\MemoryTracking\MemoryTrackingManager.cpp">
-      <Filter>OS\MemoryTracking</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsBase.cpp">
       <Filter>OS\Windows</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsFileSystem.cpp">
-      <Filter>OS\Windows</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsLogManager.cpp">
-      <Filter>OS\Windows</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsThreadManager.cpp">
       <Filter>OS\Windows</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\TinyEXR\tinyexr.cpp">
@@ -262,6 +250,21 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerUI.cpp">
       <Filter>OS\Profiler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Logging\Log.cpp">
+      <Filter>OS\Logging</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\MemoryTracking\MemoryTracking.cpp">
+      <Filter>OS\MemoryTracking</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsLog.cpp">
+      <Filter>OS\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsThread.cpp">
+      <Filter>OS\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsTime.cpp">
+      <Filter>OS\Windows</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
