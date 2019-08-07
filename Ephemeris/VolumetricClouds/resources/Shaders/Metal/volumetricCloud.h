@@ -93,6 +93,7 @@ struct volumetricCloud
     texture2d<float> depthTexture;
     texture2d<float> LowResCloudTexture;
     texture2d<float> g_PrevFrameTexture;
+    texture2d<float> g_LinearDepthTexture;
 
     sampler g_LinearClampSampler;
     sampler g_LinearWrapSampler;
@@ -316,6 +317,12 @@ struct volumetricCloud
         (depth = distance(sampleEnd, startPos));
         float distCameraToStart = distance(sampleStart, startPos);
         //(atmosphericBlendFactor = PackFloat16(distCameraToStart));
+
+        if (g_LinearDepthTexture.sample(g_LinearClampSampler, uv, level(0.0)).r < VolumetricCloudsCBuffer.g_VolumetricClouds.CameraFarClip)
+        {
+          atmosphericBlendFactor = 1.0f;
+        }
+
         if (((sampleStart).y + VolumetricCloudsCBuffer.g_VolumetricClouds.Test01 < 0.0))
         {
             (intensity = (float)(0.0));
@@ -344,7 +351,7 @@ struct volumetricCloud
             (sceneDepth = (float)(depthTexture.read(texels.xy).r));
             if ((sceneDepth < (VolumetricCloudsCBuffer.g_VolumetricClouds).CameraFarClip))
             {
-                return 0.0;
+                return 1.0;
             }
         }
         float alpha = 0.0;
@@ -414,6 +421,7 @@ struct volumetricCloud
                     {
                         (intensity /= alpha);
                         (depth = PackFloat16(depth));
+                        atmosphericBlendFactor = 1.0f;
                         return 1.0;
                     }
                 }
@@ -421,6 +429,7 @@ struct volumetricCloud
             }
         }
         (depth = PackFloat16(depth));
+        atmosphericBlendFactor = max(atmosphericBlendFactor, alpha);
         return alpha;
     };
 
@@ -440,6 +449,12 @@ struct volumetricCloud
         (depth = distance(sampleEnd, startPos));
         float distCameraToStart = distance(sampleStart, startPos);
         //(atmosphericBlendFactor = PackFloat16(distCameraToStart));
+        float sceneDepth = depthTexture.sample(g_LinearClampSampler, uv, level(0)).r;
+        if (sceneDepth < VolumetricCloudsCBuffer.g_VolumetricClouds.CameraFarClip)
+        {
+          atmosphericBlendFactor = 1.0f;
+        }
+
         if (((sampleStart).y + VolumetricCloudsCBuffer.g_VolumetricClouds.Test01 < 0.0))
         {
             (intensity = (float)(0.0));
@@ -462,7 +477,7 @@ struct volumetricCloud
 #endif
 
         uint2 texels = (uint2)(float2((VolumetricCloudsCBuffer.g_VolumetricClouds).Padding02, (VolumetricCloudsCBuffer.g_VolumetricClouds).Padding03) * uv);
-        float sceneDepth = depthTexture.read(texels.xy).r;
+        //float sceneDepth = depthTexture.read(texels.xy).r;
         float alpha = 0.0;
         (intensity = 0.0);
         bool detailedSample = false;
@@ -534,6 +549,7 @@ struct volumetricCloud
                     {
                         (intensity /= alpha);
                         (depth = PackFloat16(depth));
+                        atmosphericBlendFactor = 1.0f;
                         return 1.0;
                     }
                 }
@@ -541,6 +557,7 @@ struct volumetricCloud
             }
         }
         (depth = PackFloat16(depth));
+        atmosphericBlendFactor = 1.0f;
         return alpha;
     };	
 };

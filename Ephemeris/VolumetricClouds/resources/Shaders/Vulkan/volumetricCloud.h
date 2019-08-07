@@ -26,6 +26,8 @@
 #define ALLOW_CONTROL_CLOUD 1
 #define STEREO_INSTANCED 0
 
+#define FLOAT16_MAX 65500.0f 
+
 struct VolumetricCloudsCB
 {
     mat4 m_WorldToProjMat_1st;
@@ -106,6 +108,8 @@ layout(set = 0, binding = 3) uniform texture2D weatherTexture;
 layout(set = 0, binding = 4) uniform texture2D depthTexture;
 layout(set = 0, binding = 5) uniform texture2D LowResCloudTexture;
 layout(set = 0, binding = 6) uniform texture2D g_PrevFrameTexture;
+layout(set = 0, binding = 17) uniform texture2D g_LinearDepthTexture;
+
 layout(set = 0, binding = 7) uniform sampler g_LinearClampSampler;
 layout(set = 0, binding = 8) uniform sampler g_LinearWrapSampler;
 layout(set = 0, binding = 9) uniform sampler g_PointClampSampler;
@@ -201,11 +205,11 @@ float getRelativeHeightAccurate(in vec3 pt, in vec3 projectedPt, float layer_thi
 }
 float PackFloat16(float value)
 {
-    return (value * 0.010000000);
+    return (value * 0.001f);
 }
 float UnPackFloat16(float value)
 {
-    return (value * 100.0);
+    return (value * 1000.0f);
 }
 float getAtmosphereBlendForComposite(float distance)
 {
@@ -310,6 +314,11 @@ float GetDensity(vec3 startPos, vec3 worldPos, vec3 dir, float maxSampleDistance
     (depth = distance(sampleEnd, startPos));
     float distCameraToStart = distance(sampleStart, startPos);
     //(atmosphericBlendFactor = PackFloat16(distCameraToStart));
+    if (UnPackFloat16(textureLod(sampler2D(g_LinearDepthTexture, g_LinearClampSampler), uv, float(0)).r) < FLOAT16_MAX)
+    {
+      atmosphericBlendFactor = 1.0f;
+    }
+
     if(((sampleStart).y + VolumetricCloudsCBuffer.g_VolumetricClouds.Test01 < 0.0))
     {
         (intensity = float (0.0));
@@ -335,8 +344,8 @@ float GetDensity(vec3 startPos, vec3 worldPos, vec3 dir, float maxSampleDistance
     {
       sceneDepth = texelFetch(depthTexture, ivec2(ivec2(texels)).xy + ivec2(0, 0), 0).r;
 
-      if (sceneDepth < VolumetricCloudsCBuffer.g_VolumetricClouds.CameraFarClip)
-        return 0.0;
+      if (UnPackFloat16(sceneDepth) < FLOAT16_MAX)
+        return 1.0;
     }
 
     float alpha = 0.0;
@@ -407,6 +416,7 @@ float GetDensity(vec3 startPos, vec3 worldPos, vec3 dir, float maxSampleDistance
                 {
                     (intensity /= alpha);
                     (depth = PackFloat16(depth));
+                    atmosphericBlendFactor = 1.0f;
                     return 1.0;
                 }
             }
@@ -414,6 +424,7 @@ float GetDensity(vec3 startPos, vec3 worldPos, vec3 dir, float maxSampleDistance
         }
     }
     (depth = PackFloat16(depth));
+    atmosphericBlendFactor = max(atmosphericBlendFactor, alpha);
     return alpha;
 }
 
@@ -435,6 +446,12 @@ float GetDensityWithComparingDepth(vec3 startPos, vec3 worldPos, vec3 dir, float
   (depth = distance(sampleEnd, startPos));
   float distCameraToStart = distance(sampleStart, startPos);
   //(atmosphericBlendFactor = PackFloat16(distCameraToStart));
+  float sceneDepth = UnPackFloat16(textureLod(sampler2D(depthTexture, g_LinearClampSampler), vec2(uv), float(0)).r);
+  if (sceneDepth < FLOAT16_MAX)
+  {
+    atmosphericBlendFactor = 1.0f;
+  }
+
   if (((sampleStart).y + VolumetricCloudsCBuffer.g_VolumetricClouds.Test01 < 0.0))
   {
     (intensity = float(0.0));
@@ -454,7 +471,7 @@ float GetDensityWithComparingDepth(vec3 startPos, vec3 worldPos, vec3 dir, float
 
   vec2 Corrected_UV = (uv - (vec2(1.0, 1.0) / textureSize));
   uvec2 texels = uvec2((vec2((VolumetricCloudsCBuffer.g_VolumetricClouds).Padding02, (VolumetricCloudsCBuffer.g_VolumetricClouds).Padding03) * uv));
-  float sceneDepth = texelFetch(depthTexture, ivec2(ivec2(texels)).xy + ivec2(0, 0), 0).r;
+  //float sceneDepth = texelFetch(depthTexture, ivec2(ivec2(texels)).xy + ivec2(0, 0), 0).r;
 
 
   float alpha = 0.0;
@@ -530,6 +547,7 @@ float GetDensityWithComparingDepth(vec3 startPos, vec3 worldPos, vec3 dir, float
         {
           (intensity /= alpha);
           (depth = PackFloat16(depth));
+          atmosphericBlendFactor = 1.0f;
           return 1.0;
         }
       }
@@ -537,6 +555,7 @@ float GetDensityWithComparingDepth(vec3 startPos, vec3 worldPos, vec3 dir, float
     }
   }
   (depth = PackFloat16(depth));
+  atmosphericBlendFactor = max(atmosphericBlendFactor, alpha);
   return alpha;
 }
 vec4 SamplePrev(vec2 prevUV, out float outOfBound)

@@ -7,20 +7,19 @@
   </Plugins>
   <Description/>
   <Dependencies/>
-  <VirtualDirectory Name="src">
-    <File Name="../../../The-Forge/Common_3/Tools/SpirvTools/dllmain.cpp"/>
-    <File Name="../../../The-Forge/Common_3/Tools/SpirvTools/SpirvTools.cpp"/>
-    <File Name="../../../The-Forge/Common_3/Tools/SpirvTools/SpirvTools.h"/>
-    <File Name="../../../The-Forge/Common_3/ThirdParty/OpenSource/SPIRV_Cross/spirv_cpp.cpp"/>
-    <File Name="../../../The-Forge/Common_3/ThirdParty/OpenSource/SPIRV_Cross/spirv_cfg.cpp"/>
-    <File Name="../../../The-Forge/Common_3/ThirdParty/OpenSource/SPIRV_Cross/spirv_cross.cpp"/>
-    <File Name="../../../The-Forge/Common_3/ThirdParty/OpenSource/SPIRV_Cross/spirv_cross_parsed_ir.cpp"/>
-    <File Name="../../../The-Forge/Common_3/ThirdParty/OpenSource/SPIRV_Cross/spirv_cross_util.cpp"/>
-    <File Name="../../../The-Forge/Common_3/ThirdParty/OpenSource/SPIRV_Cross/spirv_glsl.cpp"/>
-    <File Name="../../../The-Forge/Common_3/ThirdParty/OpenSource/SPIRV_Cross/spirv_hlsl.cpp"/>
-    <File Name="../../../The-Forge/Common_3/ThirdParty/OpenSource/SPIRV_Cross/spirv_msl.cpp"/>
-    <File Name="../../../The-Forge/Common_3/ThirdParty/OpenSource/SPIRV_Cross/spirv_parser.cpp"/>
-    <File Name="../../../The-Forge/Common_3/ThirdParty/OpenSource/SPIRV_Cross/spirv_reflect.cpp"/>
+  <VirtualDirectory Name="src">    
+    <File Name="../../../../The-Forge/Common_3/Tools/SpirvTools/SpirvTools.cpp"/>
+    <File Name="../../../../The-Forge/Common_3/Tools/SpirvTools/SpirvTools.h"/>
+    <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/SPIRV_Cross/spirv_cpp.cpp"/>
+    <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/SPIRV_Cross/spirv_cfg.cpp"/>
+    <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/SPIRV_Cross/spirv_cross.cpp"/>
+    <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/SPIRV_Cross/spirv_cross_parsed_ir.cpp"/>
+    <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/SPIRV_Cross/spirv_cross_util.cpp"/>
+    <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/SPIRV_Cross/spirv_glsl.cpp"/>
+    <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/SPIRV_Cross/spirv_hlsl.cpp"/>
+    <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/SPIRV_Cross/spirv_msl.cpp"/>
+    <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/SPIRV_Cross/spirv_parser.cpp"/>
+    <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/SPIRV_Cross/spirv_reflect.cpp"/>
   </VirtualDirectory>
   <Dependencies Name="Debug"/>
   <Dependencies Name="Release"/>

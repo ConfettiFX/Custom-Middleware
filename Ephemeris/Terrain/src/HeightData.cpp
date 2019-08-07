@@ -10,8 +10,8 @@
 #include "HeightData.h"
 #include <exception>
 
-#include "../../../The-Forge/Common_3/OS/Interfaces/IFileSystem.h"
-
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IFileSystem.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
 
 FileSystem mFileSystem;
 File mFile;

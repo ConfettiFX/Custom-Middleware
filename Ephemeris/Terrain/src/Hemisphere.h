@@ -10,8 +10,8 @@
 #pragma once
 
 //asimp importer
-#include "../../../The-Forge/Common_3/Tools/AssimpImporter/AssimpImporter.h"
-#include "../../../The-Forge/Common_3/Renderer/ResourceLoader.h"
+#include "../../../../The-Forge/Common_3/Tools/AssimpImporter/AssimpImporter.h"
+#include "../../../../The-Forge/Common_3/Renderer/ResourceLoader.h"
 
 #include "HeightData.h"
 #include "Visibility.h"

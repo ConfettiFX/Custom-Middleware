@@ -513,8 +513,20 @@ struct Fragment_Shader
     {
         uint3 LoadCoord = uint3(In.position.x, In.position.y, 0);
         float4 OriginalImage = SceneColorTexture.read(LoadCoord.xy);
+		float3 ReduceOriginalImage = ((OriginalImage).rgb * (float3)(0.3));
+		
+		float3 _groundColor = float3(0, 0, 0);
+		float3 _spaceColor = float3(0, 0, 0);
+		float3 inscatterColor = float3(0, 0, 0);
+
+		if(RenderSkyUniformBuffer.LightDirection.y < -0.3f)
+		{
+			(_groundColor = (((ReduceOriginalImage).xyz * (float3)(ISun)) / (float3)(M_PI)));
+			return float4(((HDR_NORM(_groundColor) + HDR((_spaceColor + inscatterColor))) + (OriginalImage).rgb), 0.0);
+		}
+
         float depth = Depth.read(LoadCoord.xy).x;
-        float3 ReduceOriginalImage = ((OriginalImage).rgb * (float3)(0.3));
+       
         float fixedDepth = (((-(RenderSkyUniformBuffer.QNNear).y) * (RenderSkyUniformBuffer.QNNear).x) / (depth - (RenderSkyUniformBuffer.QNNear).x));
         float3 ray = (In).texCoord;
         float3 x = (RenderSkyUniformBuffer.CameraPosition).xyz;
@@ -524,10 +536,10 @@ struct Fragment_Shader
         float VoRay = dot(v, ray);
         float t = (((depth < 1.0))?((VoRay * fixedDepth)):(0.0));
         float3 attenuation = float3(0,0,0);
-        float3 inscatterColor = inscatter(x, t, v, (RenderSkyUniformBuffer.LightDirection).xyz, r, mu, attenuation);
-        float3 _groundColor = float3(0, 0, 0);
+        inscatterColor = inscatter(x, t, v, (RenderSkyUniformBuffer.LightDirection).xyz, r, mu, attenuation);
+        
         //float3 _sunColor = sunColor(x, t, v, (RenderSkyUniformBuffer.LightDirection).xyz, r, mu);
-        float3 _spaceColor = float3(0, 0, 0);
+        
         if ((t <= (float)(0.0)))
         {
             float3 _transmittance = (((r <= Rt))?(transmittance(r, mu)):(float3(1.0).xxx));

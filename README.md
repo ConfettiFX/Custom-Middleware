@@ -3,20 +3,26 @@
 
 [![](Screenshots/main.png)](https://vimeo.com/344675521)
 
-Ephemeris2 is our new middleware solution for implementing a dynamic skydome system.
+Ephemeris 2 is a middleware solution for implementing a dynamic 24 hour Skydome System. It is running on top of [The Forge](https://github.com/ConfettiFX/The-Forge) and therefore supports the same platforms, which are at the moment 
+* Windows 10
+* macOS
+* Linux
+* XBOX One
+* PS4
+* iOS
+* Android
 
-Ephemeris2 supports various platforms and can be customized and intergrated into any custom engine.
+Check out the demo video by clicking the main image above!
 
-You can also check the demo video by clicking the main image above!
+## Main Features
 
-
-### Main Features
   - Dynamic 24 hour time cycle (sunrises, sunsets, blue sky, sun and moon)
   - Atmospheric Scattering
   - Volumetric Clouds
-  - God rays
-  - 2.5D Clouds for mobile (Coming Soon!)
-  - Simulation of astronomically correct sun, stars and moon (Coming Soon!)
+  - Godrays
+  - Procedural Night Sky and Star-field 
+  - Simulation of astronomically correct sun, stars and moon (coming soon)
+  - 2.5D Clouds for mobile (coming soon with Ephemeris 1)
    
 | Dawn Scene |
 |---|
@@ -43,38 +49,41 @@ You can also check the demo video by clicking the main image above!
 |![](Screenshots/01.png)|
 
 
-### Platforms
-  - Windows
-  - macOS
-  - Linux
-  - XboxOne
-  - iOS (Coming Soon!)
-  - Android (Coming Soon!)
+# News
+All the releases happen in sync with [The Forge](https://github.com/ConfettiFX/The-Forge) and have therefore the same release number.
 
+## Release 1.32 - August 8th - 
 
-### Installation
+- Added Procedural Night Sky and Star-field
+  - Now, the user can costomize the night sky's nebula colors 
+- Added Glow effects on Sun and Moon
+- Fix a issue that Godrays can be drawn on unexpected area
 
- * For PC Windows run PRE_BUILD.bat. It will download and unzip the art assets and install the shader builder extension for Visual Studio 2017.
- * For Linux and Mac run PRE_BUILD.command. If its the first time checking out the forge make sure the PRE_BUILD.command has the correct executable flag by running the following command
- ```sh
-  chmod +x PRE_BUILD.command
+ 
+## Installation
+
+ To build Ephemeris you would need to need to download the latest version of [The Forge](https://github.com/ConfettiFX/The-Forge). Your folder overview should look like this:
+
+ ```
+ The-Forge
+ Custom-Middleware
  ```
 
 
-### Customization
+## Customization
 
-We can customize Ephemeris2 to fit your game engine (UE4, Unity, and even any custom engine)!
+We can customize Ephemeris to fit your game engine (UE4, Unity, and even any custom engine)!
 
 Below is the list of our customers
 
 - [Insomniac Games](https://insomniac.games/)
 
 
-### License
+## License
 
 [Creative Commons Attribution-NonCommercial 4.0 International License](https://creativecommons.org/licenses/by-nc/4.0/legalcode)
 
 
-### Contact Us
+## Contact Us
 
 E-mail: info@conffx.com

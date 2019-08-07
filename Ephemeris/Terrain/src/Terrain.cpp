@@ -9,6 +9,11 @@
 
 #include "Terrain.h"
 
+#include "../../../../The-Forge/Common_3/Renderer/ResourceLoader.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IFileSystem.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IMemory.h"
+
 #if defined(_DURANGO)
 char TextureTileFilePaths[5][255] = {
   "Textures/Tiles/grass_DM",
@@ -82,125 +87,6 @@ struct LightingTerrainUniformBuffer
   float4	LightColor;
 };
 
-float Perlin::noise2D(const int32_t x, const int32_t z) {
-	//returns floats between -1 and 1
-	//TODO: generate these dynamically based on seed, maybe move them to class static members
-	const uint8_t prime0 = 13;
-	const int32_t prime1 = 15731;
-	const int32_t prime2 = 789221;
-	const int32_t prime3 = 1376312589;
-	const float prime4 = 1073741824.0;
-	const int32_t primez = 59;
-
-	int32_t n = x + z * primez;
-	n = (n << prime0) ^ n;
-	return (1.f - ((n * (n * n * prime1 + prime2) + prime3) & 0x7fffffff) / prime4);
-}
-
-float Perlin::linearInterpolate(const float a, const float b, const float u) {
-	return  a * (1.f - u) + b * u;
-}
-
-float Perlin::cosineInterpolate(const float a, const float b, const float u) {
-	float newu = (1.f - cos(u*3.1415927f)) * .5f;
-	return  a * (1.f - newu) + b * newu;
-}
-
-float Perlin::cubicInterpolate(const float v0, const float v1, const float v2, const float v3, const float u) {
-	float P = (v3 - v2) - (v0 - v1);
-	float Q = (v0 - v1) - P;
-	float R = v2 - v0;
-	float S = v1;
-
-	return P * (u*u*u) + Q * (u*u) + R * u + S;
-}
-
-float Perlin::smoothedNoise2D(const int32_t x, const int32_t z) {
-	float corners = (noise2D(x - 1, z - 1) + noise2D(x + 1, z - 1) + noise2D(x - 1, z + 1) + noise2D(x + 1, z + 1)) / 16.f;
-	float sides = (noise2D(x - 1, z) + noise2D(x + 1, z) + noise2D(x, z - 1) + noise2D(x, z + 1)) / 8.f;
-	float center = noise2D(x, z) / 4.f;
-	return corners + sides + center;
-}
-
-float Perlin::interpolate(const float v0, const float v1, const float v2, const float v3, const float u) {
-	float result = 0.f;
-	switch (INTERP_METHOD) {
-	case LINEAR:
-		result = linearInterpolate(v1, v2, u);
-		break;
-	case COSINE:
-		result = cosineInterpolate(v1, v2, u);
-		break;
-	case CUBIC:
-		result = cubicInterpolate(v0, v1, v2, v3, u);
-		break;
-	default:
-		break;
-	}
-	return result;
-}
-
-float Perlin::interpolatedNoise2D(const float x, const float z) {
-	int32_t integer_X = (int32_t)x;
-	float fractional_X = fabs(x - integer_X);
-
-	int32_t integer_Z = (int32_t)z;
-	float fractional_Z = fabs(z - integer_Z);
-
-	float v0_botprev = smoothedNoise2D(integer_X - 1, integer_Z - 1);
-	float v1_botprev = smoothedNoise2D(integer_X, integer_Z - 1);
-
-	float v2_botprev = smoothedNoise2D(integer_X + 1, integer_Z - 1);
-	float v3_botprev = smoothedNoise2D(integer_X + 2, integer_Z - 1);
-
-	float v0_bot = smoothedNoise2D(integer_X - 1, integer_Z);
-	float v1_bot = smoothedNoise2D(integer_X, integer_Z);
-	float v2_bot = smoothedNoise2D(integer_X + 1, integer_Z);
-	float v3_bot = smoothedNoise2D(integer_X + 2, integer_Z);
-
-	float v0_top = smoothedNoise2D(integer_X - 1, integer_Z + 1);
-	float v1_top = smoothedNoise2D(integer_X, integer_Z + 1);
-	float v2_top = smoothedNoise2D(integer_X + 1, integer_Z + 1);
-	float v3_top = smoothedNoise2D(integer_X + 2, integer_Z + 1);
-
-	float v0_topafter = smoothedNoise2D(integer_X - 1, integer_Z + 2);
-	float v1_topafter = smoothedNoise2D(integer_X, integer_Z + 2);
-	float v2_topafter = smoothedNoise2D(integer_X + 1, integer_Z + 2);
-	float v3_topafter = smoothedNoise2D(integer_X + 2, integer_Z + 2);
-
-	float ix_botprev = interpolate(v0_botprev, v1_botprev, v2_botprev, v3_botprev, fractional_X);
-	float ix_bot = interpolate(v0_bot, v1_bot, v2_bot, v3_bot, fractional_X);
-	float ix_top = interpolate(v0_top, v1_top, v2_top, v3_top, fractional_X);
-	float ix_topafter = interpolate(v0_topafter, v1_topafter, v2_topafter, v3_topafter, fractional_X);
-
-	return interpolate(ix_botprev, ix_bot, ix_top, ix_topafter, fractional_Z);
-}
-
-float Perlin::perlinNoise2D(const float x, const float z) {
-	float total = 0.f;
-	for (uint32_t i = 0; i < OCTAVES; i++) {
-		const uint32_t bit = 1;
-		const uint32_t frequency = bit << i; // 2 to the ith power, 1,2,4,8,16,etc.
-		const double amplitude = pow(PERSISTANCE, (double)(i));
-		total += interpolatedNoise2D(x * frequency, z * frequency) * (float)amplitude;
-	}
-	total *= SCALE2D;//additional dimension reduces likelyhood that this is 1
-	return total;//clamp(total, -1, 1);
-}
-
-
-float Perlin::clamp(const float value, const float min, const float max) {
-	if (value < min) {
-		return min;
-	}
-	else if (value > max) {
-		return max;
-	}
-	else {
-		return value;
-	}
-}
-
 #if defined(VULKAN)
 static void TransitionRenderTargets(RenderTarget *pRT, ResourceState state, Renderer* renderer, Cmd* cmd, Queue* queue, Fence* fence)
 {
@@ -226,7 +112,7 @@ static void ShaderPath(const eastl::string &shaderPath, char* pShaderName, eastl
 	result = shaderPath + shaderName;
 }
 
-bool Terrain::Init(Renderer* const renderer)
+bool Terrain::Init(Renderer* renderer)
 {
 	pRenderer = renderer;	
   g_StandardPosition = vec4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -659,7 +545,7 @@ bool Terrain::GenerateNormalMap(Cmd* cmd)
 	return true;
 }
 
-bool Terrain::Load(RenderTarget** rts)
+bool Terrain::Load(RenderTarget** rts, uint32_t count)
 {
 	return false;
 }
@@ -758,7 +644,6 @@ bool Terrain::Load(int32_t width, int32_t height)
 		pipelineSettings.pVertexLayout = &vertexLayout;
 		pipelineSettings.pRasterizerState = pRasterizerForTerrain;
 
-		//addPipeline(pRenderer, &pipelineSettings, &pTerrainPipeline);
 		addPipeline(pRenderer, &pipelineDescTerrain, &pTerrainPipeline);
 	}	
 
@@ -776,7 +661,7 @@ bool Terrain::Load(int32_t width, int32_t height)
 		pipelineDescRenderTerrain.mType = PIPELINE_TYPE_GRAPHICS;
 		GraphicsPipelineDesc &pipelineSettings = pipelineDescRenderTerrain.mGraphicsDesc;
 
-    pipelineSettings = {};
+		pipelineSettings = {};
 		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_STRIP;
 		pipelineSettings.mRenderTargetCount = 2;
 		pipelineSettings.pDepthState = pDepth;
@@ -785,12 +670,10 @@ bool Terrain::Load(int32_t width, int32_t height)
 		pipelineSettings.mSampleCount = pGBuffer_BasicRT->mDesc.mSampleCount;
 		pipelineSettings.mSampleQuality = pGBuffer_BasicRT->mDesc.mSampleQuality;
 		pipelineSettings.mDepthStencilFormat = pDepthBuffer->mDesc.mFormat;
-		//pipelineSettings.pRootSignature = pRenderTerrainRootSignature;
-    pipelineSettings.pRootSignature = pTerrainRootSignature;
+		pipelineSettings.pRootSignature = pTerrainRootSignature;
 		pipelineSettings.pShaderProgram = pRenderTerrainShader;
 		pipelineSettings.pVertexLayout = &vertexLayout;
 		pipelineSettings.pRasterizerState = pRasterizerForTerrain;
-		//addPipeline(pRenderer, &pipelineSettings, &pRenderTerrainPipeline);
 		addPipeline(pRenderer, &pipelineDescRenderTerrain, &pRenderTerrainPipeline);
 	}
 	
@@ -799,7 +682,7 @@ bool Terrain::Load(int32_t width, int32_t height)
 		pipelineDescGenTerrainNormal.mType = PIPELINE_TYPE_GRAPHICS;
 		GraphicsPipelineDesc &pipelineSettings = pipelineDescGenTerrainNormal.mGraphicsDesc;
 		
-    pipelineSettings = {};
+		pipelineSettings = {};
 		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
 		pipelineSettings.mRenderTargetCount = 1;
 		pipelineSettings.pDepthState = NULL;
@@ -819,7 +702,7 @@ bool Terrain::Load(int32_t width, int32_t height)
 		pipelineDescLightingTerrain.mType = PIPELINE_TYPE_GRAPHICS;
 		GraphicsPipelineDesc &pipelineSettings = pipelineDescLightingTerrain.mGraphicsDesc;
 		
-    pipelineSettings = {};
+		pipelineSettings = {};
 		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
 		pipelineSettings.mRenderTargetCount = 1;
 		pipelineSettings.pDepthState = NULL;
@@ -829,7 +712,7 @@ bool Terrain::Load(int32_t width, int32_t height)
 		pipelineSettings.mSampleQuality = pTerrainRT->mDesc.mSampleQuality;
 		
 		//pipelineSettings.pRootSignature = pLightingTerrainRootSignature;
-    pipelineSettings.pRootSignature = pTerrainRootSignature;
+		pipelineSettings.pRootSignature = pTerrainRootSignature;
 		pipelineSettings.pShaderProgram = pLightingTerrainShader;
 		
 		pipelineSettings.pVertexLayout = &vertexLayout;
@@ -939,22 +822,22 @@ void Terrain::Draw(Cmd* cmd)
 		}
 		*/
 
-    LoadActionsDesc loadActions = {};
-    loadActions.mLoadActionsColor[0] = LOAD_ACTION_CLEAR;
-    loadActions.mLoadActionsColor[1] = LOAD_ACTION_CLEAR;
+		LoadActionsDesc loadActions = {};
+		loadActions.mLoadActionsColor[0] = LOAD_ACTION_CLEAR;
+		loadActions.mLoadActionsColor[1] = LOAD_ACTION_CLEAR;
 
-    loadActions.mLoadActionDepth = LOAD_ACTION_CLEAR;
+		loadActions.mLoadActionDepth = LOAD_ACTION_CLEAR;
 
-    loadActions.mClearColorValues[0].r = 0.0f;
-    loadActions.mClearColorValues[0].g = 0.0f;
-    loadActions.mClearColorValues[0].b = 0.0f;
-    loadActions.mClearColorValues[0].a = 0.0f;
+		loadActions.mClearColorValues[0].r = 0.0f;
+		loadActions.mClearColorValues[0].g = 0.0f;
+		loadActions.mClearColorValues[0].b = 0.0f;
+		loadActions.mClearColorValues[0].a = 0.0f;
 
-    loadActions.mClearColorValues[1].r = 0.0f;
-    loadActions.mClearColorValues[1].g = 0.0f;
-    loadActions.mClearColorValues[1].b = 0.0f;
-    loadActions.mClearColorValues[1].a = 0.0f;
-    loadActions.mClearDepth = pDepthBuffer->mDesc.mClearValue;
+		loadActions.mClearColorValues[1].r = 0.0f;
+		loadActions.mClearColorValues[1].g = 0.0f;
+		loadActions.mClearColorValues[1].b = 0.0f;
+		loadActions.mClearColorValues[1].a = 0.0f;
+		loadActions.mClearDepth = pDepthBuffer->mDesc.mClearValue;
 
 		getFrustumFromMatrix(TerrainProjectionMatrix * pCameraController->getViewMatrix(), terrainFrustum);    
 

@@ -58,7 +58,7 @@ vec4 HLSLmain(PSIn input0)
     for (uint i = uint (0); (i < uint (80)); (i++))
     {
         (texCoord -= deltaTexCoord);
-        float localDensity = (float (1.0) - float ((texture(sampler2D( g_PrevFrameTexture, g_LinearBorderSampler), vec2(texCoord))).a));
+        float localDensity = (float (1.0) - float ((texture(sampler2D( g_PrevFrameTexture, g_LinearBorderSampler), vec2(texCoord))).g));
         (localDensity *= (illuminationDecay * (VolumetricCloudsCBuffer.g_VolumetricClouds).GodrayWeight));
         (finalIntensity += localDensity);
         (illuminationDecay *= (VolumetricCloudsCBuffer.g_VolumetricClouds).GodrayDecay);

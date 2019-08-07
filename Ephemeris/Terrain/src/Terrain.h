@@ -10,20 +10,16 @@
 #pragma once
 
 #include "Hemisphere.h"
+#include "../../src/Perlin.h"
 #include "../../VolumetricClouds/src/VolumetricClouds.h"
 
-#include "../../../The-Forge/Common_3/OS/Interfaces/ICameraController.h"
-#include "../../../The-Forge/Common_3/OS/Interfaces/IMiddleware.h"
-#include "../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/string.h"
-#include "../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/unordered_map.h"
-#include "../../../The-Forge/Middleware_3/UI/AppUI.h"
-#include "../../../The-Forge/Common_3/Renderer/IRenderer.h"
-#include "../../../The-Forge/Common_3/Renderer/GpuProfiler.h"
-
-#include "../../../The-Forge/Common_3/Renderer/ResourceLoader.h"
-#include "../../../The-Forge/Common_3/OS/Interfaces/IFileSystem.h"
-#include "../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
-#include "../../../The-Forge/Common_3/OS/Interfaces/IMemory.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/ICameraController.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IMiddleware.h"
+#include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/string.h"
+#include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/unordered_map.h"
+#include "../../../../The-Forge/Middleware_3/UI/AppUI.h"
+#include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
+#include "../../../../The-Forge/Common_3/Renderer/GpuProfiler.h"
 
 #define GRID_SIZE 256
 #define TILE_CENTER 50
@@ -65,13 +61,7 @@ struct Zone
 
 typedef eastl::unordered_map<uint32_t, Zone*> ZoneMap;
 
-enum PerlinInterpolate { LINEAR , COSINE , CUBIC };
 
-#define INTERP_METHOD PerlinInterpolate::CUBIC
-#define OCTAVES 16
-#define PERSISTANCE 0.5
-#define SCALE2D 15.0f
-#define OVERALLSCALE 100.0f
 
 struct VolumetricCloudsShadowCB
 {
@@ -80,32 +70,14 @@ struct VolumetricCloudsShadowCB
   vec4  ShadowInfo; //vec4(gAppSettings.m_ShadowBrightness, gAppSettings.m_ShadowSpeed, gAppSettings.m_ShadowTiling, 0.0);
 };
 
-class Perlin
-{
-public:
-	Perlin() {};
-	~Perlin() {};
-	
-	static float noise2D(const int32_t x, const int32_t y);	
-
-	static float interpolate(const float, const float, const float, const float, const float);
-	static float linearInterpolate(const float, const float, const float);
-	static float cosineInterpolate(const float, const float, const float);
-	static float cubicInterpolate(const float, const float, const float, const float, const float);
-
-	static float smoothedNoise2D(const int32_t, const int32_t);
-	static float interpolatedNoise2D(const float, const float);
-	static float perlinNoise2D(const float, const float);
-	static float clamp(const float, const float, const float);
-};
 
 class Terrain : public IMiddleware
 {
 public:
 
-	virtual bool Init(Renderer* const renderer) final;
+	virtual bool Init(Renderer* renderer) final;
 	virtual void Exit() final;	
-	virtual bool Load(RenderTarget** rts) final;
+	virtual bool Load(RenderTarget** rts, uint32_t count = 1) final;
 	virtual void Unload() final;
 	virtual void Draw(Cmd* cmd) final;
 	virtual void Update(float deltaTime) final;	

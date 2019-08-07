@@ -27,15 +27,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Renderer\CommonShaderReflection.cpp" />
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Renderer\Direct3D11\Direct3D11.cpp" />
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Renderer\Direct3D11\Direct3D11Raytracing.cpp" />
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Renderer\Direct3D11\Direct3D11ShaderReflection.cpp" />
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Renderer\GpuProfiler.cpp" />
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Renderer\ResourceLoader.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Renderer\CommonShaderReflection.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Renderer\Direct3D11\Direct3D11.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Renderer\Direct3D11\Direct3D11Raytracing.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Renderer\Direct3D11\Direct3D11ShaderReflection.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Renderer\GpuProfiler.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Renderer\ResourceLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\Renderer\Direct3D11\Direct3D11Commands.h" />
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\Renderer\Direct3D11\Direct3D11Commands.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{8EBB17A6-12AC-46AF-AE55-A7159C9CD2E1}</ProjectGuid>

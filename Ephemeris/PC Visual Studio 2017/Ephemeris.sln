@@ -21,11 +21,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Renderer", "Renderer", "{01
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Include", "Include", "{EC7D6A22-5A14-4BC4-8867-C4CFC47CB0D3}"
 	ProjectSection(SolutionItems) = preProject
-		..\..\The-Forge\Common_3\Renderer\GpuProfiler.h = ..\..\The-Forge\Common_3\Renderer\GpuProfiler.h
-		..\..\The-Forge\Common_3\Renderer\IRay.h = ..\..\The-Forge\Common_3\Renderer\IRay.h
-		..\..\The-Forge\Common_3\Renderer\IRenderer.h = ..\..\The-Forge\Common_3\Renderer\IRenderer.h
-		..\..\The-Forge\Common_3\Renderer\IShaderReflection.h = ..\..\The-Forge\Common_3\Renderer\IShaderReflection.h
-		..\..\The-Forge\Common_3\Renderer\ResourceLoader.h = ..\..\The-Forge\Common_3\Renderer\ResourceLoader.h
+		..\..\..\The-Forge\Common_3\Renderer\GpuProfiler.h = ..\..\..\The-Forge\Common_3\Renderer\GpuProfiler.h
+		..\..\..\The-Forge\Common_3\Renderer\IRay.h = ..\..\..\The-Forge\Common_3\Renderer\IRay.h
+		..\..\..\The-Forge\Common_3\Renderer\IRenderer.h = ..\..\..\The-Forge\Common_3\Renderer\IRenderer.h
+		..\..\..\The-Forge\Common_3\Renderer\IShaderReflection.h = ..\..\..\The-Forge\Common_3\Renderer\IShaderReflection.h
+		..\..\..\The-Forge\Common_3\Renderer\ResourceLoader.h = ..\..\..\The-Forge\Common_3\Renderer\ResourceLoader.h
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "AssimpStatic", "AssimpStatic", "{2BBBB59E-3087-459E-8031-76BDE0383B6B}"
@@ -40,9 +40,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Ephemeris", "Ephemeris.vcxp
 		{EBC1C8D7-D49B-409A-A575-5AB53111E4D7} = {EBC1C8D7-D49B-409A-A575-5AB53111E4D7}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IrrXML", "..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\IrrXML.vcxproj", "{0C80E083-8EC3-4DC4-8A93-BC30F0525A53}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "IrrXML", "..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\IrrXML.vcxproj", "{0C80E083-8EC3-4DC4-8A93-BC30F0525A53}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zlibstatic", "..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\zlibstatic.vcxproj", "{D543A5A3-C52A-43C6-BE66-14B7AEE2FBBD}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zlibstatic", "..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\zlibstatic.vcxproj", "{D543A5A3-C52A-43C6-BE66-14B7AEE2FBBD}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LuaManager", "Libraries\Tools\LuaManager.vcxproj", "{1BE7CBD8-E473-41EE-99CF-666A76F41C6E}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -51,7 +51,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LuaManager", "Libraries\Too
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SpirvTools", "Libraries\Tools\SpirvCross.vcxproj", "{F3C4507C-E714-4773-AF45-5FA9FB0BB4AF}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AssetPipeline", "..\..\The-Forge\Common_3\Tools\AssetPipeline\Win64\AssetPipeline.vcxproj", "{86CCE738-AAA1-4327-9DE0-AAB5B23B7852}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AssetPipeline", "..\..\..\The-Forge\Common_3\Tools\AssetPipeline\Win64\AssetPipeline.vcxproj", "{86CCE738-AAA1-4327-9DE0-AAB5B23B7852}"
 	ProjectSection(ProjectDependencies) = postProject
 		{AC91B515-5B5E-399D-BF31-B6272AF9D139} = {AC91B515-5B5E-399D-BF31-B6272AF9D139}
 		{29449326-FEDE-40D1-B849-536BD8E58041} = {29449326-FEDE-40D1-B849-536BD8E58041}
@@ -61,9 +61,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AssetPipeline", "..\..\The-
 		{D543A5A3-C52A-43C6-BE66-14B7AEE2FBBD} = {D543A5A3-C52A-43C6-BE66-14B7AEE2FBBD}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gainputstatic", "..\..\The-Forge\Common_3\ThirdParty\OpenSource\gainput\Win64\lib\gainputstatic.vcxproj", "{C5D0E437-7C52-3132-80E6-3CBE834313EF}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gainputstatic", "..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\gainput\Win64\lib\gainputstatic.vcxproj", "{C5D0E437-7C52-3132-80E6-3CBE834313EF}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "assimp", "..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\assimp.vcxproj", "{29449326-FEDE-40D1-B849-536BD8E58041}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "assimp", "..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\assimp.vcxproj", "{29449326-FEDE-40D1-B849-536BD8E58041}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RendererDX11", "Libraries\RendererDX11\RendererDX11.vcxproj", "{8EBB17A6-12AC-46AF-AE55-A7159C9CD2E1}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -87,11 +87,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OS", "Libraries\OS\OS.vcxpr
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ozz-animation", "ozz-animation", "{489864EE-CE14-4169-9ADA-105BD9B8FD21}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ozz_animation", "..\..\The-Forge\Common_3\ThirdParty\OpenSource\ozz-animation\Win64\src\animation\runtime\ozz_animation.vcxproj", "{E0CB3186-0614-4DF0-891B-848743572AB2}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ozz_animation", "..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\ozz-animation\Win64\src\animation\runtime\ozz_animation.vcxproj", "{E0CB3186-0614-4DF0-891B-848743572AB2}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ozz_animation_offline", "..\..\The-Forge\Common_3\ThirdParty\OpenSource\ozz-animation\Win64\src\animation\offline\ozz_animation_offline.vcxproj", "{AC91B515-5B5E-399D-BF31-B6272AF9D139}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ozz_animation_offline", "..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\ozz-animation\Win64\src\animation\offline\ozz_animation_offline.vcxproj", "{AC91B515-5B5E-399D-BF31-B6272AF9D139}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ozz_base", "..\..\The-Forge\Common_3\ThirdParty\OpenSource\ozz-animation\Win64\src\base\ozz_base.vcxproj", "{EE1F0FC8-40F5-476A-8553-C8175B343BEE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ozz_base", "..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\ozz-animation\Win64\src\base\ozz_base.vcxproj", "{EE1F0FC8-40F5-476A-8553-C8175B343BEE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

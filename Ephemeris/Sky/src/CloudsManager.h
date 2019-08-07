@@ -11,11 +11,6 @@
 
 #include "SkyDomeParams.h"
 
-
-
-
-//#include "../Include/CloudsManager.h"
-
 struct ParticleProps
 {
   ParticleProps() : texID(0), angle(0), reserved0(1), reserved1(0) {}

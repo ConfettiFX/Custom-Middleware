@@ -3,29 +3,29 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="src">
-    <File Name="../../../The-Forge/Common_3/Renderer/CommonShaderReflection.cpp"/>
-    <File Name="../../../The-Forge/Common_3/Renderer/IRay.h"/>
-    <File Name="../../../The-Forge/Common_3/Renderer/IRenderer.h"/>
-    <File Name="../../../The-Forge/Common_3/Renderer/IShaderReflection.h"/>
-    <File Name="../../../The-Forge/Common_3/Renderer/ResourceLoader.cpp"/>
-    <File Name="../../../The-Forge/Common_3/Renderer/ResourceLoader.h"/>
+    <File Name="../../../../The-Forge/Common_3/Renderer/CommonShaderReflection.cpp"/>
+    <File Name="../../../../The-Forge/Common_3/Renderer/IRay.h"/>
+    <File Name="../../../../The-Forge/Common_3/Renderer/IRenderer.h"/>
+    <File Name="../../../../The-Forge/Common_3/Renderer/IShaderReflection.h"/>
+    <File Name="../../../../The-Forge/Common_3/Renderer/ResourceLoader.cpp"/>
+    <File Name="../../../../The-Forge/Common_3/Renderer/ResourceLoader.h"/>
     <VirtualDirectory Name="Profiler">
-      <File Name="../../../The-Forge/Common_3/Renderer/GpuProfiler.cpp"/>
-      <File Name="../../../The-Forge/Common_3/Renderer/GpuProfiler.h"/>
-      <File Name="../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/Profiler.cpp"/>
-      <File Name="../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/ProfilerBase.cpp"/>
-      <File Name="../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/ProfilerBase.h"/>
-      <File Name="../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/ProfilerDraw.cpp"/>
-      <File Name="../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/ProfilerHTML.h"/>
-      <File Name="../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/ProfilerInput.cpp"/>
-      <File Name="../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/ProfilerUI.cpp"/>
-      <File Name="../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/ProfilerUI.h"/>
+      <File Name="../../../../The-Forge/Common_3/Renderer/GpuProfiler.cpp"/>
+      <File Name="../../../../The-Forge/Common_3/Renderer/GpuProfiler.h"/>
+      <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/Profiler.cpp"/>
+      <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/ProfilerBase.cpp"/>
+      <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/ProfilerBase.h"/>
+      <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/ProfilerDraw.cpp"/>
+      <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/ProfilerHTML.h"/>
+      <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/ProfilerInput.cpp"/>
+      <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/ProfilerUI.cpp"/>
+      <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/ProfilerUI.h"/>
     </VirtualDirectory>
   </VirtualDirectory>
   <VirtualDirectory Name="Vulkan">
-    <File Name="../../../The-Forge/Common_3/Renderer/Vulkan/Vulkan.cpp"/>
-    <File Name="../../../The-Forge/Common_3/Renderer/Vulkan/VulkanRaytracing.cpp"/>
-    <File Name="../../../The-Forge/Common_3/Renderer/Vulkan/VulkanShaderReflection.cpp"/>
+    <File Name="../../../../The-Forge/Common_3/Renderer/Vulkan/Vulkan.cpp"/>
+    <File Name="../../../../The-Forge/Common_3/Renderer/Vulkan/VulkanRaytracing.cpp"/>
+    <File Name="../../../../The-Forge/Common_3/Renderer/Vulkan/VulkanShaderReflection.cpp"/>
   </VirtualDirectory>
   <Settings Type="Static Library">
     <GlobalSettings>

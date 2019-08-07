@@ -23,6 +23,16 @@ float DepthLinearization(float depth)
 	return (2.0 * nearPlane) / (farPlane + nearPlane - depth * (farPlane - nearPlane));
 }
 
+float PackFloat16(float value)
+{
+  return value * 0.001f;
+}
+
+float UnPackFloat16(float value)
+{
+  return value * 1000.0f;
+}
+
 struct PSIn {
 	float4 Position : SV_POSITION;
 	float2 TexCoord : TEXCOORD;
@@ -30,6 +40,6 @@ struct PSIn {
 
 float main(PSIn input) : SV_TARGET
 {
-	return DepthLinearization(SrcTexture.Sample(g_LinearClamp, input.TexCoord).r) * farPlane;
+	return PackFloat16(DepthLinearization(SrcTexture.Sample(g_LinearClamp, input.TexCoord).r) * farPlane);
 }
 

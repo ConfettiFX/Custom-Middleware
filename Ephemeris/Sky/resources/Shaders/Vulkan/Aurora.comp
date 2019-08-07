@@ -1,0 +1,122 @@
+/*
+* Copyright (c) 2018-2019 Confetti Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You may not use the material for commercial purposes.
+*
+*/
+#version 450 core
+
+#extension GL_EXT_control_flow_attributes : require
+
+struct PsIn
+{
+    vec4 position;
+    vec2 texCoord;
+    vec3 color;
+};
+struct AuroraParticle
+{
+    vec4 PrevPosition;
+    vec4 Position;
+    vec4 Acceleration;
+};
+struct AuroraConstraint
+{
+    uint IndexP0;
+    uint IndexP1;
+    float RestDistance;
+    float Padding00;
+    float Padding01;
+    float Padding02;
+    float Padding03;
+    float Padding04;
+};
+layout(row_major, set=0, binding= 14) buffer AuroraParticleBuffer
+{
+    AuroraParticle AuroraParticleBuffer_Data[];
+};
+
+layout(row_major, set=1, binding=10) buffer AuroraConstraintBuffer
+{
+    AuroraConstraint AuroraConstraintBuffer_Data[];
+};
+
+layout(row_major, set = 0, binding = 13) uniform AuroraUniformBuffer
+{
+    uint maxVertex;
+    float heightOffset;
+    float height;
+    float deltaTime;
+    mat4 ViewProjMat;
+};
+
+void satisfyConstraint(uint threadID)
+{
+    AuroraConstraint constraint = AuroraConstraintBuffer_Data[threadID];
+    AuroraParticle p0 = AuroraParticleBuffer_Data[(constraint).IndexP0];
+    AuroraParticle p1 = AuroraParticleBuffer_Data[(constraint).IndexP1];
+    vec3 gap = normalize((((p0).Position).xyz - ((p1).Position).xyz));
+    float current_distance = distance(((p0).Position).xyz, ((p1).Position).xyz);
+    vec3 correctionVector = ((gap * vec3 ((abs((current_distance - (constraint).RestDistance)) / (constraint).RestDistance))) * vec3 (0.00010000000));
+    (((p0).Position).xyz += correctionVector);
+    (((p1).Position).xyz -= correctionVector);
+    (AuroraParticleBuffer_Data[(constraint).IndexP0] = p0);
+    (AuroraParticleBuffer_Data[(constraint).IndexP1] = p1);
+}
+void update(uint threadID)
+{
+    const float DAMPING = 0.010000000;
+    AuroraParticle p0 = AuroraParticleBuffer_Data[threadID];
+    vec3 temporaryPosition = ((p0).Position).xyz;
+    (((p0).Position).xyz += (((((p0).Position).xyz - ((p0).PrevPosition).xyz) * vec3 ((1.0 - DAMPING))) + (((p0).Acceleration).xyz * vec3 (deltaTime))));
+    (((p0).PrevPosition).xyz = temporaryPosition);
+    (((p0).Acceleration).xyz = vec3(0.0, 0.0, 0.0));
+    (AuroraParticleBuffer_Data[threadID] = p0);
+}
+void addForce(uint threadID, vec3 force)
+{
+    AuroraParticle p0 = AuroraParticleBuffer_Data[threadID];
+    (((p0).Acceleration).xyz += (force / vec3 (((p0).Position).a)));
+    (AuroraParticleBuffer_Data[threadID] = p0);
+}
+
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+void HLSLmain(uvec3 GTid, uvec3 Gid, uvec3 DTid)
+{
+    const uint CONSTRAINT_ITERATIONS = uint (15);
+    uint ThreadID = (DTid).x;
+    uint even = (ThreadID % uint (2));
+    if((ThreadID < (maxVertex - uint (1))))
+    {
+        [[unroll]] 
+        for (uint iteration = uint (0); (iteration < CONSTRAINT_ITERATIONS); (iteration++))
+        {
+            if((even == uint (0)))
+            {
+                satisfyConstraint(ThreadID);
+            }
+            barrier(); groupMemoryBarrier();
+            if((even == uint (1)))
+            {
+                satisfyConstraint(ThreadID);
+            }
+            barrier(); groupMemoryBarrier();
+        }
+    }
+    barrier(); groupMemoryBarrier();
+    update(ThreadID);
+    barrier(); groupMemoryBarrier();
+    addForce(ThreadID, normalize(vec3(1.0, 0.0, 0.0)));
+}
+void main()
+{
+    uvec3 GTid;
+    GTid = gl_LocalInvocationID;
+    uvec3 Gid;
+    Gid = gl_WorkGroupID;
+    uvec3 DTid;
+    DTid = gl_GlobalInvocationID;
+    HLSLmain(GTid, Gid, DTid);
+}

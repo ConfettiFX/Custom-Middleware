@@ -9,28 +9,27 @@
 
 #pragma once
 
-#include "../../../The-Forge/Common_3/OS/Interfaces/ICameraController.h"
-#include "../../../The-Forge/Common_3/OS/Interfaces/IMiddleware.h"
-#include "../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/string.h"
-#include "../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/unordered_map.h"
-#include "../../../The-Forge/Middleware_3/UI/AppUI.h"
-#include "../../../The-Forge/Common_3/Renderer/IRenderer.h"
-#include "../../../The-Forge/Common_3/Renderer/GpuProfiler.h"
-
-#include "../../../The-Forge/Common_3/Renderer/ResourceLoader.h"
-#include "../../../The-Forge/Common_3/OS/Interfaces/IFileSystem.h"
-#include "../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
-#include "../../../The-Forge/Common_3/OS/Interfaces/IMemory.h"
-
 #include "SkyCommon.h"
+#include "Icosahedron.h"
+#include "../../src/Perlin.h"
+//#include "B_Spline.h"
+//#include "Aurora.h"
+
+#include "../../../../The-Forge/Common_3/OS/Interfaces/ICameraController.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IMiddleware.h"
+#include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/string.h"
+#include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/unordered_map.h"
+#include "../../../../The-Forge/Middleware_3/UI/AppUI.h"
+#include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
+#include "../../../../The-Forge/Common_3/Renderer/GpuProfiler.h"
 
 class Sky : public IMiddleware
 {
 public:
 
-	virtual bool Init(Renderer* const renderer) final;
+	virtual bool Init(Renderer* renderer) final;
 	virtual void Exit() final;
-	virtual bool Load(RenderTarget** rts) final;
+	virtual bool Load(RenderTarget** rts, uint32_t count = 1) final;
 	virtual void Unload() final;
 	virtual void Draw(Cmd* cmd) final;
 	virtual void Update(float deltaTime) final;
@@ -40,9 +39,11 @@ public:
 		Cmd** InTransCmds, Fence* InTransitionCompleteFences, GpuProfiler*	InGraphicsGpuProfiler, UIApp* InGAppUI, Buffer*	pTransmittanceBuffer);	
 	
 	void InitializeWithLoad(RenderTarget* InDepthRenderTarget, RenderTarget* InLinearDepthRenderTarget);
-
+  
 	void CalculateLookupData();
 	float3 GetSunColor();
+  void GenerateIcosahedron(float **ppPoints, eastl::vector<float> &vertices, eastl::vector<uint32_t> &indices, int numberOfDivisions, float radius = 1.0f);
+  void GenerateRing(eastl::vector<float> &vertices, eastl::vector<uint32_t> &indices, uint32_t WidthDividor, uint32_t HeightDividor, float radius = 1.0f, float height = 1.0f);
 
   uint                  gFrameIndex;
 
@@ -69,6 +70,7 @@ public:
 	Buffer*               pGlobalTriangularVertexBuffer;
 
 	Sampler*              pLinearClampSampler;
+  Sampler*              pLinearBorderSampler;
 
 	RasterizerState*      pRasterizerForSky = NULL;
 	RenderTarget*         pPreStageRenderTarget;
@@ -78,10 +80,14 @@ public:
 
 	ICameraController*    pCameraController = NULL;
 
+  float                 Azimuth;
+  float                 Elevation;
 	float3                LightDirection;
 	float4                LightColorAndIntensity;
 
 	mat4                  SkyProjectionMatrix;
 
 	Buffer*               pTransmittanceBuffer;
+
+  Perlin                noiseGenerator;
 };

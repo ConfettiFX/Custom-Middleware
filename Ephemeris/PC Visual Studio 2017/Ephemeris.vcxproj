@@ -27,19 +27,27 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\Sky\src\Aurora.cpp" />
+    <ClCompile Include="..\Sky\src\B_Spline.cpp" />
     <ClCompile Include="..\Sky\src\CloudImpostor.cpp" />
     <ClCompile Include="..\Sky\src\CloudsManager.cpp" />
     <ClCompile Include="..\Sky\src\CumulusCloud.cpp" />
     <ClCompile Include="..\Sky\src\DistantCloud.cpp" />
     <ClCompile Include="..\Sky\src\Ephemeris.cpp" />
+    <ClCompile Include="..\Sky\src\Icosahedron.cpp" />
     <ClCompile Include="..\Sky\src\LocalTime.cpp" />
     <ClCompile Include="..\Sky\src\Sky.cpp" />
     <ClCompile Include="..\src\EphemerisExample\Example.cpp" />
+    <ClCompile Include="..\src\Perlin.cpp" />
     <ClCompile Include="..\Terrain\src\HeightData.cpp" />
     <ClCompile Include="..\Terrain\src\Terrain.cpp" />
     <ClCompile Include="..\VolumetricClouds\src\VolumetricClouds.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\Sky\resources\Shaders\D3D12\Aurora.comp" />
+    <None Include="..\Sky\resources\Shaders\D3D12\Aurora.frag" />
+    <None Include="..\Sky\resources\Shaders\D3D12\Aurora.geom" />
+    <None Include="..\Sky\resources\Shaders\D3D12\Aurora.vert" />
     <None Include="..\Sky\resources\Shaders\D3D12\clCumulusCloud.frag" />
     <None Include="..\Sky\resources\Shaders\D3D12\clCumulusCloud.geom" />
     <None Include="..\Sky\resources\Shaders\D3D12\clCumulusCloud.vert" />
@@ -47,17 +55,31 @@
     <None Include="..\Sky\resources\Shaders\D3D12\clDistanceCloud.vert" />
     <None Include="..\Sky\resources\Shaders\D3D12\clImpostorCloud.frag" />
     <None Include="..\Sky\resources\Shaders\D3D12\clImpostorCloud.vert" />
+    <None Include="..\Sky\resources\Shaders\D3D12\MilkyWay.frag" />
+    <None Include="..\Sky\resources\Shaders\D3D12\MilkyWay.vert" />
     <None Include="..\Sky\resources\Shaders\D3D12\RenderSky.frag" />
     <None Include="..\Sky\resources\Shaders\D3D12\RenderSky.vert" />
     <None Include="..\Sky\resources\Shaders\D3D12\Space.frag" />
     <None Include="..\Sky\resources\Shaders\D3D12\Space.vert" />
+    <None Include="..\Sky\resources\Shaders\D3D12\Star.frag" />
+    <None Include="..\Sky\resources\Shaders\D3D12\Star.geom" />
+    <None Include="..\Sky\resources\Shaders\D3D12\Star.vert" />
     <None Include="..\Sky\resources\Shaders\D3D12\Sun.frag" />
     <None Include="..\Sky\resources\Shaders\D3D12\Sun.geom" />
     <None Include="..\Sky\resources\Shaders\D3D12\Sun.vert" />
+    <None Include="..\Sky\resources\Shaders\Vulkan\Aurora.comp" />
+    <None Include="..\Sky\resources\Shaders\Vulkan\Aurora.frag" />
+    <None Include="..\Sky\resources\Shaders\Vulkan\Aurora.geom" />
+    <None Include="..\Sky\resources\Shaders\Vulkan\Aurora.vert" />
+    <None Include="..\Sky\resources\Shaders\Vulkan\MilkyWay.frag" />
+    <None Include="..\Sky\resources\Shaders\Vulkan\MilkyWay.vert" />
     <None Include="..\Sky\resources\Shaders\Vulkan\RenderSky.frag" />
     <None Include="..\Sky\resources\Shaders\Vulkan\RenderSky.vert" />
     <None Include="..\Sky\resources\Shaders\Vulkan\Space.frag" />
     <None Include="..\Sky\resources\Shaders\Vulkan\Space.vert" />
+    <None Include="..\Sky\resources\Shaders\Vulkan\Star.frag" />
+    <None Include="..\Sky\resources\Shaders\Vulkan\Star.geom" />
+    <None Include="..\Sky\resources\Shaders\Vulkan\Star.vert" />
     <None Include="..\Sky\resources\Shaders\Vulkan\Sun.frag" />
     <None Include="..\Sky\resources\Shaders\Vulkan\Sun.geom" />
     <None Include="..\Sky\resources\Shaders\Vulkan\Sun.vert" />
@@ -142,17 +164,21 @@
     <ClInclude Include="..\Sky\resources\Shaders\D3D12\RenderSky.h" />
     <ClInclude Include="..\Sky\resources\Shaders\D3D12\SkyCommon.h" />
     <ClInclude Include="..\Sky\resources\Shaders\Vulkan\RenderSky.h" />
+    <ClInclude Include="..\Sky\src\Aurora.h" />
+    <ClInclude Include="..\Sky\src\B_Spline.h" />
     <ClInclude Include="..\Sky\src\CloudImpostor.h" />
     <ClInclude Include="..\Sky\src\CloudsManager.h" />
     <ClInclude Include="..\Sky\src\CumulusCloud.h" />
     <ClInclude Include="..\Sky\src\DistantCloud.h" />
     <ClInclude Include="..\Sky\src\Ephemeris.h" />
+    <ClInclude Include="..\Sky\src\Icosahedron.h" />
     <ClInclude Include="..\Sky\src\IndexManager.h" />
     <ClInclude Include="..\Sky\src\LocalTime.h" />
     <ClInclude Include="..\Sky\src\Location.h" />
     <ClInclude Include="..\Sky\src\Sky.h" />
     <ClInclude Include="..\Sky\src\SkyCommon.h" />
     <ClInclude Include="..\Sky\src\SkyDomeParams.h" />
+    <ClInclude Include="..\src\Perlin.h" />
     <ClInclude Include="..\Terrain\src\HeightData.h" />
     <ClInclude Include="..\Terrain\src\Hemisphere.h" />
     <ClInclude Include="..\Terrain\src\Terrain.h" />
@@ -165,7 +191,7 @@
     <ProjectGuid>{12E2663B-7168-466C-BBD1-07947D088409}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Samples_GLFW</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
     <ProjectName>Ephemeris</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -235,14 +261,14 @@
     <LinkIncremental>true</LinkIncremental>
     <IntDir>$(SolutionDir)\$(Platform)\$(Configuration)\Intermediate\$(ProjectName)\</IntDir>
     <IncludePath>$(VULKAN_SDK)\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\$(Platform)\$(Configuration);$(VULKAN_SDK)\Lib;$(SolutionDir)\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\Bin\Debug\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)\$(Platform)\$(Configuration);$(VULKAN_SDK)\Lib;$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\Bin\Debug\;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugDx|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IntDir>$(SolutionDir)\$(Platform)\$(Configuration)\Intermediate\$(ProjectName)\</IntDir>
     <IncludePath>$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\$(Platform)\$(Configuration);$(SolutionDir)\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\Bin\Debug\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)\$(Platform)\$(Configuration);$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\Bin\Debug\;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugDx11|x64'">
@@ -256,14 +282,14 @@
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(SolutionDir)\$(Platform)\$(Configuration)\Intermediate\$(ProjectName)\</IntDir>
     <IncludePath>$(VULKAN_SDK)\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\$(Platform)\$(Configuration);$(VULKAN_SDK)\Lib;$(SolutionDir)\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\Bin\Release\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)\$(Platform)\$(Configuration);$(VULKAN_SDK)\Lib;$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\Bin\Release\;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDx|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(SolutionDir)\$(Platform)\$(Configuration)\Intermediate\$(ProjectName)\</IntDir>
     <IncludePath>$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\$(Platform)\$(Configuration);$(SolutionDir)..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\Bin\Release\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)\$(Platform)\$(Configuration);$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\Bin\Release\;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDx11|x64'">
