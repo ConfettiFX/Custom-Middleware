@@ -35,7 +35,7 @@
 #define ALLOW_CONTROL_CLOUD 1
 #define STEREO_INSTANCED 0
 
-#define USE_DEPTH_CULLING 1
+#define FLOAT16_MAX 65500.0f 
 
 struct VolumetricCloudsCB
 {
@@ -144,6 +144,7 @@ Texture2D depthTexture : register(t4);
 
 Texture2D LowResCloudTexture : register(t5);
 Texture2D g_PrevFrameTexture : register(t6);
+Texture2D g_LinearDepthTexture : register(t17);
 
 SamplerState g_LinearClampSampler : register(s0);
 SamplerState g_LinearWrapSampler : register(s1);
@@ -273,12 +274,12 @@ float getRelativeHeightAccurate(in float3 pt, in float3 projectedPt, float layer
 
 float PackFloat16(float value)
 {
-  return value * 0.01f;
+  return value * 0.001f;
 }
 
 float UnPackFloat16(float value)
 {
-  return value * 100.0f;
+  return value * 1000.0f;
 }
 
 float getAtmosphereBlendForComposite(float distance)
@@ -453,6 +454,10 @@ float GetDensity(float3 startPos, float3 worldPos, float3 dir, float maxSampleDi
   float distCameraToStart = distance(sampleStart, startPos);
 
   //atmosphericBlendFactor = PackFloat16(distCameraToStart);
+  if (UnPackFloat16(g_LinearDepthTexture.SampleLevel(g_LinearClampSampler, uv, 0.0f).r) < FLOAT16_MAX)
+  {
+    atmosphericBlendFactor = 1.0f;
+  }
 
   // Horizontal Culling		
   // The most of cases, we don't need to render the clouds below the horizon
@@ -492,8 +497,10 @@ float GetDensity(float3 startPos, float3 worldPos, float3 dir, float maxSampleDi
   {
     sceneDepth  = depthTexture.Load(int3(int2(texels), 0), int2(0, 0)).r;
 
-    if (sceneDepth < g_VolumetricClouds.CameraFarClip)
-      return 0.0;
+    if (UnPackFloat16(sceneDepth) < FLOAT16_MAX)
+    { 
+      return 1.0;
+    }
   }  
 
   // Prepare to do raymarching
@@ -592,6 +599,7 @@ float GetDensity(float3 startPos, float3 worldPos, float3 dir, float maxSampleDi
         {
           intensity /= alpha;
           depth = PackFloat16(depth);
+          atmosphericBlendFactor = 1.0f;
           return 1.0f;
         }
       }
@@ -601,6 +609,7 @@ float GetDensity(float3 startPos, float3 worldPos, float3 dir, float maxSampleDi
   }
 
   depth = PackFloat16(depth);
+  atmosphericBlendFactor = max(atmosphericBlendFactor, alpha);
   return alpha;
 }
 
@@ -632,6 +641,11 @@ float GetDensityWithComparingDepth(float3 startPos, float3 worldPos, float3 dir,
   float distCameraToStart = distance(sampleStart, startPos);
 
   //atmosphericBlendFactor = PackFloat16(distCameraToStart);
+  float sceneDepth = UnPackFloat16(depthTexture.SampleLevel(g_LinearClampSampler, uv, 0.0f).r);
+  if (sceneDepth < FLOAT16_MAX)
+  {
+    atmosphericBlendFactor = 1.0f;
+  }
 
   // Horizontal Culling		
   // The most of cases, we don't need to render the clouds below the horizon
@@ -665,7 +679,7 @@ float GetDensityWithComparingDepth(float3 startPos, float3 worldPos, float3 dir,
   uint2 texels = (uint2)(float2(g_VolumetricClouds.Padding02, g_VolumetricClouds.Padding03) * uv);
 
   //Get the lodded depth, if it is not using, use far distance instead to pass the culling
-  float sceneDepth = depthTexture.Load(int3(texels, 0), int2(0, 0)).r;
+  //float sceneDepth = depthTexture.Load(int3(texels, 0), int2(0, 0)).r;
 
   // Prepare to do raymarching
   float alpha = 0.0f;
@@ -766,6 +780,7 @@ float GetDensityWithComparingDepth(float3 startPos, float3 worldPos, float3 dir,
         {
           intensity /= alpha;
           depth = PackFloat16(depth);
+          atmosphericBlendFactor = 1.0f;
           return 1.0f;
         }
       }
@@ -775,6 +790,7 @@ float GetDensityWithComparingDepth(float3 startPos, float3 worldPos, float3 dir,
   }
 
   depth = PackFloat16(depth);
+  atmosphericBlendFactor = max(atmosphericBlendFactor, alpha);
   return alpha;
 }
 

@@ -9,10 +9,25 @@
 
 #include "VolumetricClouds.h"
 
+#include "../../../../The-Forge/Common_3/Renderer/ResourceLoader.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IFileSystem.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IMemory.h"
+
 #define TERRAIN_NEAR 50.0f
 #define TERRAIN_FAR 100000000.0f
 
+#if defined(_DURANGO)
+#define	USE_CHEAP_SETTINGS
+#endif
+
+#if defined(USE_CHEAP_SETTINGS)
+static uint               prevDownSampling = 2;
+#else
 static uint               prevDownSampling = 1;
+#endif
+
+
 static uint32_t           gDownsampledCloudSize = (uint32_t)pow(2, (double)prevDownSampling);
 const uint32_t            glowResBufferSize = 4;
 static uint32_t           postProcessBufferSize = gDownsampledCloudSize;
@@ -183,7 +198,7 @@ BlendState*               pBlendStateGodray;
 #define				USE_VC_FRAGMENTSHADER 0
 #endif
 
-#define       USE_RP_FRAGMENTSHADER 1
+#define				USE_RP_FRAGMENTSHADER 1
 #define				USE_DEPTH_CULLING 1
 #define				USE_LOD_DEPTH 1
 #define				DRAW_SHADOW   0
@@ -226,18 +241,30 @@ static float g_currentTime = 0.0f;
 typedef struct AppSettings
 {
   uint32_t m_Enabled = true;
+#if defined(USE_CHEAP_SETTINGS)
+  uint32_t m_DownSampling = 2;
+#else
   uint32_t m_DownSampling = 1;
-
+#endif
   // VolumetricClouds raymarching
+
+#if defined(USE_CHEAP_SETTINGS)
+  uint32_t m_MinSampleCount = 54;
+  uint32_t m_MaxSampleCount = 96;
+  float m_MinStepSize = 1024.0;
+  float m_MaxStepSize = 2048.0;
+#else
   uint32_t m_MinSampleCount = 128;
   uint32_t m_MaxSampleCount = 192;
-
-  float m_MinStepSize = 256.0;
+  float m_MinStepSize = 512.0;
   float m_MaxStepSize = 1536.0;
+#endif
+  
   float m_LayerHeightOffset = 5800.0f;
   float	m_LayerThickness = 78000.0f;
 
   bool m_EnabledTemporalRayOffset = false;
+
   // VolumetricClouds modeling
   float m_BaseTile = 0.455f;
 
@@ -248,6 +275,7 @@ typedef struct AppSettings
 
   float m_CloudTopOffset = 500.0f;
   float m_CloudSize = 64049.602f;
+  
   float m_CloudDensity = 3.0f;
   float m_CloudCoverageModifier = 0.0f;
 
@@ -268,7 +296,7 @@ typedef struct AppSettings
   float  m_CustomColorIntensity = 1.0f;
   float	 m_CustomColorBlendFactor = 0.0f;
   float	 m_Contrast = 1.2f;
-  float	 m_TransStepSize = 347.0f;
+  float	 m_TransStepSize = 768.0f;
 
   float m_BackgroundBlendFactor = 1.0f;
   float m_Precipitation = 1.3f;
@@ -281,16 +309,28 @@ typedef struct AppSettings
   bool m_EnabledDepthCulling = true;
   bool m_EnabledLodDepth = true;
   //Shadow
+
+#if defined(USE_CHEAP_SETTINGS)
+  bool m_EnabledShadow = false;
+#else
   bool m_EnabledShadow = true;
+#endif
+ 
 
   float m_ShadowBrightness = 0.5f;
   float m_ShadowTiling = 20.0f;
   float m_ShadowSpeed = 1.0f;
   // VolumetricClouds' Light shaft
+
+#if defined(USE_CHEAP_SETTINGS)
+  bool m_EnabledGodray = false;
+#else
   bool m_EnabledGodray = true;
+#endif
+ 
 
   uint32_t m_GodNumSamples = 80;
-  float m_Exposure = 0.010f;
+  float m_Exposure = 0.008f;
   float m_Decay = 0.975f;
   float m_Density = 0.3f;
   float m_Weight = 0.85f;
@@ -300,7 +340,12 @@ typedef struct AppSettings
   float m_Test02 = 0.23f;
   float m_Test03 = 25000.0f;
 
+#if defined(USE_CHEAP_SETTINGS)
   bool m_EnableBlur = true;
+#else
+  bool m_EnableBlur = false;
+#endif
+  
 
 } AppSettings;
 
@@ -399,7 +444,7 @@ static void TransitionRenderTargets(RenderTarget *pRT, ResourceState state, Rend
 }
 #endif
 
-bool VolumetricClouds::Init(Renderer* const renderer)
+bool VolumetricClouds::Init(Renderer* renderer)
 {
 	pRenderer = renderer;
   g_StandardPosition = vec4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -940,7 +985,7 @@ bool VolumetricClouds::Init(Renderer* const renderer)
   WeatherCompactTextureLoadDesc.pDesc = &WeatherCompactTextureDesc;
   addResource(&WeatherCompactTextureLoadDesc, false);
 
-	
+  /*
   {
 	PipelineDesc CopyWeatherTexturePipelineDesc;
 	CopyWeatherTexturePipelineDesc.mType = PIPELINE_TYPE_COMPUTE;
@@ -983,6 +1028,7 @@ bool VolumetricClouds::Init(Renderer* const renderer)
     queueSubmit(pGraphicsQueue, 1, &cmd, pTransitionCompleteFences, 0, 0, 0, 0);
     waitForFences(pRenderer, 1, &pTransitionCompleteFences);
   }
+  */
 
 
 	RasterizerStateDesc rasterizerStateDesc = {};
@@ -1004,9 +1050,17 @@ bool VolumetricClouds::Init(Renderer* const renderer)
 	SliderUintWidget DownSampling("Downsampling", &gAppSettings.m_DownSampling, 1, 3, 1);
 	pGuiWindow->AddWidget(DownSampling);
 
+	ButtonWidget UseLowQuality("Use  Low Quality Settings");
+	UseLowQuality.pOnEdited = VolumetricClouds::UseLowQualitySettings;
+	pGuiWindow->AddWidget(UseLowQuality);
+
+	ButtonWidget UseHighQuality("Use High Quality Settings");
+	UseHighQuality.pOnEdited = VolumetricClouds::UseHighQualitySettings;
+	pGuiWindow->AddWidget(UseHighQuality);
+
 #if !defined(METAL)
-  CheckboxWidget Blur("Enabled Blur", &gAppSettings.m_EnableBlur);
-  pGuiWindow->AddWidget(Blur);
+  //CheckboxWidget Blur("Enabled Blur", &gAppSettings.m_EnableBlur);
+  //pGuiWindow->AddWidget(Blur);
 #endif
 	
 	CollapsingHeaderWidget CollapsingRayMarching("Ray Marching");
@@ -1016,7 +1070,7 @@ bool VolumetricClouds::Init(Renderer* const renderer)
 	CollapsingRayMarching.AddSubWidget(SliderFloatWidget("Min Step Size", &gAppSettings.m_MinStepSize, float(1.0f), float(2048.0f), float(32.0f)));
 	CollapsingRayMarching.AddSubWidget(SliderFloatWidget("Max Step Size", &gAppSettings.m_MaxStepSize, float(1.0f), float(4096.0f), float(32.0f)));
 	CollapsingRayMarching.AddSubWidget(SliderFloatWidget("Layer Height Offset", &gAppSettings.m_LayerHeightOffset, float(-100000.0f), float(100000.0f), float(100.0f)));
-  CollapsingRayMarching.AddSubWidget(SliderFloatWidget("Layer Thickness", &gAppSettings.m_LayerThickness, float(1.0f), float(100000.0f), float(100.0f)));  
+	CollapsingRayMarching.AddSubWidget(SliderFloatWidget("Layer Thickness", &gAppSettings.m_LayerThickness, float(1.0f), float(100000.0f), float(100.0f)));  
 
 	CollapsingRayMarching.AddSubWidget(CheckboxWidget("Enabled Temporal RayOffset", &gAppSettings.m_EnabledTemporalRayOffset));
 
@@ -1037,8 +1091,8 @@ bool VolumetricClouds::Init(Renderer* const renderer)
 	CollapsingCloud.AddSubWidget(SliderFloatWidget("Cloud Type Modifier", &gAppSettings.m_CloudTypeModifier, float(-1.0f), float(1.0f), float(0.001f)));
 	CollapsingCloud.AddSubWidget(SliderFloatWidget("Anvil Bias", &gAppSettings.m_AnvilBias, float(0.0f), float(1.0f), float(0.001f)));
 	CollapsingCloud.AddSubWidget(SliderFloatWidget("Weather Texture Size", &gAppSettings.m_WeatherTexSize, float(0.001f), float(1000000.0f), float(0.1f)));
-  CollapsingCloud.AddSubWidget(SliderFloatWidget("Weather Texture Direction", &gAppSettings.WeatherTextureAzimuth, float(-180.0f), float(180.0f), float(0.001f)));
-  CollapsingCloud.AddSubWidget(SliderFloatWidget("Weather Texture Distance", &gAppSettings.WeatherTextureDistance, float(-1000000.0f), float(1000000.0f), float(0.01f)));
+	CollapsingCloud.AddSubWidget(SliderFloatWidget("Weather Texture Direction", &gAppSettings.WeatherTextureAzimuth, float(-180.0f), float(180.0f), float(0.001f)));
+	CollapsingCloud.AddSubWidget(SliderFloatWidget("Weather Texture Distance", &gAppSettings.WeatherTextureDistance, float(-1000000.0f), float(1000000.0f), float(0.01f)));
 
 	pGuiWindow->AddWidget(CollapsingCloud);
 
@@ -1071,12 +1125,8 @@ bool VolumetricClouds::Init(Renderer* const renderer)
 	CollapsingHeaderWidget CollapsingCulling("Depth Culling");
 
 	CollapsingCulling.AddSubWidget(CheckboxWidget("Enabled Depth Culling", &gAppSettings.m_EnabledDepthCulling));
-  CollapsingCulling.AddSubWidget(CheckboxWidget("Enabled Lod Depth", &gAppSettings.m_EnabledLodDepth));
+	CollapsingCulling.AddSubWidget(CheckboxWidget("Enabled Lod Depth", &gAppSettings.m_EnabledLodDepth));
 	pGuiWindow->AddWidget(CollapsingCulling);
-
-
-  
-
 
 	CollapsingHeaderWidget CollapsingShadow("Clouds Shadow");
 
@@ -1111,6 +1161,12 @@ bool VolumetricClouds::Init(Renderer* const renderer)
 	pGuiWindow->AddWidget(CollapsingTest);
   */
   ///////////////////////////
+
+#if defined(USE_CHEAP_SETTINGS)
+	UseLowQualitySettings();
+#else
+	UseHighQualitySettings();
+#endif
 
 	PipelineDesc pipelineDesc;
 	pipelineDesc.mType = PIPELINE_TYPE_COMPUTE;
@@ -1332,7 +1388,7 @@ void VolumetricClouds::Exit()
 	conf_free(gHighFrequencyOriginTextureStorage);
 	conf_free(gLowFrequencyOriginTextureStorage);
 
-  removePipeline(pRenderer, pCopyWeatherTexturePipeline);
+    //removePipeline(pRenderer, c);
 
 	removeResource(pTriangularScreenVertexBuffer);
 	
@@ -1395,7 +1451,7 @@ Texture* VolumetricClouds::GetWeatherMap()
  return pWeatherTexture;
 };
 
-bool VolumetricClouds::Load(RenderTarget** rts)
+bool VolumetricClouds::Load(RenderTarget** rts, uint32_t count)
 {
 	pFinalRT = rts;
 
@@ -1743,36 +1799,26 @@ bool VolumetricClouds::Load(RenderTarget** rts)
 	addPipeline(pRenderer, &pipelineDesc, &pCopyTexturePipeline);
 
 	comPipelineSettings.pShaderProgram = pCopyRTShader;
-	//comPipelineSettings.pRootSignature = pCopyRTRootSignature;
   comPipelineSettings.pRootSignature = pVolumetricCloudsRootSignatureCompute;
 	addPipeline(pRenderer, &pipelineDesc, &pCopyRTPipeline);
 
 	comPipelineSettings.pShaderProgram = pVolumetricCloudCompShader;
-	//comPipelineSettings.pRootSignature = pVolumetricCloudCompRootSignature;
   comPipelineSettings.pRootSignature = pVolumetricCloudsRootSignatureCompute;
 	addPipeline(pRenderer, &pipelineDesc, &pVolumetricCloudCompPipeline);
 
 	comPipelineSettings.pShaderProgram = pVolumetricCloudWithDepthCompShader;
-	//comPipelineSettings.pRootSignature = pVolumetricCloudWithDepthCompRootSignature;
   comPipelineSettings.pRootSignature = pVolumetricCloudsRootSignatureCompute;
 	addPipeline(pRenderer, &pipelineDesc, &pVolumetricCloudWithDepthCompPipeline);
 
-	//comPipelineSettings.pShaderProgram = pReprojectionCompShader;
-	//comPipelineSettings.pRootSignature = pReprojectionCompRootSignature;
-	//addPipeline(pRenderer, &pipelineDesc, &pReprojectionCompPipeline);
-
 	comPipelineSettings.pShaderProgram = pGenHiZMipmapPRShader;
-	//comPipelineSettings.pRootSignature = pGenHiZMipmapPRRootSignature;
   comPipelineSettings.pRootSignature = pVolumetricCloudsRootSignatureCompute;
 	addPipeline(pRenderer, &pipelineDesc, &pGenHiZMipmapPRPipeline);
 
 	comPipelineSettings.pShaderProgram = pHorizontalBlurShader;
-	//comPipelineSettings.pRootSignature = pHorizontalBlurRootSignature;
   comPipelineSettings.pRootSignature = pVolumetricCloudsRootSignatureCompute;
 	addPipeline(pRenderer, &pipelineDesc, &pHorizontalBlurPipeline);
 
 	comPipelineSettings.pShaderProgram = pVerticalBlurShader;
-	//comPipelineSettings.pRootSignature = pVerticalBlurRootSignature;
   comPipelineSettings.pRootSignature = pVolumetricCloudsRootSignatureCompute;
 	addPipeline(pRenderer, &pipelineDesc, &pVerticalBlurPipeline);
 
@@ -1784,7 +1830,7 @@ bool VolumetricClouds::Load(RenderTarget** rts)
 void VolumetricClouds::Unload()
 {
 	removePipeline(pRenderer, pPostProcessPipeline);
-  removePipeline(pRenderer, pPostProcessWithBlurPipeline);
+	removePipeline(pRenderer, pPostProcessWithBlurPipeline);
 	removePipeline(pRenderer, pCompositeOverlayPipeline);
 	removePipeline(pRenderer, pCompositePipeline);
 	removePipeline(pRenderer, pVolumetricCloudPipeline);
@@ -1797,7 +1843,7 @@ void VolumetricClouds::Unload()
 	removePipeline(pRenderer, pGenHiZMipmapPipeline);
 	removePipeline(pRenderer, pCopyRTPipeline);
 	removePipeline(pRenderer, pVolumetricCloudCompPipeline);
-  removePipeline(pRenderer, pVolumetricCloudWithDepthCompPipeline);
+	removePipeline(pRenderer, pVolumetricCloudWithDepthCompPipeline);
 	removePipeline(pRenderer, pGenHiZMipmapPRPipeline);
 	removePipeline(pRenderer, pHorizontalBlurPipeline);
 	removePipeline(pRenderer, pVerticalBlurPipeline);
@@ -2006,7 +2052,7 @@ void VolumetricClouds::Draw(Cmd* cmd)
 
 				cmdBindPipeline(cmd, pVolumetricCloudPipeline);
 
-				DescriptorData VCParams[7] = {};
+				DescriptorData VCParams[8] = {};
 
 				VCParams[0].pName = "highFreqNoiseTexture";
 				VCParams[0].ppTextures = &pHighFrequency3DTexture;
@@ -2022,15 +2068,18 @@ void VolumetricClouds::Draw(Cmd* cmd)
 
 				VCParams[4].pName = "depthTexture";
 				VCParams[4].ppTextures = &HiZedDepthTexture;
+				
+				VCParams[5].pName = "g_LinearDepthTexture";
+				VCParams[5].ppTextures = &pLinearDepthTexture;
+				
+				VCParams[6].pName = "g_LinearWrapSampler";
+				VCParams[6].ppSamplers = &pBilinearSampler;
 
-				VCParams[5].pName = "g_LinearWrapSampler";
-				VCParams[5].ppSamplers = &pBilinearSampler;
-
-				VCParams[6].pName = "VolumetricCloudsCBuffer";
-				VCParams[6].ppBuffers = &VolumetricCloudsCBuffer[gFrameIndex];
+				VCParams[7].pName = "VolumetricCloudsCBuffer";
+				VCParams[7].ppBuffers = &VolumetricCloudsCBuffer[gFrameIndex];
 				
 
-				cmdBindDescriptors(cmd, pVolumetricCloudsDescriptorBinder, pVolumetricCloudsRootSignatureGraphics, 7, VCParams);
+				cmdBindDescriptors(cmd, pVolumetricCloudsDescriptorBinder, pVolumetricCloudsRootSignatureGraphics, 8, VCParams);
 
 				cmdBindVertexBuffer(cmd, 1, &pTriangularScreenVertexWithMiscBuffer, NULL);
 				cmdDraw(cmd, 3, 0);
@@ -2048,7 +2097,7 @@ void VolumetricClouds::Draw(Cmd* cmd)
 				  cmdBindPipeline(cmd, pVolumetricCloudWithDepthCompPipeline);
 			  }
 
-				DescriptorData VCParams[8] = {};
+				DescriptorData VCParams[9] = {};
 
 				VCParams[0].pName = "highFreqNoiseTexture";
 				VCParams[0].ppTextures = &pHighFrequency3DTexture;
@@ -2065,13 +2114,13 @@ void VolumetricClouds::Draw(Cmd* cmd)
 
 				VCParams[4].pName = "depthTexture";
 
-			  if(gAppSettings.m_EnabledLodDepth && gAppSettings.m_EnabledDepthCulling)
+			  if(/*gAppSettings.m_EnabledLodDepth &&*/ gAppSettings.m_EnabledDepthCulling)
 			  {
-				VCParams[4].ppTextures = &HiZedDepthTexture;			  
+				  VCParams[4].ppTextures = &HiZedDepthTexture;			  
 			  }
 			  else
 			  {
-				VCParams[4].ppTextures = &pLinearDepthTexture;			  
+				  VCParams[4].ppTextures = &pLinearDepthTexture;			  
 			  }
 
 				VCParams[5].pName = "g_LinearWrapSampler";
@@ -2083,9 +2132,15 @@ void VolumetricClouds::Draw(Cmd* cmd)
 			  VCParams[7].pName = "VolumetricCloudsCBuffer";
 			  VCParams[7].ppBuffers = &VolumetricCloudsCBuffer[gFrameIndex];
 
+				if (/*gAppSettings.m_EnabledLodDepth &&*/ gAppSettings.m_EnabledDepthCulling)
+				{
+				  VCParams[8].pName = "g_LinearDepthTexture";
+				  VCParams[8].ppTextures = &pLinearDepthTexture;
+				}
+
 			  if (gAppSettings.m_EnabledDepthCulling)
 			  {
-				  cmdBindDescriptors(cmd, pVolumetricCloudsDescriptorBinder, pVolumetricCloudsRootSignatureCompute, 8, VCParams);
+				  cmdBindDescriptors(cmd, pVolumetricCloudsDescriptorBinder, pVolumetricCloudsRootSignatureCompute, 9, VCParams);
 				  pThreadGroupSize = pVolumetricCloudCompShader->mReflection.mStageReflections[0].mNumThreadsPerGroup;
 			  }
 			  else
@@ -2430,17 +2485,13 @@ void VolumetricClouds::Draw(Cmd* cmd)
 			DescriptorData PPparams[3] = {};
 
 			PPparams[0].pName = "g_PrevFrameTexture";
-			PPparams[0].ppTextures = &phighResCloudRT->pTexture;
-			
+			PPparams[0].ppTextures = &phighResCloudRT->pTexture;			
 
 			PPparams[1].pName = "g_LinearBorderSampler";
-			PPparams[1].ppSamplers = &pLinearBorderSampler;
+			PPparams[1].ppSamplers = &pLinearBorderSampler;			
 
-			//PPparams[2].pName = "VolumetricCloudsCBufferRootConstant";
-			//PPparams[2].pRootConstant = &volumetricCloudsCB;
-
-			  PPparams[2].pName = "VolumetricCloudsCBuffer";
-			  PPparams[2].ppBuffers = &VolumetricCloudsCBuffer[gFrameIndex];
+			PPparams[2].pName = "VolumetricCloudsCBuffer";
+			PPparams[2].ppBuffers = &VolumetricCloudsCBuffer[gFrameIndex];
 
 			cmdBindDescriptors(cmd, pVolumetricCloudsDescriptorBinder, pVolumetricCloudsRootSignatureGraphics, 3, PPparams);
 
@@ -2537,8 +2588,8 @@ void VolumetricClouds::Draw(Cmd* cmd)
 		  Presentpparams[1].pName = "depthTexture";
 		  Presentpparams[1].ppTextures = &pDepthTexture;
 
-			Presentpparams[2].pName = "g_PrevVolumetricCloudTexture";
-			Presentpparams[2].ppTextures = &phighResCloudRT->pTexture;
+		  Presentpparams[2].pName = "g_PrevVolumetricCloudTexture";
+		  Presentpparams[2].ppTextures = &phighResCloudRT->pTexture;
 
 		  Presentpparams[3].pName = "g_LinearClampSampler";
 		  Presentpparams[3].ppSamplers = &pBiClampSampler;
@@ -2848,7 +2899,7 @@ bool VolumetricClouds::AddHiZDepthBuffer()
 {
 	TextureDesc HiZDepthDesc = {};
 	HiZDepthDesc.mArraySize = 1;
-	HiZDepthDesc.mFormat = ImageFormat::R32F;
+	HiZDepthDesc.mFormat = ImageFormat::R16F;
 
 	HiZDepthDesc.mWidth = mWidth & (~63);
 	HiZDepthDesc.mHeight = mHeight & (~63);
@@ -3139,4 +3190,28 @@ void VolumetricClouds::Initialize(uint InImageCount,
 	pGAppUI = InGAppUI;
 	pTransmittanceBuffer = InTransmittanceBuffer;
 	
+}
+
+void VolumetricClouds::UseLowQualitySettings()
+{
+	gAppSettings.m_DownSampling = 2;
+	gAppSettings.m_MinSampleCount = 54;
+	gAppSettings.m_MaxSampleCount = 96;
+	gAppSettings.m_MinStepSize = 1024.0;
+	gAppSettings.m_MaxStepSize = 2048.0;
+	gAppSettings.m_EnabledShadow = false;
+	gAppSettings.m_EnabledGodray = false;
+	gAppSettings.m_EnableBlur = true;
+}
+
+void VolumetricClouds::UseHighQualitySettings()
+{
+	gAppSettings.m_DownSampling = 1;
+	gAppSettings.m_MinSampleCount = 128;
+	gAppSettings.m_MaxSampleCount = 128;
+	gAppSettings.m_MinStepSize = 512.0;
+	gAppSettings.m_MaxStepSize = 2048.0;
+	gAppSettings.m_EnabledShadow = true;
+	gAppSettings.m_EnabledGodray = true;
+	gAppSettings.m_EnableBlur = false;
 }

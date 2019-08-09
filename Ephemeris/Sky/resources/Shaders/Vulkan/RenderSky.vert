@@ -53,7 +53,7 @@ PsIn HLSLmain(uint VertexID)
     float mu = (dot(x, v) / r);
 
     vec4 dayLight = vec4(transmittance(r, mu), 1.0f);
-    vec4 nightLight = RenderSkyUniformBuffer.LightIntensity * 0.15f;
+    vec4 nightLight = RenderSkyUniformBuffer.LightIntensity * 0.05f;
 
     TransmittanceColor.TransmittanceColor_Data[VertexID] = RenderSkyUniformBuffer.LightDirection.y >= 0.2f ? dayLight : mix(nightLight, dayLight, vec4(clamp(RenderSkyUniformBuffer.LightDirection.y / 0.2f, 0.0f, 1.0f)));
 

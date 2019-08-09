@@ -10,6 +10,10 @@
 
 #include "CumulusCloud.h"
 
+#include "../../../../The-Forge/Common_3/Renderer/ResourceLoader.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IFileSystem.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IMemory.h"
 //#include "Singletons.h"
 
 //#include "../Include/Renderer.h"

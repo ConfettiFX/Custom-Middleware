@@ -27,10 +27,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Tools\AssimpImporter\AssimpImporter.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Tools\AssimpImporter\AssimpImporter.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\Tools\AssimpImporter\AssimpImporter.h" />
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\Tools\AssimpImporter\AssimpImporter.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{1018594F-0769-4244-BED4-CEB06EBBAE22}</ProjectGuid>
@@ -105,14 +105,14 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugVk|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IntDir>$(SolutionDir)\$(Platform)\$(Configuration)\Intermediate\$(ProjectName)\</IntDir>
-    <IncludePath>$(IncludePath);$(SolutionDir)\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\include;$(SolutionDir)\..\..\..;</IncludePath>
-    <LibraryPath>$(SolutionDir)\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\Bin\Debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(IncludePath);$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\include;$(SolutionDir)\..\..\..;</IncludePath>
+    <LibraryPath>$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\Bin\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugDx|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IntDir>$(SolutionDir)\$(Platform)\$(Configuration)\Intermediate\$(ProjectName)\</IntDir>
-    <IncludePath>$(IncludePath);$(SolutionDir)\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\include;$(SolutionDir)\..\..\..</IncludePath>
-    <LibraryPath>$(SolutionDir)\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\Bin\Debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(IncludePath);$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\include;$(SolutionDir)\..\..\..</IncludePath>
+    <LibraryPath>$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\Bin\Debug;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugDx11|x64'">
     <LinkIncremental>true</LinkIncremental>
@@ -123,14 +123,14 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseVk|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(SolutionDir)\$(Platform)\$(Configuration)\Intermediate\$(ProjectName)\</IntDir>
-    <IncludePath>$(IncludePath);$(SolutionDir)\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\include;$(SolutionDir)\..\..\..;</IncludePath>
-    <LibraryPath>$(SolutionDir)\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\Bin\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(IncludePath);$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\include;$(SolutionDir)\..\..\..;</IncludePath>
+    <LibraryPath>$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\Bin\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDx|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(SolutionDir)\$(Platform)\$(Configuration)\Intermediate\$(ProjectName)\</IntDir>
-    <IncludePath>$(IncludePath);$(SolutionDir)\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\include;$(SolutionDir)\..\..\..</IncludePath>
-    <LibraryPath>$(SolutionDir)\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\Bin\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(IncludePath);$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\include;$(SolutionDir)\..\..\..</IncludePath>
+    <LibraryPath>$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\Bin\Release;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDx11|x64'">
     <LinkIncremental>false</LinkIncremental>

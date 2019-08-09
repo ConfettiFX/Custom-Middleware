@@ -8,35 +8,34 @@
 */
 
 //asimp importer
-#include "../../../The-Forge/Common_3/Tools/AssimpImporter/AssimpImporter.h"
+#include "../../../../The-Forge/Common_3/Tools/AssimpImporter/AssimpImporter.h"
 
 //stl
-#include "../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/vector.h"
-#include "../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/string.h"
-
-//Interfaces
-#include "../../../The-Forge/Common_3/OS/Interfaces/ICameraController.h"
-#include "../../../The-Forge/Common_3/OS/Interfaces/IApp.h"
-#include "../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
-#include "../../../The-Forge/Common_3/OS/Interfaces/IFileSystem.h"
-#include "../../../The-Forge/Common_3/OS/Interfaces/ITime.h"
-#include "../../../The-Forge/Middleware_3/UI/AppUI.h"
-#include "../../../The-Forge/Common_3/Renderer/IRenderer.h"
-#include "../../../The-Forge/Common_3/Renderer/ResourceLoader.h"
-#include "../../../The-Forge/Common_3/Renderer/GpuProfiler.h"
-
-#include "../../../The-Forge/Common_3/OS/Input/InputSystem.h"
-#include "../../../The-Forge/Common_3/OS/Input/InputMappings.h"
-//Math
-#include "../../../The-Forge/Common_3/OS/Math/MathTypes.h"
-
-#include "../../../The-Forge/Common_3/OS/Interfaces/IMemory.h"
+#include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/vector.h"
+#include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/string.h"
 
 // Ephemeris BEGIN
-#include "../../VolumetricClouds/src/VolumetricClouds.h"
 #include "../../Terrain/src/Terrain.h"
 #include "../../Sky/src/Sky.h"
+#include "../../VolumetricClouds/src/VolumetricClouds.h"
 // Ephemeris END
+
+//Interfaces
+#include "../../../../The-Forge/Common_3/OS/Interfaces/ICameraController.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IApp.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IFileSystem.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/ITime.h"
+#include "../../../../The-Forge/Middleware_3/UI/AppUI.h"
+#include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
+#include "../../../../The-Forge/Common_3/Renderer/ResourceLoader.h"
+#include "../../../../The-Forge/Common_3/Renderer/GpuProfiler.h"
+
+#include "../../../../The-Forge/Common_3/OS/Input/InputSystem.h"
+#include "../../../../The-Forge/Common_3/OS/Input/InputMappings.h"
+//Math
+#include "../../../../The-Forge/Common_3/OS/Math/MathTypes.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IMemory.h"
 
 const uint32_t      gImageCount = 3;
 
@@ -60,21 +59,16 @@ RenderTarget*       pLinearDepthBuffer = NULL;
 
 Shader*             pLinearDepthResolveShader = NULL;
 Pipeline*           pLinearDepthResolvePipeline = NULL;
-//RootSignature*      pLinearDepthResolveRootSignature = NULL;
-//DescriptorBinder* 	pLinearDepthResolveDescriptorBinder = NULL;
 
 Shader*             pLinearDepthCompShader = NULL;
 Pipeline*           pLinearDepthCompPipeline = NULL;
 RootSignature*      pLinearDepthCompRootSignature = NULL;
-//DescriptorBinder*   pLinearDepthCompDescriptorBinder = NULL;
 
 RenderTarget*       pTerrainResultRT = NULL;
 RenderTarget*       pSkydomeResultRT = NULL;
 
 Shader*             pPresentShader = NULL;
 Pipeline*           pPresentPipeline = NULL;
-//RootSignature*      pPresentRootSignature = NULL;
-//DescriptorBinder*   pPresentDescriptorBinder = NULL;
 
 DescriptorBinder*   pExampleDescriptorBinder = NULL;
 RootSignature*      pExampleRootSignature = NULL;
@@ -100,7 +94,7 @@ static float4       LightColorAndIntensity = float4(1.0f, 1.0f, 1.0f, 1.0f);
 #define FAR_CAMERA 100000000.0f
 
 static uint prevFrameIndex = 0;
-static bool bSunMove = false;
+static bool bSunMove = true;
 static float SunMovingSpeed = 5.0f;
 
 //--------------------------------------------------------------------------------------------
@@ -139,17 +133,17 @@ Sky					gSky;
 
 const char* pszBases[FSR_Count] =
 {
-	"../../../src/EphemerisExample/",               // FSR_BinShaders
-	"../../../src/EphemerisExample/",               // FSR_SrcShaders
-	"../../../Resources/",                          // FSR_Textures
-	"../../../Resources/",                          // FSR_Meshes
-	"../../../Resources/",                          // FSR_Builtin_Fonts
-	"../../../src/EphemerisExample/",               // FSR_GpuConfig
-	"",                                             // FSR_Animation
-	"",                                             // FSR_Audio
-	"",                                             // FSR_OtherFiles
-	"../../../../The-Forge/Middleware_3/Text/",     // FSR_MIDDLEWARE_TEXT
-	"../../../../The-Forge/Middleware_3/UI/",       // FSR_MIDDLEWARE_UI
+	"../../../src/EphemerisExample/",                  // FSR_BinShaders
+	"../../../src/EphemerisExample/",                  // FSR_SrcShaders
+	"../../../Resources/",                             // FSR_Textures
+	"../../../Resources/",                             // FSR_Meshes
+	"../../../Resources/",                             // FSR_Builtin_Fonts
+	"../../../src/EphemerisExample/",                  // FSR_GpuConfig
+	"",                                                // FSR_Animation
+	"",                                                // FSR_Audio
+	"",                                                // FSR_OtherFiles
+	"../../../../../The-Forge/Middleware_3/Text/",     // FSR_MIDDLEWARE_TEXT
+	"../../../../../The-Forge/Middleware_3/UI/",       // FSR_MIDDLEWARE_UI
 };
 
 TextDrawDesc gFrameTimeDraw = TextDrawDesc(0, 0xff00ffff, 18 );
@@ -235,11 +229,6 @@ public:
 		rootDesc.mShaderCount = 1;
 		rootDesc.ppShaders = &pPresentShader;
 
-		//addRootSignature(pRenderer, &rootDesc, &pPresentRootSignature);
-
-		//DescriptorBinderDesc PresenthDescriptorBinderDesc[1] = { { pPresentRootSignature } };
-		//addDescriptorBinder(pRenderer, 0, 1, PresenthDescriptorBinderDesc, &pPresentDescriptorBinder);
-
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		ShaderLoadDesc depthLinearizationResolveShader = {};
@@ -253,11 +242,6 @@ public:
 		rootDesc.mShaderCount = 1;
 		rootDesc.ppShaders = &pLinearDepthResolveShader;
 
-		//addRootSignature(pRenderer, &rootDesc, &pLinearDepthResolveRootSignature);
-
-		//DescriptorBinderDesc LinearDepthResolveDescriptorBinderDesc[1] = { { pLinearDepthResolveRootSignature } };
-		//addDescriptorBinder(pRenderer, 0, 1, LinearDepthResolveDescriptorBinderDesc, &pLinearDepthResolveDescriptorBinder);
-
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		ShaderLoadDesc depthLinearizationShader = {};
 		ShaderPath(shaderPath, (char*)"depthLinearization.comp", shaderFullPath);
@@ -270,9 +254,6 @@ public:
 		rootDesc.ppShaders = &pLinearDepthCompShader;
 
 		addRootSignature(pRenderer, &rootDesc, &pLinearDepthCompRootSignature);
-
-		//DescriptorBinderDesc LinearDepthDescriptorBinderDesc[1] = { { pLinearDepthCompRootSignature } };
-		//addDescriptorBinder(pRenderer, 0, 1, LinearDepthDescriptorBinderDesc, &pLinearDepthCompDescriptorBinder);
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -639,6 +620,9 @@ public:
 
 		float Azimuth = (PI / 180.0f) * LightDirection.x;
 		float Elevation = (PI / 180.0f) * (LightDirection.y - 180.0f);		
+
+    gSky.Azimuth = Azimuth;
+    gSky.Elevation = Elevation;
 		
 		vec3 sunDirection = normalize(vec3(cosf(Azimuth)*cosf(Elevation), sinf(Elevation), sinf(Azimuth)*cosf(Elevation)));
 
@@ -742,8 +726,7 @@ public:
 			LinearDepthpparams[2].pName = "g_LinearClamp";
 			LinearDepthpparams[2].ppSamplers = &pBilinearClampSampler;
 
-			//cmdBindDescriptors(cmd, pLinearDepthResolveDescriptorBinder, pLinearDepthResolveRootSignature, 3, LinearDepthpparams);
-      cmdBindDescriptors(cmd, pExampleDescriptorBinder, pExampleRootSignature, 3, LinearDepthpparams);
+			cmdBindDescriptors(cmd, pExampleDescriptorBinder, pExampleRootSignature, 3, LinearDepthpparams);
 
 			cmdBindVertexBuffer(cmd, 1, &pScreenQuadVertexBuffer, NULL);
 			cmdDraw(cmd, 3, 0);
@@ -869,7 +852,7 @@ public:
 	bool addSwapChain()
 	{
 		SwapChainDesc swapChainDesc = {};
-		swapChainDesc.pWindow = pWindow;
+		swapChainDesc.mWindowHandle = pWindow->handle;
 		swapChainDesc.mPresentQueueCount = 1;
 		swapChainDesc.ppPresentQueues = &pGraphicsQueue;
 		swapChainDesc.mWidth = mSettings.mWidth;
@@ -921,7 +904,7 @@ public:
 #endif
 
 		// Add linear depth Texture
-		depthRT.mFormat = ImageFormat::R32F;
+		depthRT.mFormat = ImageFormat::R16F;
 		depthRT.mWidth = mSettings.mWidth & (~63);
 		depthRT.mHeight = mSettings.mHeight & (~63);
 		addRenderTarget(pRenderer, &depthRT, &pLinearDepthBuffer);

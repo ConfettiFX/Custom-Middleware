@@ -28,6 +28,8 @@ struct Compute_Shader
 #define ALLOW_CONTROL_CLOUD 1
 #define STEREO_INSTANCED 0
 #define USE_DEPTH_CULLING 1
+#define FLOAT16_MAX 65500.0f 
+
     struct VolumetricCloudsCB
     {
         float4x4 m_WorldToProjMat_1st;
@@ -104,6 +106,7 @@ struct Compute_Shader
     texture2d<float> depthTexture;
     //texture2d<float> LowResCloudTexture;
     //texture2d<float> g_PrevFrameTexture;
+    texture2d<float> g_LinearDepthTexture;
     sampler g_LinearClampSampler;
     sampler g_LinearWrapSampler;
     sampler g_PointClampSampler;
@@ -199,11 +202,11 @@ struct Compute_Shader
     };
     float PackFloat16(float value)
     {
-        return (value * 0.010000000);
+        return (value * 0.001);
     };
     float UnPackFloat16(float value)
     {
-        return (value * 100.0);
+        return (value * 1000.0);
     };
     float getAtmosphereBlendForComposite(float distance)
     {
@@ -304,16 +307,22 @@ struct Compute_Shader
         float sample_step = min((length((sampleEnd - sampleStart)) / (float)((float)(sample_count) * 0.43)), mix(((VolumetricCloudsCBuffer.g_VolumetricClouds).m_StepSize).y, ((VolumetricCloudsCBuffer.g_VolumetricClouds).m_StepSize).x, pow(horizon, 0.33)));
         (depth = distance(sampleEnd, startPos));
         float distCameraToStart = distance(sampleStart, startPos);
-        (atmosphericBlendFactor = PackFloat16(distCameraToStart));
-        if (((sampleStart).y < 0.0))
+        //(atmosphericBlendFactor = PackFloat16(distCameraToStart));
+
+        if (UnPackFloat16(g_LinearDepthTexture.sample(g_LinearClampSampler, uv, level(0.0)).r) < FLOAT16_MAX)
+        {
+          atmosphericBlendFactor = 1.0f;
+        }
+
+        if (((sampleStart).y + VolumetricCloudsCBuffer.g_VolumetricClouds.Test01 < 0.0))
         {
             (intensity = (float)(0.0));
             return 0.0;
         }
-        if ((distCameraToStart >= (float)(MAX_SAMPLE_DISTANCE)))
-        {
-            return 0.0;
-        }
+        //if ((distCameraToStart >= (float)(MAX_SAMPLE_DISTANCE)))
+        //{
+        //    return 0.0;
+        //}
         float scaleFactor = mix(0.125, 1.0, saturate((distCameraToStart / (float)(_CLOUDS_LAYER_START))));
         (sample_count = (uint)((float)((float)(sample_count) / scaleFactor)));
         (sample_step *= scaleFactor);
@@ -328,10 +337,10 @@ struct Compute_Shader
         float sceneDepth;
         if (((float)((VolumetricCloudsCBuffer.g_VolumetricClouds).EnabledLodDepthCulling) > 0.5))
         {
-            (sceneDepth = (float)(depthTexture.read(texels, 0).r));
-            if ((sceneDepth < (VolumetricCloudsCBuffer.g_VolumetricClouds).CameraFarClip))
+            (sceneDepth = UnPackFloat16((float)(depthTexture.read(texels, 0).r)));
+            if ((sceneDepth < FLOAT16_MAX))
             {
-                return 0.0;
+                return 1.0;
             }
         }
         float alpha = 0.0;
@@ -401,6 +410,7 @@ struct Compute_Shader
                     {
                         (intensity /= alpha);
                         (depth = PackFloat16(depth));
+                         atmosphericBlendFactor = 1.0f;
                         return 1.0;
                     }
                 }
@@ -408,6 +418,7 @@ struct Compute_Shader
             }
         }
         (depth = PackFloat16(depth));
+        atmosphericBlendFactor = max(atmosphericBlendFactor, alpha);
         return alpha;
     };
     float GetDensityWithComparingDepth(float3 startPos, float3 worldPos, float3 dir, float maxSampleDistance, float raymarchOffset, float EARTH_RADIUS_ADD_CLOUDS_LAYER_END, float EARTH_RADIUS_ADD_CLOUDS_LAYER_END2, thread float(& intensity), thread float(& atmosphericBlendFactor), thread float(& depth), float2 uv)
@@ -425,16 +436,22 @@ struct Compute_Shader
         float sample_step = min((length((sampleEnd - sampleStart)) / (float)((float)(sample_count) * 0.43)), mix(((VolumetricCloudsCBuffer.g_VolumetricClouds).m_StepSize).y, ((VolumetricCloudsCBuffer.g_VolumetricClouds).m_StepSize).x, pow(horizon, 0.33)));
         (depth = distance(sampleEnd, startPos));
         float distCameraToStart = distance(sampleStart, startPos);
-        (atmosphericBlendFactor = PackFloat16(distCameraToStart));
-        if (((sampleStart).y < 0.0))
+        //(atmosphericBlendFactor = PackFloat16(distCameraToStart));
+        float sceneDepth = UnPackFloat16(depthTexture.sample(g_LinearClampSampler, uv, level(0)).r);
+        if (sceneDepth < FLOAT16_MAX)
+        {
+          atmosphericBlendFactor = 1.0f;
+        }
+
+        if (((sampleStart).y + VolumetricCloudsCBuffer.g_VolumetricClouds.Test01 < 0.0))
         {
             (intensity = (float)(0.0));
             return 0.0;
         }
-        if ((distCameraToStart >= (float)(MAX_SAMPLE_DISTANCE)))
-        {
-            return 0.0;
-        }
+        //if ((distCameraToStart >= (float)(MAX_SAMPLE_DISTANCE)))
+        //{
+        //    return 0.0;
+        //}
         float scaleFactor = mix(0.125, 1.0, saturate((distCameraToStart / (float)(_CLOUDS_LAYER_START))));
         (sample_count = (uint)((float)((float)(sample_count) / scaleFactor)));
         (sample_step *= scaleFactor);
@@ -446,7 +463,7 @@ struct Compute_Shader
 #endif
 
         uint2 texels = (uint2)(float2((VolumetricCloudsCBuffer.g_VolumetricClouds).Padding02, (VolumetricCloudsCBuffer.g_VolumetricClouds).Padding03) * uv);
-        float sceneDepth = depthTexture.read(texels, 0).r;
+        //float sceneDepth = depthTexture.read(texels, 0).r;
         float alpha = 0.0;
         (intensity = 0.0);
         bool detailedSample = false;
@@ -518,6 +535,7 @@ struct Compute_Shader
                     {
                         (intensity /= alpha);
                         (depth = PackFloat16(depth));
+                        atmosphericBlendFactor = 1.0f;
                         return 1.0;
                     }
                 }
@@ -525,7 +543,8 @@ struct Compute_Shader
             }
         }
         (depth = PackFloat16(depth));
-        return alpha;
+        atmosphericBlendFactor = max(atmosphericBlendFactor, alpha);
+		return alpha;
     };
     
     texture2d<float, access::read_write> DstTexture;
@@ -566,6 +585,7 @@ texture3d<float> highFreqNoiseTexture,texture3d<float> lowFreqNoiseTexture,
 				   texture2d<float> depthTexture,
 				   //texture2d<float> LowResCloudTexture,
 				   //texture2d<float> g_PrevFrameTexture,
+           texture2d<float> g_LinearDepthTexture,
 				   sampler g_LinearClampSampler,sampler g_LinearWrapSampler,sampler g_PointClampSampler,sampler g_LinearBorderSampler,constant Uniforms_VolumetricCloudsCBuffer & VolumetricCloudsCBuffer,texture2d<float, access::read_write> DstTexture) :
 highFreqNoiseTexture(highFreqNoiseTexture),
 	lowFreqNoiseTexture(lowFreqNoiseTexture),
@@ -574,6 +594,7 @@ highFreqNoiseTexture(highFreqNoiseTexture),
 	depthTexture(depthTexture),
 	//LowResCloudTexture(LowResCloudTexture),
 	//g_PrevFrameTexture(g_PrevFrameTexture),
+  g_LinearDepthTexture(g_LinearDepthTexture),
 	g_LinearClampSampler(g_LinearClampSampler),g_LinearWrapSampler(g_LinearWrapSampler),g_PointClampSampler(g_PointClampSampler),g_LinearBorderSampler(g_LinearBorderSampler),VolumetricCloudsCBuffer(VolumetricCloudsCBuffer),DstTexture(DstTexture) {}
 };
 
@@ -589,6 +610,7 @@ uint3 DTid [[thread_position_in_grid]],
     texture2d<float> depthTexture [[texture(4)]],
     //texture2d<float> LowResCloudTexture [[texture(5)]],
     //texture2d<float> g_PrevFrameTexture [[texture(6)]],
+    texture2d<float> g_LinearDepthTexture [[texture(16)]],
     sampler g_LinearClampSampler [[sampler(0)]],
     sampler g_LinearWrapSampler [[sampler(1)]],
     sampler g_PointClampSampler [[sampler(2)]],
@@ -610,6 +632,7 @@ uint3 DTid [[thread_position_in_grid]],
     depthTexture,
     //LowResCloudTexture,
     //g_PrevFrameTexture,
+    g_LinearDepthTexture,
     g_LinearClampSampler,
     g_LinearWrapSampler,
     g_PointClampSampler,

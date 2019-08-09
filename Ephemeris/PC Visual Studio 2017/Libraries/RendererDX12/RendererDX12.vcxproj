@@ -19,14 +19,14 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Renderer\CommonShaderReflection.cpp" />
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Renderer\Direct3D12\Direct3D12.cpp" />
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Renderer\Direct3D12\Direct3D12Hooks.cpp" />
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Renderer\Direct3D12\Direct3D12MemoryAllocator.cpp" />
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Renderer\Direct3D12\Direct3D12Raytracing.cpp" />
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Renderer\Direct3D12\Direct3D12ShaderReflection.cpp" />
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Renderer\GpuProfiler.cpp" />
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Renderer\ResourceLoader.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Renderer\CommonShaderReflection.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Renderer\Direct3D12\Direct3D12.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Renderer\Direct3D12\Direct3D12Hooks.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Renderer\Direct3D12\Direct3D12MemoryAllocator.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Renderer\Direct3D12\Direct3D12Raytracing.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Renderer\Direct3D12\Direct3D12ShaderReflection.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Renderer\GpuProfiler.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Renderer\ResourceLoader.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{DFAAEF2D-9A5E-475E-86BA-59529DD39CF3}</ProjectGuid>
@@ -149,7 +149,7 @@
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)..\..\The-Forge\Common_3\ThirdParty\OpenSource\winpixeventruntime\bin\WinPixEventRuntime.dll" "$(TargetDir)WinPixEventRunTime.dll"* /Y
+      <Command>xcopy "$(SolutionDir)..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\winpixeventruntime\bin\WinPixEventRuntime.dll" "$(TargetDir)WinPixEventRunTime.dll"* /Y
 xcopy "$(WindowsSDKDir)bin\$(WindowsTargetPlatformVersion)\x64\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"* /Y
 xcopy "$(WindowsSDKDir)bin\$(WindowsTargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dxil.dll"* /Y</Command>
     </PostBuildEvent>
@@ -157,7 +157,7 @@ xcopy "$(WindowsSDKDir)bin\$(WindowsTargetPlatformVersion)\x64\dxil.dll" "$(Targ
       <AdditionalDependencies>WinPixEventRuntime.lib</AdditionalDependencies>
     </Lib>
     <Lib>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\..\The-Forge\Common_3\ThirdParty\OpenSource\winpixeventruntime\bin\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\winpixeventruntime\bin\</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseVk|x64'">
@@ -213,7 +213,7 @@ xcopy "$(WindowsSDKDir)bin\$(WindowsTargetPlatformVersion)\x64\dxil.dll" "$(Targ
       <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy "$(SolutionDir)..\..\The-Forge\Common_3\ThirdParty\OpenSource\winpixeventruntime\bin\WinPixEventRuntime.dll" "$(TargetDir)WinPixEventRunTime.dll"* /Y
+      <Command>xcopy "$(SolutionDir)..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\winpixeventruntime\bin\WinPixEventRuntime.dll" "$(TargetDir)WinPixEventRunTime.dll"* /Y
 xcopy "$(WindowsSDKDir)bin\$(WindowsTargetPlatformVersion)\x64\dxcompiler.dll" "$(TargetDir)dxcompiler.dll"* /Y
 xcopy "$(WindowsSDKDir)bin\$(WindowsTargetPlatformVersion)\x64\dxil.dll" "$(TargetDir)dxil.dll"* /Y</Command>
     </PostBuildEvent>
@@ -221,7 +221,7 @@ xcopy "$(WindowsSDKDir)bin\$(WindowsTargetPlatformVersion)\x64\dxil.dll" "$(Targ
       <AdditionalDependencies>WinPixEventRuntime.lib</AdditionalDependencies>
     </Lib>
     <Lib>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\..\The-Forge\Common_3\ThirdParty\OpenSource\winpixeventruntime\bin\</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\winpixeventruntime\bin\</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

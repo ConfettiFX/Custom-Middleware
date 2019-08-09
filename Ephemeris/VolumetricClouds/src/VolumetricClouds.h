@@ -9,17 +9,12 @@
 
 #pragma once
 
-#include "../../../The-Forge/Common_3/OS/Interfaces/ICameraController.h"
-#include "../../../The-Forge/Common_3/OS/Interfaces/IMiddleware.h"
-#include "../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/string.h"
-#include "../../../The-Forge/Middleware_3/UI/AppUI.h"
-#include "../../../The-Forge/Common_3/Renderer/IRenderer.h"
-#include "../../../The-Forge/Common_3/Renderer/GpuProfiler.h"
-
-#include "../../../The-Forge/Common_3/Renderer/ResourceLoader.h"
-#include "../../../The-Forge/Common_3/OS/Interfaces/IFileSystem.h"
-#include "../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
-#include "../../../The-Forge/Common_3/OS/Interfaces/IMemory.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/ICameraController.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IMiddleware.h"
+#include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/string.h"
+#include "../../../../The-Forge/Middleware_3/UI/AppUI.h"
+#include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
+#include "../../../../The-Forge/Common_3/Renderer/GpuProfiler.h"
 
 struct VolumetricCloudsCB
 {
@@ -217,12 +212,13 @@ struct VolumetricCloudsCB
 class VolumetricClouds : public IMiddleware
 {
 public:
-	virtual bool Init(Renderer* const renderer) final;
+	virtual bool Init(Renderer* renderer) final;
 	virtual void Exit() final;
-	virtual bool Load(RenderTarget** rts) final;
+	virtual bool Load(RenderTarget** rts, uint32_t count = 1) final;
 	virtual void Unload() final;
 	virtual void Draw(Cmd* cmd) final;
 	virtual void Update(float deltaTime) final;	
+
 
 	void InitializeWithLoad(Texture* InLinearDepthTexture, Texture* InSceneColorTexture, Texture* InDepthTexture);
 
@@ -243,7 +239,10 @@ public:
 	bool AfterSubmit(uint currentFrameIndex);
 	float4 GetProjectionExtents(float fov, float aspect, float width, float height, float texelOffsetX, float texelOffsetY);
 
-  Texture* GetWeatherMap();
+	static void UseLowQualitySettings();
+	static void UseHighQualitySettings();
+
+	Texture* GetWeatherMap();
 
 	// Below are passed from Previous stage via Initialize()
 	Renderer*               pRenderer;

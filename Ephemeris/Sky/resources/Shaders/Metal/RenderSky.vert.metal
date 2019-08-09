@@ -84,7 +84,7 @@ struct Vertex_Shader
         float mu = (dot(x, v) / r);
 
         float4 dayLight = float4(transmittance(r, mu), 1.0f);
-        float4 nightLight = RenderSkyUniformBuffer.LightIntensity * 0.15f;
+        float4 nightLight = RenderSkyUniformBuffer.LightIntensity * 0.05f;
 
 		TransmittanceColor[VertexID] = RenderSkyUniformBuffer.LightDirection.y >= 0.2f ? dayLight : mix(nightLight , dayLight, saturate(RenderSkyUniformBuffer.LightDirection.y / 0.2f));
         return Out;

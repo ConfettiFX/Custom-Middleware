@@ -46,8 +46,8 @@ PsIn main(uint VertexID: SV_VertexID){
 	float r = length(x);
 	float mu = dot(x, v) / r;
 
-  float4 dayLight = float4(transmittance(r, mu), 1.0f);
-  float4 nightLight = float4(LightIntensity) * 0.15f;
+	float4 dayLight = float4(transmittance(r, mu), 1.0f);
+	float4 nightLight = float4(LightIntensity) * 0.05f;
 
 	TransmittanceColor[VertexID] = LightDirection.y >= 0.2f ? dayLight : lerp(nightLight, dayLight, saturate(LightDirection.y / 0.2f));
 

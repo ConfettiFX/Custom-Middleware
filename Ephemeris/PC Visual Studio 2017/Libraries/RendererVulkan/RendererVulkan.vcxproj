@@ -19,15 +19,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Renderer\CommonShaderReflection.cpp" />
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Renderer\GpuProfiler.cpp" />
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Renderer\ResourceLoader.cpp" />
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Renderer\Vulkan\Vulkan.cpp" />
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Renderer\Vulkan\VulkanRaytracing.cpp" />
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Renderer\Vulkan\VulkanShaderReflection.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Renderer\CommonShaderReflection.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Renderer\GpuProfiler.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Renderer\ResourceLoader.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Renderer\Vulkan\Vulkan.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Renderer\Vulkan\VulkanRaytracing.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Renderer\Vulkan\VulkanShaderReflection.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\VulkanMemoryAllocator\VulkanMemoryAllocator.h" />
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\VulkanMemoryAllocator\VulkanMemoryAllocator.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{EBC1C8D7-D49B-409A-A575-5AB53111E4D7}</ProjectGuid>

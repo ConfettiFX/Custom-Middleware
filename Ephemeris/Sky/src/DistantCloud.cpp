@@ -11,6 +11,11 @@
 
 #include "DistantCloud.h"
 
+#include "../../../../The-Forge/Common_3/Renderer/ResourceLoader.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IFileSystem.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IMemory.h"
+
 DistantCloud::DistantCloud(const mat4 &Transform, Texture* tex):
 	m_Transform(Transform), m_Texture(tex)
 {

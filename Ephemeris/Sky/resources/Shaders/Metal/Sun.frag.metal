@@ -29,41 +29,51 @@ struct Fragment_Shader
     };
     texture2d<float> depthTexture;
     texture2d<float> moonAtlas;
-    sampler g_LinearClampSampler;
+    sampler g_LinearBorder;
     float4 main(PsIn In)
     {
         float2 screenUV = (In).screenCoord;
-        float sceneDepth = depthTexture.sample(g_LinearClampSampler, screenUV, level(0)).r;
+        float sceneDepth = depthTexture.sample(g_LinearBorder, screenUV, level(0)).r;
         if ((sceneDepth < (float)(1.0)))
         {
             discard_fragment();
         }
         float ISun = 1.0;
+        float4 res;
+
         if (In.texCoord.z >= 0.0)
         {
-            float param = ((float)(2) * sqrt((((((In).texCoord).x - (float)(0.5)) * (((In).texCoord).x - (float)(0.5))) + ((((In).texCoord).y - (float)(0.5)) * (((In).texCoord).y - (float)(0.5))))));
+            float2 uv = In.texCoord.xy * 2.0 - float2(0.5, 0.5);
+            float param = 2.0f * sqrt((uv.x-0.5)*(uv.x-0.5)+(uv.y-0.5)*(uv.y-0.5));
             float blendFactor = smoothstep(1, 0.8, param);
-            return float4((float3(1.0, 0.95294, 0.91765) * (float3)(ISun)), blendFactor);
+            res = float4((float3(1.0, 0.95294, 0.91765) * (float3)(ISun)), blendFactor);
         }
         else
         {
             float3 normal;
             ((normal).xy = ((((In).texCoord).xy - (float2)(0.5)) * (float2)(2)));
-            ((normal).z = ((float)(1) - sqrt(saturate((((normal).x * (normal).x) + ((normal).y * (normal).y))))));
-            float4 res = moonAtlas.sample(g_LinearClampSampler, ((In).texCoord).xy);
-            return res;
+            normal.z = 1.0f - sqrt(clamp(normal.x * normal.x + normal.y * normal.y, 0.0f, 1.0f));
+            res = moonAtlas.sample(g_LinearBorder, In.texCoord.xy * 2.0 - float2(0.5, 0.5));
         }
+
+         float2 glow = clamp(abs(In.texCoord.xy * 1.5 - float2(0.75, 0.75)), 0.0f, 1.0f);
+   
+        float gl = clamp(1.0f - sqrt(dot(glow, glow)), 0.0f, 1.0f);
+        gl = pow(gl, 2.1) * 1.5;
+		    res = mix(float4(gl, gl, gl, res.a), res, res.a);
+        res.a = clamp(gl + res.a, 0.0f ,1.0f);
+        return res;
     };
 
     Fragment_Shader(
 constant Uniforms_cbRootConstant & SunUniform,
 texture2d<float> depthTexture,
 texture2d<float> moonAtlas,
-sampler g_LinearClampSampler) :
+sampler g_LinearBorder) :
 cbRootConstant(SunUniform),
 depthTexture(depthTexture),
 moonAtlas(moonAtlas),
-g_LinearClampSampler(g_LinearClampSampler) {}
+g_LinearBorder(g_LinearBorder) {}
 };
 
 
@@ -72,7 +82,7 @@ fragment float4 stageMain(
     constant Fragment_Shader::Uniforms_cbRootConstant & SunUniform [[buffer(4)]],
     texture2d<float> depthTexture [[texture(4)]],
     texture2d<float> moonAtlas [[texture(5)]],
-    sampler g_LinearClampSampler [[sampler(1)]])
+    sampler g_LinearBorder [[sampler(1)]])
 {
     Fragment_Shader::PsIn In0;
     In0.position = float4(In.position.xyz, 1.0 / In.position.w);
@@ -82,6 +92,6 @@ fragment float4 stageMain(
     SunUniform,
     depthTexture,
     moonAtlas,
-    g_LinearClampSampler);
+    g_LinearBorder);
     return main.main(In0);
 }

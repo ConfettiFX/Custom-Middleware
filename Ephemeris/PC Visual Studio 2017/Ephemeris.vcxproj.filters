@@ -84,6 +84,18 @@
     <ClCompile Include="..\Sky\src\DistantCloud.cpp">
       <Filter>Source Files\Ephemeris\Sky</Filter>
     </ClCompile>
+    <ClCompile Include="..\Sky\src\Icosahedron.cpp">
+      <Filter>Source Files\Ephemeris\Sky</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\Perlin.cpp">
+      <Filter>Source Files\Ephemeris</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Sky\src\B_Spline.cpp">
+      <Filter>Source Files\Ephemeris\Sky</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Sky\src\Aurora.cpp">
+      <Filter>Source Files\Ephemeris\Sky</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Terrain\resources\Shaders\D3D12\GenNormalMap.frag">
@@ -377,6 +389,60 @@
     <None Include="..\Sky\resources\Shaders\D3D12\clImpostorCloud.vert">
       <Filter>Shaders\D3D12\Ephemeris\Sky</Filter>
     </None>
+    <None Include="..\Sky\resources\Shaders\D3D12\Star.frag">
+      <Filter>Shaders\D3D12\Ephemeris\Sky</Filter>
+    </None>
+    <None Include="..\Sky\resources\Shaders\D3D12\Star.geom">
+      <Filter>Shaders\D3D12\Ephemeris\Sky</Filter>
+    </None>
+    <None Include="..\Sky\resources\Shaders\D3D12\Star.vert">
+      <Filter>Shaders\D3D12\Ephemeris\Sky</Filter>
+    </None>
+    <None Include="..\Sky\resources\Shaders\Vulkan\Star.frag">
+      <Filter>Shaders\Vulkan\Ephemeris\Sky</Filter>
+    </None>
+    <None Include="..\Sky\resources\Shaders\Vulkan\Star.geom">
+      <Filter>Shaders\Vulkan\Ephemeris\Sky</Filter>
+    </None>
+    <None Include="..\Sky\resources\Shaders\Vulkan\Star.vert">
+      <Filter>Shaders\Vulkan\Ephemeris\Sky</Filter>
+    </None>
+    <None Include="..\Sky\resources\Shaders\D3D12\Aurora.frag">
+      <Filter>Shaders\D3D12\Ephemeris\Sky</Filter>
+    </None>
+    <None Include="..\Sky\resources\Shaders\D3D12\Aurora.vert">
+      <Filter>Shaders\D3D12\Ephemeris\Sky</Filter>
+    </None>
+    <None Include="..\Sky\resources\Shaders\D3D12\MilkyWay.frag">
+      <Filter>Shaders\D3D12\Ephemeris\Sky</Filter>
+    </None>
+    <None Include="..\Sky\resources\Shaders\D3D12\MilkyWay.vert">
+      <Filter>Shaders\D3D12\Ephemeris\Sky</Filter>
+    </None>
+    <None Include="..\Sky\resources\Shaders\D3D12\Aurora.geom">
+      <Filter>Shaders\D3D12\Ephemeris\Sky</Filter>
+    </None>
+    <None Include="..\Sky\resources\Shaders\D3D12\Aurora.comp">
+      <Filter>Shaders\D3D12\Ephemeris\Sky</Filter>
+    </None>
+    <None Include="..\Sky\resources\Shaders\Vulkan\Aurora.comp">
+      <Filter>Shaders\Vulkan\Ephemeris\Sky</Filter>
+    </None>
+    <None Include="..\Sky\resources\Shaders\Vulkan\Aurora.frag">
+      <Filter>Shaders\Vulkan\Ephemeris\Sky</Filter>
+    </None>
+    <None Include="..\Sky\resources\Shaders\Vulkan\Aurora.geom">
+      <Filter>Shaders\Vulkan\Ephemeris\Sky</Filter>
+    </None>
+    <None Include="..\Sky\resources\Shaders\Vulkan\Aurora.vert">
+      <Filter>Shaders\Vulkan\Ephemeris\Sky</Filter>
+    </None>
+    <None Include="..\Sky\resources\Shaders\Vulkan\MilkyWay.frag">
+      <Filter>Shaders\Vulkan\Ephemeris\Sky</Filter>
+    </None>
+    <None Include="..\Sky\resources\Shaders\Vulkan\MilkyWay.vert">
+      <Filter>Shaders\Vulkan\Ephemeris\Sky</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Sky\resources\Shaders\D3D12\RenderSky.h">
@@ -440,6 +506,18 @@
       <Filter>Source Files\Ephemeris\Sky</Filter>
     </ClInclude>
     <ClInclude Include="..\Sky\src\IndexManager.h">
+      <Filter>Source Files\Ephemeris\Sky</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Sky\src\Icosahedron.h">
+      <Filter>Source Files\Ephemeris\Sky</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\Perlin.h">
+      <Filter>Source Files\Ephemeris</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Sky\src\B_Spline.h">
+      <Filter>Source Files\Ephemeris\Sky</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Sky\src\Aurora.h">
       <Filter>Source Files\Ephemeris\Sky</Filter>
     </ClInclude>
   </ItemGroup>

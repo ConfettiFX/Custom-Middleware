@@ -31,12 +31,22 @@ float DepthLinearization(float depth)
 
 vec4 HLSLmain(PsIn In)
 {
-  //return vec4(In.texCoord, 0.0);
-
     ivec3 LoadCoord = ivec3(ivec2 ((In).position), 0);
     vec4 OriginalImage = texelFetch(SceneColorTexture, ivec2(LoadCoord).xy, (LoadCoord).z);
-    float depth = float ((texelFetch(Depth, ivec2(LoadCoord).xy, (LoadCoord).z)).x);
     vec3 ReduceOriginalImage = ((OriginalImage).rgb * vec3 (0.3));
+
+	vec3 _groundColor = vec3(0, 0, 0);
+	vec3 _spaceColor = vec3(0, 0, 0);
+	vec3 inscatterColor = vec3(0, 0, 0);
+
+	if(RenderSkyUniformBuffer.LightDirection.y < -0.3f)
+	{
+		(_groundColor = (((ReduceOriginalImage).xyz * vec3 (ISun)) / vec3 (M_PI)));
+		return vec4(((HDR_NORM(_groundColor) + HDR((_spaceColor + inscatterColor))) + (OriginalImage).rgb), 0.0);
+	}
+	
+	float depth = float ((texelFetch(Depth, ivec2(LoadCoord).xy, (LoadCoord).z)).x);
+
     float fixedDepth = (((-(RenderSkyUniformBuffer.QNNear).y) * (RenderSkyUniformBuffer.QNNear).x) / (depth - (RenderSkyUniformBuffer.QNNear).x));
     vec3 ray = (In).texCoord;
     vec3 x = (RenderSkyUniformBuffer.CameraPosition).xyz;
@@ -46,13 +56,13 @@ vec4 HLSLmain(PsIn In)
     float VoRay = dot(v, ray);
     float t = (((depth < 1.0))?((VoRay * fixedDepth)):(0.0));
     vec3 attenuation;
-    vec3 inscatterColor = inscatter(x, t, v, (RenderSkyUniformBuffer.LightDirection).xyz, r, mu, attenuation);
+    inscatterColor = inscatter(x, t, v, (RenderSkyUniformBuffer.LightDirection).xyz, r, mu, attenuation);
   
    
 
-    vec3 _groundColor = vec3(0, 0, 0);
+   
     vec3 _sunColor = sunColor(x, t, v, (RenderSkyUniformBuffer.LightDirection).xyz, r, mu);
-    vec3 _spaceColor = vec3(0, 0, 0);
+   
     if((t <= float (0.0)))
     {
         vec3 _transmittance = (((r <= Rt))?(transmittance(r, mu)):(vec3 ((1.0).xxx)));

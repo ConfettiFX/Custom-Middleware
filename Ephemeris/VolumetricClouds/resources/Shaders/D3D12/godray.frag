@@ -69,7 +69,7 @@ float4 main(PSIn input) : SV_TARGET
 	{
 		texCoord -= deltaTexCoord;
 			   
-		float localDensity = 1.0 - g_PrevFrameTexture.Sample(g_LinearBorderSampler, texCoord).a;
+		float localDensity = 1.0 - g_PrevFrameTexture.Sample(g_LinearBorderSampler, texCoord).g;
 		localDensity *= illuminationDecay * g_VolumetricClouds.GodrayWeight;
 
 		finalIntensity += localDensity;

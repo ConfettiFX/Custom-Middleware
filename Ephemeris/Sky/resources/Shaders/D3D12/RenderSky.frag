@@ -23,16 +23,22 @@ float DepthLinearization(float depth)
 
 float4 main(PsIn In): SV_Target
 {
-  //return float4(In.texCoord, 0.0);
-
 	int3 LoadCoord = int3((int2)In.position, 0);
 	float4 OriginalImage = SceneColorTexture.Load(LoadCoord);
-	
-	float depth = Depth.Load(LoadCoord).x;
-
-	
-	
 	float3 ReduceOriginalImage = OriginalImage.rgb * 0.3f;
+
+	float3 _groundColor = float3(0,0,0);
+	float3 _spaceColor = float3(0,0,0);
+	float3 inscatterColor = float3(0,0,0);
+	
+	if(LightDirection.y < -0.3f)
+	{
+		_groundColor = ReduceOriginalImage.xyz * ISun / M_PI;
+		return float4(HDR_NORM(_groundColor) + HDR(_spaceColor + inscatterColor) + OriginalImage.rgb, 0.0);
+	}
+	
+	
+	float depth = Depth.Load(LoadCoord).x;	
 
 	float fixedDepth = (-QNNear.y * QNNear.x) / (depth - QNNear.x);
 	//float fixedDepth = depth / QNNear.w;
@@ -43,19 +49,19 @@ float4 main(PsIn In): SV_Target
 
     float r = length(x);
     float mu = dot(x, v) / r;
-	  float VoRay = dot(v, ray);
+	float VoRay = dot(v, ray);
     float t = (depth < 1.0f) ? VoRay * fixedDepth : 0.0f;
 
 
     float3 attenuation;
-	  float3 inscatterColor = inscatter(x, t, v, LightDirection.xyz, r, mu, attenuation); //S[L]-T(x,xs)S[l]|xs
+	inscatterColor = inscatter(x, t, v, LightDirection.xyz, r, mu, attenuation); //S[L]-T(x,xs)S[l]|xs
 
     
 	
-    float3 _groundColor = float3(0,0,0);
+    
 	
     float3 _sunColor = sunColor(x, t, v, LightDirection.xyz, r, mu); //L0
-	float3 _spaceColor = float3(0,0,0);
+	
 
 	if ( t <= 0.0 ) 
 	{
