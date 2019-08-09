@@ -1,22 +1,35 @@
-# Ephemeris 2
+# Ephemeris
 ----
 
+| Day Scene (Click on Image to view a Video) | 
+|---|
 [![](Screenshots/main.png)](https://vimeo.com/344675521)
 
-Ephemeris2 is our new middleware solution for implementing a dynamic skydome system.
+| Night Scene (Click on Image to view a Video) |
+|---|
+[![](Screenshots/NightSky02.png)](https://vimeo.com/352541826)
 
-Ephemeris2 supports various platforms and can be customized and intergrated into any custom engine.
+Ephemeris 2 is a middleware solution for implementing a dynamic 24 hour Skydome System. It is running on top of [The Forge](https://github.com/ConfettiFX/The-Forge) and therefore supports the same platforms, which are at the moment 
+* Windows 10
+* macOS
+* Linux
+* XBOX One
+* PS4
+* iOS (with the release of Ephemeris 1)
+* Android  (with the release of Ephemeris 1)
+* More to come ...
 
-You can also check the demo video by clicking the main image above!
+Check out the demo video by clicking the main image above!
 
+## Main Features
 
-### Main Features
   - Dynamic 24 hour time cycle (sunrises, sunsets, blue sky, sun and moon)
   - Atmospheric Scattering
   - Volumetric Clouds
-  - God rays
-  - 2.5D Clouds for mobile (Coming Soon!)
-  - Simulation of astronomically correct sun, stars and moon (Coming Soon!)
+  - Godrays
+  - Procedural Night Sky and Star-field 
+  - Simulation of astronomically correct sun, stars and moon (coming soon)
+  - 2.5D Clouds for mobile (coming soon with Ephemeris 1)
    
 | Dawn Scene |
 |---|
@@ -32,7 +45,19 @@ You can also check the demo video by clicking the main image above!
 
 | Night Scene |
 |---|
-|![](Screenshots/05.png)|
+![Ephemeris 2](Screenshots/NightSky02.png)
+
+![Ephemeris 2](Screenshots/NightSky03.png)
+
+![Ephemeris 2](Screenshots/NightSky04.png)
+
+![Ephemeris 2](Screenshots/NightSky05.png)
+
+![Ephemeris 2](Screenshots/NightSky06.png)
+
+![Ephemeris 2](Screenshots/NightSky07.png)
+
+![Ephemeris 2](Screenshots/NightSky08.png)
 
 | Cloudy Scene |
 |---|
@@ -43,38 +68,59 @@ You can also check the demo video by clicking the main image above!
 |![](Screenshots/01.png)|
 
 
-### Platforms
-  - Windows
-  - macOS
-  - Linux
-  - XboxOne
-  - iOS (Coming Soon!)
-  - Android (Coming Soon!)
+# News
+All releases happen in sync with [The Forge](https://github.com/ConfettiFX/The-Forge) and have therefore the same release number.
 
+## Release 1.32 - August 9th - Ephemeris Night Sky update 
+* Added Procedural Night Sky and Star-field - the night sky's nebula colors are now customizable
+* Added Glow effects on Sun and Moon
+* Fix the issue that Godrays can be drawn on unexpected area
 
-### Installation
+Click on the following screenshot to see a movie:
 
- * For PC Windows run PRE_BUILD.bat. It will download and unzip the art assets and install the shader builder extension for Visual Studio 2017.
- * For Linux and Mac run PRE_BUILD.command. If its the first time checking out the forge make sure the PRE_BUILD.command has the correct executable flag by running the following command
- ```sh
-  chmod +x PRE_BUILD.command
+ [![Ephemeris 2](Screenshots/NightSky02.png)](https://vimeo.com/352541826)
+
+ More night scene screenshots:
+
+![Ephemeris 2](Screenshots/NightSky03.png)
+
+![Ephemeris 2](Screenshots/NightSky04.png)
+
+![Ephemeris 2](Screenshots/NightSky05.png)
+
+![Ephemeris 2](Screenshots/NightSky06.png)
+
+![Ephemeris 2](Screenshots/NightSky07.png)
+
+![Ephemeris 2](Screenshots/NightSky08.png)
+
+ 
+## Installation
+
+ To build Ephemeris you would need to need to download the latest version of [The Forge](https://github.com/ConfettiFX/The-Forge). Your folder overview should look like this:
+
+ ```
+ The-Forge
+ Custom-Middleware
  ```
 
+The release version of Ephemeris and the release version of The Forge need to be the same.
 
-### Customization
 
-We can customize Ephemeris2 to fit your game engine (UE4, Unity, and even any custom engine)!
+## Customization
+
+We can customize Ephemeris to fit your game engine (UE4, Unity, and even any custom engine)!
 
 Below is the list of our customers
 
 - [Insomniac Games](https://insomniac.games/)
 
 
-### License
+## License
 
 [Creative Commons Attribution-NonCommercial 4.0 International License](https://creativecommons.org/licenses/by-nc/4.0/legalcode)
 
 
-### Contact Us
+## Contact Us
 
 E-mail: info@conffx.com
