@@ -24,6 +24,7 @@
 #include "../../../../The-Forge/Common_3/OS/Interfaces/ICameraController.h"
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IApp.h"
 #include "../../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IInput.h"
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IFileSystem.h"
 #include "../../../../The-Forge/Common_3/OS/Interfaces/ITime.h"
 #include "../../../../The-Forge/Middleware_3/UI/AppUI.h"
@@ -31,8 +32,6 @@
 #include "../../../../The-Forge/Common_3/Renderer/ResourceLoader.h"
 #include "../../../../The-Forge/Common_3/Renderer/GpuProfiler.h"
 
-#include "../../../../The-Forge/Common_3/OS/Input/InputSystem.h"
-#include "../../../../The-Forge/Common_3/OS/Input/InputMappings.h"
 //Math
 #include "../../../../The-Forge/Common_3/OS/Math/MathTypes.h"
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IMemory.h"
@@ -318,11 +317,11 @@ public:
 		vec3 lookAt{ 0.0f, h, 1.0f };
 
 		pCameraController = createFpsCameraController(camPos, lookAt);
-		requestMouseCapture(true);
+		//requestMouseCapture(true);
 
 		pCameraController->setMotionParameters(cmp);
 
-		InputSystem::RegisterInputEvent(cameraInputEvent);
+		//InputSystem::RegisterInputEvent(cameraInputEvent);
 	
 
 		gTerrain.Initialize(gImageCount, pCameraController, pGraphicsQueue, ppTransCmds, pTransitionCompleteFences, pGraphicsGpuProfiler, &gAppUI);
@@ -350,14 +349,53 @@ public:
 		SliderFloat4Widget LI("Light Color & Intensity", &LightColorAndIntensity, float(0.0f), float(10.0f), float(0.01f));
 		pMainGuiWindow->AddWidget(LI);
 
-    CheckboxWidget SM("Automatic Sun Moving", &bSunMove);
-    pMainGuiWindow->AddWidget(SM);
+		CheckboxWidget SM("Automatic Sun Moving", &bSunMove);
+		pMainGuiWindow->AddWidget(SM);
 
-    SliderFloatWidget SS("Sun Moving Speed", &SunMovingSpeed, float(-100.0f), float(100.0f), float(0.01f));
-    pMainGuiWindow->AddWidget(SS);
+		SliderFloatWidget SS("Sun Moving Speed", &SunMovingSpeed, float(-100.0f), float(100.0f), float(0.01f));
+		pMainGuiWindow->AddWidget(SS);
 
     
-		
+		if (!initInputSystem(pWindow))
+			return false;
+
+		// Microprofiler Actions
+		// #TODO: Remove this once the profiler UI is ported to use our UI system
+		InputActionDesc actionDesc;
+
+		// App Actions
+		actionDesc = { InputBindings::BUTTON_FULLSCREEN, [](InputActionContext* ctx) { toggleFullscreen(((IApp*)ctx->pUserData)->pWindow); return true; }, this };
+		addInputAction(&actionDesc);
+		actionDesc = { InputBindings::BUTTON_EXIT, [](InputActionContext* ctx) { requestShutdown(); return true; } };
+		addInputAction(&actionDesc);
+		actionDesc =
+		{
+			InputBindings::BUTTON_ANY, [](InputActionContext* ctx)
+			{
+				bool capture = gAppUI.OnButton(ctx->mBinding, ctx->mBool, ctx->pPosition, true);
+				setEnableCaptureInput(capture && INPUT_ACTION_PHASE_CANCELED != ctx->mPhase);
+				return true;
+			}, this
+		};
+		addInputAction(&actionDesc);
+		typedef bool(*CameraInputHandler)(InputActionContext* ctx, uint32_t index);
+		static CameraInputHandler onCameraInput = [](InputActionContext* ctx, uint32_t index)
+		{
+			if (!gAppUI.IsFocused() && *ctx->pCaptured)
+				index ? pCameraController->onRotate(ctx->mFloat2) : pCameraController->onMove(ctx->mFloat2);
+			return true;
+		};
+		actionDesc = { InputBindings::FLOAT_RIGHTSTICK, [](InputActionContext* ctx) { return onCameraInput(ctx, 1); }, NULL, 20.0f, 200.0f, 1.0f };
+		addInputAction(&actionDesc);
+		actionDesc = { InputBindings::FLOAT_LEFTSTICK, [](InputActionContext* ctx) { return onCameraInput(ctx, 0); }, NULL, 20.0f, 200.0f, 1.0f };
+		addInputAction(&actionDesc);		
+		actionDesc = { InputBindings::BUTTON_NORTH, [](InputActionContext* ctx) { pCameraController->resetView(); return true; } };
+		addInputAction(&actionDesc);
+
+		actionDesc = { InputBindings::BUTTON_L3, [](InputActionContext* ctx) { gShowUI = !gShowUI; return true; } };
+		addInputAction(&actionDesc);
+		actionDesc = { InputBindings::BUTTON_R3, [](InputActionContext* ctx) { gTogglePerformance = !gTogglePerformance; return true; } };
+		addInputAction(&actionDesc);
 
 
 		return true;
@@ -579,6 +617,8 @@ public:
 
 	void Update(float deltaTime)
 	{
+		updateInputSystem(mSettings.mWidth, mSettings.mHeight);
+
 #if !defined(TARGET_IOS)
 		if (pSwapChain->mDesc.mEnableVsync != gToggleVSync)
 		{
@@ -589,17 +629,17 @@ public:
 		/************************************************************************/
 		// Input
 		/************************************************************************/
+		/*
 		if (InputSystem::GetBoolInput(KEY_BUTTON_X_TRIGGERED))
 		{
-      gShowUI = !gShowUI;
+			gShowUI = !gShowUI;
 		}
 
-    if (InputSystem::GetBoolInput(KEY_BUTTON_Y_TRIGGERED))
-    {
-      gTogglePerformance = !gTogglePerformance;
-    }
-
-    
+		if (InputSystem::GetBoolInput(KEY_BUTTON_Y_TRIGGERED))
+		{
+			gTogglePerformance = !gTogglePerformance;
+		}
+		*/    
 
 		pCameraController->update(deltaTime);
 		/************************************************************************/
@@ -953,12 +993,14 @@ public:
 		pCameraController->lookAt(lookAt);
 	}
 
+	/*
 	static bool cameraInputEvent(const ButtonData* data)
 	{
 		pCameraController->onInputEvent(data);
 
 		return true;
 	}
+	*/
 };
 
 DEFINE_APPLICATION_MAIN(RenderEphemeris)

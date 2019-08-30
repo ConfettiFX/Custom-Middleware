@@ -31,18 +31,6 @@
     <Filter Include="OS\Camera">
       <UniqueIdentifier>{9020f991-deb3-47a0-a9c1-76f2a341a41d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Middleware_3">
-      <UniqueIdentifier>{a9268313-8233-4fcd-8b2f-daa1ea49d480}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Middleware_3\UI">
-      <UniqueIdentifier>{67dcb179-77f7-4735-ba7a-9d47f2c86c55}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Middleware_3\Text">
-      <UniqueIdentifier>{ea71056b-4bfe-454e-b0e4-312881420a89}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Middleware_3\UI\imgui">
-      <UniqueIdentifier>{724e49bb-b5bc-44a6-8d6c-f9363f9a504b}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Utils">
       <UniqueIdentifier>{0ac76a3d-2a41-45ff-beb0-7b0d162c070b}</UniqueIdentifier>
     </Filter>
@@ -58,217 +46,229 @@
     <Filter Include="Dependencies\EASTL\EAStdC">
       <UniqueIdentifier>{7f628826-ad83-44ed-9bb3-7505161b2672}</UniqueIdentifier>
     </Filter>
+    <Filter Include="OS\Middleware_3">
+      <UniqueIdentifier>{a9268313-8233-4fcd-8b2f-daa1ea49d480}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OS\Middleware_3\UI">
+      <UniqueIdentifier>{67dcb179-77f7-4735-ba7a-9d47f2c86c55}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OS\Middleware_3\UI\imgui">
+      <UniqueIdentifier>{724e49bb-b5bc-44a6-8d6c-f9363f9a504b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="OS\Middleware_3\Text">
+      <UniqueIdentifier>{ea71056b-4bfe-454e-b0e4-312881420a89}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\The-Forge\Middleware_3\Text\Fontstash.h">
-      <Filter>Middleware_3\Text</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Middleware_3\UI\AppUI.h">
-      <Filter>Middleware_3\UI</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\imgui\imconfig.h">
-      <Filter>Middleware_3\UI\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\imgui\imgui.h">
-      <Filter>Middleware_3\UI\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\imgui\imgui_internal.h">
-      <Filter>Middleware_3\UI\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Core\Atomics.h">
-      <Filter>OS\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Core\Compiler.h">
-      <Filter>OS\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Core\GPUConfig.h">
-      <Filter>OS\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Core\RingBuffer.h">
-      <Filter>OS\Core</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Image\Image.h">
-      <Filter>OS\Image</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Image\ImageEnums.h">
-      <Filter>OS\Image</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Input\InputMappings.h">
-      <Filter>OS\Input</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Input\InputSystem.h">
-      <Filter>OS\Input</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Interfaces\IApp.h">
-      <Filter>OS\Interfaces</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Interfaces\ICameraController.h">
-      <Filter>OS\Interfaces</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Interfaces\IFileSystem.h">
-      <Filter>OS\Interfaces</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Interfaces\IMiddleware.h">
-      <Filter>OS\Interfaces</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Interfaces\IOperatingSystem.h">
-      <Filter>OS\Interfaces</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Interfaces\IPlatformEvents.h">
-      <Filter>OS\Interfaces</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Interfaces\IThread.h">
-      <Filter>OS\Interfaces</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Math\MathTypes.h">
-      <Filter>OS\Math</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerBase.h">
-      <Filter>OS\Profiler</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerHTML.h">
-      <Filter>OS\Profiler</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerUI.h">
-      <Filter>OS\Profiler</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Logging\Log.h">
-      <Filter>OS\Logging</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Interfaces\ILog.h">
-      <Filter>OS\Interfaces</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Interfaces\IMemory.h">
-      <Filter>OS\Interfaces</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\OS\Interfaces\ITime.h">
-      <Filter>OS\Interfaces</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\..\..\The-Forge\Middleware_3\Text\Fontstash.cpp">
-      <Filter>Middleware_3\Text</Filter>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\BaseComponent.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\ComponentRepresentation.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\EntityManager.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\allocator_forge.cpp">
+      <Filter>Dependencies\EASTL</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Middleware_3\UI\AppUI.cpp">
-      <Filter>Middleware_3\UI</Filter>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\assert.cpp">
+      <Filter>Dependencies\EASTL</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Middleware_3\UI\imgui_user.cpp">
-      <Filter>Middleware_3\UI</Filter>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\fixed_pool.cpp">
+      <Filter>Dependencies\EASTL</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Middleware_3\UI\ImguiGUIDriver.cpp">
-      <Filter>Middleware_3\UI</Filter>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\hashtable.cpp">
+      <Filter>Dependencies\EASTL</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\imgui\imgui.cpp">
-      <Filter>Middleware_3\UI\imgui</Filter>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\intrusive_list.cpp">
+      <Filter>Dependencies\EASTL</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\imgui\imgui_demo.cpp">
-      <Filter>Middleware_3\UI\imgui</Filter>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\numeric_limits.cpp">
+      <Filter>Dependencies\EASTL</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\imgui\imgui_draw.cpp">
-      <Filter>Middleware_3\UI\imgui</Filter>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\red_black_tree.cpp">
+      <Filter>Dependencies\EASTL</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\imgui\imgui_widgets.cpp">
-      <Filter>Middleware_3\UI\imgui</Filter>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\string.cpp">
+      <Filter>Dependencies\EASTL</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Camera\FpsCameraController.cpp">
-      <Filter>OS\Camera</Filter>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\thread_support.cpp">
+      <Filter>Dependencies\EASTL</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Camera\GuiCameraController.cpp">
-      <Filter>OS\Camera</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Core\FileSystem.cpp">
-      <Filter>OS\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Core\PlatformEvents.cpp">
-      <Filter>OS\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Core\ThreadSystem.cpp">
-      <Filter>OS\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Core\Timer.cpp">
-      <Filter>OS\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Image\Image.cpp">
-      <Filter>OS\Image</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Input\InputSystem.cpp">
-      <Filter>OS\Input</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsBase.cpp">
-      <Filter>OS\Windows</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsFileSystem.cpp">
-      <Filter>OS\Windows</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\TinyEXR\tinyexr.cpp">
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\TinyEXR\tinyexr.cpp">
       <Filter>Dependencies</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\allocator_forge.cpp">
-      <Filter>Dependencies\EASTL</Filter>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Camera\CameraController.cpp">
+      <Filter>OS\Camera</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\assert.cpp">
-      <Filter>Dependencies\EASTL</Filter>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Core\FileSystem.cpp">
+      <Filter>OS\Core</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\fixed_pool.cpp">
-      <Filter>Dependencies\EASTL</Filter>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Core\ThreadSystem.cpp">
+      <Filter>OS\Core</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\hashtable.cpp">
-      <Filter>Dependencies\EASTL</Filter>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Core\Timer.cpp">
+      <Filter>OS\Core</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\intrusive_list.cpp">
-      <Filter>Dependencies\EASTL</Filter>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Image\Image.cpp">
+      <Filter>OS\Image</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\numeric_limits.cpp">
-      <Filter>Dependencies\EASTL</Filter>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Input\InputSystem.cpp">
+      <Filter>OS\Input</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\red_black_tree.cpp">
-      <Filter>Dependencies\EASTL</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\string.cpp">
-      <Filter>Dependencies\EASTL</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\thread_support.cpp">
-      <Filter>Dependencies\EASTL</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\EAStdC\EAMemory.cpp">
-      <Filter>Dependencies\EASTL\EAStdC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\EAStdC\EASprintf.cpp">
-      <Filter>Dependencies\EASTL\EAStdC</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\Profiler.cpp">
-      <Filter>OS\Profiler</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerBase.cpp">
-      <Filter>OS\Profiler</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerDraw.cpp">
-      <Filter>OS\Profiler</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerInput.cpp">
-      <Filter>OS\Profiler</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerUI.cpp">
-      <Filter>OS\Profiler</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Logging\Log.cpp">
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Logging\Log.cpp">
       <Filter>OS\Logging</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\MemoryTracking\MemoryTracking.cpp">
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\MemoryTracking\MemoryTracking.cpp">
       <Filter>OS\MemoryTracking</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsLog.cpp">
+    <ClCompile Include="..\..\..\..\..\The-Forge\Middleware_3\Text\Fontstash.cpp">
+      <Filter>OS\Middleware_3\Text</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Middleware_3\UI\AppUI.cpp">
+      <Filter>OS\Middleware_3\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Middleware_3\UI\ImguiGUIDriver.cpp">
+      <Filter>OS\Middleware_3\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\imgui\imgui.cpp">
+      <Filter>OS\Middleware_3\UI\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\imgui\imgui_demo.cpp">
+      <Filter>OS\Middleware_3\UI\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\imgui\imgui_draw.cpp">
+      <Filter>OS\Middleware_3\UI\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\imgui\imgui_widgets.cpp">
+      <Filter>OS\Middleware_3\UI\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\Profiler.cpp">
+      <Filter>OS\Profiler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerBase.cpp">
+      <Filter>OS\Profiler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerDraw.cpp">
+      <Filter>OS\Profiler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerInput.cpp">
+      <Filter>OS\Profiler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerUI.cpp">
+      <Filter>OS\Profiler</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsBase.cpp">
       <Filter>OS\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsThread.cpp">
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsFileSystem.cpp">
       <Filter>OS\Windows</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsTime.cpp">
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsLog.cpp">
       <Filter>OS\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsThread.cpp">
+      <Filter>OS\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsTime.cpp">
+      <Filter>OS\Windows</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\EAStdC\EAMemory.cpp">
+      <Filter>Dependencies\EASTL\EAStdC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\EAStdC\EASprintf.cpp">
+      <Filter>Dependencies\EASTL\EAStdC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\basis_universal\transcoder\basisu_transcoder.cpp">
+      <Filter>OS\Image</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <Natvis Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\EASTL.natvis">
+    <ClInclude Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\BaseComponent.h" />
+    <ClInclude Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\ComponentRepresentation.h" />
+    <ClInclude Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\EntityManager.h" />
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Core\Atomics.h">
+      <Filter>OS\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Core\Compiler.h">
+      <Filter>OS\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Core\GPUConfig.h">
+      <Filter>OS\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Core\RingBuffer.h">
+      <Filter>OS\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Core\ThreadSystem.h">
+      <Filter>OS\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Image\Image.h">
+      <Filter>OS\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Image\ImageEnums.h">
+      <Filter>OS\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Interfaces\IApp.h">
+      <Filter>OS\Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Interfaces\ICameraController.h">
+      <Filter>OS\Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Interfaces\IFileSystem.h">
+      <Filter>OS\Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Interfaces\IInput.h">
+      <Filter>OS\Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Interfaces\ILog.h">
+      <Filter>OS\Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Interfaces\IMemory.h">
+      <Filter>OS\Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Interfaces\IMiddleware.h">
+      <Filter>OS\Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Interfaces\IOperatingSystem.h">
+      <Filter>OS\Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Interfaces\IProfiler.h">
+      <Filter>OS\Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Interfaces\IThread.h">
+      <Filter>OS\Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Interfaces\ITime.h">
+      <Filter>OS\Interfaces</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Logging\Log.h">
+      <Filter>OS\Logging</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Math\MathTypes.h">
+      <Filter>OS\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Middleware_3\Text\Fontstash.h">
+      <Filter>OS\Middleware_3\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Middleware_3\UI\AppUI.h">
+      <Filter>OS\Middleware_3\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\imgui\imconfig.h">
+      <Filter>OS\Middleware_3\UI\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\imgui\imgui.h">
+      <Filter>OS\Middleware_3\UI\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\imgui\imgui_internal.h">
+      <Filter>OS\Middleware_3\UI\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerBase.h">
+      <Filter>OS\Profiler</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerHTML.h">
+      <Filter>OS\Profiler</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerUI.h">
+      <Filter>OS\Profiler</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\EASTL.natvis">
       <Filter>Utils</Filter>
     </Natvis>
   </ItemGroup>

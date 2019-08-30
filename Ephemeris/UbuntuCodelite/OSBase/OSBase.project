@@ -30,8 +30,6 @@
       <File Name="../../../../The-Forge/Middleware_3/UI/AppUI.cpp"/>
       <File Name="../../../../The-Forge/Middleware_3/UI/AppUI.h"/>
       <File Name="../../../../The-Forge/Middleware_3/UI/ImguiGUIDriver.cpp"/>
-      <File Name="../../../../The-Forge/Middleware_3/UI/imgui_user.cpp"/>
-      <File Name="../../../../The-Forge/Middleware_3/UI/imgui_user.h"/>
       <File Name="../../../../The-Forge/Middleware_3/Text/Fontstash.cpp"/>
       <File Name="../../../../The-Forge/Middleware_3/Text/Fontstash.h"/>
     </VirtualDirectory>
@@ -39,30 +37,20 @@
   <Description/>
   <Dependencies/>
   <VirtualDirectory Name="Camera">
-    <File Name="../../../../The-Forge/Common_3/OS/Camera/FpsCameraController.cpp"/>
-    <File Name="../../../../The-Forge/Common_3/OS/Camera/GuiCameraController.cpp"/>
+    <File Name="../../../../The-Forge/Common_3/OS/Camera/CameraController.cpp"/>
   </VirtualDirectory>
   <VirtualDirectory Name="Core">
     <File Name="../../../../The-Forge/Common_3/OS/Core/Atomics.h"/>
     <File Name="../../../../The-Forge/Common_3/OS/Core/Compiler.h"/>
     <File Name="../../../../The-Forge/Common_3/OS/Core/DLL.h"/>
     <File Name="../../../../The-Forge/Common_3/OS/Core/FileSystem.cpp"/>
-    <File Name="../../../../The-Forge/Common_3/OS/Core/GPUConfig.h"/>
-    <File Name="../../../../The-Forge/Common_3/OS/Core/PlatformEvents.cpp"/>
     <File Name="../../../../The-Forge/Common_3/OS/Core/RingBuffer.h"/>
     <File Name="../../../../The-Forge/Common_3/OS/Core/ThreadSystem.cpp"/>
     <File Name="../../../../The-Forge/Common_3/OS/Core/ThreadSystem.h"/>
     <File Name="../../../../The-Forge/Common_3/OS/Core/Timer.cpp"/>
   </VirtualDirectory>
-  <VirtualDirectory Name="Image">
-    <File Name="../../../../The-Forge/Common_3/OS/Image/Image.cpp"/>
-    <File Name="../../../../The-Forge/Common_3/OS/Image/Image.h"/>
-    <File Name="../../../../The-Forge/Common_3/OS/Image/ImageEnums.h"/>
-  </VirtualDirectory>
   <VirtualDirectory Name="Input">
-    <File Name="../../../../The-Forge/Common_3/OS/Input/InputMappings.h"/>
     <File Name="../../../../The-Forge/Common_3/OS/Input/InputSystem.cpp"/>
-    <File Name="../../../../The-Forge/Common_3/OS/Input/InputSystem.h"/>
   </VirtualDirectory>
   <VirtualDirectory Name="Interfaces">
     <File Name="../../../../The-Forge/Common_3/OS/Interfaces/IApp.h"/>
@@ -70,11 +58,12 @@
     <File Name="../../../../The-Forge/Common_3/OS/Interfaces/IFileSystem.h"/>
     <File Name="../../../../The-Forge/Common_3/OS/Interfaces/IMiddleware.h"/>
     <File Name="../../../../The-Forge/Common_3/OS/Interfaces/IOperatingSystem.h"/>
-    <File Name="../../../../The-Forge/Common_3/OS/Interfaces/IPlatformEvents.h"/>
     <File Name="../../../../The-Forge/Common_3/OS/Interfaces/IThread.h"/>
     <File Name="../../../../The-Forge/Common_3/OS/Interfaces/ILog.h"/>
     <File Name="../../../../The-Forge/Common_3/OS/Interfaces/IMemory.h"/>
     <File Name="../../../../The-Forge/Common_3/OS/Interfaces/ITime.h"/>
+    <File Name="../../../../The-Forge/Common_3/OS/Interfaces/IInput.h"/>
+    <File Name="../../../../The-Forge/Common_3/OS/Interfaces/IProfiler.h"/>
   </VirtualDirectory>
   <VirtualDirectory Name="Logging">
     <File Name="../../../../The-Forge/Common_3/OS/Logging/Log.cpp"/>

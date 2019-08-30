@@ -27,10 +27,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Camera\FpsCameraController.cpp" />
-    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Camera\GuiCameraController.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Camera\CameraController.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Core\FileSystem.cpp" />
-    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Core\PlatformEvents.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Core\ThreadSystem.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Core\Timer.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Image\Image.cpp" />
@@ -42,6 +40,7 @@
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsLog.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsThread.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsTime.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\basis_universal\transcoder\basisu_transcoder.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\allocator_forge.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\assert.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\EAStdC\EAMemory.cpp" />
@@ -63,26 +62,30 @@
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerInput.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerUI.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\TinyEXR\tinyexr.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\BaseComponent.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\ComponentRepresentation.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\EntityManager.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Middleware_3\Text\Fontstash.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Middleware_3\UI\AppUI.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Middleware_3\UI\ImguiGUIDriver.cpp" />
-    <ClCompile Include="..\..\..\..\..\The-Forge\Middleware_3\UI\imgui_user.cpp" />
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Core\Atomics.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Core\Compiler.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Core\GPUConfig.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Core\RingBuffer.h" />
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Core\ThreadSystem.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Image\Image.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Image\ImageEnums.h" />
-    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Input\InputMappings.h" />
-    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Input\InputSystem.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Interfaces\IApp.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Interfaces\ICameraController.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Interfaces\IFileSystem.h" />
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Interfaces\IInput.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Interfaces\ILog.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Interfaces\IMemory.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Interfaces\IMiddleware.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Interfaces\IOperatingSystem.h" />
-    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Interfaces\IPlatformEvents.h" />
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Interfaces\IProfiler.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Interfaces\IThread.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Interfaces\ITime.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Logging\Log.h" />
@@ -93,6 +96,9 @@
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerBase.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerHTML.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerUI.h" />
+    <ClInclude Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\BaseComponent.h" />
+    <ClInclude Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\ComponentRepresentation.h" />
+    <ClInclude Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\EntityManager.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Middleware_3\Text\Fontstash.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Middleware_3\UI\AppUI.h" />
   </ItemGroup>

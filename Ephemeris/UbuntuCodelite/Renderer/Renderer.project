@@ -2,7 +2,7 @@
 <CodeLite_Project Name="Renderer" InternalType="Library" Version="10.0.0">
   <Description/>
   <Dependencies/>
-  <VirtualDirectory Name="src">
+  <VirtualDirectory Name="Common">
     <File Name="../../../../The-Forge/Common_3/Renderer/CommonShaderReflection.cpp"/>
     <File Name="../../../../The-Forge/Common_3/Renderer/IRay.h"/>
     <File Name="../../../../The-Forge/Common_3/Renderer/IRenderer.h"/>
@@ -20,6 +20,12 @@
       <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/ProfilerInput.cpp"/>
       <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/ProfilerUI.cpp"/>
       <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/ProfilerUI.h"/>
+    </VirtualDirectory>
+    <VirtualDirectory Name="image">
+      <File Name="../../../../The-Forge/Common_3/OS/Image/Image.cpp"/>
+      <File Name="../../../../The-Forge/Common_3/OS/Image/Image.h"/>
+      <File Name="../../../../The-Forge/Common_3/OS/Image/ImageEnums.h"/>
+      <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/basis_universal/transcoder/basisu_transcoder.cpp"/>
     </VirtualDirectory>
   </VirtualDirectory>
   <VirtualDirectory Name="Vulkan">
