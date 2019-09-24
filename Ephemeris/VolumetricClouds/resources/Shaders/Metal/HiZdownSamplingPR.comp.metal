@@ -50,14 +50,20 @@ struct Compute_Shader
 					DstTexture(DstTexture) {}
 };
 
+struct ArgsData
+{
+    texture2d<float> SrcTexture;
+    texture2d<float, access::read_write> DstTexture;
+};
+
 //[numthreads(16, 16, 1)]
 kernel void stageMain(
 uint3 GTid [[thread_position_in_threadgroup]],
 uint3 Gid [[threadgroup_position_in_grid]],
 uint3 DTid [[thread_position_in_grid]],
 uint GroupIndex [[thread_index_in_threadgroup]],
-    texture2d<float> SrcTexture [[texture(27)]],
-    texture2d<float, access::read_write> DstTexture [[texture(30)]])
+    constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]]
+)
 {
 	threadgroup float GroupOutput[NUM_THREADS];
 	
@@ -70,7 +76,7 @@ uint GroupIndex [[thread_index_in_threadgroup]],
     uint GroupIndex0;
     GroupIndex0 = GroupIndex;
     Compute_Shader main(
-    SrcTexture,
-    DstTexture);
+    argBufferStatic.SrcTexture,
+    argBufferStatic.DstTexture);
     return main.main(GTid0, Gid0, DTid0, GroupIndex0, GroupOutput);
 }

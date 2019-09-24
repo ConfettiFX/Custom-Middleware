@@ -61,19 +61,24 @@ constant Uniforms_cbRootConstant & cbRootConstant,texture2d<float> Heightmap,sam
 cbRootConstant(cbRootConstant),Heightmap(Heightmap),g_LinearMirror(g_LinearMirror) {}
 };
 
+struct ArgsData
+{
+    texture2d<float> Heightmap;
+    sampler g_LinearMirror;
+};
 
 fragment float4 stageMain(
     Fragment_Shader::PsIn In [[stage_in]],
-    constant Fragment_Shader::Uniforms_cbRootConstant & cbRootConstant [[buffer(1)]],
-    texture2d<float> Heightmap [[texture(0)]],
-    sampler g_LinearMirror [[sampler(0)]])
+    constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+    constant Fragment_Shader::Uniforms_cbRootConstant & cbRootConstant [[buffer(UPDATE_FREQ_USER)]]
+)
 {
     Fragment_Shader::PsIn In0;
     In0.position = float4(In.position.xyz, 1.0 / In.position.w);
     In0.screenPos = In.screenPos;
     Fragment_Shader main(
     cbRootConstant,
-    Heightmap,
-    g_LinearMirror);
+    argBufferStatic.Heightmap,
+    argBufferStatic.g_LinearMirror);
     return float4(main.main(In0), 0.0, 0.0);
 }

@@ -77,14 +77,19 @@ constant Uniforms_cbRootConstant & SunUniform) :
 cbRootConstant(SunUniform) {}
 };
 
+struct ArgsPerFrame
+{
+	constant Vertex_Shader::Uniforms_cbRootConstant & SunUniform;
+};
 
 vertex Vertex_Shader::PsIn stageMain(
 uint VertexID [[vertex_id]],
-    constant Vertex_Shader::Uniforms_cbRootConstant & SunUniform [[buffer(4)]])
+    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+)
 {
     uint VertexID0;
     VertexID0 = VertexID;
     Vertex_Shader main(
-    SunUniform);
+    argBufferPerFrame.SunUniform);
     return main.main(VertexID0);
 }

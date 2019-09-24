@@ -15,11 +15,9 @@
       <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/Profiler.cpp"/>
       <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/ProfilerBase.cpp"/>
       <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/ProfilerBase.h"/>
-      <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/ProfilerDraw.cpp"/>
       <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/ProfilerHTML.h"/>
-      <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/ProfilerInput.cpp"/>
-      <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/ProfilerUI.cpp"/>
-      <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/ProfilerUI.h"/>
+      <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/ProfilerWidgetsUI.cpp"/>
+      <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/MicroProfile/ProfilerWidgetsUI.h"/>
     </VirtualDirectory>
     <VirtualDirectory Name="image">
       <File Name="../../../../The-Forge/Common_3/OS/Image/Image.cpp"/>

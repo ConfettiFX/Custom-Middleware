@@ -7,7 +7,7 @@
 *
 */
 
-Texture2D SrcTexture[32] : register(t0, space1);
+Texture2D SrcTexture[32] : register(t0);
 RWTexture3D<float4> DstTexture : register(u0);
 
 [numthreads(32, 32, 1)]

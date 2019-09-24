@@ -88,6 +88,10 @@ struct VolumetricCloudsCB
 
   float	CurlTextureTiling;				// Control the curl size of the clouds. Using bigger value makes smaller curl shapes.
   float	CurlStrenth;					// Intensify the curl effect.
+
+  float UpstreamScale;
+  float UpstreamSpeed;
+
   float	AnvilBias;						// Using lower value makes anvil shape.
   float	WeatherTextureSize;				// Control the size of Weather map, bigger value makes the world to be covered by larger clouds pattern.
   float	WeatherTextureOffsetX;
@@ -107,13 +111,11 @@ struct VolumetricCloudsCB
 
   float	CameraFarClip;
   float	Padding01;
-  float	Padding02;
-  float	Padding03;
 
   uint  EnabledDepthCulling;
   uint	EnabledLodDepthCulling;
-  uint  padding04;
-  uint  padding05;
+  uint  DepthMapWidth;
+  uint  DepthMapHeight;
 
   // VolumetricClouds' Light shaft
   uint	GodNumSamples;					// Number of godray samples
@@ -150,7 +152,7 @@ SamplerState g_LinearClampSampler : register(s0);
 SamplerState g_LinearWrapSampler : register(s1);
 SamplerState g_PointClampSampler : register(s2);
 SamplerState g_LinearBorderSampler : register(s3);
-cbuffer VolumetricCloudsCBuffer : register(b4)
+cbuffer VolumetricCloudsCBuffer : register(b4, UPDATE_FREQ_PER_FRAME)
 {
   VolumetricCloudsCB g_VolumetricClouds;
 };
@@ -310,7 +312,7 @@ float GetDensityHeightGradientForPoint(in float relativeHeight, in float cloudTy
 }
 
 // Get the density of clouds from current ray-marched position
-float SampleDensity(float3 worldPos, float lod, float height_fraction, float3 currentProj, in float3 cloudTopOffsetWithWindDir, in float2 windWithVelocity, in float3 biasedCloudPos,
+float SampleDensity(float3 worldPos, float lod, float height_fraction, float3 currentProj, in float3 cloudTopOffsetWithWindDir, in float4 windWithVelocity, in float3 biasedCloudPos,
   in float DetailShapeTilingDivCloudSize,
   bool cheap)
 {
@@ -321,7 +323,7 @@ float SampleDensity(float3 worldPos, float lod, float height_fraction, float3 cu
   worldPos += height_fraction * cloudTopOffsetWithWindDir;
   worldPos += biasedCloudPos;
 
-  float3 weatherData = weatherTexture.SampleLevel(g_LinearWrapSampler, (unwindWorldPos.xz + windWithVelocity + float2(g_VolumetricClouds.WeatherTextureOffsetX, g_VolumetricClouds.WeatherTextureOffsetZ)) / (g_VolumetricClouds.WeatherTextureSize), 0.0f).rgb;
+  float3 weatherData = weatherTexture.SampleLevel(g_LinearWrapSampler, (unwindWorldPos.xz + windWithVelocity.xy + float2(g_VolumetricClouds.WeatherTextureOffsetX, g_VolumetricClouds.WeatherTextureOffsetZ)) / (g_VolumetricClouds.WeatherTextureSize), 0.0f).rgb;
  
   float3 worldPosDivCloudSize = worldPos / g_VolumetricClouds.CloudSize;
 
@@ -353,9 +355,10 @@ float SampleDensity(float3 worldPos, float lod, float height_fraction, float3 cu
     // Apply the curl noise
     float2 curl_noise = curlNoiseTexture.SampleLevel(g_LinearWrapSampler, float2(worldPosDivCloudSize.xz * g_VolumetricClouds.CurlTextureTiling), 0.0).rg;
     worldPos.xz += curl_noise * (1.0 - height_fraction) * g_VolumetricClouds.CurlStrenth;
+    worldPos.y -= ((g_VolumetricClouds.TimeAndScreenSize.x * g_VolumetricClouds.UpstreamSpeed) / (g_VolumetricClouds.CloudSize * 0.0657 * g_VolumetricClouds.UpstreamScale));
 
     // Get the density of base cloud 
-    float3 high_frequency_noises = highFreqNoiseTexture.SampleLevel(g_LinearWrapSampler, float3(worldPos * DetailShapeTilingDivCloudSize), lod).rgb;
+    float3 high_frequency_noises = highFreqNoiseTexture.SampleLevel(g_LinearWrapSampler, float3((worldPos + float3(windWithVelocity.z, 0.0, windWithVelocity.w)) * DetailShapeTilingDivCloudSize), lod).rgb;
     float high_freq_fBm = (high_frequency_noises.r * 0.625) + (high_frequency_noises.g * 0.25) + (high_frequency_noises.b * 0.125);
 
     float height_fraction_new = getRelativeHeight(worldPos, currentProj, g_VolumetricClouds.LayerThickness);
@@ -380,15 +383,13 @@ float GetLightEnergy(float height_fraction, float dl, float ds_loded, float phas
   float depth_probability = lerp(0.05 + pow(ds_loded, RemapClamped(height_fraction, 0.3, 0.85, 0.5, 2.0)), 1.0, saturate(dl));
   float vertical_probability = pow(RemapClamped(height_fraction, 0.07, 0.14, 0.1, 1.0), 0.8);
   float in_scatter_probability = vertical_probability * depth_probability;
-
   float light_energy = (attenuation_probability + in_scatter_probability * phase_probability);
   light_energy = pow(abs(light_energy), contrast);
-
   return light_energy;
 }
 
 // Sample the positions to get the light energy
-float SampleEnergy(float3 rayPos, float3 magLightDirection, float height_fraction, float3 currentProj, in float3 cloudTopOffsetWithWindDir, in float2 windWithVelocity,
+float SampleEnergy(float3 rayPos, float3 magLightDirection, float height_fraction, float3 currentProj, in float3 cloudTopOffsetWithWindDir, in float4 windWithVelocity,
   in float3 biasedCloudPos, in float DetailShapeTilingDivCloudSize,
   float ds_loded, float stepSize, float cosTheta, float mipBias)
 {
@@ -417,11 +418,12 @@ float SampleEnergy(float3 rayPos, float3 magLightDirection, float height_fractio
     step += 1.0f;
   } 
 
-  float hg = max(HenryGreenstein(g_VolumetricClouds.Eccentricity, cosTheta), g_VolumetricClouds.SilverliningIntensity * saturate(HenryGreenstein(0.99f - g_VolumetricClouds.SilverliningSpread, cosTheta)));
-  //float hg = HenryGreenstein(g_VolumetricClouds.Eccentricity, cosTheta);
+  float hg = max(HenryGreenstein(g_VolumetricClouds.Eccentricity, cosTheta), saturate(HenryGreenstein(0.99f - g_VolumetricClouds.SilverliningSpread, cosTheta))) * g_VolumetricClouds.SilverliningIntensity;
+  float dl = totalSample * g_VolumetricClouds.Precipitation;
+  hg = hg / max(dl, 0.05);
 
   float lodded_density = saturate(SampleDensity(rayPos, mipBias, height_fraction, currentProj, cloudTopOffsetWithWindDir, windWithVelocity, biasedCloudPos, DetailShapeTilingDivCloudSize, true));
-  float energy = GetLightEnergy(height_fraction, totalSample * g_VolumetricClouds.Precipitation, ds_loded, hg, cosTheta, stepSize, g_VolumetricClouds.Contrast);
+  float energy = GetLightEnergy(height_fraction, dl, ds_loded, hg, cosTheta, stepSize, g_VolumetricClouds.Contrast);
 
   return energy;
 }
@@ -488,7 +490,7 @@ float GetDensity(float3 startPos, float3 worldPos, float3 dir, float maxSampleDi
 
   // Depth Culling
   // Get texel coordinates for Depth culling
-  uint2 texels = (uint2)(float2(g_VolumetricClouds.Padding02, g_VolumetricClouds.Padding03) * uv);
+  uint2 texels = (uint2)(float2(g_VolumetricClouds.DepthMapWidth, g_VolumetricClouds.DepthMapHeight) * uv);
 
   //Get the lodded depth, if it is not using, use far distance instead to pass the culling
   float sceneDepth;
@@ -525,7 +527,7 @@ float GetDensity(float3 startPos, float3 worldPos, float3 dir, float maxSampleDi
   float cosTheta = dot(dir, g_VolumetricClouds.lightDirection.xyz);
   float3 rayPos = sampleStart;
 
-  float2 windWithVelocity = g_VolumetricClouds.StandardPosition.xz;
+  float4 windWithVelocity = g_VolumetricClouds.StandardPosition;
   float3 biasedCloudPos = 4.5f * (g_VolumetricClouds.WindDirection.xyz + float3(0.0, 0.1, 0.0));
   float3 cloudTopOffsetWithWindDir = g_VolumetricClouds.CloudTopOffset * g_VolumetricClouds.WindDirection.xyz;
 
@@ -676,7 +678,7 @@ float GetDensityWithComparingDepth(float3 startPos, float3 worldPos, float3 dir,
 
   // Depth Culling
   // Get texel coordinates for Depth culling
-  uint2 texels = (uint2)(float2(g_VolumetricClouds.Padding02, g_VolumetricClouds.Padding03) * uv);
+  uint2 texels = (uint2)(float2(g_VolumetricClouds.DepthMapWidth, g_VolumetricClouds.DepthMapHeight) * uv);
 
   //Get the lodded depth, if it is not using, use far distance instead to pass the culling
   //float sceneDepth = depthTexture.Load(int3(texels, 0), int2(0, 0)).r;
@@ -703,7 +705,7 @@ float GetDensityWithComparingDepth(float3 startPos, float3 worldPos, float3 dir,
   float cosTheta = dot(dir, g_VolumetricClouds.lightDirection.xyz);
   float3 rayPos = sampleStart;
 
-  float2 windWithVelocity = g_VolumetricClouds.StandardPosition.xz;
+  float4 windWithVelocity = g_VolumetricClouds.StandardPosition;
   float3 biasedCloudPos = 4.5f * (g_VolumetricClouds.WindDirection.xyz + float3(0.0, 0.1, 0.0));
   float3 cloudTopOffsetWithWindDir = g_VolumetricClouds.CloudTopOffset * g_VolumetricClouds.WindDirection.xyz;
 

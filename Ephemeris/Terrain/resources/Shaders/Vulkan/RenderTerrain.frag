@@ -17,22 +17,22 @@ layout(location = 4) in vec3 fragInput_Bitangent;
 layout(location = 0) out vec4 rast_FragData0; 
 layout(location = 1) out vec4 rast_FragData1; 
 
-layout(set = 1, binding = 0) uniform RenderTerrainUniformBuffer_Block
+layout(UPDATE_FREQ_PER_FRAME, binding = 0) uniform RenderTerrainUniformBuffer_Block
 {
     mat4 projView;
     vec4 TerrainInfo;
     vec4 CameraInfo;
 }RenderTerrainUniformBuffer;
 
-layout(set = 0, binding = 0) uniform texture2D NormalMap;
-layout(set = 0, binding = 1) uniform texture2D MaskMap;
-layout(set = 0, binding = 2) uniform texture2D tileTextures[5];
-layout(set = 0, binding = 7) uniform texture2D tileTexturesNrm[5];
-layout(set = 0, binding = 12) uniform texture2D shadowMap;
+layout(UPDATE_FREQ_NONE, binding = 0) uniform texture2D NormalMap;
+layout(UPDATE_FREQ_NONE, binding = 1) uniform texture2D MaskMap;
+layout(UPDATE_FREQ_NONE, binding = 2) uniform texture2D tileTextures[5];
+layout(UPDATE_FREQ_NONE, binding = 7) uniform texture2D tileTexturesNrm[5];
+layout(UPDATE_FREQ_NONE, binding = 12) uniform texture2D shadowMap;
 
-layout(set = 0, binding = 13) uniform sampler g_LinearMirror;
-layout(set = 0, binding = 14) uniform sampler g_LinearWrap;
-layout(set = 0, binding = 15) uniform sampler g_LinearBorder;
+layout(UPDATE_FREQ_NONE, binding = 13) uniform sampler g_LinearMirror;
+layout(UPDATE_FREQ_NONE, binding = 14) uniform sampler g_LinearWrap;
+layout(UPDATE_FREQ_NONE, binding = 15) uniform sampler g_LinearBorder;
 
 struct PsIn
 {

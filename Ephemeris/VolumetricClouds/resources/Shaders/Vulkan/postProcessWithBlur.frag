@@ -28,13 +28,6 @@ struct PSOut
   vec4 VolumetricClouds;
   vec4 ResultColor;
 };
-layout(set = 0, binding = 11) uniform texture2D g_SrcTexture2D;
-layout(set = 0, binding = 12) uniform texture2D g_SkyBackgroudTexture;
-layout(set = 0, binding = 13) uniform texture2D g_BlurTexture;
-layout(set = 0, binding = 14) buffer TransmittanceColor
-{
-  vec4 TransmittanceColor_Data[];
-};
 
 vec4 HLSLmain(PSIn input0)
 {

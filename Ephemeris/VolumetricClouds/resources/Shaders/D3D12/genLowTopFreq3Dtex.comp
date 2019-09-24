@@ -7,7 +7,7 @@
 *
 */
 
-Texture2D SrcTexture[128] : register(t0, space1);
+Texture2D SrcTexture[128] : register(t0);
 RWTexture3D<float4> DstTexture : register(u0);
 
 #define THREAD_SIZE 32

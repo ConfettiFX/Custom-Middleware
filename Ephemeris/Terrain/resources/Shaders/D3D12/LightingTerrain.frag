@@ -7,7 +7,7 @@
 *
 */
 
-cbuffer LightingTerrainUniformBuffer : register(b2)
+cbuffer LightingTerrainUniformBuffer : register(b2, UPDATE_FREQ_PER_FRAME)
 {
 	float4x4	InvViewProjMat;
 	float4x4	ShadowViewProjMat;
@@ -24,7 +24,7 @@ struct VolumetricCloudsShadowCB
   float4  ShadowInfo;
 };
 
-cbuffer VolumetricCloudsShadowCB : register(b3)
+cbuffer VolumetricCloudsShadowCB : register(b3, UPDATE_FREQ_PER_FRAME)
 {
   // SettingInfo; // x : EnableCastShadow, y : CloudCoverage, z : WeatherTextureTiling, w : Time
   VolumetricCloudsShadowCB g_VolumetricCloudsShadow;

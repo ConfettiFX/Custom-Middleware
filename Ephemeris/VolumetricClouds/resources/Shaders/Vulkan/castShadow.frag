@@ -14,10 +14,10 @@ layout(location = 0) in vec2 fragInput_TEXCOORD;
 layout(location = 1) in vec2 fragInput_TEXCOORD1;
 layout(location = 0) out float rast_FragData0; 
 
-layout(set = 0, binding = 2) uniform texture2D depthTexture;
-layout(set = 0, binding = 3) uniform texture2D noiseTexture;
-layout(set = 0, binding = 4) uniform sampler PointClampSampler;
-layout(set = 0, binding = 5) uniform sampler BilinearSampler;
+layout(UPDATE_FREQ_NONE, binding = 2) uniform texture2D depthTexture;
+layout(UPDATE_FREQ_NONE, binding = 3) uniform texture2D noiseTexture;
+layout(UPDATE_FREQ_NONE, binding = 4) uniform sampler PointClampSampler;
+layout(UPDATE_FREQ_NONE, binding = 5) uniform sampler BilinearSampler;
 layout(push_constant) uniform uniformGlobalInfoRootConstant_Block
 {
     vec2 _Time;

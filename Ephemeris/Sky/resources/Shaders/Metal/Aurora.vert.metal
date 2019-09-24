@@ -43,14 +43,24 @@ AuroraParticleBuffer(AuroraParticleBuffer),
 AuroraUniformBuffer(AuroraUniformBuffer) {}
 };
 
+struct ArgsData
+{
+	device Vertex_Shader::AuroraParticle* AuroraParticleBuffer;
+};
+
+struct ArgsPerFrame
+{
+	constant Vertex_Shader::Uniforms_AuroraUniformBuffer & AuroraUniformBuffer;
+};
 
 vertex Vertex_Shader::VSOutput stageMain(
 uint VertexID [[vertex_id]],
-	device Vertex_Shader::AuroraParticle* AuroraParticleBuffer [[buffer(6)]],
-    constant Vertex_Shader::Uniforms_AuroraUniformBuffer & AuroraUniformBuffer [[buffer(8)]])
+	 constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+	 constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+)
 {
     uint VertexID0;
     VertexID0 = VertexID;
-    Vertex_Shader main(AuroraParticleBuffer, AuroraUniformBuffer);
+    Vertex_Shader main(argBufferStatic.AuroraParticleBuffer, argBufferPerFrame.AuroraUniformBuffer);
     return main.main(VertexID0);
 }

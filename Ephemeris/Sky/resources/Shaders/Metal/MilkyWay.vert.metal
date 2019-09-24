@@ -36,10 +36,15 @@ struct VSOutput
 	float2 ScreenCoord;
 };
 
-vertex VSOutput stageMain(uint VertexID [[vertex_id]], VSInput Input [[stage_in]], uint InstanceID [[instance_id]], constant Uniforms_SpaceUniform &SpaceUniform [[buffer(3)]])
+struct ArgsPerFrame
+{
+	constant Uniforms_SpaceUniform & SpaceUniform;
+};
+
+vertex VSOutput stageMain(uint VertexID [[vertex_id]], VSInput Input [[stage_in]], uint InstanceID [[instance_id]], constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]])
 {
   VSOutput result;
-	result.Position = SpaceUniform.ViewProjMat * float4(Input.Position, 1.0);
+	result.Position = argBufferPerFrame.SpaceUniform.ViewProjMat * float4(Input.Position, 1.0);
 	result.Normal = float4(Input.Normal, 0.0);
 	result.ScreenCoord = result.Position.xy * float2(0.5, -0.5) + 0.5;  
   result.Info = float4(Input.StarInfo.x, Input.StarInfo.y, Input.StarInfo.z, 1.0);

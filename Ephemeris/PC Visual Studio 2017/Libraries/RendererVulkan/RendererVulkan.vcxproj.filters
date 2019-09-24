@@ -6,27 +6,27 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Renderer\CommonShaderReflection.cpp">
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Renderer\CommonShaderReflection.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Renderer\GpuProfiler.cpp">
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Renderer\GpuProfiler.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Renderer\ResourceLoader.cpp">
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Renderer\ResourceLoader.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Renderer\Vulkan\Vulkan.cpp">
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Renderer\Vulkan\Vulkan.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Renderer\Vulkan\VulkanRaytracing.cpp">
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Renderer\Vulkan\VulkanRaytracing.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\The-Forge\Common_3\Renderer\Vulkan\VulkanShaderReflection.cpp">
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\Renderer\Vulkan\VulkanShaderReflection.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\VulkanMemoryAllocator\VulkanMemoryAllocator.h">
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\VulkanMemoryAllocator\VulkanMemoryAllocator.h">
       <Filter>Renderer</Filter>
     </ClInclude>
   </ItemGroup>

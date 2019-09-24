@@ -49,10 +49,10 @@ CloudImpostor::CloudImpostor() : m_Valid(false), m_Radius(0), m_SortDepth(0)
   RenderTargetDesc ImposterRenderTarget = {};
   ImposterRenderTarget.mArraySize = 1;
   ImposterRenderTarget.mDepth = 1;
-  ImposterRenderTarget.mFormat = ImageFormat::RGBA16F;
+  ImposterRenderTarget.mFormat = TinyImageFormat_R16G16B16A16_SFLOAT;
   ImposterRenderTarget.mSampleCount = SAMPLE_COUNT_1;
   ImposterRenderTarget.mSampleQuality = 0;
-  ImposterRenderTarget.mSrgb = false;
+  //ImposterRenderTarget.mSrgb = false;
   ImposterRenderTarget.mWidth = m_TextureSize;
   ImposterRenderTarget.mHeight = m_TextureSize;
   ImposterRenderTarget.pDebugName = L"Imposter RenderTarget";
@@ -288,7 +288,7 @@ void CloudImpostor::setupRenderer( Cmd *cmd, CumulusCloud *pCloud, const vec3 &c
       { m_tImpostor->pTexture, RESOURCE_STATE_RENDER_TARGET }
 };
 
-  cmdResourceBarrier(cmd, 0, NULL, 1, barriersImposter, false);
+  cmdResourceBarrier(cmd, 0, NULL, 1, barriersImposter);
 
 	//Renderer.clear(true, false, false);
 	//	TODO: A: clear to neutral color

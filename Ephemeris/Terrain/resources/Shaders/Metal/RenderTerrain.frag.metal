@@ -121,18 +121,28 @@ struct Fragment_Shader
 RenderTerrainUniformBuffer(RenderTerrainUniformBuffer),NormalMap(NormalMap),MaskMap(MaskMap),tileTextures(tileTextures),tileTexturesNrm(tileTexturesNrm),shadowMap(shadowMap),g_LinearMirror(g_LinearMirror),g_LinearWrap(g_LinearWrap),g_LinearBorder(g_LinearBorder) {}
 };
 
+struct ArgsData
+{
+    texture2d<float> NormalMap;
+    texture2d<float> MaskMap;
+    const array<texture2d<float>, 5> tileTextures;
+    const array<texture2d<float>, 5> tileTexturesNrm;
+    texture2d<float> shadowMap;
+    sampler g_LinearMirror;
+    sampler g_LinearWrap;
+    sampler g_LinearBorder;
+};
+
+struct ArgsPerFrame
+{
+    constant Fragment_Shader::Uniforms_RenderTerrainUniformBuffer & RenderTerrainUniformBuffer;
+};
 
 fragment Fragment_Shader::PsOut stageMain(
     Fragment_Shader::PsIn In [[stage_in]],
-    constant Fragment_Shader::Uniforms_RenderTerrainUniformBuffer & RenderTerrainUniformBuffer [[buffer(2)]],
-    texture2d<float> NormalMap [[texture(0)]],
-    texture2d<float> MaskMap [[texture(1)]],
-    const array<texture2d<float>, 5> tileTextures [[texture(2)]],
-    const array<texture2d<float>, 5> tileTexturesNrm [[texture(7)]],
-    texture2d<float> shadowMap [[texture(12)]],
-    sampler g_LinearMirror [[sampler(0)]],
-    sampler g_LinearWrap [[sampler(1)]],
-    sampler g_LinearBorder [[sampler(2)]])
+    constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+)
 {
     Fragment_Shader::PsIn In0;
     In0.position = float4(In.position.xyz, 1.0 / In.position.w);
@@ -143,15 +153,15 @@ fragment Fragment_Shader::PsOut stageMain(
     In0.bitangent = In.bitangent;
 	
     Fragment_Shader main(
-    RenderTerrainUniformBuffer,
-    NormalMap,
-    MaskMap,
-    tileTextures,
-    tileTexturesNrm,
-    shadowMap,
-    g_LinearMirror,
-    g_LinearWrap,
-    g_LinearBorder);
+    argBufferPerFrame.RenderTerrainUniformBuffer,
+    argBufferStatic.NormalMap,
+    argBufferStatic.MaskMap,
+    argBufferStatic.tileTextures,
+    argBufferStatic.tileTexturesNrm,
+    argBufferStatic.shadowMap,
+    argBufferStatic.g_LinearMirror,
+    argBufferStatic.g_LinearWrap,
+    argBufferStatic.g_LinearBorder);
 	
     return main.main(In0);
 }

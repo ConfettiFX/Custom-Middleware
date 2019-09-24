@@ -15,7 +15,7 @@ layout(location = 2) in vec3 fragInput_Color;
 
 layout(location = 0) out vec4 rast_FragData0; 
 
-layout(set = 0, binding = 11) uniform StarUniform_Block
+layout(UPDATE_FREQ_PER_FRAME, binding = 11) uniform StarUniform_Block
 {
     mat4 RotMat;
     mat4 ViewProjMat;
@@ -31,8 +31,8 @@ struct PsIn
     vec2 screenCoord;
     vec3 color;
 };
-layout(set = 0, binding = 8) uniform texture2D depthTexture;
-layout(set = 0, binding = 5) uniform sampler g_LinearClamp;
+layout(UPDATE_FREQ_NONE, binding = 8) uniform texture2D depthTexture;
+layout(UPDATE_FREQ_NONE, binding = 5) uniform sampler g_LinearClamp;
 vec4 HLSLmain(PsIn In)
 {
     vec2 screenUV = (In).screenCoord;

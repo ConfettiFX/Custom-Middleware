@@ -41,8 +41,8 @@ float4 main(PSIn input) : SV_TARGET
 	float4 PostProcessedResult;
 	PostProcessedResult.a = density;
 	PostProcessedResult.rgb = intensity * lerp(TransmittanceRGB , lerp(g_VolumetricClouds.lightColorAndIntensity.rgb, TransmittanceRGB, pow(saturate(1.0 - g_VolumetricClouds.lightDirection.y), 0.5)), g_VolumetricClouds.Test00) * g_VolumetricClouds.lightColorAndIntensity.a * g_VolumetricClouds.CloudBrightness;
-	PostProcessedResult.rgb = lerp(saturate(BackgroudColor) + PostProcessedResult.rgb, PostProcessedResult.rgb, min(PostProcessedResult.a * 1.0f, g_VolumetricClouds.BackgroundBlendFactor));
-  PostProcessedResult.rgb = lerp(BackgroudColor, PostProcessedResult.rgb, g_VolumetricClouds.BackgroundBlendFactor);
+	PostProcessedResult.rgb = lerp(saturate(BackgroudColor) + PostProcessedResult.rgb, PostProcessedResult.rgb, min(PostProcessedResult.a, g_VolumetricClouds.BackgroundBlendFactor));
+	PostProcessedResult.rgb = lerp(BackgroudColor, PostProcessedResult.rgb, g_VolumetricClouds.BackgroundBlendFactor);
 
 	return float4(PostProcessedResult.rgb, 1.0);
 }

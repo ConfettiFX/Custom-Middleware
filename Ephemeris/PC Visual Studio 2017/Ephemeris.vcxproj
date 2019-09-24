@@ -107,8 +107,6 @@
     <None Include="..\Terrain\resources\Shaders\Vulkan\RenderTerrain.vert" />
     <None Include="..\Terrain\resources\Shaders\Vulkan\terrain.frag" />
     <None Include="..\Terrain\resources\Shaders\Vulkan\terrain.vert" />
-    <None Include="..\VolumetricClouds\resources\Shaders\D3D12\basic.frag" />
-    <None Include="..\VolumetricClouds\resources\Shaders\D3D12\basic.vert" />
     <None Include="..\VolumetricClouds\resources\Shaders\D3D12\BlurHorizontal.comp" />
     <None Include="..\VolumetricClouds\resources\Shaders\D3D12\BlurVertical.comp" />
     <None Include="..\VolumetricClouds\resources\Shaders\D3D12\castShadow.frag" />
@@ -133,8 +131,6 @@
     <None Include="..\VolumetricClouds\resources\Shaders\D3D12\volumetricCloud.frag" />
     <None Include="..\VolumetricClouds\resources\Shaders\D3D12\volumetricCloud.vert" />
     <None Include="..\VolumetricClouds\resources\Shaders\D3D12\volumetricCloudWithDepth.comp" />
-    <None Include="..\VolumetricClouds\resources\Shaders\Vulkan\basic.frag" />
-    <None Include="..\VolumetricClouds\resources\Shaders\Vulkan\basic.vert" />
     <None Include="..\VolumetricClouds\resources\Shaders\Vulkan\BlurHorizontal.comp" />
     <None Include="..\VolumetricClouds\resources\Shaders\Vulkan\BlurVertical.comp" />
     <None Include="..\VolumetricClouds\resources\Shaders\Vulkan\castShadow.frag" />

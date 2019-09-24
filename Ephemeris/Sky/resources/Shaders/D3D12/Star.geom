@@ -7,7 +7,7 @@
 *
 */
 
-cbuffer StarUniform : register(b2)
+cbuffer StarUniform : register(b2, UPDATE_FREQ_PER_FRAME)
 {
 	float4x4 RotMat;
 	float4x4 ViewProjMat;

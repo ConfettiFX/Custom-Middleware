@@ -324,7 +324,7 @@ struct Compute_Shader
         float2 textureSize = (((VolumetricCloudsCBuffer.g_VolumetricClouds).TimeAndScreenSize).zw * (float2)(0.25));
 #endif
 
-        uint2 texels = (uint2)(float2((VolumetricCloudsCBuffer.g_VolumetricClouds).Padding02, (VolumetricCloudsCBuffer.g_VolumetricClouds).Padding03) * uv);
+        uint2 texels = (uint2)(float2((VolumetricCloudsCBuffer.g_VolumetricClouds).Padding01, (VolumetricCloudsCBuffer.g_VolumetricClouds).Padding01) * uv);
         float sceneDepth;
         if (((float)((VolumetricCloudsCBuffer.g_VolumetricClouds).EnabledLodDepthCulling) > 0.5))
         {
@@ -445,7 +445,7 @@ struct Compute_Shader
         float2 textureSize = (((VolumetricCloudsCBuffer.g_VolumetricClouds).TimeAndScreenSize).zw * (float2)(0.25));
 #endif
 
-        uint2 texels = (uint2)(float2((VolumetricCloudsCBuffer.g_VolumetricClouds).Padding02, (VolumetricCloudsCBuffer.g_VolumetricClouds).Padding03) * uv);
+        uint2 texels = (uint2)(float2((VolumetricCloudsCBuffer.g_VolumetricClouds).Padding01, (VolumetricCloudsCBuffer.g_VolumetricClouds).Padding01) * uv);
         float sceneDepth = depthTexture.read(texels, 0).r;
         float alpha = 0.0;
         (intensity = 0.0);
@@ -579,24 +579,35 @@ texture3d<float> highFreqNoiseTexture,texture3d<float> lowFreqNoiseTexture,textu
 highFreqNoiseTexture(highFreqNoiseTexture),lowFreqNoiseTexture(lowFreqNoiseTexture),curlNoiseTexture(curlNoiseTexture),weatherTexture(weatherTexture),depthTexture(depthTexture),LowResCloudTexture(LowResCloudTexture),g_PrevFrameTexture(g_PrevFrameTexture),g_LinearClampSampler(g_LinearClampSampler),g_LinearWrapSampler(g_LinearWrapSampler),g_PointClampSampler(g_PointClampSampler),g_LinearBorderSampler(g_LinearBorderSampler),VolumetricCloudsCBuffer(VolumetricCloudsCBuffer),DstTexture(DstTexture) {}
 };
 
+struct ArgsData
+{
+    texture3d<float> highFreqNoiseTexture;
+    texture3d<float> lowFreqNoiseTexture;
+    texture2d<float> curlNoiseTexture;
+    texture2d<float> weatherTexture;
+    texture2d<float> depthTexture;
+    texture2d<float> LowResCloudTexture;
+    texture2d<float> g_PrevFrameTexture;
+    sampler g_LinearClampSampler;
+    sampler g_LinearWrapSampler;
+    sampler g_PointClampSampler;
+    sampler g_LinearBorderSampler;
+    texture2d<float, access::read_write> volumetricCloudsDstTexture;
+};
+
+struct ArgsPerFrame
+{
+	constant Compute_Shader::Uniforms_VolumetricCloudsCBuffer & VolumetricCloudsCBuffer;
+};
+
 //[numthreads(8, 8, 1)]
 kernel void stageMain(
 uint3 GTid [[thread_position_in_threadgroup]],
 uint3 Gid [[threadgroup_position_in_grid]],
 uint3 DTid [[thread_position_in_grid]],
-    texture3d<float> highFreqNoiseTexture [[texture(0)]],
-    texture3d<float> lowFreqNoiseTexture [[texture(1)]],
-    texture2d<float> curlNoiseTexture [[texture(2)]],
-    texture2d<float> weatherTexture [[texture(3)]],
-    texture2d<float> depthTexture [[texture(4)]],
-    texture2d<float> LowResCloudTexture [[texture(5)]],
-    texture2d<float> g_PrevFrameTexture [[texture(6)]],
-    sampler g_LinearClampSampler [[sampler(0)]],
-    sampler g_LinearWrapSampler [[sampler(1)]],
-    sampler g_PointClampSampler [[sampler(2)]],
-    sampler g_LinearBorderSampler [[sampler(3)]],
-    constant Compute_Shader::Uniforms_VolumetricCloudsCBuffer & VolumetricCloudsCBuffer [[buffer(1)]],
-    texture2d<float, access::read_write> volumetricCloudsDstTexture [[texture(17)]])
+    constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+)
 {
     uint3 GTid0;
     GTid0 = GTid;
@@ -605,18 +616,18 @@ uint3 DTid [[thread_position_in_grid]],
     uint3 DTid0;
     DTid0 = DTid;
     Compute_Shader main(
-    highFreqNoiseTexture,
-    lowFreqNoiseTexture,
-    curlNoiseTexture,
-    weatherTexture,
-    depthTexture,
-    LowResCloudTexture,
-    g_PrevFrameTexture,
-    g_LinearClampSampler,
-    g_LinearWrapSampler,
-    g_PointClampSampler,
-    g_LinearBorderSampler,
-    VolumetricCloudsCBuffer,
-    volumetricCloudsDstTexture);
+    argBufferStatic.highFreqNoiseTexture,
+    argBufferStatic.lowFreqNoiseTexture,
+    argBufferStatic.curlNoiseTexture,
+    argBufferStatic.weatherTexture,
+    argBufferStatic.depthTexture,
+    argBufferStatic.LowResCloudTexture,
+    argBufferStatic.g_PrevFrameTexture,
+    argBufferStatic.g_LinearClampSampler,
+    argBufferStatic.g_LinearWrapSampler,
+    argBufferStatic.g_PointClampSampler,
+    argBufferStatic.g_LinearBorderSampler,
+    argBufferPerFrame.VolumetricCloudsCBuffer,
+    argBufferStatic.volumetricCloudsDstTexture);
     return main.main(GTid0, Gid0, DTid0);
 }

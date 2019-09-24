@@ -21,7 +21,7 @@ struct PsIn {
   float3 bitangent : Bitangent;
 };
 
-cbuffer RenderTerrainUniformBuffer : register(b1)
+cbuffer RenderTerrainUniformBuffer : register(b1, UPDATE_FREQ_PER_FRAME)
 {
 	float4x4 projView;
 	float4	TerrainInfo;

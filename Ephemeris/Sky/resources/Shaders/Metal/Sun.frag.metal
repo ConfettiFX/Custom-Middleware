@@ -76,22 +76,32 @@ moonAtlas(moonAtlas),
 g_LinearBorder(g_LinearBorder) {}
 };
 
+struct ArgsData
+{
+    texture2d<float> depthTexture;
+    texture2d<float> moonAtlas;
+    sampler g_LinearBorder;
+};
+
+struct ArgsPerFrame
+{
+	constant Fragment_Shader::Uniforms_cbRootConstant & SunUniform;
+};
 
 fragment float4 stageMain(
     Fragment_Shader::PsIn In [[stage_in]],
-    constant Fragment_Shader::Uniforms_cbRootConstant & SunUniform [[buffer(4)]],
-    texture2d<float> depthTexture [[texture(4)]],
-    texture2d<float> moonAtlas [[texture(5)]],
-    sampler g_LinearBorder [[sampler(1)]])
+    constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+)
 {
     Fragment_Shader::PsIn In0;
     In0.position = float4(In.position.xyz, 1.0 / In.position.w);
     In0.texCoord = In.texCoord;
     In0.screenCoord = In.screenCoord;
     Fragment_Shader main(
-    SunUniform,
-    depthTexture,
-    moonAtlas,
-    g_LinearBorder);
+    argBufferPerFrame.SunUniform,
+    argBufferStatic.depthTexture,
+    argBufferStatic.moonAtlas,
+    argBufferStatic.g_LinearBorder);
     return main.main(In0);
 }

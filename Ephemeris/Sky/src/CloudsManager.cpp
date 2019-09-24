@@ -122,17 +122,20 @@ static void ShaderPath(const eastl::string &shaderPath, char* pShaderName, eastl
 
 Shader* pClDistanceCloudShader;
 RootSignature* pClDistanceCloudRootSignature;
-DescriptorBinder* pClDistanceCloudDescriptorBinder = NULL;
+// #TODO
+//DescriptorBinder* pClDistanceCloudDescriptorBinder = NULL;
 //Pipeline* pClDistanceCloudPipeline = NULL;
 
 Shader* pClCumulusCloudShader;
 RootSignature*pClCumulusCloudRootSignature;
-DescriptorBinder* pClCumulusCloudDescriptorBinder = NULL;
+// #TODO
+//DescriptorBinder* pClCumulusCloudDescriptorBinder = NULL;
 //Pipeline* pClCumulusCloudPipeline = NULL;
 
 Shader* pImposterCloudShader;
 RootSignature*pImposterCloudRootSignature;
-DescriptorBinder* pImposterCloudDescriptorBinder = NULL;
+// #TODO
+//DescriptorBinder* pImposterCloudDescriptorBinder = NULL;
 
 CloudsManager::CloudsManager(void) :
 	//m_pRenderer(0), m_pDevice(0),
@@ -306,7 +309,7 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
   VertexLayout vertexLayout = {};
   vertexLayout.mAttribCount = 1;
   vertexLayout.mAttribs[0].mSemantic = SEMANTIC_POSITION;
-  vertexLayout.mAttribs[0].mFormat = ImageFormat::RG32F;
+  vertexLayout.mAttribs[0].mFormat = TinyImageFormat_R32G32_SFLOAT;
   vertexLayout.mAttribs[0].mBinding = 0;
   vertexLayout.mAttribs[0].mLocation = 0;
   vertexLayout.mAttribs[0].mOffset = 0;
@@ -333,8 +336,9 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 
     addRootSignature(pRenderer, &rootDesc, &pClDistanceCloudRootSignature);
 
-    DescriptorBinderDesc SkyDescriptorBinderDesc[1] = { { pClDistanceCloudRootSignature } };
-    addDescriptorBinder(pRenderer, 0, 1, SkyDescriptorBinderDesc, &pClDistanceCloudDescriptorBinder);
+	// #TODO
+    //DescriptorBinderDesc SkyDescriptorBinderDesc[1] = { { pClDistanceCloudRootSignature } };
+    //addDescriptorBinder(pRenderer, 0, 1, SkyDescriptorBinderDesc, &pClDistanceCloudDescriptorBinder);
 
 
     PipelineDesc pipelineDescClDistanceCloud;
@@ -348,7 +352,7 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
       pipelineSettings.mRenderTargetCount = 1;
 
       pipelineSettings.pColorFormats = &pSkyRenderTarget->mDesc.mFormat;
-      pipelineSettings.pSrgbValues = &pSkyRenderTarget->mDesc.mSrgb;
+      //pipelineSettings.pSrgbValues = &pSkyRenderTarget->mDesc.mSrgb;
       pipelineSettings.mSampleCount = pSkyRenderTarget->mDesc.mSampleCount;
       pipelineSettings.mSampleQuality = pSkyRenderTarget->mDesc.mSampleQuality;
 
@@ -381,8 +385,9 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 
     addRootSignature(pRenderer, &rootDesc, &pClCumulusCloudRootSignature);
 
-    DescriptorBinderDesc SpaceDescriptorBinderDesc[1] = { { pClCumulusCloudRootSignature } };
-    addDescriptorBinder(pRenderer, 0, 1, SpaceDescriptorBinderDesc, &pClCumulusCloudDescriptorBinder);
+	// #TODO
+    //DescriptorBinderDesc SpaceDescriptorBinderDesc[1] = { { pClCumulusCloudRootSignature } };
+    //addDescriptorBinder(pRenderer, 0, 1, SpaceDescriptorBinderDesc, &pClCumulusCloudDescriptorBinder);
 
     PipelineDesc pipelineDescClCumulusCloud;
     {
@@ -395,7 +400,7 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
       pipelineSettings.mRenderTargetCount = 1;
 
       pipelineSettings.pColorFormats = &pSkyRenderTarget->mDesc.mFormat;
-      pipelineSettings.pSrgbValues = &pSkyRenderTarget->mDesc.mSrgb;
+      //pipelineSettings.pSrgbValues = &pSkyRenderTarget->mDesc.mSrgb;
       pipelineSettings.mSampleCount = pSkyRenderTarget->mDesc.mSampleCount;
       pipelineSettings.mSampleQuality = pSkyRenderTarget->mDesc.mSampleQuality;
 
@@ -452,8 +457,9 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 
       addRootSignature(pRenderer, &rootDesc, &pImposterCloudRootSignature);
 
-      DescriptorBinderDesc ImpostorDescriptorBinderDesc[1] = { { pImposterCloudRootSignature } };
-      addDescriptorBinder(pRenderer, 0, 1, ImpostorDescriptorBinderDesc, &pImposterCloudDescriptorBinder);
+	  // #TODO
+      //DescriptorBinderDesc ImpostorDescriptorBinderDesc[1] = { { pImposterCloudRootSignature } };
+      //addDescriptorBinder(pRenderer, 0, 1, ImpostorDescriptorBinderDesc, &pImposterCloudDescriptorBinder);
 
       PipelineDesc pipelineDescImpostor;
       {
@@ -466,7 +472,7 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
         pipelineSettings.mRenderTargetCount = 1;
 
         pipelineSettings.pColorFormats = &pSkyRenderTarget->mDesc.mFormat;
-        pipelineSettings.pSrgbValues = &pSkyRenderTarget->mDesc.mSrgb;
+        //pipelineSettings.pSrgbValues = &pSkyRenderTarget->mDesc.mSrgb;
         pipelineSettings.mSampleCount = pSkyRenderTarget->mDesc.mSampleCount;
         pipelineSettings.mSampleQuality = pSkyRenderTarget->mDesc.mSampleQuality;
 
@@ -567,9 +573,10 @@ void CloudsManager::unload()
   removeRootSignature(pRenderer, pClCumulusCloudRootSignature);
   removeRootSignature(pRenderer, pImposterCloudRootSignature);
 
-  removeDescriptorBinder(pRenderer, pClDistanceCloudDescriptorBinder);
-  removeDescriptorBinder(pRenderer, pClCumulusCloudDescriptorBinder);
-  removeDescriptorBinder(pRenderer, pImposterCloudDescriptorBinder);
+  // #TODO
+  //removeDescriptorBinder(pRenderer, pClDistanceCloudDescriptorBinder);
+  //removeDescriptorBinder(pRenderer, pClCumulusCloudDescriptorBinder);
+  //removeDescriptorBinder(pRenderer, pImposterCloudDescriptorBinder);
 
   removeResource(m_tDistantCloud);
   removeResource(m_tCumulusCloud);
@@ -1154,7 +1161,8 @@ void CloudsManager::prepareImpostors(Cmd *cmd, const vec3 & camPos, const mat4 &
       preImpParams[2].pName = "base";
       preImpParams[2].ppTextures = &m_tCumulusCloud;
 
-      cmdBindDescriptors(cmd, pClCumulusCloudDescriptorBinder, pClCumulusCloudRootSignature, 3, preImpParams);
+	  // #TODO
+      //cmdBindDescriptors(cmd, pClCumulusCloudDescriptorBinder, pClCumulusCloudRootSignature, 3, preImpParams);
       //cmdBindVertexBuffer(cmd, 1, &pGlobalTriangularVertexBuffer, NULL);
       
       cmdDraw(cmd, (uint32_t)m_CumulusClouds[cumulusID].getParticlesCount(), 0);
@@ -1425,7 +1433,8 @@ void CloudsManager::renderDistantCloud(Cmd* cmd,
   preImpParams[3].pName = "base";
   preImpParams[3].ppTextures = &m_tCumulusCloud;
 
-  cmdBindDescriptors(cmd, pClCumulusCloudDescriptorBinder, pClCumulusCloudRootSignature, 4, preImpParams);
+  // #TODO
+  //cmdBindDescriptors(cmd, pClCumulusCloudDescriptorBinder, pClCumulusCloudRootSignature, 4, preImpParams);
   //cmdBindVertexBuffer(cmd, 1, &pGlobalTriangularVertexBuffer, NULL);
 
   cmdDraw(cmd, 4, 0);
@@ -1556,7 +1565,7 @@ void CloudsManager::renderCumulusCloud(Cmd *cmd, Texture* Transmittance, Texture
           { m_Impostors[i].getImpostorTexture()->pTexture, RESOURCE_STATE_SHADER_RESOURCE }
   };
 
-  cmdResourceBarrier(cmd, 0, NULL, 1, barriersSky, false);
+  cmdResourceBarrier(cmd, 0, NULL, 1, barriersSky);
 
   DescriptorData preImpParams[4] = {};
 
@@ -1572,7 +1581,8 @@ void CloudsManager::renderCumulusCloud(Cmd *cmd, Texture* Transmittance, Texture
   preImpParams[3].pName = "base";
   preImpParams[3].ppTextures = &m_Impostors[i].getImpostorTexture()->pTexture;
 
-  cmdBindDescriptors(cmd, pClCumulusCloudDescriptorBinder, pClCumulusCloudRootSignature, 4, preImpParams);
+  // #TODO
+  //cmdBindDescriptors(cmd, pClCumulusCloudDescriptorBinder, pClCumulusCloudRootSignature, 4, preImpParams);
   //cmdBindVertexBuffer(cmd, 1, &pGlobalTriangularVertexBuffer, NULL);
 
   cmdDraw(cmd, 4, 0);

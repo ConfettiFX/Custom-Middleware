@@ -12,11 +12,6 @@ using namespace metal;
 
 struct Fragment_Shader
 {
-    struct Uniforms_cbRootConstant
-    {
-        float4x4 projView;
-    };
-    constant Uniforms_cbRootConstant & cbRootConstant;
     struct VSOutput
     {
         float4 Position [[position]];
@@ -30,22 +25,18 @@ struct Fragment_Shader
         return float4(NoL, NoL, NoL, 1.0);
     };
 
-    Fragment_Shader(
-constant Uniforms_cbRootConstant & cbRootConstant) :
-cbRootConstant(cbRootConstant) {}
+    Fragment_Shader() {}
 };
 
 
 fragment float4 stageMain(
-    Fragment_Shader::VSOutput input [[stage_in]],
-    constant Fragment_Shader::Uniforms_cbRootConstant & cbRootConstant [[buffer(1)]])
+    Fragment_Shader::VSOutput input [[stage_in]])
 {
     Fragment_Shader::VSOutput input0;
     input0.Position = float4(input.Position.xyz, 1.0 / input.Position.w);
     input0.pos = input.pos;
     input0.normal = input.normal;
     input0.uv = input.uv;
-    Fragment_Shader main(
-    cbRootConstant);
+	Fragment_Shader main;
     return main.main(input0);
 }

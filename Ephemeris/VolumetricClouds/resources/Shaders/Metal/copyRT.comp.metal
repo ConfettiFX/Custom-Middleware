@@ -45,15 +45,26 @@ struct Compute_Shader
 					{}
 };
 
+struct ArgsData
+{
+	texture2d<float> SrcTexture;
+	texture2d<float, access::write> SavePrevTexture;
+    device uint4* DstBuffer;
+};
+
+struct ArgsPerFrame
+{
+    constant volumetricCloud::Uniforms_VolumetricCloudsCBuffer & VolumetricCloudsCBuffer;
+};
+
 //[numthreads(16, 16, 1)]
 kernel void stageMain(
 uint3 GTid [[thread_position_in_threadgroup]],
 uint3 Gid [[threadgroup_position_in_grid]],
 uint3 DTid [[thread_position_in_grid]],
-    texture2d<float> SrcTexture [[texture(27)]],
-	texture2d<float, access::write> SavePrevTexture [[texture(28)]],
-    device uint4* DstBuffer [[buffer(20)]],
-	constant volumetricCloud::Uniforms_VolumetricCloudsCBuffer & VolumetricCloudsCBuffer [[buffer(2)]])
+    constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+)
 {
     uint3 GTid0;
     GTid0 = GTid;
@@ -62,9 +73,9 @@ uint3 DTid [[thread_position_in_grid]],
     uint3 DTid0;
     DTid0 = DTid;
     Compute_Shader main(
-    SrcTexture,
-	SavePrevTexture,
-    DstBuffer,
-	VolumetricCloudsCBuffer);
+    argBufferStatic.SrcTexture,
+	argBufferStatic.SavePrevTexture,
+    argBufferStatic.DstBuffer,
+	argBufferPerFrame.VolumetricCloudsCBuffer);
     return main.main(GTid0, Gid0, DTid0);
 }

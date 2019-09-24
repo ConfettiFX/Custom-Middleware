@@ -35,7 +35,7 @@ struct AuroraConstraint
 RWStructuredBuffer<AuroraParticle> AuroraParticleBuffer		: register(u1);
 RWStructuredBuffer<AuroraConstraint> AuroraConstraintBuffer	: register(u0, space1);
 
-cbuffer AuroraUniformBuffer	: register(b4)
+cbuffer AuroraUniformBuffer : register(b4, UPDATE_FREQ_PER_FRAME)
 {	
 	uint        maxVertex;
 	float       heightOffset;

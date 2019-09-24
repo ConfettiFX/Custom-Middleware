@@ -571,27 +571,37 @@ struct Fragment_Shader
 					{}
 };
 
+struct ArgsData
+{
+    texture2d<float> SceneColorTexture;
+    texture2d<float> Depth;
+    texture2d<float> TransmittanceTexture;
+    texture3d<float> InscatterTexture;
+    sampler g_LinearClamp;
+};
+
+struct ArgsPerFrame
+{
+	constant Fragment_Shader::Uniforms_RenderSkyUniformBuffer & RenderSkyUniformBuffer;
+};
 
 fragment float4 stageMain(
     Fragment_Shader::PsIn In [[stage_in]],
-	constant Fragment_Shader::Uniforms_RenderSkyUniformBuffer & RenderSkyUniformBuffer [[buffer(1)]],
-    texture2d<float> SceneColorTexture [[texture(0)]],
-    texture2d<float> Depth [[texture(1)]],
-    texture2d<float> TransmittanceTexture [[texture(2)]],
-    texture3d<float> InscatterTexture [[texture(3)]],
-    sampler g_LinearClamp [[sampler(0)]])
+	constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+)
 {
     Fragment_Shader::PsIn In0;
     In0.position = float4(In.position.xyz, 1.0 / In.position.w);
     In0.texCoord = In.texCoord;
     In0.ScreenCoord = In.ScreenCoord;
     Fragment_Shader main(
-    RenderSkyUniformBuffer,
-    SceneColorTexture,
-    Depth,
-    TransmittanceTexture,
-    //IrradianceTexture,
-    InscatterTexture,
-    g_LinearClamp);
+    argBufferPerFrame.RenderSkyUniformBuffer,
+    argBufferStatic.SceneColorTexture,
+    argBufferStatic.Depth,
+    argBufferStatic.TransmittanceTexture,
+    //argBufferStatic.IrradianceTexture,
+    argBufferStatic.InscatterTexture,
+    argBufferStatic.g_LinearClamp);
     return main.main(In0);
 }

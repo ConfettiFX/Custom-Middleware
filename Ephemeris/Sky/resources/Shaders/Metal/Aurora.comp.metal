@@ -102,14 +102,25 @@ constant Uniforms_AuroraUniformBuffer & AuroraUniformBuffer) :
 AuroraParticleBuffer(AuroraParticleBuffer),AuroraConstraintBuffer(AuroraConstraintBuffer),AuroraUniformBuffer(AuroraUniformBuffer) {}
 };
 
+struct ArgsData
+{
+	device Compute_Shader::AuroraParticle* AuroraParticleBuffer;
+	device Compute_Shader::AuroraConstraint* AuroraConstraintBuffer;
+};
+
+struct ArgsPerFrame
+{
+	constant Compute_Shader::Uniforms_AuroraUniformBuffer & AuroraUniformBuffer;
+};
+
 //[numthreads(64, 1, 1)]
 kernel void stageMain(
 uint3 GTid [[thread_position_in_threadgroup]],
 uint3 Gid [[threadgroup_position_in_grid]],
 uint3 DTid [[thread_position_in_grid]],
-	device Compute_Shader::AuroraParticle* AuroraParticleBuffer [[buffer(6)]],
-    device Compute_Shader::AuroraConstraint* AuroraConstraintBuffer [[buffer(7)]],
-    constant Compute_Shader::Uniforms_AuroraUniformBuffer & AuroraUniformBuffer [[buffer(8)]])
+   constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+   constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+)
 {
     uint3 GTid0;
     GTid0 = GTid;
@@ -118,8 +129,8 @@ uint3 DTid [[thread_position_in_grid]],
     uint3 DTid0;
     DTid0 = DTid;
     Compute_Shader main(
-    AuroraParticleBuffer,
-    AuroraConstraintBuffer,
-    AuroraUniformBuffer);
+    argBufferStatic.AuroraParticleBuffer,
+    argBufferStatic.AuroraConstraintBuffer,
+    argBufferPerFrame.AuroraUniformBuffer);
     return main.main(GTid0, Gid0, DTid0);
 }

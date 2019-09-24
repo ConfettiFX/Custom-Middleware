@@ -51,15 +51,20 @@ constant Uniforms_RenderTerrainUniformBuffer & RenderTerrainUniformBuffer) :
 RenderTerrainUniformBuffer(RenderTerrainUniformBuffer) {}
 };
 
+struct ArgsPerFrame
+{
+    constant Vertex_Shader::Uniforms_RenderTerrainUniformBuffer & RenderTerrainUniformBuffer;
+};
 
 vertex Vertex_Shader::PsIn stageMain(
     Vertex_Shader::VsIn In [[stage_in]],
-    constant Vertex_Shader::Uniforms_RenderTerrainUniformBuffer & RenderTerrainUniformBuffer [[buffer(2)]])
+    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+)
 {
     Vertex_Shader::VsIn In0;
     In0.position = In.position;
     In0.texcoord = In.texcoord;
     Vertex_Shader main(
-    RenderTerrainUniformBuffer);
+    argBufferPerFrame.RenderTerrainUniformBuffer);
     return main.main(In0);
 }

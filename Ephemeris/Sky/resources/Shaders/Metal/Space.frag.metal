@@ -53,11 +53,21 @@ struct Fragment_Shader
 					Depth(Depth) {}
 };
 
+struct ArgsData
+{
+    texture2d<float> depthTexture;
+};
+
+struct ArgsPerFrame
+{
+    constant Fragment_Shader::spaceUniform & SpaceUniform;
+};
 
 fragment float4 stageMain(
     Fragment_Shader::VSOutput In [[stage_in]],
-    constant Fragment_Shader::spaceUniform & SpaceUniform [[buffer(3)]],
-    texture2d<float> depthTexture [[texture(4)]])
+	constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+)
 {
     Fragment_Shader::VSOutput In0;
     In0.Position = float4(In.Position.xyz, 1.0 / In.Position.w);
@@ -65,7 +75,7 @@ fragment float4 stageMain(
     In0.Info = In.Info;
     In0.ScreenCoord = In.ScreenCoord;
     Fragment_Shader main(
-    SpaceUniform,
-    depthTexture);
+    argBufferPerFrame.SpaceUniform,
+    argBufferStatic.depthTexture);
     return main.main(In0);
 }

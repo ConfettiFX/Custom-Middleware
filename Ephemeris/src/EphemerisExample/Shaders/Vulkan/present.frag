@@ -12,9 +12,9 @@
 layout(location = 0) in vec2 fragInput_TEXCOORD;
 layout(location = 0) out vec4 rast_FragData0; 
 
-layout(set = 0, binding = 0) uniform texture2D skydomeTexture;
-layout(set = 0, binding = 1) uniform texture2D sceneTexture;
-layout(set = 0, binding = 2) uniform sampler BilinearClampSampler;
+layout(UPDATE_FREQ_NONE, binding = 2) uniform texture2D skydomeTexture;
+layout(UPDATE_FREQ_NONE, binding = 3) uniform texture2D SrcTexture;
+layout(UPDATE_FREQ_NONE, binding = 4) uniform sampler g_LinearClamp;
 struct PSIn
 {
     vec4 Position;
@@ -22,7 +22,7 @@ struct PSIn
 };
 vec4 HLSLmain(PSIn input0)
 {
-    vec4 sceneColor = texture(sampler2D( sceneTexture, BilinearClampSampler), vec2((input0).TexCoord));
+    vec4 sceneColor = texture(sampler2D( SrcTexture, g_LinearClamp), vec2((input0).TexCoord));
     return sceneColor;
 }
 void main()

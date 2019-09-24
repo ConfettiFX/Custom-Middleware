@@ -90,44 +90,54 @@ struct Fragment_Shader
 					TransmittanceColor(TransmittanceColor) {}
 };
 
+struct ArgsData
+{
+    texture3d<float> highFreqNoiseTexture;
+    texture3d<float> lowFreqNoiseTexture;
+    texture2d<float> curlNoiseTexture;
+    texture2d<float> weatherTexture;
+    texture2d<float> depthTexture;
+    texture2d<float> LowResCloudTexture;
+    texture2d<float> g_PrevFrameTexture;
+    sampler g_LinearClampSampler;
+    sampler g_LinearWrapSampler;
+    sampler g_PointClampSampler;
+    sampler g_LinearBorderSampler;
+    texture2d<float> g_SrcTexture2D;
+    texture2d<float> g_SkyBackgroudTexture;
+    device float4* TransmittanceColor;
+};
+
+struct ArgsPerFrame
+{
+    constant volumetricCloud::Uniforms_VolumetricCloudsCBuffer & VolumetricCloudsCBuffer;
+};
 
 fragment float4 stageMain(
     Fragment_Shader::PSIn input [[stage_in]],
-    texture3d<float> highFreqNoiseTexture [[texture(0)]],
-    texture3d<float> lowFreqNoiseTexture [[texture(1)]],
-    texture2d<float> curlNoiseTexture [[texture(2)]],
-    texture2d<float> weatherTexture [[texture(3)]],
-    texture2d<float> depthTexture [[texture(4)]],
-    texture2d<float> LowResCloudTexture [[texture(5)]],
-    texture2d<float> g_PrevFrameTexture [[texture(6)]],
-    sampler g_LinearClampSampler [[sampler(0)]],
-    sampler g_LinearWrapSampler [[sampler(1)]],
-    sampler g_PointClampSampler [[sampler(2)]],
-    sampler g_LinearBorderSampler [[sampler(3)]],
-    constant volumetricCloud::Uniforms_VolumetricCloudsCBuffer & VolumetricCloudsCBuffer [[buffer(1)]],
-    texture2d<float> g_SrcTexture2D [[texture(7)]],
-    texture2d<float> g_SkyBackgroudTexture [[texture(8)]],
-    device float4* TransmittanceColor [[buffer(2)]])
+    constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+)
 {
     Fragment_Shader::PSIn input0;
     input0.Position = float4(input.Position.xyz, 1.0 / input.Position.w);
     input0.TexCoord = input.TexCoord;
     input0.VSray = input.VSray;
     Fragment_Shader main(
-    highFreqNoiseTexture,
-    lowFreqNoiseTexture,
-    curlNoiseTexture,
-    weatherTexture,
-    depthTexture,
-    LowResCloudTexture,
-    g_PrevFrameTexture,
-    g_LinearClampSampler,
-    g_LinearWrapSampler,
-    g_PointClampSampler,
-    g_LinearBorderSampler,
-    VolumetricCloudsCBuffer,
-    g_SrcTexture2D,
-    g_SkyBackgroudTexture,
-    TransmittanceColor);
+    argBufferStatic.highFreqNoiseTexture,
+    argBufferStatic.lowFreqNoiseTexture,
+    argBufferStatic.curlNoiseTexture,
+    argBufferStatic.weatherTexture,
+    argBufferStatic.depthTexture,
+    argBufferStatic.LowResCloudTexture,
+    argBufferStatic.g_PrevFrameTexture,
+    argBufferStatic.g_LinearClampSampler,
+    argBufferStatic.g_LinearWrapSampler,
+    argBufferStatic.g_PointClampSampler,
+    argBufferStatic.g_LinearBorderSampler,
+    argBufferPerFrame.VolumetricCloudsCBuffer,
+    argBufferStatic.g_SrcTexture2D,
+    argBufferStatic.g_SkyBackgroudTexture,
+    argBufferStatic.TransmittanceColor);
     return main.main(input0);
 }

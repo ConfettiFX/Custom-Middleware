@@ -54,7 +54,7 @@ static const float mieG = 0.65;
 #define INSCATTER_NON_LINEAR
 #define USE_SAMPLELEVEL
 
-cbuffer RenderSkyUniformBuffer : register(b0)
+cbuffer RenderSkyUniformBuffer : register(b0, UPDATE_FREQ_PER_FRAME)
 {
 	float4x4 invView;
 	float4x4 invProj;

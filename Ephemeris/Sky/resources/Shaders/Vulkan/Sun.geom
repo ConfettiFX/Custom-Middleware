@@ -16,7 +16,7 @@ layout(location = 0) in vec4 geomInput_Position[];
 layout(location = 0) out vec3 geomOutput_TexCoord0;
 layout(location = 1) out vec2 geomOutput_TexCoord1;
 
-layout(set = 0, binding = 9) uniform SunUniform_Block
+layout(UPDATE_FREQ_PER_FRAME, binding = 9) uniform SunUniform_Block
 {
     mat4 ViewMat;
     mat4 ViewProjMat;

@@ -7,11 +7,12 @@
 *
 */
 
-cbuffer cbRootConstant : register(b0) 
+cbuffer RenderTerrainUniformBuffer : register(b1, UPDATE_FREQ_PER_FRAME)
 {
-	float4x4 projView;
+    float4x4 projView;
+    float4 TerrainInfo;
+    float4 CameraInfo;
 }
-
 
 struct VSInput
 {

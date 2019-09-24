@@ -12,11 +12,13 @@ using namespace metal;
 
 struct Vertex_Shader
 {
-    struct Uniforms_cbRootConstant
+    struct Uniforms_RenderTerrainUniformBuffer
     {
         float4x4 projView;
+        float4 TerrainInfo;
+        float4 CameraInfo;
     };
-    constant Uniforms_cbRootConstant & cbRootConstant;
+    constant Uniforms_RenderTerrainUniformBuffer & RenderTerrainUniformBuffer;
     struct VSInput
     {
         float3 Position [[attribute(0)]];
@@ -33,7 +35,7 @@ struct Vertex_Shader
     {
         VSOutput result;
         (((input).Position).xyz *= (float3)(10.0));
-        ((result).Position = ((cbRootConstant.projView)*(float4(((input).Position).xyz, 1.0))));
+        ((result).Position = ((RenderTerrainUniformBuffer.projView)*(float4(((input).Position).xyz, 1.0))));
         ((result).pos = ((input).Position).xyz);
         ((result).normal = float3(0.0, 1.0, 0.0));
         ((result).uv = (input).Uv);
@@ -41,19 +43,24 @@ struct Vertex_Shader
     };
 
     Vertex_Shader(
-constant Uniforms_cbRootConstant & cbRootConstant) :
-cbRootConstant(cbRootConstant) {}
+constant Uniforms_RenderTerrainUniformBuffer & RenderTerrainUniformBuffer) :
+RenderTerrainUniformBuffer(RenderTerrainUniformBuffer) {}
 };
 
+struct ArgsPerFrame
+{
+    constant Vertex_Shader::Uniforms_RenderTerrainUniformBuffer & RenderTerrainUniformBuffer;
+};
 
 vertex Vertex_Shader::VSOutput stageMain(
     Vertex_Shader::VSInput input [[stage_in]],
-    constant Vertex_Shader::Uniforms_cbRootConstant & cbRootConstant [[buffer(1)]])
+    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+)
 {
     Vertex_Shader::VSInput input0;
     input0.Position = input.Position;
     input0.Uv = input.Uv;
     Vertex_Shader main(
-    cbRootConstant);
+    argBufferPerFrame.RenderTerrainUniformBuffer);
     return main.main(input0);
 }

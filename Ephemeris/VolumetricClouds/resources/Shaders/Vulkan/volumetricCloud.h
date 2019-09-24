@@ -61,60 +61,94 @@ struct VolumetricCloudsCB
     float CloudCoverage;
     float CloudType;
     float CloudTopOffset;
-    float CloudSize;
-    float BaseShapeTiling;
-    float DetailShapeTiling;
-    float DetailStrenth;
-    float CurlTextureTiling;
-    float CurlStrenth;
-    float AnvilBias;
-    float WeatherTextureSize;
+
+
+    //Modeling
+    float	CloudSize;						// Overall size of the clouds. Using bigger value generates larger chunks of clouds.
+    float	BaseShapeTiling;				// Control the base shape of the clouds. Using bigger value makes smaller chunks of base clouds.
+    float	DetailShapeTiling;				// Control the detail shape of the clouds. Using bigger value makes smaller chunks of detail clouds.
+    float	DetailStrenth;					// Intensify the detail of the clouds. It is possible to lose whole shape of the clouds if the user uses too high value of it.
+
+    float	CurlTextureTiling;				// Control the curl size of the clouds. Using bigger value makes smaller curl shapes.
+    float	CurlStrenth;					// Intensify the curl effect.
+
+    float UpstreamScale;
+    float UpstreamSpeed;
+
+    float	AnvilBias;						// Using lower value makes anvil shape.
+    float	WeatherTextureSize;				// Control the size of Weather map, bigger value makes the world to be covered by larger clouds pattern.
     float	WeatherTextureOffsetX;
     float	WeatherTextureOffsetZ;
 
-    
-    float BackgroundBlendFactor;
-    float Contrast;
-    float Eccentricity;
-    float CloudBrightness;
-    float Precipitation;
-    float SilverliningIntensity;
-    float SilverliningSpread;
-    float Random00;
-    float CameraFarClip;
-    float Padding01;
-    float Padding02;
-    float Padding03;
+
+    //Lighting
+    float	BackgroundBlendFactor;			// Blend clouds with the background, more background will be shown if this value is close to 0.0
+    float	Contrast;						// Contrast of the clouds' color 
+    float	Eccentricity;					// The bright highlights around the sun that the user needs at sunset
+    float	CloudBrightness;				// The brightness for clouds
+
+    float	Precipitation;
+    float	SilverliningIntensity;			// Intensity of silver-lining
+    float	SilverliningSpread;				// Using bigger value spreads more silver-lining, but the intesity of it
+    float	Random00;						// Random seed for the first ray-marching offset
+
+    float	CameraFarClip;
+    float	Padding01;
+
     uint  EnabledDepthCulling;
     uint	EnabledLodDepthCulling;
-    uint  padding04;
-    uint  padding05;
-    uint GodNumSamples;
-    float GodrayMaxBrightness;
-    float GodrayExposure;
-    float GodrayDecay;
-    float GodrayDensity;
-    float GodrayWeight;
-    float m_UseRandomSeed;
-    float Test00;
-    float Test01;
-    float Test02;
-    float Test03;
-};
-layout(set = 0, binding = 0) uniform texture3D highFreqNoiseTexture;
-layout(set = 0, binding = 1) uniform texture3D lowFreqNoiseTexture;
-layout(set = 0, binding = 2) uniform texture2D curlNoiseTexture;
-layout(set = 0, binding = 3) uniform texture2D weatherTexture;
-layout(set = 0, binding = 4) uniform texture2D depthTexture;
-layout(set = 0, binding = 5) uniform texture2D LowResCloudTexture;
-layout(set = 0, binding = 6) uniform texture2D g_PrevFrameTexture;
-layout(set = 0, binding = 17) uniform texture2D g_LinearDepthTexture;
+    uint  DepthMapWidth;
+    uint  DepthMapHeight;
 
-layout(set = 0, binding = 7) uniform sampler g_LinearClampSampler;
-layout(set = 0, binding = 8) uniform sampler g_LinearWrapSampler;
-layout(set = 0, binding = 9) uniform sampler g_PointClampSampler;
-layout(set = 0, binding = 10) uniform sampler g_LinearBorderSampler;
-layout(set = 0, binding = 40) uniform VolumetricCloudsCBuffer_Block
+    // VolumetricClouds' Light shaft
+    uint	GodNumSamples;					// Number of godray samples
+
+    float	GodrayMaxBrightness;
+    float	GodrayExposure;					// Intensity of godray
+
+    float	GodrayDecay;					// Using smaller value, the godray brightness applied to each iteration is reduced. The level of reduction is also reduced per iteration.
+    float	GodrayDensity;					// The distance between each interation.
+    float	GodrayWeight;					// Using smaller value, the godray brightness applied to each iteration is reduced. The level of reduction is not changed.
+    float	m_UseRandomSeed;
+
+    float	Test00;
+    float	Test01;
+    float	Test02;
+    float	Test03;
+};
+layout(UPDATE_FREQ_NONE, binding = 0) uniform texture3D highFreqNoiseTexture;
+layout(UPDATE_FREQ_NONE, binding = 1) uniform texture3D lowFreqNoiseTexture;
+layout(UPDATE_FREQ_NONE, binding = 2) uniform texture2D curlNoiseTexture;
+layout(UPDATE_FREQ_NONE, binding = 3) uniform texture2D weatherTexture;
+layout(UPDATE_FREQ_NONE, binding = 4) uniform texture2D depthTexture;
+layout(UPDATE_FREQ_NONE, binding = 5) uniform texture2D LowResCloudTexture;
+layout(UPDATE_FREQ_NONE, binding = 6) uniform texture2D g_PrevFrameTexture;
+layout(UPDATE_FREQ_NONE, binding = 7) uniform texture2D g_LinearDepthTexture;
+
+layout(UPDATE_FREQ_NONE, binding = 8) uniform texture2D g_PostProcessedTexture;
+layout(UPDATE_FREQ_NONE, binding = 9) uniform texture2D g_PrevVolumetricCloudTexture;
+layout(UPDATE_FREQ_NONE, binding = 10) uniform texture2D g_GodrayTexture;
+
+layout(UPDATE_FREQ_NONE, binding = 11) uniform texture2D g_SrcTexture2D;
+layout(UPDATE_FREQ_NONE, binding = 12) uniform texture2D g_SkyBackgroudTexture;
+layout(UPDATE_FREQ_NONE, binding = 13) uniform texture2D g_BlurTexture;
+layout(UPDATE_FREQ_NONE, binding = 14) buffer TransmittanceColor
+{
+	vec4 TransmittanceColor_Data[];
+};
+
+layout(UPDATE_FREQ_NONE, binding = 15) uniform texture2D InputTex;
+
+layout(UPDATE_FREQ_NONE, binding = 30, rgba32f) uniform image2D OutputTex;
+layout(UPDATE_FREQ_NONE, binding = 31, rgba32f) uniform image2D volumetricCloudsDstTexture;
+layout(UPDATE_FREQ_NONE, binding = 32, rgba32f) uniform image2D SavePrevTexture;
+
+layout(UPDATE_FREQ_NONE, binding = 100) uniform sampler g_LinearClampSampler;
+layout(UPDATE_FREQ_NONE, binding = 101) uniform sampler g_LinearWrapSampler;
+layout(UPDATE_FREQ_NONE, binding = 102) uniform sampler g_PointClampSampler;
+layout(UPDATE_FREQ_NONE, binding = 103) uniform sampler g_LinearBorderSampler;
+
+layout(UPDATE_FREQ_PER_FRAME, binding = 110) uniform VolumetricCloudsCBuffer_Block
 {
     VolumetricCloudsCB g_VolumetricClouds;
 }VolumetricCloudsCBuffer;
@@ -230,12 +264,12 @@ float GetDensityHeightGradientForPoint(in float relativeHeight, in float cloudTy
     float b = mix(stratocumulus, cumulus, clamp((cloudType2 - float (1.0)), 0.0, 1.0));
     return mix(a, b, round(cloudType));
 }
-float SampleDensity(vec3 worldPos, float lod, float height_fraction, vec3 currentProj, in vec3 cloudTopOffsetWithWindDir, in vec2 windWithVelocity, in vec3 biasedCloudPos, in float DetailShapeTilingDivCloudSize, bool cheap)
+float SampleDensity(vec3 worldPos, float lod, float height_fraction, vec3 currentProj, in vec3 cloudTopOffsetWithWindDir, in vec4 windWithVelocity, in vec3 biasedCloudPos, in float DetailShapeTilingDivCloudSize, bool cheap)
 {
     vec3 unwindWorldPos = worldPos;
     (worldPos += (vec3 (height_fraction) * cloudTopOffsetWithWindDir));
     (worldPos += biasedCloudPos);
-    vec3 weatherData = vec3 ((textureLod(sampler2D( weatherTexture, g_LinearWrapSampler), vec2((((unwindWorldPos).xz + windWithVelocity + vec2(VolumetricCloudsCBuffer.g_VolumetricClouds.WeatherTextureOffsetX, VolumetricCloudsCBuffer.g_VolumetricClouds.WeatherTextureOffsetZ)) / vec2 ((VolumetricCloudsCBuffer.g_VolumetricClouds).WeatherTextureSize))), 0.0)).rgb);
+    vec3 weatherData = vec3 ((textureLod(sampler2D( weatherTexture, g_LinearWrapSampler), vec2((((unwindWorldPos).xz + windWithVelocity.xy + vec2(VolumetricCloudsCBuffer.g_VolumetricClouds.WeatherTextureOffsetX, VolumetricCloudsCBuffer.g_VolumetricClouds.WeatherTextureOffsetZ)) / vec2 ((VolumetricCloudsCBuffer.g_VolumetricClouds).WeatherTextureSize))), 0.0)).rgb);
     vec3 worldPosDivCloudSize = (worldPos / vec3 ((VolumetricCloudsCBuffer.g_VolumetricClouds).CloudSize));
     vec4 low_freq_noises = textureLod(sampler3D( lowFreqNoiseTexture, g_LinearWrapSampler), vec3((worldPosDivCloudSize * vec3 ((VolumetricCloudsCBuffer.g_VolumetricClouds).BaseShapeTiling))), lod);
     float low_freq_fBm = ((((low_freq_noises).g * float (0.625)) + ((low_freq_noises).b * float (0.25))) + ((low_freq_noises).a * float (0.125)));
@@ -253,7 +287,9 @@ float SampleDensity(vec3 worldPos, float lod, float height_fraction, vec3 curren
     {
         vec2 curl_noise = vec2 ((textureLod(sampler2D( curlNoiseTexture, g_LinearWrapSampler), vec2(vec2(((worldPosDivCloudSize).xz * vec2 ((VolumetricCloudsCBuffer.g_VolumetricClouds).CurlTextureTiling)))), int (0.0))).rg);
         ((worldPos).xz += ((curl_noise * vec2 ((float (1.0) - height_fraction))) * vec2 ((VolumetricCloudsCBuffer.g_VolumetricClouds).CurlStrenth)));
-        vec3 high_frequency_noises = vec3 ((textureLod(sampler3D( highFreqNoiseTexture, g_LinearWrapSampler), vec3(vec3((worldPos * vec3 (DetailShapeTilingDivCloudSize)))), lod)).rgb);
+        worldPos.y -= ((VolumetricCloudsCBuffer.g_VolumetricClouds.TimeAndScreenSize.x * VolumetricCloudsCBuffer.g_VolumetricClouds.UpstreamSpeed) / (VolumetricCloudsCBuffer.g_VolumetricClouds.CloudSize * 0.0657 * VolumetricCloudsCBuffer.g_VolumetricClouds.UpstreamScale));
+
+        vec3 high_frequency_noises = vec3 ((textureLod(sampler3D( highFreqNoiseTexture, g_LinearWrapSampler), vec3(vec3(((worldPos + vec3(windWithVelocity.z, 0.0, windWithVelocity.w))   * vec3 (DetailShapeTilingDivCloudSize)))), lod)).rgb);
         float high_freq_fBm = ((((high_frequency_noises).r * float (0.625)) + ((high_frequency_noises).g * float (0.25))) + ((high_frequency_noises).b * float (0.125)));
         float height_fraction_new = getRelativeHeight(worldPos, currentProj, VolumetricCloudsCBuffer.g_VolumetricClouds.LayerThickness);
         float height_freq_noise_modifier = mix(high_freq_fBm, (float (1.0) - high_freq_fBm), clamp((height_fraction_new * float (10.0)), 0.0, 1.0));
@@ -273,7 +309,7 @@ float GetLightEnergy(float height_fraction, float dl, float ds_loded, float phas
     (light_energy = pow(abs(light_energy),float(contrast)));
     return light_energy;
 }
-float SampleEnergy(vec3 rayPos, vec3 magLightDirection, float height_fraction, vec3 currentProj, in vec3 cloudTopOffsetWithWindDir, in vec2 windWithVelocity, in vec3 biasedCloudPos, in float DetailShapeTilingDivCloudSize, float ds_loded, float stepSize, float cosTheta, float mipBias)
+float SampleEnergy(vec3 rayPos, vec3 magLightDirection, float height_fraction, vec3 currentProj, in vec3 cloudTopOffsetWithWindDir, in vec4 windWithVelocity, in vec3 biasedCloudPos, in float DetailShapeTilingDivCloudSize, float ds_loded, float stepSize, float cosTheta, float mipBias)
 {
     float totalSample = float (0);
     float mipmapOffset = mipBias;
@@ -291,9 +327,13 @@ float SampleEnergy(vec3 rayPos, vec3 magLightDirection, float height_fraction, v
         (mipmapOffset += float (0.5));
         (step += 1.0);
     }
-    float hg = max(HenryGreenstein((VolumetricCloudsCBuffer.g_VolumetricClouds).Eccentricity, cosTheta), ((VolumetricCloudsCBuffer.g_VolumetricClouds).SilverliningIntensity * clamp(HenryGreenstein((0.99 - (VolumetricCloudsCBuffer.g_VolumetricClouds).SilverliningSpread), cosTheta), 0.0, 1.0)));
-    float lodded_density = clamp(SampleDensity(rayPos, mipBias, height_fraction, currentProj, cloudTopOffsetWithWindDir, windWithVelocity, biasedCloudPos, DetailShapeTilingDivCloudSize, true), 0.0, 1.0);
-    float energy = GetLightEnergy(height_fraction, (totalSample * (VolumetricCloudsCBuffer.g_VolumetricClouds).Precipitation), ds_loded, hg, cosTheta, stepSize, (VolumetricCloudsCBuffer.g_VolumetricClouds).Contrast);
+    float hg = max(HenryGreenstein((VolumetricCloudsCBuffer.g_VolumetricClouds).Eccentricity, cosTheta), (clamp(HenryGreenstein((0.99 - (VolumetricCloudsCBuffer.g_VolumetricClouds).SilverliningSpread), cosTheta), 0.0, 1.0))) * (VolumetricCloudsCBuffer.g_VolumetricClouds).SilverliningIntensity;
+	
+	float dl = totalSample * VolumetricCloudsCBuffer.g_VolumetricClouds.Precipitation;
+	hg = hg / max(dl, 0.05);	
+	
+	float lodded_density = clamp(SampleDensity(rayPos, mipBias, height_fraction, currentProj, cloudTopOffsetWithWindDir, windWithVelocity, biasedCloudPos, DetailShapeTilingDivCloudSize, true), 0.0, 1.0);
+    float energy = GetLightEnergy(height_fraction, dl, ds_loded, hg, cosTheta, stepSize, (VolumetricCloudsCBuffer.g_VolumetricClouds).Contrast);
     return energy;
 }
 float GetDensity(vec3 startPos, vec3 worldPos, vec3 dir, float maxSampleDistance, float raymarchOffset,
@@ -337,7 +377,7 @@ float GetDensity(vec3 startPos, vec3 worldPos, vec3 dir, float maxSampleDistance
 #endif
 
     vec2 Corrected_UV = (uv - (vec2(1.0, 1.0) / textureSize));
-    uvec2 texels = uvec2 ((vec2((VolumetricCloudsCBuffer.g_VolumetricClouds).Padding02, (VolumetricCloudsCBuffer.g_VolumetricClouds).Padding03) * uv));
+    uvec2 texels = uvec2 ((vec2((VolumetricCloudsCBuffer.g_VolumetricClouds).DepthMapWidth, (VolumetricCloudsCBuffer.g_VolumetricClouds).DepthMapHeight) * uv));
     float sceneDepth;
 
     if (VolumetricCloudsCBuffer.g_VolumetricClouds.EnabledLodDepthCulling > 0.5f)
@@ -361,7 +401,7 @@ float GetDensity(vec3 startPos, vec3 worldPos, vec3 dir, float maxSampleDistance
     bool pickedFirstHit = false;
     float cosTheta = dot(dir, ((VolumetricCloudsCBuffer.g_VolumetricClouds).lightDirection).xyz);
     vec3 rayPos = sampleStart;
-    vec2 windWithVelocity = ((VolumetricCloudsCBuffer.g_VolumetricClouds).StandardPosition).xz;
+    vec4 windWithVelocity = ((VolumetricCloudsCBuffer.g_VolumetricClouds).StandardPosition);
     vec3 biasedCloudPos = (vec3 (4.5) * (((VolumetricCloudsCBuffer.g_VolumetricClouds).WindDirection).xyz + vec3(0.0, 0.1, 0.0)));
     vec3 cloudTopOffsetWithWindDir = (vec3 ((VolumetricCloudsCBuffer.g_VolumetricClouds).CloudTopOffset) * ((VolumetricCloudsCBuffer.g_VolumetricClouds).WindDirection).xyz);
     float DetailShapeTilingDivCloudSize = ((VolumetricCloudsCBuffer.g_VolumetricClouds).DetailShapeTiling / (VolumetricCloudsCBuffer.g_VolumetricClouds).CloudSize);
@@ -470,7 +510,7 @@ float GetDensityWithComparingDepth(vec3 startPos, vec3 worldPos, vec3 dir, float
 #endif
 
   vec2 Corrected_UV = (uv - (vec2(1.0, 1.0) / textureSize));
-  uvec2 texels = uvec2((vec2((VolumetricCloudsCBuffer.g_VolumetricClouds).Padding02, (VolumetricCloudsCBuffer.g_VolumetricClouds).Padding03) * uv));
+  uvec2 texels = uvec2((vec2((VolumetricCloudsCBuffer.g_VolumetricClouds).DepthMapWidth, (VolumetricCloudsCBuffer.g_VolumetricClouds).DepthMapHeight) * uv));
   //float sceneDepth = texelFetch(depthTexture, ivec2(ivec2(texels)).xy + ivec2(0, 0), 0).r;
 
 
@@ -487,7 +527,7 @@ float GetDensityWithComparingDepth(vec3 startPos, vec3 worldPos, vec3 dir, float
   bool pickedFirstHit = false;
   float cosTheta = dot(dir, ((VolumetricCloudsCBuffer.g_VolumetricClouds).lightDirection).xyz);
   vec3 rayPos = sampleStart;
-  vec2 windWithVelocity = ((VolumetricCloudsCBuffer.g_VolumetricClouds).StandardPosition).xz;
+  vec4 windWithVelocity = ((VolumetricCloudsCBuffer.g_VolumetricClouds).StandardPosition);
   vec3 biasedCloudPos = (vec3(4.5) * (((VolumetricCloudsCBuffer.g_VolumetricClouds).WindDirection).xyz + vec3(0.0, 0.1, 0.0)));
   vec3 cloudTopOffsetWithWindDir = (vec3((VolumetricCloudsCBuffer.g_VolumetricClouds).CloudTopOffset) * ((VolumetricCloudsCBuffer.g_VolumetricClouds).WindDirection).xyz);
   float DetailShapeTilingDivCloudSize = ((VolumetricCloudsCBuffer.g_VolumetricClouds).DetailShapeTiling / (VolumetricCloudsCBuffer.g_VolumetricClouds).CloudSize);

@@ -29,17 +29,27 @@ struct VSOutput
 	float2 ScreenCoord;
 };
 
+struct ArgsData
+{
+	texture2d<float> depthTexture;
+};
+
+struct ArgsPerFrame
+{
+	constant Uniforms_SpaceUniform & SpaceUniform;
+};
 
 fragment float4 stageMain(
     VSOutput In [[stage_in]],
-    constant Uniforms_SpaceUniform & SpaceUniform [[buffer(3)]],
-    texture2d<float> depthTexture [[texture(4)]])
+	constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+	constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+)
 {
-	float depth = depthTexture.read((uint2)In.Position.xy).x;
+	float depth = argBufferStatic.depthTexture.read((uint2)In.Position.xy).x;
 	if(depth < 1.0)
 		discard_fragment();
 
-	float3 resultSpaceColor = (SpaceUniform.NebulaLowColor.rgb * SpaceUniform.NebulaLowColor.a * In.Info.x) + (SpaceUniform.NebulaMidColor.rgb * SpaceUniform.NebulaLowColor.a * In.Info.y) + (SpaceUniform.NebulaHighColor.rgb * SpaceUniform.NebulaHighColor.a * In.Info.z);
+	float3 resultSpaceColor = (argBufferPerFrame.SpaceUniform.NebulaLowColor.rgb * argBufferPerFrame.SpaceUniform.NebulaLowColor.a * In.Info.x) + (argBufferPerFrame.SpaceUniform.NebulaMidColor.rgb * argBufferPerFrame.SpaceUniform.NebulaLowColor.a * In.Info.y) + (argBufferPerFrame.SpaceUniform.NebulaHighColor.rgb * argBufferPerFrame.SpaceUniform.NebulaHighColor.a * In.Info.z);
 
-	return float4( float3(0.5, 0.2, 0.1), clamp(clamp(-SpaceUniform.LightDirection.y + 0.2f, 0.0f, 1.0f) * 2.0f, 0.0f, 1.0f));
+	return float4( float3(0.5, 0.2, 0.1), clamp(clamp(-argBufferPerFrame.SpaceUniform.LightDirection.y + 0.2f, 0.0f, 1.0f) * 2.0f, 0.0f, 1.0f));
 }

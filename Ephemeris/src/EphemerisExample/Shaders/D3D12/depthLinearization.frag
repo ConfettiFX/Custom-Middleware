@@ -7,8 +7,8 @@
 *
 */
 
-Texture2D<float> SrcTexture : register(t0, space1);
-SamplerState g_LinearClamp : register(s1);
+Texture2D<float> SrcTexture : register(t0);
+SamplerState g_LinearClamp : register(s0);
 
 cbuffer CameraInfoRootConstant : register(b0)
 {

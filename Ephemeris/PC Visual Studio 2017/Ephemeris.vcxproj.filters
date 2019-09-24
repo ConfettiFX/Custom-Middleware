@@ -49,6 +49,12 @@
     <Filter Include="Shaders\Vulkan\Ephemeris\VolumetricClouds">
       <UniqueIdentifier>{1cf212ed-8b10-46b3-ab30-f1531417d1f1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\D3D12\Ephemeris\Example">
+      <UniqueIdentifier>{c0b4a62f-e248-474a-8f85-788775d654ca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Vulkan\Ephemeris\Example">
+      <UniqueIdentifier>{b76dc82f-15c0-4a69-b010-c96ce328d29b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\EphemerisExample\Example.cpp">
@@ -137,12 +143,6 @@
     <None Include="..\Sky\resources\Shaders\D3D12\Sun.vert">
       <Filter>Shaders\D3D12\Ephemeris\Sky</Filter>
     </None>
-    <None Include="..\VolumetricClouds\resources\Shaders\D3D12\basic.frag">
-      <Filter>Shaders\D3D12\Ephemeris\VolumetricClouds</Filter>
-    </None>
-    <None Include="..\VolumetricClouds\resources\Shaders\D3D12\basic.vert">
-      <Filter>Shaders\D3D12\Ephemeris\VolumetricClouds</Filter>
-    </None>
     <None Include="..\VolumetricClouds\resources\Shaders\D3D12\BlurHorizontal.comp">
       <Filter>Shaders\D3D12\Ephemeris\VolumetricClouds</Filter>
     </None>
@@ -206,32 +206,8 @@
     <None Include="..\VolumetricClouds\resources\Shaders\D3D12\volumetricCloud.vert">
       <Filter>Shaders\D3D12\Ephemeris\VolumetricClouds</Filter>
     </None>
-    <None Include="..\src\EphemerisExample\Shaders\D3D12\depthLinearization.comp">
-      <Filter>Shaders\D3D12\Ephemeris</Filter>
-    </None>
-    <None Include="..\src\EphemerisExample\Shaders\D3D12\depthLinearization.frag">
-      <Filter>Shaders\D3D12\Ephemeris</Filter>
-    </None>
-    <None Include="..\src\EphemerisExample\Shaders\D3D12\present.frag">
-      <Filter>Shaders\D3D12\Ephemeris</Filter>
-    </None>
-    <None Include="..\src\EphemerisExample\Shaders\D3D12\Triangular.vert">
-      <Filter>Shaders\D3D12\Ephemeris</Filter>
-    </None>
     <None Include="..\VolumetricClouds\resources\Shaders\D3D12\copyWeatherTexture.comp">
       <Filter>Shaders\D3D12\Ephemeris\VolumetricClouds</Filter>
-    </None>
-    <None Include="..\src\EphemerisExample\Shaders\Vulkan\Triangular.vert">
-      <Filter>Shaders\Vulkan\Ephemeris</Filter>
-    </None>
-    <None Include="..\src\EphemerisExample\Shaders\Vulkan\depthLinearization.comp">
-      <Filter>Shaders\Vulkan\Ephemeris</Filter>
-    </None>
-    <None Include="..\src\EphemerisExample\Shaders\Vulkan\depthLinearization.frag">
-      <Filter>Shaders\Vulkan\Ephemeris</Filter>
-    </None>
-    <None Include="..\src\EphemerisExample\Shaders\Vulkan\present.frag">
-      <Filter>Shaders\Vulkan\Ephemeris</Filter>
     </None>
     <None Include="..\Sky\resources\Shaders\Vulkan\RenderSky.frag">
       <Filter>Shaders\Vulkan\Ephemeris\Sky</Filter>
@@ -338,12 +314,6 @@
     <None Include="..\VolumetricClouds\resources\Shaders\Vulkan\Triangular.vert">
       <Filter>Shaders\Vulkan\Ephemeris\VolumetricClouds</Filter>
     </None>
-    <None Include="..\VolumetricClouds\resources\Shaders\Vulkan\basic.frag">
-      <Filter>Shaders\Vulkan\Ephemeris\VolumetricClouds</Filter>
-    </None>
-    <None Include="..\VolumetricClouds\resources\Shaders\Vulkan\basic.vert">
-      <Filter>Shaders\Vulkan\Ephemeris\VolumetricClouds</Filter>
-    </None>
     <None Include="..\VolumetricClouds\resources\Shaders\Vulkan\postProcess.frag">
       <Filter>Shaders\Vulkan\Ephemeris\VolumetricClouds</Filter>
     </None>
@@ -442,6 +412,30 @@
     </None>
     <None Include="..\Sky\resources\Shaders\Vulkan\MilkyWay.vert">
       <Filter>Shaders\Vulkan\Ephemeris\Sky</Filter>
+    </None>
+    <None Include="..\src\EphemerisExample\Shaders\D3D12\depthLinearization.comp">
+      <Filter>Shaders\D3D12\Ephemeris\Example</Filter>
+    </None>
+    <None Include="..\src\EphemerisExample\Shaders\D3D12\depthLinearization.frag">
+      <Filter>Shaders\D3D12\Ephemeris\Example</Filter>
+    </None>
+    <None Include="..\src\EphemerisExample\Shaders\D3D12\present.frag">
+      <Filter>Shaders\D3D12\Ephemeris\Example</Filter>
+    </None>
+    <None Include="..\src\EphemerisExample\Shaders\D3D12\Triangular.vert">
+      <Filter>Shaders\D3D12\Ephemeris\Example</Filter>
+    </None>
+    <None Include="..\src\EphemerisExample\Shaders\Vulkan\depthLinearization.comp">
+      <Filter>Shaders\Vulkan\Ephemeris\Example</Filter>
+    </None>
+    <None Include="..\src\EphemerisExample\Shaders\Vulkan\depthLinearization.frag">
+      <Filter>Shaders\Vulkan\Ephemeris\Example</Filter>
+    </None>
+    <None Include="..\src\EphemerisExample\Shaders\Vulkan\present.frag">
+      <Filter>Shaders\Vulkan\Ephemeris\Example</Filter>
+    </None>
+    <None Include="..\src\EphemerisExample\Shaders\Vulkan\Triangular.vert">
+      <Filter>Shaders\Vulkan\Ephemeris\Example</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

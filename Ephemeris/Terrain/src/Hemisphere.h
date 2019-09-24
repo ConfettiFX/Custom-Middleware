@@ -162,7 +162,7 @@ private:
 		int rowStart, int colCount, int rowCount, TriangulationOrder triangleType,
 		uint32 pitch, eastl::vector<uint32>& indices)
 	{
-		ASSERT(triangleType == ORDER_00_TO_11 || triangleType == ORDER_01_TO_10);
+		//ASSERT(triangleType == ORDER_00_TO_11 || triangleType == ORDER_01_TO_10);
 		int iFirstTerrainVertex = startIndex + colStart + (rowStart + (triangleType == ORDER_00_TO_11 ? 1 : 0)) * pitch;
 		if (triangulationOrder != ORDER_UNDEFINED)
 		{
@@ -191,7 +191,7 @@ private:
 				{
 					if (iCol == 0 && iRow == 0)
 					{
-						ASSERT(iFirstTerrainVertex == iV00);
+						//ASSERT(iFirstTerrainVertex == iV00);
 					}
 
 					indices.push_back(iV00);
@@ -201,7 +201,7 @@ private:
 				{
 					if (iCol == 0 && iRow == 0)
 					{
-						ASSERT(iFirstTerrainVertex == iV01);
+						//ASSERT(iFirstTerrainVertex == iV01);
 					}
 
 					indices.push_back(iV01);
@@ -209,7 +209,7 @@ private:
 				}
 				else
 				{
-					ASSERT(false);
+					//ASSERT(false);
 				}
 			}
 

@@ -17,7 +17,7 @@ layout(location = 0) out vec4 geomOutput_position;
 layout(location = 1) out vec2 geomOutput_texCoord;
 layout(location = 2) out vec3 geomOutput_color;
 
-layout(set = 0, binding = 13) uniform AuroraUniformBuffer
+layout(UPDATE_FREQ_PER_FRAME, binding = 13) uniform AuroraUniformBuffer
 {
     uint maxVertex;
     float heightOffset;
