@@ -144,15 +144,6 @@
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerBase.cpp">
       <Filter>OS\Profiler</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerDraw.cpp">
-      <Filter>OS\Profiler</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerInput.cpp">
-      <Filter>OS\Profiler</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerUI.cpp">
-      <Filter>OS\Profiler</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Windows\WindowsBase.cpp">
       <Filter>OS\Windows</Filter>
     </ClCompile>
@@ -176,6 +167,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\basis_universal\transcoder\basisu_transcoder.cpp">
       <Filter>OS\Image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerWidgetsUI.cpp">
+      <Filter>OS\Profiler</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -263,7 +257,7 @@
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerHTML.h">
       <Filter>OS\Profiler</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerUI.h">
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerWidgetsUI.h">
       <Filter>OS\Profiler</Filter>
     </ClInclude>
   </ItemGroup>

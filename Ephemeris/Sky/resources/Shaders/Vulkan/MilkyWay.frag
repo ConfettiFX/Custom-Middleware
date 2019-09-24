@@ -16,7 +16,7 @@ layout(location = 1) in vec4 fragInput_COLOR;
 layout(location = 2) in vec2 fragInput_TexCoord;
 layout(location = 0) out vec4 rast_FragData0; 
 
-layout(row_major, set = 0, binding = 7) uniform SpaceUniform
+layout(row_major, UPDATE_FREQ_PER_FRAME, binding = 7) uniform SpaceUniform
 {
     mat4 ViewProjMat;
     vec4 LightDirection;
@@ -26,7 +26,7 @@ layout(row_major, set = 0, binding = 7) uniform SpaceUniform
     vec4 NebulaLowColor;
 };
 
-layout(set = 0, binding = 8) uniform texture2D depthTexture;
+layout(UPDATE_FREQ_NONE, binding = 8) uniform texture2D depthTexture;
 struct VSOutput
 {
     vec4 Position;

@@ -14,7 +14,7 @@ layout(location = 0) in vec3 fragInput_TexCoord0;
 layout(location = 1) in vec2 fragInput_TexCoord1;
 layout(location = 0) out vec4 rast_FragData0; 
 
-layout(set = 0, binding = 9) uniform SunUniform_Block
+layout(UPDATE_FREQ_PER_FRAME, binding = 9) uniform SunUniform_Block
 {
     mat4 ViewMat;
     mat4 ViewProjMat;
@@ -29,9 +29,9 @@ struct PsIn
     vec3 texCoord;
     vec2 screenCoord;
 };
-layout(set = 0, binding = 8) uniform texture2D depthTexture;
-layout(set = 0, binding = 10) uniform texture2D moonAtlas;
-layout(set = 0, binding = 12) uniform sampler g_LinearBorder;
+layout(UPDATE_FREQ_NONE, binding = 8) uniform texture2D depthTexture;
+layout(UPDATE_FREQ_NONE, binding = 10) uniform texture2D moonAtlas;
+layout(UPDATE_FREQ_NONE, binding = 12) uniform sampler g_LinearBorder;
 vec4 HLSLmain(PsIn In)
 {
     vec2 screenUV = (In).screenCoord;

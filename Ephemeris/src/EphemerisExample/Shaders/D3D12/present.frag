@@ -7,10 +7,9 @@
 *
 */
 
-Texture2D skydomeTexture : register(t0);
-Texture2D sceneTexture : register(t1);
+Texture2D SrcTexture : register(t0);
 //Texture2D shadowTexture : register(t2);
-SamplerState BilinearClampSampler : register(s0);
+SamplerState g_LinearClamp : register(s0);
 
 
 struct PSIn {
@@ -20,7 +19,7 @@ struct PSIn {
 
 float4 main(PSIn input) : SV_TARGET
 {	
-	float4 sceneColor = sceneTexture.Sample(BilinearClampSampler, input.TexCoord);
+    float4 sceneColor = SrcTexture.Sample(g_LinearClamp, input.TexCoord);
 
 	//float4 skydomeColor = skydomeTexture.Sample(BilinearClampSampler, input.TexCoord);
 	//float shadow = shadowTexture.Sample(BilinearClampSampler, input.TexCoord).r;	

@@ -55,18 +55,22 @@ PsIn PushVertex(float4x4 rotMat, float4x4 viewProjMat, float3 pos, float3 color,
 	return output;
 }
 
+struct ArgsPerFrame
+{
+	constant Uniforms_StarUniform &StarUniform;
+};
 
-vertex PsIn stageMain(uint VertexID [[vertex_id]], VSInput input [[stage_in]], uint InstanceID [[instance_id]], constant Uniforms_StarUniform &StarUniform [[buffer(5)]])
+vertex PsIn stageMain(uint VertexID [[vertex_id]], VSInput input [[stage_in]], uint InstanceID [[instance_id]], constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]])
 {
 	PsIn Out;
 
 	float4 starInfo = input.ParticleColors;
 	float particleSize  = starInfo.y;
-	float3 Width        = StarUniform.Dx.xyz * particleSize;
-	float3 Height       = StarUniform.Dy.xyz * particleSize;
+	float3 Width        = argBufferPerFrame.StarUniform.Dx.xyz * particleSize;
+	float3 Height       = argBufferPerFrame.StarUniform.Dy.xyz * particleSize;
 
 	float3 Color = input.ParticleColors.rgb * input.ParticleColors.a;
-	float time = StarUniform.LightDirection.a;
+	float time = argBufferPerFrame.StarUniform.LightDirection.a;
 	float timeSeed = starInfo.z;
 	float timeScale = starInfo.a;	
 
@@ -75,19 +79,19 @@ vertex PsIn stageMain(uint VertexID [[vertex_id]], VSInput input [[stage_in]], u
 		
 	if(VertexID == 0)
 	{
-		Out = PushVertex(StarUniform.RotMat, StarUniform.ViewProjMat, input.ParticlePositions.xyz, Color, Width, Height, float2(-1.0, -1.0));
+		Out = PushVertex(argBufferPerFrame.StarUniform.RotMat, argBufferPerFrame.StarUniform.ViewProjMat, input.ParticlePositions.xyz, Color, Width, Height, float2(-1.0, -1.0));
 	}
 	else if(VertexID == 1)
 	{
-		Out = PushVertex(StarUniform.RotMat, StarUniform.ViewProjMat, input.ParticlePositions.xyz, Color, Width, Height, float2(1.0, -1.0));
+		Out = PushVertex(argBufferPerFrame.StarUniform.RotMat, argBufferPerFrame.StarUniform.ViewProjMat, input.ParticlePositions.xyz, Color, Width, Height, float2(1.0, -1.0));
 	}
 	else if(VertexID == 2)
 	{
-		Out = PushVertex(StarUniform.RotMat, StarUniform.ViewProjMat, input.ParticlePositions.xyz, Color, Width, Height, float2(-1.0, 1.0));
+		Out = PushVertex(argBufferPerFrame.StarUniform.RotMat, argBufferPerFrame.StarUniform.ViewProjMat, input.ParticlePositions.xyz, Color, Width, Height, float2(-1.0, 1.0));
 	}
 	else
 	{
-		Out = PushVertex(StarUniform.RotMat, StarUniform.ViewProjMat, input.ParticlePositions.xyz, Color, Width, Height, float2(1.0, 1.0));
+		Out = PushVertex(argBufferPerFrame.StarUniform.RotMat, argBufferPerFrame.StarUniform.ViewProjMat, input.ParticlePositions.xyz, Color, Width, Height, float2(1.0, 1.0));
 	}
      
 	return Out;

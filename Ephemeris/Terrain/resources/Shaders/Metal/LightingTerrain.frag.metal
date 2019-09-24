@@ -106,29 +106,40 @@ constant Uniforms_LightingTerrainUniformBuffer & LightingTerrainUniformBuffer,co
 LightingTerrainUniformBuffer(LightingTerrainUniformBuffer),VolumetricCloudsShadowCB(VolumetricCloudsShadowCB),BasicTexture(BasicTexture),NormalTexture(NormalTexture),weatherTexture(weatherTexture),depthTexture(depthTexture),g_LinearMirror(g_LinearMirror),g_LinearWrap(g_LinearWrap) {}
 };
 
+struct ArgsData
+{
+    texture2d<float> BasicTexture;
+    texture2d<float> NormalTexture;
+    texture2d<float> weatherTexture;
+    texture2d<float> depthTexture;
+    sampler g_LinearMirror;
+    sampler g_LinearWrap;
+};
+
+struct ArgsPerFrame
+{
+    constant Fragment_Shader::Uniforms_LightingTerrainUniformBuffer & LightingTerrainUniformBuffer;
+    constant Fragment_Shader::Uniforms_VolumetricCloudsShadowCB & VolumetricCloudsShadowCB;
+};
+
 
 fragment float4 stageMain(
     Fragment_Shader::PsIn In [[stage_in]],
-    constant Fragment_Shader::Uniforms_LightingTerrainUniformBuffer & LightingTerrainUniformBuffer [[buffer(3)]],
-    constant Fragment_Shader::Uniforms_VolumetricCloudsShadowCB & VolumetricCloudsShadowCB [[buffer(4)]],
-    texture2d<float> BasicTexture [[texture(14)]],
-    texture2d<float> NormalTexture [[texture(15)]],
-    texture2d<float> weatherTexture [[texture(16)]],
-    texture2d<float> depthTexture [[texture(17)]],
-    sampler g_LinearMirror [[sampler(0)]],
-    sampler g_LinearWrap [[sampler(1)]])
+    constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+)
 {
     Fragment_Shader::PsIn In0;
     In0.position = float4(In.position.xyz, 1.0 / In.position.w);
     In0.screenPos = In.screenPos;
     Fragment_Shader main(
-    LightingTerrainUniformBuffer,
-    VolumetricCloudsShadowCB,
-    BasicTexture,
-    NormalTexture,
-    weatherTexture,
-    depthTexture,
-    g_LinearMirror,
-    g_LinearWrap);
+    argBufferPerFrame.LightingTerrainUniformBuffer,
+    argBufferPerFrame.VolumetricCloudsShadowCB,
+    argBufferStatic.BasicTexture,
+    argBufferStatic.NormalTexture,
+    argBufferStatic.weatherTexture,
+    argBufferStatic.depthTexture,
+    argBufferStatic.g_LinearMirror,
+    argBufferStatic.g_LinearWrap);
     return main.main(In0);
 }

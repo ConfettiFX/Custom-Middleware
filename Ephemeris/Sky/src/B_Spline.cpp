@@ -39,7 +39,7 @@ void B_Spline::interpolate(eastl::vector<float> &time, uint degree, eastl::vecto
   }
   else
   {
-    ASSERT((uint32_t)knots.size() == (numberOfPoints + degree + 1));
+    //ASSERT((uint32_t)knots.size() == (numberOfPoints + degree + 1));
   }
   
 
@@ -80,7 +80,7 @@ void B_Spline::interpolate(eastl::vector<float> &time, uint degree, eastl::vecto
 
     if (t < low || t > high)
     {
-      ASSERT(false);
+      //ASSERT(false);
     }
 
     uint s;

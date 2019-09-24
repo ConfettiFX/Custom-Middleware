@@ -28,12 +28,6 @@ struct PSOut
   vec4 VolumetricClouds;
   vec4 ResultColor;
 };
-layout(set = 0, binding = 11) uniform texture2D g_SrcTexture2D;
-layout(set = 0, binding = 12) uniform texture2D g_SkyBackgroudTexture;
-layout(set = 0, binding = 14) buffer TransmittanceColor
-{
-  vec4 TransmittanceColor_Data[];
-};
 
 vec4 HLSLmain(PSIn input0)
 {
@@ -49,7 +43,7 @@ vec4 HLSLmain(PSIn input0)
   vec4 PostProcessedResult;
   PostProcessedResult.a = density;
   PostProcessedResult.rgb = intensity * mix(TransmittanceRGB , mix(VolumetricCloudsCBuffer.g_VolumetricClouds.lightColorAndIntensity.rgb, TransmittanceRGB, pow(clamp(1.0 - VolumetricCloudsCBuffer.g_VolumetricClouds.lightDirection.y, 0.0, 1.0), 0.5)), VolumetricCloudsCBuffer.g_VolumetricClouds.Test00) * VolumetricCloudsCBuffer.g_VolumetricClouds.lightColorAndIntensity.a * VolumetricCloudsCBuffer.g_VolumetricClouds.CloudBrightness;
-  PostProcessedResult.rgb = mix(clamp(BackgroudColor, 0.0, 1.0) + PostProcessedResult.rgb, PostProcessedResult.rgb, min(PostProcessedResult.a * 1.0f, VolumetricCloudsCBuffer.g_VolumetricClouds.BackgroundBlendFactor));
+  PostProcessedResult.rgb = mix(clamp(BackgroudColor, 0.0, 1.0) + PostProcessedResult.rgb, PostProcessedResult.rgb, min(PostProcessedResult.a, VolumetricCloudsCBuffer.g_VolumetricClouds.BackgroundBlendFactor));
   PostProcessedResult.rgb = mix(BackgroudColor, PostProcessedResult.rgb, VolumetricCloudsCBuffer.g_VolumetricClouds.BackgroundBlendFactor);
   return vec4(PostProcessedResult.rgb, 1.0);
 }

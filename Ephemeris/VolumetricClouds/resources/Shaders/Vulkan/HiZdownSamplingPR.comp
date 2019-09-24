@@ -12,8 +12,8 @@
 #extension GL_EXT_samplerless_texture_functions : enable
 
 
-layout(set = 0, binding = 25) uniform texture2D SrcTexture;
-layout(set = 0, binding = 30, r32f) uniform image2D DstTexture;
+layout(UPDATE_FREQ_NONE, binding = 25) uniform texture2D SrcTexture;
+layout(UPDATE_FREQ_NONE, binding = 35, r32f) uniform image2D DstTexture;
 float CombineGroup(in float a, in float b)
 {
     return max(a, b);

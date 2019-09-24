@@ -12,8 +12,8 @@
 #extension GL_EXT_samplerless_texture_functions : enable
 
 
-layout(set = 1, binding = 0) uniform texture2D SrcTexture[128];
-layout(set = 0, binding = 0, rgba32f) uniform image3D DstTexture;
+layout(UPDATE_FREQ_NONE, binding = 0) uniform texture2D SrcTexture[128];
+layout(UPDATE_FREQ_NONE, binding = 1, rgba32f) uniform image3D DstTexture;
 #define THREAD_SIZE 32
 
 layout(local_size_x = THREAD_SIZE, local_size_y = THREAD_SIZE, local_size_z = 1) in;

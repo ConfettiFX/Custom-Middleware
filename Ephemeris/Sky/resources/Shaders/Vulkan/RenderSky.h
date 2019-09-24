@@ -54,7 +54,7 @@ static const float mieG = 0.65;
 #define INSCATTER_NON_LINEAR
 #define USE_SAMPLELEVEL
 
-layout(set = 1, binding = 0) uniform RenderSkyUniformBuffer_Block
+layout(UPDATE_FREQ_PER_FRAME, binding = 0) uniform RenderSkyUniformBuffer_Block
 {
     mat4 invView;
     mat4 invProj;
@@ -66,12 +66,12 @@ layout(set = 1, binding = 0) uniform RenderSkyUniformBuffer_Block
 }RenderSkyUniformBuffer;
 
 
-layout(set = 0, binding = 0) uniform texture2D SceneColorTexture;
-layout(set = 0, binding = 1) uniform texture2D Depth;
-layout(set = 0, binding = 2) uniform texture2D TransmittanceTexture;
-layout(set = 0, binding = 3) uniform texture2D IrradianceTexture;
-layout(set = 0, binding = 4) uniform texture3D InscatterTexture;
-layout(set = 0, binding = 5) uniform sampler g_LinearClamp;
+layout(UPDATE_FREQ_NONE, binding = 0) uniform texture2D SceneColorTexture;
+layout(UPDATE_FREQ_NONE, binding = 1) uniform texture2D Depth;
+layout(UPDATE_FREQ_NONE, binding = 2) uniform texture2D TransmittanceTexture;
+layout(UPDATE_FREQ_NONE, binding = 3) uniform texture2D IrradianceTexture;
+layout(UPDATE_FREQ_NONE, binding = 4) uniform texture3D InscatterTexture;
+layout(UPDATE_FREQ_NONE, binding = 5) uniform sampler g_LinearClamp;
 
 #define FIX
 //	Hides moire effect using clamping low inscattering values

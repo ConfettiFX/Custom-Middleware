@@ -17,8 +17,8 @@ layout(push_constant) uniform cbRootConstant_Block
     float heightScale;
 }cbRootConstant;
 
-layout(set = 0, binding = 0) uniform texture2D Heightmap;
-layout(set = 0, binding = 1) uniform sampler g_LinearMirror;
+layout(UPDATE_FREQ_NONE, binding = 0) uniform texture2D Heightmap;
+layout(UPDATE_FREQ_NONE, binding = 1) uniform sampler g_LinearMirror;
 struct PsIn
 {
     vec4 position;

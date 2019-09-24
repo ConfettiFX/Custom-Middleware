@@ -16,10 +16,12 @@ layout(location = 0) out vec3 vertOutput_POSITION;
 layout(location = 1) out vec3 vertOutput_NORMAL;
 layout(location = 2) out vec2 vertOutput_TEXCOORD0;
 
-layout(push_constant) uniform cbRootConstant_Block
+layout(UPDATE_FREQ_PER_FRAME, binding = 0) uniform RenderTerrainUniformBuffer_Block
 {
     mat4 projView;
-}cbRootConstant;
+    vec4 TerrainInfo;
+    vec4 CameraInfo;
+}RenderTerrainUniformBuffer;
 
 struct VSInput
 {
@@ -37,7 +39,7 @@ VSOutput HLSLmain(VSInput input0)
 {
     VSOutput result;
     (((input0).Position).xyz *= vec3 (10.0));
-    ((result).Position = ((cbRootConstant.projView)*(vec4(((input0).Position).xyz, 1.0))));
+    ((result).Position = ((RenderTerrainUniformBuffer.projView) * (vec4(((input0).Position).xyz, 1.0))));
     ((result).pos = ((input0).Position).xyz);
     ((result).normal = vec3(0.0, 1.0, 0.0));
     ((result).uv = (input0).Uv);

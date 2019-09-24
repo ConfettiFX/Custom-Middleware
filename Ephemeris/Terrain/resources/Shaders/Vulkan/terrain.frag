@@ -13,12 +13,7 @@
 layout(location = 0) in vec3 fragInput_POSITION;
 layout(location = 1) in vec3 fragInput_NORMAL;
 layout(location = 2) in vec2 fragInput_TEXCOORD0;
-layout(location = 0) out vec4 rast_FragData0; 
-
-layout(push_constant) uniform cbRootConstant_Block
-{
-    mat4 projView;
-}cbRootConstant;
+layout(location = 0) out vec4 rast_FragData0;
 
 struct VSOutput
 {

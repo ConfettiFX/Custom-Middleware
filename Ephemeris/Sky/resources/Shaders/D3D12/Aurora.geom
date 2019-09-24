@@ -7,7 +7,7 @@
 *
 */
 
-cbuffer AuroraUniformBuffer : register(b4)
+cbuffer AuroraUniformBuffer : register(b4, UPDATE_FREQ_PER_FRAME)
 {
 	uint        maxVertex;
 	float       heightOffset;

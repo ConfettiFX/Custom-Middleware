@@ -69,7 +69,7 @@ RenderTarget*       pSkydomeResultRT = NULL;
 Shader*             pPresentShader = NULL;
 Pipeline*           pPresentPipeline = NULL;
 
-DescriptorBinder*   pExampleDescriptorBinder = NULL;
+DescriptorSet*      pExampleDescriptorSet = NULL;
 RootSignature*      pExampleRootSignature = NULL;
 
 Buffer*             pScreenQuadVertexBuffer = NULL;
@@ -92,7 +92,7 @@ static float4       LightColorAndIntensity = float4(1.0f, 1.0f, 1.0f, 1.0f);
 #define NEAR_CAMERA 50.0f
 #define FAR_CAMERA 100000000.0f
 
-static uint prevFrameIndex = 0;
+static uint gPrevFrameIndex = 0;
 static bool bSunMove = true;
 static float SunMovingSpeed = 5.0f;
 
@@ -114,7 +114,7 @@ struct Vertex
 };
 
 #if defined(TARGET_IOS) || defined(__ANDROID__)
-	VirtualJoystickUI   gVirtualJoystick;
+VirtualJoystickUI   gVirtualJoystick;
 #endif
 
 RasterizerState*	pPostProcessRast = NULL;
@@ -145,13 +145,13 @@ const char* pszBases[FSR_Count] =
 	"../../../../../The-Forge/Middleware_3/UI/",       // FSR_MIDDLEWARE_UI
 };
 
-TextDrawDesc gFrameTimeDraw = TextDrawDesc(0, 0xff00ffff, 18 );
+TextDrawDesc gFrameTimeDraw = TextDrawDesc(0, 0xff00ffff, 18);
 TextDrawDesc gDefaultTextDrawDesc = TextDrawDesc(0, 0xffffffff, 16);
 
 static void ShaderPath(const eastl::string &shaderPath, char* pShaderName, eastl::string &result)
 {
 	result.resize(0);
-  eastl::string shaderName(pShaderName);
+	eastl::string shaderName(pShaderName);
 	result = shaderPath + shaderName;
 }
 
@@ -160,7 +160,7 @@ class RenderEphemeris : public IApp
 public:
 
 	bool Init()
-	{		
+	{
 		// window and renderer setup
 		RendererDesc settings = { 0 };
 		initRenderer(GetName(), &settings, &pRenderer);
@@ -178,7 +178,7 @@ public:
 		addCmdPool(pRenderer, pGraphicsQueue, false, &pTransCmdPool);
 		addCmd_n(pTransCmdPool, false, 1, &ppTransCmds);
 
-		addFence(pRenderer, &pTransitionCompleteFences);		
+		addFence(pRenderer, &pTransitionCompleteFences);
 
 		for (uint32_t i = 0; i < gImageCount; ++i)
 		{
@@ -199,21 +199,21 @@ public:
 			return false;
 		}
 #endif
-		
+
 #if defined(METAL)
 		gFrameTimeDraw.mFontSize /= getDpiScale().getY();
 		gDefaultTextDrawDesc.mFontSize /= getDpiScale().getY();
 #endif
-		
+
 
 		SamplerDesc samplerClampDesc = {
 		FILTER_LINEAR, FILTER_LINEAR, MIPMAP_MODE_LINEAR,
 		ADDRESS_MODE_CLAMP_TO_EDGE, ADDRESS_MODE_CLAMP_TO_EDGE, ADDRESS_MODE_CLAMP_TO_EDGE
-			};
+		};
 		addSampler(pRenderer, &samplerClampDesc, &pBilinearClampSampler);
-		
+
 		eastl::string shaderPath("");
-		eastl::string shaderFullPath;		
+		eastl::string shaderFullPath;
 
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		ShaderLoadDesc basicShader = {};
@@ -253,19 +253,20 @@ public:
 		rootDesc.ppShaders = &pLinearDepthCompShader;
 
 		addRootSignature(pRenderer, &rootDesc, &pLinearDepthCompRootSignature);
-
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////
+		const char* pStaticSamplerNames[] = { "g_LinearClamp" };
+		Sampler* pStaticSamplers[] = { pBilinearClampSampler };
+		Shader*           shaders[] = { pPresentShader, pLinearDepthResolveShader };
+		rootDesc = {};
+		rootDesc.mShaderCount = 2;
+		rootDesc.ppStaticSamplerNames = pStaticSamplerNames;
+		rootDesc.ppStaticSamplers = pStaticSamplers;
+		rootDesc.ppShaders = shaders;
+		rootDesc.mStaticSamplerCount = 1;
+		addRootSignature(pRenderer, &rootDesc, &pExampleRootSignature);
 
-    Shader*           shaders[] = { pPresentShader, pLinearDepthResolveShader };
-    rootDesc = {};
-    rootDesc.mShaderCount = 2;
-    rootDesc.ppShaders = shaders;
-
-    addRootSignature(pRenderer, &rootDesc, &pExampleRootSignature);
-
-    DescriptorBinderDesc ExampleDescriptorBinderDesc[3] = { { pLinearDepthCompRootSignature } , {pExampleRootSignature}, {pExampleRootSignature} };
-    addDescriptorBinder(pRenderer, 0, 3, ExampleDescriptorBinderDesc, &pExampleDescriptorBinder);
-
+		DescriptorSetDesc setDesc = { pExampleRootSignature, DESCRIPTOR_UPDATE_FREQ_NONE, 2 };
+		addDescriptorSet(pRenderer, &setDesc, &pExampleDescriptorSet);
 
 		float screenQuadPoints[] = {
 				-1.0f,  3.0f, 0.5f, 0.0f, -1.0f,
@@ -322,7 +323,7 @@ public:
 		pCameraController->setMotionParameters(cmp);
 
 		//InputSystem::RegisterInputEvent(cameraInputEvent);
-	
+
 
 		gTerrain.Initialize(gImageCount, pCameraController, pGraphicsQueue, ppTransCmds, pTransitionCompleteFences, pGraphicsGpuProfiler, &gAppUI);
 		gTerrain.Init(pRenderer);
@@ -331,7 +332,7 @@ public:
 		gSky.Init(pRenderer);
 
 		gVolumetricClouds.Initialize(gImageCount, pCameraController, pGraphicsQueue, ppTransCmds, pTransitionCompleteFences, pRenderCompleteFences, pGraphicsGpuProfiler, &gAppUI, pTransmittanceBuffer);
-		gVolumetricClouds.Init(pRenderer);		
+		gVolumetricClouds.Init(pRenderer);
 
 
 		GuiDesc guiDesc = {};
@@ -355,7 +356,7 @@ public:
 		SliderFloatWidget SS("Sun Moving Speed", &SunMovingSpeed, float(-100.0f), float(100.0f), float(0.01f));
 		pMainGuiWindow->AddWidget(SS);
 
-    
+
 		if (!initInputSystem(pWindow))
 			return false;
 
@@ -372,7 +373,7 @@ public:
 		{
 			InputBindings::BUTTON_ANY, [](InputActionContext* ctx)
 			{
-				bool capture = gAppUI.OnButton(ctx->mBinding, ctx->mBool, ctx->pPosition, true);
+				bool capture = gAppUI.OnButton(ctx->mBinding, ctx->mBool, ctx->pPosition);
 				setEnableCaptureInput(capture && INPUT_ACTION_PHASE_CANCELED != ctx->mPhase);
 				return true;
 			}, this
@@ -388,7 +389,7 @@ public:
 		actionDesc = { InputBindings::FLOAT_RIGHTSTICK, [](InputActionContext* ctx) { return onCameraInput(ctx, 1); }, NULL, 20.0f, 200.0f, 1.0f };
 		addInputAction(&actionDesc);
 		actionDesc = { InputBindings::FLOAT_LEFTSTICK, [](InputActionContext* ctx) { return onCameraInput(ctx, 0); }, NULL, 20.0f, 200.0f, 1.0f };
-		addInputAction(&actionDesc);		
+		addInputAction(&actionDesc);
 		actionDesc = { InputBindings::BUTTON_NORTH, [](InputActionContext* ctx) { pCameraController->resetView(); return true; } };
 		addInputAction(&actionDesc);
 
@@ -402,9 +403,12 @@ public:
 	}
 
 	void Exit()
-	{	
-    waitQueueIdle(pGraphicsQueue);
+	{
+		waitQueueIdle(pGraphicsQueue);
 		destroyCameraController(pCameraController);
+
+		exitInputSystem();
+		removeDescriptorSet(pRenderer, pExampleDescriptorSet);
 
 #if defined(TARGET_IOS) || defined(__ANDROID__)
 		gVirtualJoystick.Exit();
@@ -432,9 +436,8 @@ public:
 		//removeRootSignature(pRenderer, pLinearDepthResolveRootSignature);
 		//removeDescriptorBinder(pRenderer, pLinearDepthResolveDescriptorBinder);
 
-    removeRootSignature(pRenderer, pExampleRootSignature);
-    removeDescriptorBinder(pRenderer, pExampleDescriptorBinder);
-		
+		removeRootSignature(pRenderer, pExampleRootSignature);
+
 		removeRasterizerState(pPostProcessRast);
 		removeGpuProfiler(pRenderer, pGraphicsGpuProfiler);
 		removeFence(pRenderer, pTransitionCompleteFences);
@@ -452,9 +455,9 @@ public:
 		removeCmd_n(pTransCmdPool, 1, ppTransCmds);
 		removeCmdPool(pRenderer, pTransCmdPool);
 
-		removeQueue(pGraphicsQueue);		
+		removeQueue(pGraphicsQueue);
 		removeResourceLoaderInterface(pRenderer);
-		
+
 		removeRenderer(pRenderer);
 	}
 
@@ -465,11 +468,11 @@ public:
 
 		if (!addSceneRenderTarget())
 			return false;
-		
+
 
 		if (!addDepthBuffer())
 			return false;
-		
+
 		if (!gAppUI.Load(pSwapChain->ppSwapchainRenderTargets))
 			return false;
 
@@ -477,19 +480,17 @@ public:
 		if (!gVirtualJoystick.Load(pSwapChain->ppSwapchainRenderTargets[0], pDepthBuffer->mDesc.mFormat))
 			return false;
 #endif
-				
+
+		gTerrain.pWeatherMap = gVolumetricClouds.GetWeatherMap();
 		gTerrain.InitializeWithLoad(pDepthBuffer);
 		gTerrain.Load(mSettings.mWidth, mSettings.mHeight);
 
 		gSky.InitializeWithLoad(pDepthBuffer, pLinearDepthBuffer);
 		gSky.Load(&gTerrain.pTerrainRT);
-		
-		gVolumetricClouds.InitializeWithLoad(pLinearDepthBuffer->pTexture, gSky.pSkyRenderTarget->pTexture, pDepthBuffer->pTexture);	
+
+		gVolumetricClouds.InitializeWithLoad(pLinearDepthBuffer->pTexture, gSky.pSkyRenderTarget->pTexture, pDepthBuffer->pTexture);
 		gVolumetricClouds.Load(&gSky.pSkyRenderTarget);
-
-
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 		/*
 		VertexLayout defaultVertexLayout = {};
 		defaultVertexLayout.mAttribCount = 3;
@@ -497,7 +498,7 @@ public:
 		defaultVertexLayout.mAttribs[0].mFormat = ImageFormat::RGB32F;
 		defaultVertexLayout.mAttribs[0].mBinding = 0;
 		defaultVertexLayout.mAttribs[0].mLocation = 0;
-		defaultVertexLayout.mAttribs[0].mOffset = 0;
+		defaultVertexLayout.mAttribs[0].mOffUPDATE_FREQ_NONE;
 		defaultVertexLayout.mAttribs[1].mSemantic = SEMANTIC_NORMAL;
 		defaultVertexLayout.mAttribs[1].mFormat = ImageFormat::RGB32F;
 		defaultVertexLayout.mAttribs[1].mLocation = 1;
@@ -510,17 +511,17 @@ public:
 		defaultVertexLayout.mAttribs[2].mOffset = 6 * sizeof(float);
 		 */
 
-		//layout and pipeline for ScreenQuad
+		 //layout and pipeline for ScreenQuad
 		VertexLayout vertexLayout = {};
 		vertexLayout.mAttribCount = 2;
 		vertexLayout.mAttribs[0].mSemantic = SEMANTIC_POSITION;
-		vertexLayout.mAttribs[0].mFormat = ImageFormat::RGB32F;
+		vertexLayout.mAttribs[0].mFormat = TinyImageFormat_R32G32B32_SFLOAT;
 		vertexLayout.mAttribs[0].mBinding = 0;
 		vertexLayout.mAttribs[0].mLocation = 0;
 		vertexLayout.mAttribs[0].mOffset = 0;
 
 		vertexLayout.mAttribs[1].mSemantic = SEMANTIC_TEXCOORD0;
-		vertexLayout.mAttribs[1].mFormat = ImageFormat::RG32F;
+		vertexLayout.mAttribs[1].mFormat = TinyImageFormat_R32G32_SFLOAT;
 		vertexLayout.mAttribs[1].mBinding = 0;
 		vertexLayout.mAttribs[1].mLocation = 1;
 		vertexLayout.mAttribs[1].mOffset = 3 * sizeof(float);
@@ -537,15 +538,15 @@ public:
 			pipelineSettings.mRenderTargetCount = 1;
 			pipelineSettings.pDepthState = NULL;
 			pipelineSettings.pColorFormats = &pSwapChain->ppSwapchainRenderTargets[0]->mDesc.mFormat;
-			pipelineSettings.pSrgbValues = &pSwapChain->ppSwapchainRenderTargets[0]->mDesc.mSrgb;
+			//pipelineSettings.pSrgbValues = &pSwapChain->ppSwapchainRenderTargets[0]->mDesc.mSrgb;
 			pipelineSettings.mSampleCount = pSwapChain->ppSwapchainRenderTargets[0]->mDesc.mSampleCount;
 			pipelineSettings.mSampleQuality = pSwapChain->ppSwapchainRenderTargets[0]->mDesc.mSampleQuality;
 			//pipelineSettings.pRootSignature = pPresentRootSignature;
-      pipelineSettings.pRootSignature = pExampleRootSignature;
+			pipelineSettings.pRootSignature = pExampleRootSignature;
 			pipelineSettings.pShaderProgram = pPresentShader;
 			pipelineSettings.pVertexLayout = &vertexLayout;
 			pipelineSettings.pRasterizerState = pPostProcessRast;
-			
+
 			addPipeline(pRenderer, &PresentPipelineDesc, &pPresentPipeline);
 		}
 
@@ -555,21 +556,21 @@ public:
 		{
 			LinearDepthResolvePipelineDesc.mType = PIPELINE_TYPE_GRAPHICS;
 			GraphicsPipelineDesc &pipelineSettings = LinearDepthResolvePipelineDesc.mGraphicsDesc;
-			
+
 			pipelineSettings = { 0 };
 			pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
 			pipelineSettings.mRenderTargetCount = 1;
 			pipelineSettings.pDepthState = NULL;
 			pipelineSettings.pColorFormats = &pLinearDepthBuffer->mDesc.mFormat;
-			pipelineSettings.pSrgbValues = &pLinearDepthBuffer->mDesc.mSrgb;
+			//pipelineSettings.pSrgbValues = &pLinearDepthBuffer->mDesc.mSrgb;
 			pipelineSettings.mSampleCount = pLinearDepthBuffer->mDesc.mSampleCount;
 			pipelineSettings.mSampleQuality = pLinearDepthBuffer->mDesc.mSampleQuality;
 			//pipelineSettings.pRootSignature = pLinearDepthResolveRootSignature;
-      pipelineSettings.pRootSignature = pExampleRootSignature;
+			pipelineSettings.pRootSignature = pExampleRootSignature;
 			pipelineSettings.pShaderProgram = pLinearDepthResolveShader;
 			pipelineSettings.pVertexLayout = &vertexLayout;
 			pipelineSettings.pRasterizerState = pPostProcessRast;
-			
+
 			addPipeline(pRenderer, &LinearDepthResolvePipelineDesc, &pLinearDepthResolvePipeline);
 		}
 
@@ -579,19 +580,33 @@ public:
 		{
 			LinearDepthCompPipelineDesc.mType = PIPELINE_TYPE_COMPUTE;
 			ComputePipelineDesc &comPipelineSettings = LinearDepthCompPipelineDesc.mComputeDesc;
-			
+
 			comPipelineSettings = { 0 };
 			comPipelineSettings.pShaderProgram = pLinearDepthCompShader;
 			comPipelineSettings.pRootSignature = pLinearDepthCompRootSignature;
 			addPipeline(pRenderer, &LinearDepthCompPipelineDesc, &pLinearDepthCompPipeline);
 		}
-		
+
+		DescriptorData LinearDepthpparams[1] = {};
+		LinearDepthpparams[0].pName = "SrcTexture";
+		LinearDepthpparams[0].ppTextures = &pDepthBuffer->pTexture;
+		updateDescriptorSet(pRenderer, 0, pExampleDescriptorSet, 1, LinearDepthpparams);
+
+		DescriptorData Presentpparams[1] = {};
+		//Presentpparams[1].pName = "skydomeTexture";
+		//Presentpparams[1].ppTextures = &pSkydomeResultRT->pTexture;
+		Presentpparams[0].pName = "SrcTexture";
+		Presentpparams[0].ppTextures = &(gSky.pSkyRenderTarget->pTexture);
+		//Presentpparams[3].pName = "shadowTexture";
+		//Presentpparams[3].ppTextures = &(gVolumetricClouds.pCastShadowRT->pTexture);
+		updateDescriptorSet(pRenderer, 1, pExampleDescriptorSet, 1, Presentpparams);
+
 		return true;
 	}
 
 	void Unload()
 	{
-    waitQueueIdle(pGraphicsQueue);
+		waitQueueIdle(pGraphicsQueue);
 
 		gAppUI.Unload();
 
@@ -612,7 +627,7 @@ public:
 
 		removeRenderTarget(pRenderer, pSkydomeResultRT);
 
-		removeSwapChain(pRenderer, pSwapChain);		
+		removeSwapChain(pRenderer, pSwapChain);
 	}
 
 	void Update(float deltaTime)
@@ -622,7 +637,7 @@ public:
 #if !defined(TARGET_IOS)
 		if (pSwapChain->mDesc.mEnableVsync != gToggleVSync)
 		{
-      waitQueueIdle(pGraphicsQueue);
+			waitQueueIdle(pGraphicsQueue);
 			::toggleVSync(pRenderer, &pSwapChain);
 		}
 #endif
@@ -639,31 +654,31 @@ public:
 		{
 			gTogglePerformance = !gTogglePerformance;
 		}
-		*/    
+		*/
 
 		pCameraController->update(deltaTime);
 		/************************************************************************/
 		// Scene Update
 		/************************************************************************/
 		static float currentTime = 0.0f;
-		currentTime += deltaTime * 1000.0f;	
+		currentTime += deltaTime * 1000.0f;
 
-    if (bSunMove)
-    {
-      LightDirection.y += deltaTime * SunMovingSpeed;
-  
-      if(LightDirection.y < 0.0f)
-        LightDirection.y += 360.0f;
+		if (bSunMove)
+		{
+			LightDirection.y += deltaTime * SunMovingSpeed;
 
-      LightDirection.y = fmodf(LightDirection.y, 360.0f);
-    }
+			if (LightDirection.y < 0.0f)
+				LightDirection.y += 360.0f;
+
+			LightDirection.y = fmodf(LightDirection.y, 360.0f);
+		}
 
 		float Azimuth = (PI / 180.0f) * LightDirection.x;
-		float Elevation = (PI / 180.0f) * (LightDirection.y - 180.0f);		
+		float Elevation = (PI / 180.0f) * (LightDirection.y - 180.0f);
 
-    gSky.Azimuth = Azimuth;
-    gSky.Elevation = Elevation;
-		
+		gSky.Azimuth = Azimuth;
+		gSky.Elevation = Elevation;
+
 		vec3 sunDirection = normalize(vec3(cosf(Azimuth)*cosf(Elevation), sinf(Elevation), sinf(Azimuth)*cosf(Elevation)));
 
 		gSky.Update(deltaTime);
@@ -671,7 +686,6 @@ public:
 		gSky.LightColorAndIntensity = LightColorAndIntensity;
 
 		gTerrain.IsEnabledShadow = true;
-		gTerrain.pWeatherMap = gVolumetricClouds.GetWeatherMap();
 		gTerrain.volumetricCloudsShadowCB.SettingInfo00 = vec4(1.0, gVolumetricClouds.volumetricCloudsCB.CloudCoverage, gVolumetricClouds.volumetricCloudsCB.WeatherTextureSize, 0.0);
 		gTerrain.volumetricCloudsShadowCB.StandardPosition = gVolumetricClouds.volumetricCloudsCB.WindDirection;
 		gTerrain.volumetricCloudsShadowCB.ShadowInfo = gVolumetricClouds.g_ShadowInfo;
@@ -679,34 +693,34 @@ public:
 		gTerrain.Update(deltaTime);
 		gTerrain.LightDirection = v3ToF3(sunDirection);
 		gTerrain.LightColorAndIntensity = LightColorAndIntensity;
-		gTerrain.SunColor = gSky.GetSunColor();		
+		gTerrain.SunColor = gSky.GetSunColor();
 
 		gVolumetricClouds.Update(deltaTime);
 		gVolumetricClouds.LightDirection = v3ToF3(sunDirection);
 		gVolumetricClouds.LightColorAndIntensity = LightColorAndIntensity;
 
-    if (gVolumetricClouds.AfterSubmit(prevFrameIndex))
-    {
-      waitQueueIdle(pGraphicsQueue);
-      gVolumetricClouds.Unload();
-      gVolumetricClouds.Load(&gSky.pSkyRenderTarget);
-    }
+		if (gVolumetricClouds.AfterSubmit(gPrevFrameIndex))
+		{
+			waitQueueIdle(pGraphicsQueue);
+			gVolumetricClouds.Unload();
+			gVolumetricClouds.Load(&gSky.pSkyRenderTarget);
+		}
 
-		
+
 		/************************************************************************/
 		// UI
 		/************************************************************************/
 		gAppUI.Update(deltaTime);
-		
+
 	}
 
 	void Draw()
 	{
 		acquireNextImage(pRenderer, pSwapChain, pImageAcquiredSemaphore, NULL, &gFrameIndex);
-		
+
 		// update camera with time
 		//mat4 viewMat = pCameraController->getViewMatrix();
-		
+
 		Semaphore* pRenderCompleteSemaphore = pRenderCompleteSemaphores[gFrameIndex];
 		Fence* pRenderCompleteFence = pRenderCompleteFences[gFrameIndex];
 
@@ -714,8 +728,8 @@ public:
 		FenceStatus fenceStatus;
 		getFenceStatus(pRenderer, pRenderCompleteFence, &fenceStatus);
 		if (fenceStatus == FENCE_STATUS_INCOMPLETE)
-			waitForFences(pRenderer, 1, &pRenderCompleteFence);		
-
+			waitForFences(pRenderer, 1, &pRenderCompleteFence);
+		
 		Cmd* cmd = ppGraphicsCmds[gFrameIndex];
 		beginCmd(cmd);
 
@@ -723,7 +737,7 @@ public:
 
 		RenderTarget* pRenderTarget = pTerrainResultRT;
 
-    ///////////////////////////////////////////////// Terrain ////////////////////////////////////////////////////
+		///////////////////////////////////////////////// Terrain ////////////////////////////////////////////////////
 
 		gTerrain.gFrameIndex = gFrameIndex;
 		gTerrain.Draw(cmd);
@@ -740,8 +754,8 @@ public:
 		cameraInfo.nearPlane = NEAR_CAMERA;
 		cameraInfo.farPlane = FAR_CAMERA;
 
-    ///////////////////////////////////////////////// Depth Linearization ////////////////////////////////////////////////////
-		{		
+		///////////////////////////////////////////////// Depth Linearization ////////////////////////////////////////////////////
+		{
 			cmdBeginGpuTimestampQuery(cmd, pGraphicsGpuProfiler, "Depth Linearization", true);
 
 			TextureBarrier barriersLinearDepth[] = {
@@ -749,130 +763,106 @@ public:
 			{ pLinearDepthBuffer->pTexture, RESOURCE_STATE_RENDER_TARGET }
 			};
 
-			cmdResourceBarrier(cmd, 0, NULL, 2, barriersLinearDepth, false);
+			cmdResourceBarrier(cmd, 0, NULL, 2, barriersLinearDepth);
 
 			cmdBindRenderTargets(cmd, 1, &pLinearDepthBuffer, NULL, NULL, NULL, NULL, -1, -1);
 			cmdSetViewport(cmd, 0.0f, 0.0f, (float)pLinearDepthBuffer->mDesc.mWidth, (float)pLinearDepthBuffer->mDesc.mHeight, 0.0f, 1.0f);
 			cmdSetScissor(cmd, 0, 0, pLinearDepthBuffer->mDesc.mWidth, pLinearDepthBuffer->mDesc.mHeight);
 
 			cmdBindPipeline(cmd, pLinearDepthResolvePipeline);
-
-			DescriptorData LinearDepthpparams[3] = {};
-
-			LinearDepthpparams[0].pName = "CameraInfoRootConstant";
-			LinearDepthpparams[0].pRootConstant = &cameraInfo;
-			LinearDepthpparams[1].pName = "SrcTexture";
-			LinearDepthpparams[1].ppTextures = &pDepthBuffer->pTexture;
-			LinearDepthpparams[2].pName = "g_LinearClamp";
-			LinearDepthpparams[2].ppSamplers = &pBilinearClampSampler;
-
-			cmdBindDescriptors(cmd, pExampleDescriptorBinder, pExampleRootSignature, 3, LinearDepthpparams);
-
+			cmdBindPushConstants(cmd, pExampleRootSignature, "CameraInfoRootConstant", &cameraInfo);
+			cmdBindDescriptorSet(cmd, 0, pExampleDescriptorSet);
 			cmdBindVertexBuffer(cmd, 1, &pScreenQuadVertexBuffer, NULL);
 			cmdDraw(cmd, 3, 0);
 
-      		cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
+			cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
 
 			TextureBarrier barriersLinearDepthEnd[] = {
 			{ pLinearDepthBuffer->pTexture, RESOURCE_STATE_SHADER_RESOURCE }
 			};
 
-			cmdResourceBarrier(cmd, 0, NULL, 1, barriersLinearDepthEnd, false);
+			cmdResourceBarrier(cmd, 0, NULL, 1, barriersLinearDepthEnd);
 
 			cmdEndGpuTimestampQuery(cmd, pGraphicsGpuProfiler);
 		}
 
-    ///////////////////////////////////////////////// Sky ////////////////////////////////////////////////////
-		
-    gSky.gFrameIndex = gFrameIndex;
+		///////////////////////////////////////////////// Sky ////////////////////////////////////////////////////
+
+		gSky.gFrameIndex = gFrameIndex;
 		gSky.Draw(cmd);
 
-    ///////////////////////////////////////////////// Volumetric Clouds ////////////////////////////////////////////////////
+		///////////////////////////////////////////////// Volumetric Clouds ////////////////////////////////////////////////////
 
-    gVolumetricClouds.Update(gFrameIndex);
+		gVolumetricClouds.Update(gFrameIndex);
 		gVolumetricClouds.Draw(cmd);
-		
-    ///////////////////////////////////////////////// Present Pipeline ////////////////////////////////////////////////////
-    {
-		cmdBeginGpuTimestampQuery(cmd, pGraphicsGpuProfiler, "PresentPipeline", true);
 
-		pRenderTarget = pSwapChain->ppSwapchainRenderTargets[gFrameIndex];
+		///////////////////////////////////////////////// Present Pipeline ////////////////////////////////////////////////////
+		{
+			cmdBeginGpuTimestampQuery(cmd, pGraphicsGpuProfiler, "PresentPipeline", true);
 
-		TextureBarrier barriers88[] = {
-			    { pRenderTarget->pTexture, RESOURCE_STATE_RENDER_TARGET },
-			    { pSkydomeResultRT->pTexture, RESOURCE_STATE_SHADER_RESOURCE }
-		  };
+			pRenderTarget = pSwapChain->ppSwapchainRenderTargets[gFrameIndex];
 
-		cmdResourceBarrier(cmd, 0, NULL, 2, barriers88, false);
+			TextureBarrier barriers88[] = {
+					{ pRenderTarget->pTexture, RESOURCE_STATE_RENDER_TARGET },
+					{ pSkydomeResultRT->pTexture, RESOURCE_STATE_SHADER_RESOURCE }
+			};
 
-		cmdBindRenderTargets(cmd, 1, &pRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
-		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mDesc.mWidth, (float)pRenderTarget->mDesc.mHeight, 0.0f, 1.0f);
-		cmdSetScissor(cmd, 0, 0, pRenderTarget->mDesc.mWidth, pRenderTarget->mDesc.mHeight);
+			cmdResourceBarrier(cmd, 0, NULL, 2, barriers88);
 
-		cmdBindPipeline(cmd, pPresentPipeline);
+			cmdBindRenderTargets(cmd, 1, &pRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
+			cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mDesc.mWidth, (float)pRenderTarget->mDesc.mHeight, 0.0f, 1.0f);
+			cmdSetScissor(cmd, 0, 0, pRenderTarget->mDesc.mWidth, pRenderTarget->mDesc.mHeight);
 
-		DescriptorData Presentpparams[4] = {};
-		
-		Presentpparams[0].pName = "BilinearClampSampler";
-		Presentpparams[0].ppSamplers = &pBilinearClampSampler;
-		//Presentpparams[1].pName = "skydomeTexture";
-		//Presentpparams[1].ppTextures = &pSkydomeResultRT->pTexture;
-		Presentpparams[1].pName = "sceneTexture";
-		Presentpparams[1].ppTextures = &(gSky.pSkyRenderTarget->pTexture);
-		//Presentpparams[3].pName = "shadowTexture";
-		//Presentpparams[3].ppTextures = &(gVolumetricClouds.pCastShadowRT->pTexture);
+			cmdBindPipeline(cmd, pPresentPipeline);
+			cmdBindDescriptorSet(cmd, 1, pExampleDescriptorSet);
+			cmdBindVertexBuffer(cmd, 1, &pScreenQuadVertexBuffer, NULL);
+			cmdDraw(cmd, 3, 0);
+			cmdBindRenderTargets(cmd, 0, NULL, NULL, NULL, NULL, NULL, -1, -1);
 
-		//cmdBindDescriptors(cmd, pPresentDescriptorBinder, pPresentRootSignature, 2, Presentpparams);
-    cmdBindDescriptors(cmd, pExampleDescriptorBinder, pExampleRootSignature, 2, Presentpparams);
 
-		cmdBindVertexBuffer(cmd, 1, &pScreenQuadVertexBuffer, NULL);
-		cmdDraw(cmd, 3, 0);
-		cmdBindRenderTargets(cmd, 0, NULL, NULL, NULL, NULL, NULL, -1, -1);
-		
-				
-		cmdEndGpuTimestampQuery(cmd, pGraphicsGpuProfiler);
-    }
-	
-    if(gShowUI)
-    {
-		  cmdBeginGpuTimestampQuery(cmd, pGraphicsGpuProfiler, "Draw UI", true);
-		
-		  pRenderTarget = pSwapChain->ppSwapchainRenderTargets[gFrameIndex];
-		
-		  cmdBindRenderTargets(cmd, 1, &pRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
-		  cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mDesc.mWidth, (float)pRenderTarget->mDesc.mHeight, 0.0f, 1.0f);
-		  cmdSetScissor(cmd, 0, 0, pRenderTarget->mDesc.mWidth, pRenderTarget->mDesc.mHeight);
-		
-		  static HiresTimer gTimer;
-		  gTimer.GetUSec(true);
+			cmdEndGpuTimestampQuery(cmd, pGraphicsGpuProfiler);
+		}
 
-      #if defined(TARGET_IOS) || defined(__ANDROID__)
-		    gVirtualJoystick.Draw(cmd, pCameraController, { 1.0f, 1.0f, 1.0f, 1.0f });
-      #endif
+		if (gShowUI)
+		{
+			cmdBeginGpuTimestampQuery(cmd, pGraphicsGpuProfiler, "Draw UI", true);
 
-      if(gTogglePerformance)
-      {
-		    gAppUI.DrawText(cmd, float2(8.0f, 15.0f), eastl::string().sprintf("CPU %f ms", gTimer.GetUSecAverage() / 1000.0f).c_str() , &gFrameTimeDraw);
-		    gAppUI.DrawText(cmd, float2(8.0f, 40.0f), eastl::string().sprintf("GPU %f ms", (float)pGraphicsGpuProfiler->mCumulativeTime * 1000.0f).c_str(), &gFrameTimeDraw);
-  #if !defined(METAL)
-		    gAppUI.DrawText(cmd, float2(8.0f, 300.0f), eastl::string().sprintf("Graphics Queue %f ms", (float)pGraphicsGpuProfiler->mCumulativeTime * 1000.0f).c_str(), &gFrameTimeDraw);
-		    gAppUI.DrawDebugGpuProfile(cmd, float2(8.0f, 325.0f), pGraphicsGpuProfiler, NULL);
-  #endif
-      }
+			pRenderTarget = pSwapChain->ppSwapchainRenderTargets[gFrameIndex];
 
-		  gAppUI.Gui(pMainGuiWindow);
-		  gAppUI.Gui(gSky.pGuiWindow);
-		  gAppUI.Gui(gVolumetricClouds.pGuiWindow);
-		
-      gAppUI.Draw(cmd);
+			cmdBindRenderTargets(cmd, 1, &pRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
+			cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mDesc.mWidth, (float)pRenderTarget->mDesc.mHeight, 0.0f, 1.0f);
+			cmdSetScissor(cmd, 0, 0, pRenderTarget->mDesc.mWidth, pRenderTarget->mDesc.mHeight);
 
-		  cmdBindRenderTargets(cmd, 0, NULL, NULL, NULL, NULL, NULL, -1, -1);
+			static HiresTimer gTimer;
+			gTimer.GetUSec(true);
 
-		  TextureBarrier barriers[] = { pRenderTarget->pTexture, RESOURCE_STATE_PRESENT };
-		  cmdResourceBarrier(cmd, 0, NULL, 1, barriers, true);
-	
-		  cmdEndGpuTimestampQuery(cmd, pGraphicsGpuProfiler);
-    }
+#if defined(TARGET_IOS) || defined(__ANDROID__)
+			gVirtualJoystick.Draw(cmd, pCameraController, { 1.0f, 1.0f, 1.0f, 1.0f });
+#endif
+
+			if (gTogglePerformance)
+			{
+				gAppUI.DrawText(cmd, float2(8.0f, 15.0f), eastl::string().sprintf("CPU %f ms", gTimer.GetUSecAverage() / 1000.0f).c_str(), &gFrameTimeDraw);
+				gAppUI.DrawText(cmd, float2(8.0f, 40.0f), eastl::string().sprintf("GPU %f ms", (float)pGraphicsGpuProfiler->mCumulativeTime * 1000.0f).c_str(), &gFrameTimeDraw);
+#if !defined(METAL)
+				gAppUI.DrawText(cmd, float2(8.0f, 300.0f), eastl::string().sprintf("Graphics Queue %f ms", (float)pGraphicsGpuProfiler->mCumulativeTime * 1000.0f).c_str(), &gFrameTimeDraw);
+				gAppUI.DrawDebugGpuProfile(cmd, float2(8.0f, 325.0f), pGraphicsGpuProfiler, NULL);
+#endif
+			}
+
+			gAppUI.Gui(pMainGuiWindow);
+			gAppUI.Gui(gSky.pGuiWindow);
+			gAppUI.Gui(gVolumetricClouds.pGuiWindow);
+
+			gAppUI.Draw(cmd);
+
+			cmdBindRenderTargets(cmd, 0, NULL, NULL, NULL, NULL, NULL, -1, -1);
+
+			TextureBarrier barriers[] = { pRenderTarget->pTexture, RESOURCE_STATE_PRESENT };
+			cmdResourceBarrier(cmd, 0, NULL, 1, barriers);
+
+			cmdEndGpuTimestampQuery(cmd, pGraphicsGpuProfiler);
+		}
 
 		cmdEndGpuFrameProfile(cmd, pGraphicsGpuProfiler);
 		endCmd(cmd);
@@ -881,10 +871,10 @@ public:
 		queuePresent(pGraphicsQueue, pSwapChain, gFrameIndex, 1, &pRenderCompleteSemaphore);
 
 		//for next frame
-		prevFrameIndex = gFrameIndex;				
+		gPrevFrameIndex = gFrameIndex;
 	}
 
-  const char* GetName()
+	const char* GetName()
 	{
 		return "Ephemeris";
 	}
@@ -906,20 +896,20 @@ public:
 		return pSwapChain != NULL;
 	}
 
-  void TransitionRenderTargets(RenderTarget *pRT, ResourceState state)
-  {
-    // Transition render targets to desired state
-    beginCmd(ppTransCmds[0]);
+	void TransitionRenderTargets(RenderTarget *pRT, ResourceState state)
+	{
+		// Transition render targets to desired state
+		beginCmd(ppTransCmds[0]);
 
-    TextureBarrier barrier[] = {
-           { pRT->pTexture, state }
-    };
+		TextureBarrier barrier[] = {
+			   { pRT->pTexture, state }
+		};
 
-    cmdResourceBarrier(ppTransCmds[0], 0, NULL, 1, barrier, false);
-    endCmd(ppTransCmds[0]);
-    queueSubmit(pGraphicsQueue, 1, &ppTransCmds[0], pTransitionCompleteFences, 0, NULL, 0, NULL);
-    waitForFences(pRenderer, 1, &pTransitionCompleteFences);
-  }
+		cmdResourceBarrier(ppTransCmds[0], 0, NULL, 1, barrier);
+		endCmd(ppTransCmds[0]);
+		queueSubmit(pGraphicsQueue, 1, &ppTransCmds[0], pTransitionCompleteFences, 0, NULL, 0, NULL);
+		waitForFences(pRenderer, 1, &pTransitionCompleteFences);
+	}
 
 	bool addDepthBuffer()
 	{
@@ -929,7 +919,7 @@ public:
 		depthRT.mClearValue.depth = 1.0f;
 		depthRT.mClearValue.stencil = 0;
 		depthRT.mDepth = 1;
-		depthRT.mFormat = ImageFormat::D32F;
+		depthRT.mFormat = TinyImageFormat_D32_SFLOAT;
 		depthRT.mHeight = mSettings.mHeight;
 		depthRT.mSampleCount = SAMPLE_COUNT_1;
 		depthRT.mSampleQuality = 0;
@@ -937,20 +927,20 @@ public:
 #if defined(METAL)
 		depthRT.mFlags = TEXTURE_CREATION_FLAG_OWN_MEMORY_BIT;
 #endif
-		addRenderTarget(pRenderer, &depthRT, &pDepthBuffer);	
+		addRenderTarget(pRenderer, &depthRT, &pDepthBuffer);
 
 #if defined(VULKAN)
-    TransitionRenderTargets(pDepthBuffer, ResourceState::RESOURCE_STATE_DEPTH_WRITE);
+		TransitionRenderTargets(pDepthBuffer, ResourceState::RESOURCE_STATE_DEPTH_WRITE);
 #endif
 
 		// Add linear depth Texture
-		depthRT.mFormat = ImageFormat::R16F;
+		depthRT.mFormat = TinyImageFormat_R16_SFLOAT;
 		depthRT.mWidth = mSettings.mWidth & (~63);
 		depthRT.mHeight = mSettings.mHeight & (~63);
 		addRenderTarget(pRenderer, &depthRT, &pLinearDepthBuffer);
 
 #if defined(VULKAN)
-    TransitionRenderTargets(pLinearDepthBuffer, ResourceState::RESOURCE_STATE_UNORDERED_ACCESS);
+		TransitionRenderTargets(pLinearDepthBuffer, ResourceState::RESOURCE_STATE_UNORDERED_ACCESS);
 #endif
 
 		return pDepthBuffer != NULL && pLinearDepthBuffer != NULL;
@@ -961,7 +951,7 @@ public:
 		RenderTargetDesc resultRT = {};
 		resultRT.mArraySize = 1;
 		resultRT.mDepth = 1;
-		resultRT.mFormat = ImageFormat::RGBA8;
+		resultRT.mFormat = TinyImageFormat_R8G8B8A8_UNORM;
 		resultRT.mSampleCount = SAMPLE_COUNT_1;
 		resultRT.mSampleQuality = 0;
 
@@ -971,7 +961,7 @@ public:
 		addRenderTarget(pRenderer, &resultRT, &pSkydomeResultRT);
 
 #if defined(VULKAN)
-    TransitionRenderTargets(pSkydomeResultRT, ResourceState::RESOURCE_STATE_RENDER_TARGET);
+		TransitionRenderTargets(pSkydomeResultRT, ResourceState::RESOURCE_STATE_RENDER_TARGET);
 #endif
 
 		return pSkydomeResultRT != NULL;

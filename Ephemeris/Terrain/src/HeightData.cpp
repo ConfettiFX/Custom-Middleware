@@ -31,7 +31,7 @@ HeightData::HeightData(const char* filePath, float heightScale) :
 	{
 		char output[256];
 		sprintf(output, "\"%s\": Image file not found.", filePath);
-		ErrorMsg(output);
+		//ErrorMsg(output);
 		return;
 	}
 	FileHandle* fileHandle = (FileHandle*)mFile.GetHandle();
@@ -43,7 +43,7 @@ HeightData::HeightData(const char* filePath, float heightScale) :
 	{
 		char output[256];
 		sprintf(output, "\"%s\": Image file is empty.", filePath);
-		ErrorMsg(output);
+		//ErrorMsg(output);
 		//FILESYSTEM->FileClose(file);
 		mFile.Close();
 		return;

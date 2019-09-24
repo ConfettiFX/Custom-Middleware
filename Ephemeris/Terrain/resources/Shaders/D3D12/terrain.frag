@@ -7,11 +7,6 @@
 *
 */
 
-cbuffer cbRootConstant : register(b0)
-{
-	float4x4 projView;
-}
-
 struct VSOutput 
 {
 	float4 Position : SV_POSITION;

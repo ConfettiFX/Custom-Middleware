@@ -31,7 +31,7 @@ struct PsIn
     vec3 tangent;
     vec3 bitangent;
 };
-layout(set = 1, binding = 0) uniform RenderTerrainUniformBuffer_Block
+layout(UPDATE_FREQ_PER_FRAME, binding = 0) uniform RenderTerrainUniformBuffer_Block
 {
     mat4 projView;
     vec4 TerrainInfo;

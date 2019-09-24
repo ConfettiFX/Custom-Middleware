@@ -46,14 +46,19 @@ texture2d<float> InputTex,texture2d<float, access::read_write> OutputTex,constan
 InputTex(InputTex),OutputTex(OutputTex),RootConstantScreenSize(RootConstantScreenSize) {}
 };
 
+struct ArgsData
+{
+    texture2d<float> InputTex;
+    texture2d<float, access::read_write> OutputTex;
+};
+
 //[numthreads(1, 1024, 1)]
 kernel void stageMain(
 uint3 GroupId [[threadgroup_position_in_grid]],
 uint3 GroupThreadId [[thread_position_in_threadgroup]],
 uint GroupIndex [[thread_index_in_threadgroup]],
-    texture2d<float> InputTex [[texture(22)]],
-    texture2d<float, access::read_write> OutputTex [[texture(23)]],
-    constant Compute_Shader::Uniforms_RootConstantScreenSize & RootConstantScreenSize [[buffer(7)]])
+    constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+    constant Compute_Shader::Uniforms_RootConstantScreenSize & RootConstantScreenSize [[buffer(UPDATE_FREQ_USER + 5)]])
 {
     uint3 GroupId0;
     GroupId0 = GroupId;
@@ -62,8 +67,8 @@ uint GroupIndex [[thread_index_in_threadgroup]],
     uint GroupIndex0;
     GroupIndex0 = GroupIndex;
     Compute_Shader main(
-    InputTex,
-    OutputTex,
+    argBufferStatic.InputTex,
+    argBufferStatic.OutputTex,
     RootConstantScreenSize);
     return main.main(GroupId0, GroupThreadId0, GroupIndex0);
 }

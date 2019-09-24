@@ -12,8 +12,8 @@
 #extension GL_EXT_samplerless_texture_functions : enable
 
 
-layout(set = 1, binding = 0) uniform texture2D SrcTexture[32];
-layout(set = 0, binding = 0, rgba32f) uniform image3D DstTexture;
+layout(UPDATE_FREQ_NONE, binding = 0) uniform texture2D SrcTexture[128];
+layout(UPDATE_FREQ_NONE, binding = 1, rgba32f) uniform image3D DstTexture;
 
 layout(local_size_x = 32, local_size_y = 32, local_size_z = 1) in;
 void HLSLmain(uvec3 GTid, uvec3 Gid)

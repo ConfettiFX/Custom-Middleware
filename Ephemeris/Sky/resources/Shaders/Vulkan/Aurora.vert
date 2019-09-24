@@ -20,12 +20,12 @@ struct AuroraParticle
     vec4 Position;
     vec4 Acceleration;
 };
-layout(row_major, set=0, binding = 14) buffer AuroraParticleBuffer
+layout(row_major, UPDATE_FREQ_NONE, binding = 14) buffer AuroraParticleBuffer
 {
     AuroraParticle AuroraParticleBuffer_Data[];
 };
 
-layout(row_major, set = 0, binding = 13) uniform AuroraUniformBuffer
+layout(row_major, UPDATE_FREQ_PER_FRAME, binding = 13) uniform AuroraUniformBuffer
 {
     uint maxVertex;
     float heightOffset;

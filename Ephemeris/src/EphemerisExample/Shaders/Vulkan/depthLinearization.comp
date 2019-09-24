@@ -12,8 +12,8 @@
 #extension GL_EXT_samplerless_texture_functions : enable
 
 
-layout(set = 1, binding = 0) uniform texture2D SrcTexture;
-layout(set = 0, binding = 0, rgba32f) uniform image2D DstTexture;
+layout(UPDATE_FREQ_NONE, binding = 0) uniform texture2D SrcTexture;
+layout(UPDATE_FREQ_NONE, binding = 1, rgba32f) uniform image2D DstTexture;
 layout(push_constant) uniform CameraInfoRootConstant_Block
 {
     float nearPlane;

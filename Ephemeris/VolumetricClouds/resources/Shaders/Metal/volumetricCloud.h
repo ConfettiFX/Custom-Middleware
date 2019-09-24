@@ -53,6 +53,8 @@ struct volumetricCloud
         float DetailStrenth;
         float CurlTextureTiling;
         float CurlStrenth;
+        float UpstreamScale;
+        float UpstreamSpeed;
         float AnvilBias;
         float WeatherTextureSize;
         float WeatherTextureOffsetX;
@@ -67,12 +69,10 @@ struct volumetricCloud
         float Random00;
         float CameraFarClip;
         float Padding01;
-        float Padding02;
-        float Padding03;
         uint EnabledDepthCulling;
         uint EnabledLodDepthCulling;
-        uint padding04;
-        uint padding05;
+        uint DepthMapWidth;
+        uint DepthMapHeight;
         uint GodNumSamples;
         float GodrayMaxBrightness;
         float GodrayExposure;
@@ -295,9 +295,12 @@ struct volumetricCloud
             (mipmapOffset += (float)(0.5));
             (step += 1.0);
         }
-        float hg = max(HenryGreenstein((VolumetricCloudsCBuffer.g_VolumetricClouds).Eccentricity, cosTheta), ((VolumetricCloudsCBuffer.g_VolumetricClouds).SilverliningIntensity * saturate(HenryGreenstein((0.99 - (VolumetricCloudsCBuffer.g_VolumetricClouds).SilverliningSpread), cosTheta))));
-        float lodded_density = saturate(SampleDensity(rayPos, mipBias, height_fraction, currentProj, cloudTopOffsetWithWindDir, windWithVelocity, biasedCloudPos, DetailShapeTilingDivCloudSize, true));
-        float energy = GetLightEnergy(height_fraction, (totalSample * (VolumetricCloudsCBuffer.g_VolumetricClouds).Precipitation), ds_loded, hg, cosTheta, stepSize, (VolumetricCloudsCBuffer.g_VolumetricClouds).Contrast);
+        float hg = max(HenryGreenstein((VolumetricCloudsCBuffer.g_VolumetricClouds).Eccentricity, cosTheta), (saturate(HenryGreenstein((0.99 - (VolumetricCloudsCBuffer.g_VolumetricClouds).SilverliningSpread), cosTheta)))) * (VolumetricCloudsCBuffer.g_VolumetricClouds).SilverliningIntensity;
+		float dl = totalSample * VolumetricCloudsCBuffer.g_VolumetricClouds.Precipitation;
+		hg = hg / max(dl, 0.05);
+
+		float lodded_density = saturate(SampleDensity(rayPos, mipBias, height_fraction, currentProj, cloudTopOffsetWithWindDir, windWithVelocity, biasedCloudPos, DetailShapeTilingDivCloudSize, true));
+        float energy = GetLightEnergy(height_fraction, dl, ds_loded, hg, cosTheta, stepSize, (VolumetricCloudsCBuffer.g_VolumetricClouds).Contrast);
         return energy;
     };
 
@@ -344,7 +347,7 @@ struct volumetricCloud
         float2 textureSize = (((VolumetricCloudsCBuffer.g_VolumetricClouds).TimeAndScreenSize).zw * (float2)(0.25));
 #endif
 
-        uint2 texels = (uint2)(float2((VolumetricCloudsCBuffer.g_VolumetricClouds).Padding02, (VolumetricCloudsCBuffer.g_VolumetricClouds).Padding03) * uv);
+        uint2 texels = (uint2)(float2((VolumetricCloudsCBuffer.g_VolumetricClouds).Padding01, (VolumetricCloudsCBuffer.g_VolumetricClouds).Padding01) * uv);
         float sceneDepth;
         if (((float)((VolumetricCloudsCBuffer.g_VolumetricClouds).EnabledLodDepthCulling) > 0.5))
         {
@@ -476,7 +479,7 @@ struct volumetricCloud
         float2 textureSize = (((VolumetricCloudsCBuffer.g_VolumetricClouds).TimeAndScreenSize).zw * (float2)(0.25));
 #endif
 
-        uint2 texels = (uint2)(float2((VolumetricCloudsCBuffer.g_VolumetricClouds).Padding02, (VolumetricCloudsCBuffer.g_VolumetricClouds).Padding03) * uv);
+        uint2 texels = (uint2)(float2((VolumetricCloudsCBuffer.g_VolumetricClouds).Padding01, (VolumetricCloudsCBuffer.g_VolumetricClouds).Padding01) * uv);
         //float sceneDepth = depthTexture.read(texels.xy).r;
         float alpha = 0.0;
         (intensity = 0.0);

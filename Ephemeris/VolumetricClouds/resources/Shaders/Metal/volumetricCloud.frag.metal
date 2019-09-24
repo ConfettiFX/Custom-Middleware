@@ -66,6 +66,8 @@ struct Fragment_Shader
         float DetailStrenth;
         float CurlTextureTiling;
         float CurlStrenth;
+        float UpstreamScale;
+        float UpstreamSpeed;
         float AnvilBias;
         float WeatherTextureSize;
         float WeatherTextureOffsetX;
@@ -80,12 +82,10 @@ struct Fragment_Shader
         float Random00;
         float CameraFarClip;
         float Padding01;
-        float Padding02;
-        float Padding03;
         uint EnabledDepthCulling;
         uint EnabledLodDepthCulling;
-        uint padding04;
-        uint padding05;
+        uint DepthMapWidth;
+        uint DepthMapHeight;
         uint GodNumSamples;
         float GodrayMaxBrightness;
         float GodrayExposure;
@@ -226,12 +226,12 @@ struct Fragment_Shader
         float b = mix(stratocumulus, cumulus, saturate((cloudType2 - (float)(1.0))));
         return mix(a, b, round(cloudType));
     };
-    float SampleDensity(float3 worldPos, float lod, float height_fraction, float3 currentProj, float3 cloudTopOffsetWithWindDir, float2 windWithVelocity, float3 biasedCloudPos, float DetailShapeTilingDivCloudSize, bool cheap)
+    float SampleDensity(float3 worldPos, float lod, float height_fraction, float3 currentProj, float3 cloudTopOffsetWithWindDir, float4 windWithVelocity, float3 biasedCloudPos, float DetailShapeTilingDivCloudSize, bool cheap)
     {
         float3 unwindWorldPos = worldPos;
         (worldPos += ((float3)(height_fraction) * cloudTopOffsetWithWindDir));
         (worldPos += biasedCloudPos);
-        float3 weatherData = weatherTexture.sample(g_LinearWrapSampler, ((((unwindWorldPos).xz + windWithVelocity) + float2((VolumetricCloudsCBuffer.g_VolumetricClouds).WeatherTextureOffsetX, (VolumetricCloudsCBuffer.g_VolumetricClouds).WeatherTextureOffsetZ)) / (float2)((VolumetricCloudsCBuffer.g_VolumetricClouds).WeatherTextureSize)), level(0.0)).rgb;
+        float3 weatherData = weatherTexture.sample(g_LinearWrapSampler, ((((unwindWorldPos).xz + windWithVelocity.xy) + float2((VolumetricCloudsCBuffer.g_VolumetricClouds).WeatherTextureOffsetX, (VolumetricCloudsCBuffer.g_VolumetricClouds).WeatherTextureOffsetZ)) / (float2)((VolumetricCloudsCBuffer.g_VolumetricClouds).WeatherTextureSize)), level(0.0)).rgb;
         float3 worldPosDivCloudSize = (worldPos / (float3)((VolumetricCloudsCBuffer.g_VolumetricClouds).CloudSize));
         float4 low_freq_noises = lowFreqNoiseTexture.sample(g_LinearWrapSampler, (worldPosDivCloudSize * (float3)((VolumetricCloudsCBuffer.g_VolumetricClouds).BaseShapeTiling)), level(lod));
         float low_freq_fBm = ((((low_freq_noises).g * (float)(0.625)) + ((low_freq_noises).b * (float)(0.25))) + ((low_freq_noises).a * (float)(0.125)));
@@ -249,7 +249,9 @@ struct Fragment_Shader
         {
             float2 curl_noise = curlNoiseTexture.sample(g_LinearWrapSampler, float2(((worldPosDivCloudSize).xz * (float2)((VolumetricCloudsCBuffer.g_VolumetricClouds).CurlTextureTiling))), level(0.0)).rg;
             ((worldPos).xz += ((curl_noise * (float2)(((float)(1.0) - height_fraction))) * (float2)((VolumetricCloudsCBuffer.g_VolumetricClouds).CurlStrenth)));
-            float3 high_frequency_noises = highFreqNoiseTexture.sample(g_LinearWrapSampler, float3((worldPos * (float3)(DetailShapeTilingDivCloudSize))), level(lod)).rgb;
+            worldPos.y -= ((VolumetricCloudsCBuffer.g_VolumetricClouds.TimeAndScreenSize.x * VolumetricCloudsCBuffer.g_VolumetricClouds.UpstreamSpeed) / (VolumetricCloudsCBuffer.g_VolumetricClouds.CloudSize * 0.0657 * VolumetricCloudsCBuffer.g_VolumetricClouds.UpstreamScale));
+
+            float3 high_frequency_noises = highFreqNoiseTexture.sample(g_LinearWrapSampler, float3(( (worldPos + float3(windWithVelocity.z, 0.0, windWithVelocity.w)) * (float3)(DetailShapeTilingDivCloudSize))), level(lod)).rgb;
             float high_freq_fBm = ((((high_frequency_noises).r * (float)(0.625)) + ((high_frequency_noises).g * (float)(0.25))) + ((high_frequency_noises).b * (float)(0.125)));
             float height_fraction_new = getRelativeHeight(worldPos, currentProj, (VolumetricCloudsCBuffer.g_VolumetricClouds).LayerThickness);
             float height_freq_noise_modifier = mix(high_freq_fBm, ((float)(1.0) - high_freq_fBm), saturate((height_fraction_new * (float)(10.0))));
@@ -269,7 +271,7 @@ struct Fragment_Shader
         (light_energy = pow(abs(light_energy), contrast));
         return light_energy;
     };
-    float SampleEnergy(float3 rayPos, float3 magLightDirection, float height_fraction, float3 currentProj, float3 cloudTopOffsetWithWindDir, float2 windWithVelocity, float3 biasedCloudPos, float DetailShapeTilingDivCloudSize, float ds_loded, float stepSize, float cosTheta, float mipBias)
+    float SampleEnergy(float3 rayPos, float3 magLightDirection, float height_fraction, float3 currentProj, float3 cloudTopOffsetWithWindDir, float4 windWithVelocity, float3 biasedCloudPos, float DetailShapeTilingDivCloudSize, float ds_loded, float stepSize, float cosTheta, float mipBias)
     {
         float totalSample = 0;
         float mipmapOffset = mipBias;
@@ -286,9 +288,12 @@ struct Fragment_Shader
             (mipmapOffset += (float)(0.5));
             (step += 1.0);
         }
-        float hg = max(HenryGreenstein((VolumetricCloudsCBuffer.g_VolumetricClouds).Eccentricity, cosTheta), ((VolumetricCloudsCBuffer.g_VolumetricClouds).SilverliningIntensity * saturate(HenryGreenstein((0.99 - (VolumetricCloudsCBuffer.g_VolumetricClouds).SilverliningSpread), cosTheta))));
-        float lodded_density = saturate(SampleDensity(rayPos, mipBias, height_fraction, currentProj, cloudTopOffsetWithWindDir, windWithVelocity, biasedCloudPos, DetailShapeTilingDivCloudSize, true));
-        float energy = GetLightEnergy(height_fraction, (totalSample * (VolumetricCloudsCBuffer.g_VolumetricClouds).Precipitation), ds_loded, hg, cosTheta, stepSize, (VolumetricCloudsCBuffer.g_VolumetricClouds).Contrast);
+        float hg = max(HenryGreenstein((VolumetricCloudsCBuffer.g_VolumetricClouds).Eccentricity, cosTheta), (saturate(HenryGreenstein((0.99 - (VolumetricCloudsCBuffer.g_VolumetricClouds).SilverliningSpread), cosTheta)))) * (VolumetricCloudsCBuffer.g_VolumetricClouds).SilverliningIntensity;
+		float dl = totalSample * VolumetricCloudsCBuffer.g_VolumetricClouds.Precipitation;
+		hg = hg / max(dl, 0.05);
+
+		float lodded_density = saturate(SampleDensity(rayPos, mipBias, height_fraction, currentProj, cloudTopOffsetWithWindDir, windWithVelocity, biasedCloudPos, DetailShapeTilingDivCloudSize, true));
+        float energy = GetLightEnergy(height_fraction, dl, ds_loded, hg, cosTheta, stepSize, (VolumetricCloudsCBuffer.g_VolumetricClouds).Contrast);
         return energy;
     };
     float GetDensity(float3 startPos, float3 worldPos, float3 dir, float maxSampleDistance, float raymarchOffset, float EARTH_RADIUS_ADD_CLOUDS_LAYER_END, float EARTH_RADIUS_ADD_CLOUDS_LAYER_END2, thread float(& intensity), thread float(& atmosphericBlendFactor), thread float(& depth), float2 uv)
@@ -333,7 +338,7 @@ struct Fragment_Shader
         float2 textureSize = (((VolumetricCloudsCBuffer.g_VolumetricClouds).TimeAndScreenSize).zw * (float2)(0.25));
 #endif
 
-        uint2 texels = (uint2)(float2((VolumetricCloudsCBuffer.g_VolumetricClouds).Padding02, (VolumetricCloudsCBuffer.g_VolumetricClouds).Padding03) * uv);
+        uint2 texels = (uint2)(float2((VolumetricCloudsCBuffer.g_VolumetricClouds).DepthMapWidth, (VolumetricCloudsCBuffer.g_VolumetricClouds).DepthMapHeight) * uv);
         float sceneDepth;
         if (((float)((VolumetricCloudsCBuffer.g_VolumetricClouds).EnabledLodDepthCulling) > 0.5))
         {
@@ -356,7 +361,7 @@ struct Fragment_Shader
         bool pickedFirstHit = false;
         float cosTheta = dot(dir, ((VolumetricCloudsCBuffer.g_VolumetricClouds).lightDirection).xyz);
         float3 rayPos = sampleStart;
-        float2 windWithVelocity = ((VolumetricCloudsCBuffer.g_VolumetricClouds).StandardPosition).xz;
+        float4 windWithVelocity = ((VolumetricCloudsCBuffer.g_VolumetricClouds).StandardPosition);
         float3 biasedCloudPos = ((float3)(4.5) * (((VolumetricCloudsCBuffer.g_VolumetricClouds).WindDirection).xyz + float3(0.0, 0.1, 0.0)));
         float3 cloudTopOffsetWithWindDir = ((float3)((VolumetricCloudsCBuffer.g_VolumetricClouds).CloudTopOffset) * ((VolumetricCloudsCBuffer.g_VolumetricClouds).WindDirection).xyz);
         float DetailShapeTilingDivCloudSize = ((VolumetricCloudsCBuffer.g_VolumetricClouds).DetailShapeTiling / (VolumetricCloudsCBuffer.g_VolumetricClouds).CloudSize);
@@ -464,7 +469,7 @@ struct Fragment_Shader
         float2 textureSize = (((VolumetricCloudsCBuffer.g_VolumetricClouds).TimeAndScreenSize).zw * (float2)(0.25));
 #endif
 
-        uint2 texels = (uint2)(float2((VolumetricCloudsCBuffer.g_VolumetricClouds).Padding02, (VolumetricCloudsCBuffer.g_VolumetricClouds).Padding03) * uv);
+        uint2 texels = (uint2)(float2((VolumetricCloudsCBuffer.g_VolumetricClouds).DepthMapWidth, (VolumetricCloudsCBuffer.g_VolumetricClouds).DepthMapHeight) * uv);
         //float sceneDepth = depthTexture.read(uint2(texels.x, texels.y), 0).r;
         float alpha = 0.0;
         (intensity = 0.0);
@@ -479,7 +484,7 @@ struct Fragment_Shader
         bool pickedFirstHit = false;
         float cosTheta = dot(dir, ((VolumetricCloudsCBuffer.g_VolumetricClouds).lightDirection).xyz);
         float3 rayPos = sampleStart;
-        float2 windWithVelocity = ((VolumetricCloudsCBuffer.g_VolumetricClouds).StandardPosition).xz;
+        float4 windWithVelocity = ((VolumetricCloudsCBuffer.g_VolumetricClouds).StandardPosition);
         float3 biasedCloudPos = ((float3)(4.5) * (((VolumetricCloudsCBuffer.g_VolumetricClouds).WindDirection).xyz + float3(0.0, 0.1, 0.0)));
         float3 cloudTopOffsetWithWindDir = ((float3)((VolumetricCloudsCBuffer.g_VolumetricClouds).CloudTopOffset) * ((VolumetricCloudsCBuffer.g_VolumetricClouds).WindDirection).xyz);
         float DetailShapeTilingDivCloudSize = ((VolumetricCloudsCBuffer.g_VolumetricClouds).DetailShapeTiling / (VolumetricCloudsCBuffer.g_VolumetricClouds).CloudSize);
@@ -613,40 +618,50 @@ highFreqNoiseTexture(highFreqNoiseTexture),lowFreqNoiseTexture(lowFreqNoiseTextu
 	g_LinearDepthTexture(g_LinearDepthTexture),	g_LinearClampSampler(g_LinearClampSampler),g_LinearWrapSampler(g_LinearWrapSampler),g_PointClampSampler(g_PointClampSampler),g_LinearBorderSampler(g_LinearBorderSampler),VolumetricCloudsCBuffer(VolumetricCloudsCBuffer) {}
 };
 
+struct ArgsData
+{
+    texture3d<float> highFreqNoiseTexture;
+    texture3d<float> lowFreqNoiseTexture;
+    texture2d<float> curlNoiseTexture;
+    texture2d<float> weatherTexture;
+    texture2d<float> depthTexture;
+    //texture2d<float> LowResCloudTexture;
+    //texture2d<float> g_PrevFrameTexture;
+	texture2d<float> g_LinearDepthTexture;
+    sampler g_LinearClampSampler;
+    sampler g_LinearWrapSampler;
+    sampler g_PointClampSampler;
+    sampler g_LinearBorderSampler;
+};
+
+struct ArgsPerFrame
+{
+    constant Fragment_Shader::Uniforms_VolumetricCloudsCBuffer & VolumetricCloudsCBuffer;
+};
 
 fragment float4 stageMain(
     Fragment_Shader::PSIn input [[stage_in]],
-    texture3d<float> highFreqNoiseTexture [[texture(0)]],
-    texture3d<float> lowFreqNoiseTexture [[texture(1)]],
-    texture2d<float> curlNoiseTexture [[texture(2)]],
-    texture2d<float> weatherTexture [[texture(3)]],
-    texture2d<float> depthTexture [[texture(4)]],
-    //texture2d<float> LowResCloudTexture [[texture(5)]],
-    //texture2d<float> g_PrevFrameTexture [[texture(6)]],
-	texture2d<float> g_LinearDepthTexture [[texture(16)]],
-    sampler g_LinearClampSampler [[sampler(0)]],
-    sampler g_LinearWrapSampler [[sampler(1)]],
-    sampler g_PointClampSampler [[sampler(2)]],
-    sampler g_LinearBorderSampler [[sampler(3)]],
-    constant Fragment_Shader::Uniforms_VolumetricCloudsCBuffer & VolumetricCloudsCBuffer [[buffer(1)]])
+    constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+)
 {
     Fragment_Shader::PSIn input0;
     input0.Position = float4(input.Position.xyz, 1.0 / input.Position.w);
     input0.TexCoord = input.TexCoord;
     input0.VSray = input.VSray;
     Fragment_Shader main(
-    highFreqNoiseTexture,
-    lowFreqNoiseTexture,
-    curlNoiseTexture,
-    weatherTexture,
-    depthTexture,
-    //LowResCloudTexture,
-    //g_PrevFrameTexture,
-	g_LinearDepthTexture,
-	g_LinearClampSampler,
-    g_LinearWrapSampler,
-    g_PointClampSampler,
-    g_LinearBorderSampler,
-    VolumetricCloudsCBuffer);
+    argBufferStatic.highFreqNoiseTexture,
+    argBufferStatic.lowFreqNoiseTexture,
+    argBufferStatic.curlNoiseTexture,
+    argBufferStatic.weatherTexture,
+    argBufferStatic.depthTexture,
+    //argBufferStatic.LowResCloudTexture,
+    //argBufferStatic.g_PrevFrameTexture,
+	argBufferStatic.g_LinearDepthTexture,
+	argBufferStatic.g_LinearClampSampler,
+    argBufferStatic.g_LinearWrapSampler,
+    argBufferStatic.g_PointClampSampler,
+    argBufferStatic.g_LinearBorderSampler,
+    argBufferPerFrame.VolumetricCloudsCBuffer);
     return main.main(input0);
 }

@@ -25,9 +25,6 @@ struct PSIn
     vec2 VSray;
 };
 
-layout(set = 0, binding = 16) uniform texture2D g_PostProcessedTexture;
-layout(set = 0, binding = 17) uniform texture2D g_PrevVolumetricCloudTexture;
-
 vec4 HLSLmain(PSIn input0)
 {
     vec4 volumetricCloudsResult = texture(sampler2D( g_PostProcessedTexture, g_LinearClampSampler), vec2((input0).TexCoord));

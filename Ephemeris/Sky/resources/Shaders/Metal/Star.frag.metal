@@ -27,13 +27,24 @@ struct PsIn
 	float3 color;
 };
 
+struct ArgsData
+{
+	texture2d<float> depthTexture;
+    sampler g_LinearBorder;
+};
+
+struct ArgsPerFrame
+{
+	constant Uniforms_StarUniform & StarUniform;
+};
+
 fragment float4 stageMain(PsIn In [[stage_in]],
-    constant Uniforms_StarUniform & StarUniform [[buffer(5)]],
-    texture2d<float> depthTexture [[texture(4)]],
-    sampler g_LinearBorder [[sampler(1)]])
+	constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+)
 {
 	float2 screenUV = (In).screenCoord;
-    float sceneDepth = depthTexture.sample(g_LinearBorder, screenUV, level(0)).r;
+    float sceneDepth = argBufferStatic.depthTexture.sample(argBufferStatic.g_LinearBorder, screenUV, level(0)).r;
 	if(sceneDepth < 1.0)
 		discard_fragment();
 
@@ -47,7 +58,7 @@ fragment float4 stageMain(PsIn In [[stage_in]],
 	float y8 = y4*y2;
 
 	float Mask = max( x8 * y8, 0.0);
-	float alpha = saturate(saturate(-StarUniform.LightDirection.y + 0.2f) * 2.0f);
+	float alpha = saturate(saturate(-argBufferPerFrame.StarUniform.LightDirection.y + 0.2f) * 2.0f);
 
 	
 	return float4(In.color, Mask *alpha);

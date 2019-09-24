@@ -27,8 +27,6 @@ struct PSOut
     vec4 ResultColor;
 };
 
-layout(set = 0, binding = 15) uniform texture2D g_GodrayTexture;
-
 vec4 HLSLmain(PSIn input0)
 {
     vec2 db_uvs = (input0).TexCoord;

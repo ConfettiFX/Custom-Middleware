@@ -49,13 +49,19 @@ constant Uniforms_RootConstant & RootConstant,texture3d<float> SrcTexture,textur
 RootConstant(RootConstant),SrcTexture(SrcTexture),DstTexture(DstTexture) {}
 };
 
+struct ArgsData
+{
+    texture3d<float> SrcTexture;
+    texture3d<float, access::read_write> DstTexture;
+};
+
 //[numthreads(1, 1, 1)]
 kernel void stageMain(
 uint3 GTid [[thread_position_in_threadgroup]],
 uint3 Gid [[threadgroup_position_in_grid]],
-    constant Compute_Shader::Uniforms_RootConstant & RootConstant [[buffer(1)]],
-    texture3d<float> SrcTexture [[texture(0)]],
-    texture3d<float, access::read_write> DstTexture [[texture(1)]])
+    constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+    constant Compute_Shader::Uniforms_RootConstant & RootConstant [[buffer(UPDATE_FREQ_USER + 3)]]
+)
 {
     uint3 GTid0;
     GTid0 = GTid;
@@ -63,7 +69,7 @@ uint3 Gid [[threadgroup_position_in_grid]],
     Gid0 = Gid;
     Compute_Shader main(
     RootConstant,
-    SrcTexture,
-    DstTexture);
+    argBufferStatic.SrcTexture,
+    argBufferStatic.DstTexture);
     return main.main(GTid0, Gid0);
 }

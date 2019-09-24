@@ -13,7 +13,7 @@ layout(location = 0) in vec4 POSITION;
 layout(location = 1) in vec4 NORMAL;
 layout(location = 0) out vec4 vertOutput_Position;
 
-layout(set = 0, binding = 9) uniform SunUniform_Block
+layout(UPDATE_FREQ_PER_FRAME, binding = 9) uniform SunUniform_Block
 {
     mat4 ViewMat;
     mat4 ViewProjMat;

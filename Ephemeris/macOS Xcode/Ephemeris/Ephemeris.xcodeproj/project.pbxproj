@@ -157,7 +157,6 @@
 		65E90DB92294837100549B03 /* genLowTopFreq3Dtex.comp.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = genLowTopFreq3Dtex.comp.metal; sourceTree = "<group>"; };
 		65E90DBA2294837200549B03 /* gen3DtexMipmap.comp.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = gen3DtexMipmap.comp.metal; sourceTree = "<group>"; };
 		65E90DBB2294837200549B03 /* Triangular.vert.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Triangular.vert.metal; sourceTree = "<group>"; };
-		65E90DBC2294837200549B03 /* basic.frag.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = basic.frag.metal; sourceTree = "<group>"; };
 		65E90DBD2294837200549B03 /* copyWeatherTexture.comp.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = copyWeatherTexture.comp.metal; sourceTree = "<group>"; };
 		65E90DBE2294837200549B03 /* HiZdownSamplingPR.comp.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = HiZdownSamplingPR.comp.metal; sourceTree = "<group>"; };
 		65E90DBF2294837200549B03 /* volumetricCloud.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = volumetricCloud.h; sourceTree = "<group>"; };
@@ -165,7 +164,6 @@
 		65E90DC12294837200549B03 /* copyRT.comp.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = copyRT.comp.metal; sourceTree = "<group>"; };
 		65E90DC22294837200549B03 /* godrayAdd.frag.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = godrayAdd.frag.metal; sourceTree = "<group>"; };
 		65E90DC32294837200549B03 /* genHighTopFreq3Dtex.comp.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = genHighTopFreq3Dtex.comp.metal; sourceTree = "<group>"; };
-		65E90DC42294837200549B03 /* basic.vert.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = basic.vert.metal; sourceTree = "<group>"; };
 		65E90DC52294837200549B03 /* HiZdownSampling.comp.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = HiZdownSampling.comp.metal; sourceTree = "<group>"; };
 		65E90DC62294837200549B03 /* BlurHorizontal.comp.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = BlurHorizontal.comp.metal; sourceTree = "<group>"; };
 		65E90DC72294837200549B03 /* BlurVertical.comp.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = BlurVertical.comp.metal; sourceTree = "<group>"; };
@@ -391,8 +389,6 @@
 				65E90DD92294B30C00549B03 /* volumetricCloud.frag.metal */,
 				65E90DDC2294B30C00549B03 /* volumetricCloud.vert.metal */,
 				65E90DDA2294B30C00549B03 /* volumetricCloudWithDepth.comp.metal */,
-				65E90DBC2294837200549B03 /* basic.frag.metal */,
-				65E90DC42294837200549B03 /* basic.vert.metal */,
 				65E90DC62294837200549B03 /* BlurHorizontal.comp.metal */,
 				65E90DC72294837200549B03 /* BlurVertical.comp.metal */,
 				65E90DC82294837200549B03 /* castShadow.frag.metal */,

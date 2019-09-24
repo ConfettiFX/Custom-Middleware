@@ -12,8 +12,8 @@
 layout(location = 0) in vec2 fragInput_TEXCOORD;
 layout(location = 0) out float rast_FragData0; 
 
-layout(set = 1, binding = 0) uniform texture2D SrcTexture;
-layout(set = 0, binding = 3) uniform sampler g_LinearClamp;
+layout(UPDATE_FREQ_NONE, binding = 3) uniform texture2D SrcTexture;
+layout(UPDATE_FREQ_NONE, binding = 4) uniform sampler g_LinearClamp;
 layout(push_constant) uniform CameraInfoRootConstant_Block
 {
     float nearPlane;

@@ -109,28 +109,38 @@ constant RenderSky::Uniforms_RenderSkyUniformBuffer & RenderSkyUniformBuffer,
 	TransmittanceColor(TransmittanceColor) {}
 };
 
+struct ArgsData
+{
+    texture2d<float> SceneColorTexture;
+    texture2d<float> Depth;
+    texture2d<float> TransmittanceTexture;
+    //texture2d<float> IrradianceTexture;
+    texture3d<float> InscatterTexture;
+    sampler g_LinearClamp;
+    device float4* TransmittanceColor;
+};
+
+struct ArgsPerFrame
+{
+    constant RenderSky::Uniforms_RenderSkyUniformBuffer & RenderSkyUniformBuffer;
+};
 
 vertex Vertex_Shader::PsIn stageMain(
 uint VertexID [[vertex_id]],
-    constant RenderSky::Uniforms_RenderSkyUniformBuffer & RenderSkyUniformBuffer [[buffer(1)]],
-    texture2d<float> SceneColorTexture [[texture(0)]],
-    texture2d<float> Depth [[texture(1)]],
-    texture2d<float> TransmittanceTexture [[texture(2)]],
-    //texture2d<float> IrradianceTexture [[texture(3)]],
-    texture3d<float> InscatterTexture [[texture(3)]],
-    sampler g_LinearClamp [[sampler(0)]],
-    device float4* TransmittanceColor [[buffer(2)]])
+	constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+)
 {
     uint VertexID0;
     VertexID0 = VertexID;
     Vertex_Shader main(
-    RenderSkyUniformBuffer,
-    SceneColorTexture,
-    Depth,
-    TransmittanceTexture,
-    //IrradianceTexture,
-    InscatterTexture,
-    g_LinearClamp,
-    TransmittanceColor);
+    argBufferPerFrame.RenderSkyUniformBuffer,
+    argBufferStatic.SceneColorTexture,
+    argBufferStatic.Depth,
+    argBufferStatic.TransmittanceTexture,
+    //argBufferStatic.IrradianceTexture,
+    argBufferStatic.InscatterTexture,
+    argBufferStatic.g_LinearClamp,
+    argBufferStatic.TransmittanceColor);
     return main.main(VertexID0);
 }

@@ -36,16 +36,16 @@ public:
 
 	void Initialize(uint InImageCount,
 		ICameraController* InCameraController, Queue*	InGraphicsQueue,
-		Cmd** InTransCmds, Fence* InTransitionCompleteFences, GpuProfiler*	InGraphicsGpuProfiler, UIApp* InGAppUI, Buffer*	pTransmittanceBuffer);	
-	
+		Cmd** InTransCmds, Fence* InTransitionCompleteFences, GpuProfiler*	InGraphicsGpuProfiler, UIApp* InGAppUI, Buffer*	pTransmittanceBuffer);
+
 	void InitializeWithLoad(RenderTarget* InDepthRenderTarget, RenderTarget* InLinearDepthRenderTarget);
-  
+
 	void CalculateLookupData();
 	float3 GetSunColor();
-  void GenerateIcosahedron(float **ppPoints, eastl::vector<float> &vertices, eastl::vector<uint32_t> &indices, int numberOfDivisions, float radius = 1.0f);
-  void GenerateRing(eastl::vector<float> &vertices, eastl::vector<uint32_t> &indices, uint32_t WidthDividor, uint32_t HeightDividor, float radius = 1.0f, float height = 1.0f);
+	void GenerateIcosahedron(float **ppPoints, eastl::vector<float> &vertices, eastl::vector<uint32_t> &indices, int numberOfDivisions, float radius = 1.0f);
+	void GenerateRing(eastl::vector<float> &vertices, eastl::vector<uint32_t> &indices, uint32_t WidthDividor, uint32_t HeightDividor, float radius = 1.0f, float height = 1.0f);
 
-  uint                  gFrameIndex;
+	uint                  gFrameIndex;
 
 	Renderer*             pRenderer;
 
@@ -66,11 +66,11 @@ public:
 	Texture*              pIrradianceTexture;		//unsigned int irradianceTexture;//unit 2, E table
 	Texture*              pInscatterTexture;		//unsigned int inscatterTexture;//unit 3, S table
 	Texture*              pMoonTexture;
-	
+
 	Buffer*               pGlobalTriangularVertexBuffer;
 
 	Sampler*              pLinearClampSampler;
-  Sampler*              pLinearBorderSampler;
+	Sampler*              pLinearBorderSampler;
 
 	RasterizerState*      pRasterizerForSky = NULL;
 	RenderTarget*         pPreStageRenderTarget;
@@ -80,8 +80,8 @@ public:
 
 	ICameraController*    pCameraController = NULL;
 
-  float                 Azimuth;
-  float                 Elevation;
+	float                 Azimuth;
+	float                 Elevation;
 	float3                LightDirection;
 	float4                LightColorAndIntensity;
 
@@ -89,5 +89,5 @@ public:
 
 	Buffer*               pTransmittanceBuffer;
 
-  Perlin                noiseGenerator;
+	Perlin                noiseGenerator;
 };

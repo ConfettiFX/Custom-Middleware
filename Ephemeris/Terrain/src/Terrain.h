@@ -31,9 +31,9 @@ struct Zone
 	bool visible;
 	uint32_t X;
 	uint32_t Z;
-	
+
 	//vec3 positions[GRID_SIZE][GRID_SIZE];
-  eastl::vector<float> PosAndUVs;
+	eastl::vector<float> PosAndUVs;
 
 	Buffer*	pZoneVertexBuffer = NULL;
 	Buffer*	pZoneIndexBuffer = NULL;
@@ -65,9 +65,9 @@ typedef eastl::unordered_map<uint32_t, Zone*> ZoneMap;
 
 struct VolumetricCloudsShadowCB
 {
-  vec4	SettingInfo00;			// x : EnableCastShadow, y : CloudCoverage, z : WeatherTextureTiling, w : Time
-  vec4	StandardPosition;		// xyz : The current center location for applying wind, w : ShadowBrightness
-  vec4  ShadowInfo; //vec4(gAppSettings.m_ShadowBrightness, gAppSettings.m_ShadowSpeed, gAppSettings.m_ShadowTiling, 0.0);
+	vec4	SettingInfo00;			// x : EnableCastShadow, y : CloudCoverage, z : WeatherTextureTiling, w : Time
+	vec4	StandardPosition;		// xyz : The current center location for applying wind, w : ShadowBrightness
+	vec4  ShadowInfo; //vec4(gAppSettings.m_ShadowBrightness, gAppSettings.m_ShadowSpeed, gAppSettings.m_ShadowTiling, 0.0);
 };
 
 
@@ -76,11 +76,11 @@ class Terrain : public IMiddleware
 public:
 
 	virtual bool Init(Renderer* renderer) final;
-	virtual void Exit() final;	
+	virtual void Exit() final;
 	virtual bool Load(RenderTarget** rts, uint32_t count = 1) final;
 	virtual void Unload() final;
 	virtual void Draw(Cmd* cmd) final;
-	virtual void Update(float deltaTime) final;	
+	virtual void Update(float deltaTime) final;
 
 
 	void InitializeWithLoad(RenderTarget* InDepthRenderTarget);
@@ -98,9 +98,9 @@ public:
 
 	uint                      gImageCount;
 	uint                      mWidth;
-	uint                      mHeight;	
+	uint                      mHeight;
 
-  uint                      gFrameIndex;
+	uint                      gFrameIndex;
 
 	GuiComponent*             pGuiWindow = nullptr;
 	UIApp*                    pGAppUI;
@@ -126,17 +126,17 @@ public:
 
 	Perlin                    noiseGenerator;
 
-  eastl::unordered_map < uint32_t, Zone* > gZoneMap;
-  eastl::vector <uint32_t>  indexBuffer;
+	eastl::unordered_map < uint32_t, Zone* > gZoneMap;
+	eastl::vector <uint32_t>  indexBuffer;
 
 	Buffer*                   pGlobalZoneIndexBuffer;
 	Buffer*                   pGlobalVertexBuffer;
 
-  eastl::vector<MeshSegment> meshSegments;
+	eastl::vector<MeshSegment> meshSegments;
 	Buffer*                   pGlobalTriangularVertexBuffer;
-  
-  Buffer*                   pLightingTerrainUniformBuffer[3];
-  Buffer*                   pRenderTerrainUniformBuffer[3];
+
+	Buffer*                   pLightingTerrainUniformBuffer[3];
+	Buffer*                   pRenderTerrainUniformBuffer[3];
 
 	Texture*                  pTerrainHeightMap;
 	RenderTarget*             pNormalMapFromHeightmapRT;
@@ -144,14 +144,14 @@ public:
 	Texture*                  pTerrainNormalTexture;
 	Texture*                  pTerrainMaskTexture;
 
-  eastl::vector<Texture*>   pTerrainTiledColorTextures;
-  eastl::vector<Texture*>   pTerrainTiledNormalTextures;
-	
+	eastl::vector<Texture*>   pTerrainTiledColorTextures;
+	eastl::vector<Texture*>   pTerrainTiledNormalTextures;
+
 	Texture*                  gTerrainTiledColorTexturesStorage = NULL;
 	Texture*                  gTerrainTiledNormalTexturesStorage = NULL;
 
-  eastl::vector<Texture*>   gTerrainTiledColorTexturesPacked;
-  eastl::vector<Texture*>   gTerrainTiledNormalTexturesPacked;
+	eastl::vector<Texture*>   gTerrainTiledColorTexturesPacked;
+	eastl::vector<Texture*>   gTerrainTiledNormalTexturesPacked;
 
 	bool                      bFirstDraw = true;
 
@@ -171,9 +171,9 @@ public:
 	float4                    LightColorAndIntensity;
 	float3                    SunColor;
 
-  bool                      IsEnabledShadow;
-  VolumetricCloudsShadowCB  volumetricCloudsShadowCB; 
-  Texture*                  pWeatherMap;
+	bool                      IsEnabledShadow;
+	VolumetricCloudsShadowCB  volumetricCloudsShadowCB;
+	Texture*                  pWeatherMap;
 
-  Buffer*                   pVolumetricCloudsShadowBuffer;
+	Buffer*                   pVolumetricCloudsShadowBuffer;
 };

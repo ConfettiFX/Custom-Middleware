@@ -15,7 +15,7 @@
 layout(location = 0) out vec3 vertOutput_TexCoord;
 layout(location = 1) out vec2 vertOutput_TexCoord1;
 
-layout(std430, set = 0, binding = 6) restrict buffer TransmittanceColor_Block {
+layout(std430, UPDATE_FREQ_NONE, binding = 6) restrict buffer TransmittanceColor_Block {
  	 vec4 TransmittanceColor_Data[];
 }TransmittanceColor;
 

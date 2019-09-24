@@ -12,7 +12,7 @@
 layout(location = 0) in vec2 fragInput_ScreenPos;
 layout(location = 0) out vec4 rast_FragData0; 
 
-layout(set = 1, binding = 1) uniform LightingTerrainUniformBuffer_Block
+layout(UPDATE_FREQ_PER_FRAME, binding = 1) uniform LightingTerrainUniformBuffer_Block
 {
     mat4 InvViewProjMat;
     mat4 ShadowViewProjMat;
@@ -22,20 +22,20 @@ layout(set = 1, binding = 1) uniform LightingTerrainUniformBuffer_Block
     vec4 LightColor;
 }LightingTerrainUniformBuffer;
 
-layout(set = 1, binding = 2) uniform VolumetricCloudsShadowCB_Block
+layout(UPDATE_FREQ_PER_FRAME, binding = 2) uniform VolumetricCloudsShadowCB_Block
 {
   vec4	SettingInfo00;			// x : EnableCastShadow, y : CloudCoverage, z : WeatherTextureTiling, w : Time
   vec4	StandardPosition;		// xyz : The current center location for applying wind, w : ShadowBrightness
   vec4  ShadowInfo;
 }VolumetricCloudsShadowCB;
 
-layout(set = 0, binding = 16) uniform texture2D BasicTexture;
-layout(set = 0, binding = 17) uniform texture2D NormalTexture;
-layout(set = 0, binding = 18) uniform texture2D weatherTexture;
-layout(set = 0, binding = 19) uniform texture2D depthTexture;
+layout(UPDATE_FREQ_NONE, binding = 16) uniform texture2D BasicTexture;
+layout(UPDATE_FREQ_NONE, binding = 17) uniform texture2D NormalTexture;
+layout(UPDATE_FREQ_NONE, binding = 18) uniform texture2D weatherTexture;
+layout(UPDATE_FREQ_NONE, binding = 19) uniform texture2D depthTexture;
 
-layout(set = 0, binding = 13) uniform sampler g_LinearMirror;
-layout(set = 0, binding = 14) uniform sampler g_LinearWrap;
+layout(UPDATE_FREQ_NONE, binding = 13) uniform sampler g_LinearMirror;
+layout(UPDATE_FREQ_NONE, binding = 14) uniform sampler g_LinearWrap;
 
 //Code from https://area.autodesk.com/blogs/game-dev-blog/volumetric-clouds/.
 bool ray_trace_sphere(vec3 center, vec3 rd, vec3 offset, float radius2, out float t1, out float t2) {

@@ -41,19 +41,24 @@ texture2d<float> SrcTexture,sampler g_LinearClamp,constant Uniforms_CameraInfoRo
 SrcTexture(SrcTexture),g_LinearClamp(g_LinearClamp),CameraInfoRootConstant(CameraInfoRootConstant) {}
 };
 
+struct ArgsData
+{
+	texture2d<float> SrcTexture;
+	sampler g_LinearClamp;
+};
 
 fragment float4 stageMain(
     Fragment_Shader::PSIn input [[stage_in]],
-    texture2d<float> SrcTexture [[texture(0)]],
-    sampler g_LinearClamp [[sampler(0)]],
-    constant Fragment_Shader::Uniforms_CameraInfoRootConstant & CameraInfoRootConstant [[buffer(1)]])
+	constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+	constant Fragment_Shader::Uniforms_CameraInfoRootConstant & CameraInfoRootConstant [[buffer(UPDATE_FREQ_USER + 7)]]
+)
 {
     Fragment_Shader::PSIn input0;
     input0.Position = float4(input.Position.xyz, 1.0 / input.Position.w);
     input0.TexCoord = input.TexCoord;
     Fragment_Shader main(
-    SrcTexture,
-    g_LinearClamp,
+    argBufferStatic.SrcTexture,
+    argBufferStatic.g_LinearClamp,
     CameraInfoRootConstant);
     return main.main(input0);
 }

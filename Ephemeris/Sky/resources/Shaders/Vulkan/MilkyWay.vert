@@ -27,7 +27,7 @@ layout(location = 0) out vec4 vertOutput_NORMAL;
 layout(location = 1) out vec4 vertOutput_COLOR;
 layout(location = 2) out vec2 vertOutput_TexCoord;
 
-layout(row_major, set = 0, binding = 7) uniform SpaceUniform
+layout(row_major, UPDATE_FREQ_PER_FRAME, binding = 7) uniform SpaceUniform
 {
     mat4 ViewProjMat;
     vec4 LightDirection;

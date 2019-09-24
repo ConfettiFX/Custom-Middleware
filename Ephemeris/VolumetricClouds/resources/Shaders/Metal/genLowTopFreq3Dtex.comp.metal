@@ -38,21 +38,27 @@ struct Compute_Shader
 					sliceNumInfo(sliceNumInfo){}
 };
 
+struct ArgsData
+{
+    texture2d<float> SrcTexture;
+    texture3d<float, access::read_write> DstTexture;
+};
+
 //[numthreads(16, 16, 1)]
 kernel void stageMain(
 uint3 GTid [[thread_position_in_threadgroup]],
 uint3 Gid [[threadgroup_position_in_grid]],
-    texture2d<float> SrcTexture [[texture(0)]],
-    texture3d<float, access::read_write> DstTexture [[texture(1)]],
-	constant SliceNumInfo & sliceRootConstant [[buffer(0)]])
+    constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+	constant SliceNumInfo & sliceRootConstant [[buffer(UPDATE_FREQ_USER + 2)]]
+)
 {
     uint3 GTid0;
     GTid0 = GTid;
     uint3 Gid0;
     Gid0 = Gid;
     Compute_Shader main(
-    SrcTexture,
-    DstTexture,
+    argBufferStatic.SrcTexture,
+    argBufferStatic.DstTexture,
 	sliceRootConstant);
     return main.main(GTid0, Gid0);
 }

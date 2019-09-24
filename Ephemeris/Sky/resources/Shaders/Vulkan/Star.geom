@@ -20,7 +20,7 @@ layout(location = 1) out vec2 geomOutput_ScreenCoord;
 layout(location = 2) out vec3 geomOutput_Color;
 
 
-layout(set = 0, binding = 11) uniform StarUniform_Block
+layout(UPDATE_FREQ_PER_FRAME, binding = 11) uniform StarUniform_Block
 {
     mat4 RotMat;
     mat4 ViewProjMat;

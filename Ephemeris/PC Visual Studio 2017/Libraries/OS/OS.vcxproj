@@ -58,9 +58,7 @@
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\imgui\imgui_widgets.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\Profiler.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerBase.cpp" />
-    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerDraw.cpp" />
-    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerInput.cpp" />
-    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerUI.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerWidgetsUI.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\TinyEXR\tinyexr.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\BaseComponent.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\ComponentRepresentation.cpp" />
@@ -95,7 +93,7 @@
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\imgui\imgui_internal.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerBase.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerHTML.h" />
-    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerUI.h" />
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerWidgetsUI.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\BaseComponent.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\ComponentRepresentation.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\EntityManager.h" />

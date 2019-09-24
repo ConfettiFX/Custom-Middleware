@@ -7,7 +7,7 @@
 *
 */
 
-cbuffer SunUniform : register(b3)
+cbuffer SunUniform : register(b3, UPDATE_FREQ_PER_FRAME)
 {
 	float4x4 ViewMat;
 	float4x4 ViewProjMat;

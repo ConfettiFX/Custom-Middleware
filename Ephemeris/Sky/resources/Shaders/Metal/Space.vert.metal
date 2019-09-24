@@ -51,15 +51,20 @@ constant spaceUniform & SpaceUniform) :
 SpaceUniform(SpaceUniform) {}
 };
 
+struct ArgsPerFrame
+{
+    constant Vertex_Shader::spaceUniform & SpaceUniform;
+};
 
 vertex Vertex_Shader::VSOutput stageMain(
     Vertex_Shader::VSInput Input [[stage_in]],
-    constant Vertex_Shader::spaceUniform & SpaceUniform [[buffer(3)]])
+    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+)
 {
     Vertex_Shader::VSInput Input0;
     Input0.Position = Input.Position;
     Input0.Normal = Input.Normal;
     Input0.StarInfo = Input.StarInfo;
-    Vertex_Shader main(SpaceUniform);
+    Vertex_Shader main(argBufferPerFrame.SpaceUniform);
     return main.main(Input0);
 }
