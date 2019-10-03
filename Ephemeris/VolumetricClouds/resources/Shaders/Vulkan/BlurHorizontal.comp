@@ -16,11 +16,6 @@
 
 
 #define MAX_WIDTH 1024
-layout(push_constant) uniform RootConstantScreenSize_Block
-{
-    uint width;
-    uint height;
-}RootConstantScreenSize;
 
 shared vec2 SharedData[MAX_WIDTH];
 

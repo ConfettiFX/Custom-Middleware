@@ -2404,7 +2404,6 @@ void VolumetricClouds::Draw(Cmd* cmd)
 			data.height = pHBlurTex->mDesc.mHeight;
 
 			cmdBindPipeline(cmd, pHorizontalBlurPipeline);
-			cmdBindPushConstants(cmd, pVolumetricCloudsRootSignatureCompute, "RootConstantScreenSize", &data);
 			cmdBindDescriptorSet(cmd, 4, pVolumetricCloudsDescriptorSetCompute[0]);
 			cmdDispatch(cmd, 1, pHBlurTex->mDesc.mHeight, 1);
 
