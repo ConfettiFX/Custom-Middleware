@@ -9,15 +9,7 @@
 |---|
 [![](Screenshots/NightSky02.png)](https://vimeo.com/352541826)
 
-Ephemeris 2 is a middleware solution for implementing a dynamic 24 hour Skydome System. It is running on top of [The Forge](https://github.com/ConfettiFX/The-Forge) and therefore supports the same platforms, which are at the moment 
-* Windows 10
-* macOS
-* Linux
-* XBOX One
-* PS4
-* iOS (with the release of Ephemeris 1)
-* Android  (with the release of Ephemeris 1)
-* More to come ...
+Ephemeris 2 is a middleware solution for implementing a dynamic 24 hour Skydome System. It is running on top of [The Forge](https://github.com/ConfettiFX/The-Forge) and therefore supports the same platforms. We will release Ephemeris 1 for the iOS / Android mobile platforms in the future.
 
 Check out the demo video by clicking the main image above!
 
@@ -71,6 +63,9 @@ Check out the demo video by clicking the main image above!
 # News
 All releases happen in sync with [The Forge](https://github.com/ConfettiFX/The-Forge) and have therefore the same release number.
 
+## Release 1.35 - October 2nd, 2019
+Maintenance release following the upate of the Forge.
+
 ## Release 1.34 - September 23rd
 Maintenance release following the upate of the Forge.
 
@@ -103,7 +98,7 @@ Click on the following screenshot to see a movie:
  
 ## Installation
 
- To build Ephemeris you would need to need to download the latest version of [The Forge](https://github.com/ConfettiFX/The-Forge). Your folder overview should look like this:
+ To build Ephemeris you would need to download the latest version of [The Forge](https://github.com/ConfettiFX/The-Forge). Your folder overview should look like this:
 
  ```
  The-Forge
