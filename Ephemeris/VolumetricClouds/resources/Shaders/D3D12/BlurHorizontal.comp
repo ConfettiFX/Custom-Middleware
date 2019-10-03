@@ -12,12 +12,6 @@
 Texture2D<float4> InputTex : register(t22);
 RWTexture2D<float4> OutputTex : register(u1);
 
-cbuffer RootConstantScreenSize : register(b7)
-{
-	uint width;
-	uint height;
-}
-
 groupshared half2 SharedData[MAX_WIDTH];
 
 [numthreads(MAX_WIDTH, 1, 1)]

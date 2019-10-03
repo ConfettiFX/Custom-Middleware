@@ -147,6 +147,9 @@ struct SpaceUniformBuffer
 	mat4 ViewProjMat;
 	float4 LightDirection;
 	float4 ScreenSize;
+	float4 NebulaHighColor;
+	float4 NebulaMidColor;
+	float4 NebulaLowColor;
 };
 
 struct SunUniformBuffer
