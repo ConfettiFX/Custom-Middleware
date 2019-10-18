@@ -43,7 +43,6 @@
     <File Name="../../../../The-Forge/Common_3/OS/Core/Atomics.h"/>
     <File Name="../../../../The-Forge/Common_3/OS/Core/Compiler.h"/>
     <File Name="../../../../The-Forge/Common_3/OS/Core/DLL.h"/>
-    <File Name="../../../../The-Forge/Common_3/OS/Core/FileSystem.cpp"/>
     <File Name="../../../../The-Forge/Common_3/OS/Core/RingBuffer.h"/>
     <File Name="../../../../The-Forge/Common_3/OS/Core/ThreadSystem.cpp"/>
     <File Name="../../../../The-Forge/Common_3/OS/Core/ThreadSystem.h"/>
@@ -85,6 +84,25 @@
   <VirtualDirectory Name="Dependencies">
     <File Name="../../../../The-Forge/Common_3/ThirdParty/OpenSource/TinyEXR/tinyexr.cpp"/>
   </VirtualDirectory>
+  <Dependencies Name="Debug">
+    <Project Name="gainput"/>
+  </Dependencies>
+  <Dependencies Name="Release"/>
+  <VirtualDirectory Name="FileSystem">
+    <File Name="../../../../The-Forge/Common_3/OS/FileSystem/FileSystemInternal.cpp"/>
+    <File Name="../../../../The-Forge/Common_3/OS/FileSystem/FileSystemInternal.h"/>
+    <File Name="../../../../The-Forge/Common_3/OS/FileSystem/MemoryStream.cpp"/>
+    <File Name="../../../../The-Forge/Common_3/OS/FileSystem/MemoryStream.h"/>
+    <File Name="../../../../The-Forge/Common_3/OS/FileSystem/SystemFileStream.cpp"/>
+    <File Name="../../../../The-Forge/Common_3/OS/FileSystem/SystemFileStream.h"/>
+    <File Name="../../../../The-Forge/Common_3/OS/FileSystem/SystemRun.cpp"/>
+    <File Name="../../../../The-Forge/Common_3/OS/FileSystem/ZipFileStream.cpp"/>
+    <File Name="../../../../The-Forge/Common_3/OS/FileSystem/ZipFileStream.h"/>
+    <File Name="../../../../The-Forge/Common_3/OS/FileSystem/ZipFileSystem.cpp"/>
+    <File Name="../../../../The-Forge/Common_3/OS/FileSystem/ZipFileSystem.h"/>
+    <File Name="../../../../The-Forge/Common_3/OS/FileSystem/UnixFileSystem.cpp"/>
+    <File Name="../../../../The-Forge/Common_3/OS/FileSystem/UnixFileSystem.h"/>
+  </VirtualDirectory>
   <Settings Type="Static Library">
     <GlobalSettings>
       <Compiler Options="" C_Options="" Assembler="">
@@ -100,6 +118,7 @@
         <IncludePath Value="."/>
         <Preprocessor Value="VULKAN"/>
         <Preprocessor Value="_DEBUG"/>
+        <Preprocessor Value="FORGE_DISABLE_ZIP"/>
       </Compiler>
       <Linker Options="" Required="yes"/>
       <ResourceCompiler Options="" Required="no"/>
@@ -141,6 +160,7 @@
         <IncludePath Value="."/>
         <Preprocessor Value="VULKAN"/>
         <Preprocessor Value="NDEBUG"/>
+        <Preprocessor Value="FORGE_DISABLE_ZIP"/>
       </Compiler>
       <Linker Options="" Required="yes"/>
       <ResourceCompiler Options="" Required="no"/>
@@ -178,8 +198,4 @@
       </Completion>
     </Configuration>
   </Settings>
-  <Dependencies Name="Debug">
-    <Project Name="gainput"/>
-  </Dependencies>
-  <Dependencies Name="Release"/>
 </CodeLite_Project>

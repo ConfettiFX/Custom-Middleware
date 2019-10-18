@@ -7,8 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		5C172F34214147700074EE71 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C172F32214147700074EE71 /* AppDelegate.m */; };
-		5C17300521414D110074EE71 /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 5C17300421414D110074EE71 /* AppDelegate.m */; };
 		5CA80F4C21F0A0D000C99983 /* fontstash.frag.metal in Copy Files */ = {isa = PBXBuildFile; fileRef = 5CA80E2D21F09FCC00C99983 /* fontstash.frag.metal */; };
 		5CA80F4D21F0A0D000C99983 /* fontstash2D.vert.metal in Copy Files */ = {isa = PBXBuildFile; fileRef = 5CA80E2C21F09FCC00C99983 /* fontstash2D.vert.metal */; };
 		5CA80F4E21F0A0D000C99983 /* fontstash3D.vert.metal in Copy Files */ = {isa = PBXBuildFile; fileRef = 5CA80E2B21F09FCC00C99983 /* fontstash3D.vert.metal */; };
@@ -30,6 +28,8 @@
 		65C55CD2229734BF008456ED /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 65C55CD1229734BF008456ED /* Assets.xcassets */; };
 		B2087DD321421A13006F372D /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B2087DD121421A13006F372D /* MetalKit.framework */; };
 		B2087DD421421A13006F372D /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B2087DD221421A13006F372D /* Metal.framework */; };
+		B21CD70E23593AC900D0EDCC /* macOSAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = B21CD70C23593AC900D0EDCC /* macOSAppDelegate.m */; };
+		B21CD71123593AF900D0EDCC /* iOSAppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = B21CD70F23593AF800D0EDCC /* iOSAppDelegate.m */; };
 		B21F76BE21420E7000DF2297 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B21F76BB21420E7000DF2297 /* UIKit.framework */; };
 		B21F76BF21420E7000DF2297 /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B21F76BC21420E7000DF2297 /* MetalKit.framework */; };
 		B21F76C021420E7000DF2297 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B21F76BD21420E7000DF2297 /* Metal.framework */; };
@@ -98,10 +98,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		5C172F32214147700074EE71 /* AppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AppDelegate.m; path = "../../../../../The-Forge/Common_3/OS/macOS/AppDelegate.m"; sourceTree = "<group>"; };
-		5C172F33214147700074EE71 /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = "../../../../../The-Forge/Common_3/OS/macOS/AppDelegate.h"; sourceTree = "<group>"; };
-		5C17300321414D110074EE71 /* AppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AppDelegate.h; path = "../../../../../The-Forge/Common_3/OS/iOS/AppDelegate.h"; sourceTree = "<group>"; };
-		5C17300421414D110074EE71 /* AppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = AppDelegate.m; path = "../../../../../The-Forge/Common_3/OS/iOS/AppDelegate.m"; sourceTree = "<group>"; };
 		5CA80E1F21F09FB900C99983 /* textured_mesh.vert.metal */ = {isa = PBXFileReference; explicitFileType = text; fileEncoding = 4; name = textured_mesh.vert.metal; path = "../../../../The-Forge/Middleware_3/UI/Shaders/Metal/textured_mesh.vert.metal"; sourceTree = "<group>"; };
 		5CA80E2021F09FB900C99983 /* textured_mesh.frag.metal */ = {isa = PBXFileReference; explicitFileType = text; fileEncoding = 4; name = textured_mesh.frag.metal; path = "../../../../The-Forge/Middleware_3/UI/Shaders/Metal/textured_mesh.frag.metal"; sourceTree = "<group>"; };
 		5CA80E2121F09FBA00C99983 /* imgui.frag.metal */ = {isa = PBXFileReference; explicitFileType = text; fileEncoding = 4; name = imgui.frag.metal; path = "../../../../The-Forge/Middleware_3/UI/Shaders/Metal/imgui.frag.metal"; sourceTree = "<group>"; };
@@ -180,6 +176,10 @@
 		65E90DE82295ACE200549B03 /* compositeOverlay.frag.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = compositeOverlay.frag.metal; sourceTree = "<group>"; };
 		B2087DD121421A13006F372D /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
 		B2087DD221421A13006F372D /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
+		B21CD70C23593AC900D0EDCC /* macOSAppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = macOSAppDelegate.m; sourceTree = "<group>"; };
+		B21CD70D23593AC900D0EDCC /* macOSAppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = macOSAppDelegate.h; sourceTree = "<group>"; };
+		B21CD70F23593AF800D0EDCC /* iOSAppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = iOSAppDelegate.m; sourceTree = "<group>"; };
+		B21CD71023593AF900D0EDCC /* iOSAppDelegate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = iOSAppDelegate.h; sourceTree = "<group>"; };
 		B21F76BB21420E7000DF2297 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS12.0.sdk/System/Library/Frameworks/UIKit.framework; sourceTree = DEVELOPER_DIR; };
 		B21F76BC21420E7000DF2297 /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS12.0.sdk/System/Library/Frameworks/MetalKit.framework; sourceTree = DEVELOPER_DIR; };
 		B21F76BD21420E7000DF2297 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS12.0.sdk/System/Library/Frameworks/Metal.framework; sourceTree = DEVELOPER_DIR; };
@@ -421,8 +421,8 @@
 		C95132EE2010E68A002E584B /* Ephemeris_iOS */ = {
 			isa = PBXGroup;
 			children = (
-				5C17300321414D110074EE71 /* AppDelegate.h */,
-				5C17300421414D110074EE71 /* AppDelegate.m */,
+				B21CD71023593AF900D0EDCC /* iOSAppDelegate.h */,
+				B21CD70F23593AF800D0EDCC /* iOSAppDelegate.m */,
 				C95132FE2010E68A002E584B /* Assets.xcassets */,
 				C95133002010E68A002E584B /* LaunchScreen.storyboard */,
 				C95133032010E68A002E584B /* Info.plist */,
@@ -457,10 +457,10 @@
 		EA463C941EF81E8F005AC8C7 /* Ephemeris */ = {
 			isa = PBXGroup;
 			children = (
+				B21CD70D23593AC900D0EDCC /* macOSAppDelegate.h */,
+				B21CD70C23593AC900D0EDCC /* macOSAppDelegate.m */,
 				65C55CD1229734BF008456ED /* Assets.xcassets */,
 				65C55CCF229734B2008456ED /* Info.plist */,
-				5C172F33214147700074EE71 /* AppDelegate.h */,
-				5C172F32214147700074EE71 /* AppDelegate.m */,
 				D2E631DF1F3472DF005BFBA7 /* MainMenu.xib */,
 			);
 			path = Ephemeris;
@@ -596,7 +596,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				5C17300521414D110074EE71 /* AppDelegate.m in Sources */,
+				B21CD71123593AF900D0EDCC /* iOSAppDelegate.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -606,12 +606,12 @@
 			files = (
 				6543D8FA22932FC20098B17B /* LocalTime.cpp in Sources */,
 				B2E2519A22F0F1BB00E37226 /* Icosahedron.cpp in Sources */,
+				B21CD70E23593AC900D0EDCC /* macOSAppDelegate.m in Sources */,
 				6543D90222932FD90098B17B /* Terrain.cpp in Sources */,
 				B2BF7EA222F8B2AA0095A0C8 /* Perlin.cpp in Sources */,
 				6543D90122932FD90098B17B /* HeightData.cpp in Sources */,
 				6543D8F822932FC20098B17B /* Ephemeris.cpp in Sources */,
 				6543D8EC22932F7A0098B17B /* Example.cpp in Sources */,
-				5C172F34214147700074EE71 /* AppDelegate.m in Sources */,
 				6543D8F922932FC20098B17B /* Sky.cpp in Sources */,
 				6543D90522932FEB0098B17B /* VolumetricClouds.cpp in Sources */,
 			);

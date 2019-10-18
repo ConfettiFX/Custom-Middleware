@@ -501,56 +501,57 @@ bool VolumetricClouds::Init(Renderer* renderer)
 #elif defined(METAL)
 	eastl::string shaderPath("../../../../../Ephemeris/VolumetricClouds/resources/Shaders/Metal/");
 #endif
-	eastl::string shaderFullPath;
 
 	ShaderLoadDesc basicShader = {};
-
-	ShaderPath(shaderPath, (char*)"volumetricCloud.vert", shaderFullPath);
-	basicShader.mStages[0] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
-	ShaderPath(shaderPath, (char*)"postProcess.frag", shaderFullPath);
-	basicShader.mStages[1] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
+	eastl::string basicShaderFullPath[2];
+	ShaderPath(shaderPath, (char*)"volumetricCloud.vert", basicShaderFullPath[0]);
+	basicShader.mStages[0] = { basicShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"postProcess.frag", basicShaderFullPath[1]);
+	basicShader.mStages[1] = { basicShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &basicShader, &pPostProcessShader);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc postBlurShader = {};
-
-	ShaderPath(shaderPath, (char*)"volumetricCloud.vert", shaderFullPath);
-	postBlurShader.mStages[0] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
-	ShaderPath(shaderPath, (char*)"postProcessWithBlur.frag", shaderFullPath);
-	postBlurShader.mStages[1] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
+	eastl::string postBlurShaderFullPath[2];
+	ShaderPath(shaderPath, (char*)"volumetricCloud.vert", postBlurShaderFullPath[0]);
+	postBlurShader.mStages[0] = { postBlurShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"postProcessWithBlur.frag", postBlurShaderFullPath[1]);
+	postBlurShader.mStages[1] = { postBlurShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &postBlurShader, &pPostProcessWithBlurShader);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc reprojectionShader = {};
-
-	ShaderPath(shaderPath, (char*)"volumetricCloud.vert", shaderFullPath);
-	reprojectionShader.mStages[0] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
-	ShaderPath(shaderPath, (char*)"reprojection.frag", shaderFullPath);
-	reprojectionShader.mStages[1] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
+	eastl::string reprojectionShaderFullPath[2];
+	ShaderPath(shaderPath, (char*)"volumetricCloud.vert", reprojectionShaderFullPath[0]);
+	reprojectionShader.mStages[0] = { reprojectionShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"reprojection.frag", reprojectionShaderFullPath[1]);
+	reprojectionShader.mStages[1] = { reprojectionShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &reprojectionShader, &pReprojectionShader);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc godrayShader = {};
-	ShaderPath(shaderPath, (char*)"Triangular.vert", shaderFullPath);
-	godrayShader.mStages[0] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
-	ShaderPath(shaderPath, (char*)"godray.frag", shaderFullPath);
-	godrayShader.mStages[1] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
+	eastl::string godrayShaderFullPath[2];
+	ShaderPath(shaderPath, (char*)"Triangular.vert", godrayShaderFullPath[0]);
+	godrayShader.mStages[0] = { godrayShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"godray.frag", godrayShaderFullPath[1]);
+	godrayShader.mStages[1] = { godrayShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &godrayShader, &pGodrayShader);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc godrayAddShader = {};
-	ShaderPath(shaderPath, (char*)"Triangular.vert", shaderFullPath);
-	godrayAddShader.mStages[0] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
-	ShaderPath(shaderPath, (char*)"godrayAdd.frag", shaderFullPath);
-	godrayAddShader.mStages[1] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
+	eastl::string godrayAddShaderFullPath[2];
+	ShaderPath(shaderPath, (char*)"Triangular.vert", godrayAddShaderFullPath[0]);
+	godrayAddShader.mStages[0] = { godrayAddShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"godrayAdd.frag", godrayAddShaderFullPath[1]);
+	godrayAddShader.mStages[1] = { godrayAddShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &godrayAddShader, &pGodrayAddShader);
 
@@ -575,35 +576,40 @@ bool VolumetricClouds::Init(Renderer* renderer)
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc compositeShader = {};
-	ShaderPath(shaderPath, (char*)"volumetricCloud.vert", shaderFullPath);
-	compositeShader.mStages[0] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
-	ShaderPath(shaderPath, (char*)"composite.frag", shaderFullPath);
-	compositeShader.mStages[1] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
+	eastl::string compositeShaderFullPath[2];
+	ShaderPath(shaderPath, (char*)"volumetricCloud.vert", compositeShaderFullPath[0]);
+	compositeShader.mStages[0] = { compositeShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"composite.frag", compositeShaderFullPath[1]);
+	compositeShader.mStages[1] = { compositeShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &compositeShader, &pCompositeShader);
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+/*
 	ShaderLoadDesc compositeOverlayShader = {};
-	ShaderPath(shaderPath, (char*)"volumetricCloud.vert", shaderFullPath);
-	compositeOverlayShader.mStages[0] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
-	ShaderPath(shaderPath, (char*)"compositeOverlay.frag", shaderFullPath);
-	compositeOverlayShader.mStages[1] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
+	eastl::string compositeOverlayShaderFullPath[2];
+	ShaderPath(shaderPath, (char*)"volumetricCloud.vert", compositeOverlayShaderFullPath[0]);
+	compositeOverlayShader.mStages[0] = { compositeOverlayShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"compositeOverlay.frag", compositeOverlayShaderFullPath[1]);
+	compositeOverlayShader.mStages[1] = { compositeOverlayShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &compositeOverlayShader, &pCompositeOverlayShader);
-
+*/
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc GenLowTopFreq3DtexShader = {};
-	ShaderPath(shaderPath, (char*)"genLowTopFreq3Dtex.comp", shaderFullPath);
-	GenLowTopFreq3DtexShader.mStages[0] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
+	eastl::string GenLowTopFreq3DtexShaderFullPath[1];
+	ShaderPath(shaderPath, (char*)"genLowTopFreq3Dtex.comp", GenLowTopFreq3DtexShaderFullPath[0]);
+	GenLowTopFreq3DtexShader.mStages[0] = { GenLowTopFreq3DtexShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &GenLowTopFreq3DtexShader, &pGenLowTopFreq3DtexShader);
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc GenHighTopFreq3DtexShader = {};
-	ShaderPath(shaderPath, (char*)"genHighTopFreq3Dtex.comp", shaderFullPath);
-	GenHighTopFreq3DtexShader.mStages[0] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
+	eastl::string GenHighTopFreq3DtexShaderFullPath[1];
+	ShaderPath(shaderPath, (char*)"genHighTopFreq3Dtex.comp", GenHighTopFreq3DtexShaderFullPath[0]);
+	GenHighTopFreq3DtexShader.mStages[0] = { GenHighTopFreq3DtexShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &GenHighTopFreq3DtexShader, &pGenHighTopFreq3DtexShader);
 
@@ -618,8 +624,9 @@ bool VolumetricClouds::Init(Renderer* renderer)
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc GenMipmap3DtexShader = {};
-	ShaderPath(shaderPath, (char*)"gen3DtexMipmap.comp", shaderFullPath);
-	GenMipmap3DtexShader.mStages[0] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
+	eastl::string GenMipmap3DtexShaderFullPath[1];
+	ShaderPath(shaderPath, (char*)"gen3DtexMipmap.comp", GenMipmap3DtexShaderFullPath[0]);
+	GenMipmap3DtexShader.mStages[0] = { GenMipmap3DtexShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &GenMipmap3DtexShader, &pGenMipmapShader);
 
@@ -633,8 +640,9 @@ bool VolumetricClouds::Init(Renderer* renderer)
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc GenHiZMipmapShader = {};
-	ShaderPath(shaderPath, (char*)"HiZdownSampling.comp", shaderFullPath);
-	GenHiZMipmapShader.mStages[0] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
+	eastl::string GenHiZMipmapShaderFullPath[1];
+	ShaderPath(shaderPath, (char*)"HiZdownSampling.comp", GenHiZMipmapShaderFullPath[0]);
+	GenHiZMipmapShader.mStages[0] = { GenHiZMipmapShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &GenHiZMipmapShader, &pGenHiZMipmapShader);
 
@@ -649,8 +657,9 @@ bool VolumetricClouds::Init(Renderer* renderer)
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc GenHiZMipmapPRShader = {};
-	ShaderPath(shaderPath, (char*)"HiZdownSamplingPR.comp", shaderFullPath);
-	GenHiZMipmapPRShader.mStages[0] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
+	eastl::string GenHiZMipmapPRShaderFullPath[1];
+	ShaderPath(shaderPath, (char*)"HiZdownSamplingPR.comp", GenHiZMipmapPRShaderFullPath[0]);
+	GenHiZMipmapPRShader.mStages[0] = { GenHiZMipmapPRShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &GenHiZMipmapPRShader, &pGenHiZMipmapPRShader);
 
@@ -659,8 +668,9 @@ bool VolumetricClouds::Init(Renderer* renderer)
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc CopyTextureShader = {};
-	ShaderPath(shaderPath, (char*)"copyTexture.comp", shaderFullPath);
-	CopyTextureShader.mStages[0] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
+	eastl::string CopyTextureShaderFullPath[1];
+	ShaderPath(shaderPath, (char*)"copyTexture.comp", CopyTextureShaderFullPath[0]);
+	CopyTextureShader.mStages[0] = { CopyTextureShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &CopyTextureShader, &pCopyTextureShader);
 
@@ -675,8 +685,9 @@ bool VolumetricClouds::Init(Renderer* renderer)
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc CopyWeatherTextureShader = {};
-	ShaderPath(shaderPath, (char*)"copyWeatherTexture.comp", shaderFullPath);
-	CopyWeatherTextureShader.mStages[0] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
+	eastl::string CopyWeatherTextureShaderFullPath[1];
+	ShaderPath(shaderPath, (char*)"copyWeatherTexture.comp", CopyWeatherTextureShaderFullPath[0]);
+	CopyWeatherTextureShader.mStages[0] = { CopyWeatherTextureShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &CopyWeatherTextureShader, &pCopyWeatherTextureShader);
 
@@ -692,21 +703,23 @@ bool VolumetricClouds::Init(Renderer* renderer)
 
 
 	ShaderLoadDesc BlurShader = {};
-	ShaderPath(shaderPath, (char*)"BlurHorizontal.comp", shaderFullPath);
-	BlurShader.mStages[0] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
+	eastl::string BlurShaderFullPath[1];
+	ShaderPath(shaderPath, (char*)"BlurHorizontal.comp", BlurShaderFullPath[0]);
+	BlurShader.mStages[0] = { BlurShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &BlurShader, &pHorizontalBlurShader);
 
-	ShaderPath(shaderPath, (char*)"BlurVertical.comp", shaderFullPath);
-	BlurShader.mStages[0] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
+	ShaderPath(shaderPath, (char*)"BlurVertical.comp", BlurShaderFullPath[0]);
+	BlurShader.mStages[0] = { BlurShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &BlurShader, &pVerticalBlurShader);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc CopyRTShader = {};
-	ShaderPath(shaderPath, (char*)"copyRT.comp", shaderFullPath);
-	CopyRTShader.mStages[0] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
+	eastl::string CopyRTShaderFullPath[1];
+	ShaderPath(shaderPath, (char*)"copyRT.comp", CopyRTShaderFullPath[0]);
+	CopyRTShader.mStages[0] = { CopyRTShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &CopyRTShader, &pCopyRTShader);
 
@@ -715,26 +728,29 @@ bool VolumetricClouds::Init(Renderer* renderer)
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc VolumetricCloudShaderDesc = {};
-	ShaderPath(shaderPath, (char*)"volumetricCloud.vert", shaderFullPath);
-	VolumetricCloudShaderDesc.mStages[0] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
-	ShaderPath(shaderPath, (char*)"volumetricCloud.frag", shaderFullPath);
-	VolumetricCloudShaderDesc.mStages[1] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
+	eastl::string VolumetricCloudShaderFullPath[2];
+	ShaderPath(shaderPath, (char*)"volumetricCloud.vert", VolumetricCloudShaderFullPath[0]);
+	VolumetricCloudShaderDesc.mStages[0] = { VolumetricCloudShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"volumetricCloud.frag", VolumetricCloudShaderFullPath[1]);
+	VolumetricCloudShaderDesc.mStages[1] = { VolumetricCloudShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &VolumetricCloudShaderDesc, &pVolumetricCloudShader);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc VolumetricCloudCompShaderDesc = {};
-	ShaderPath(shaderPath, (char*)"volumetricCloud.comp", shaderFullPath);
-	VolumetricCloudCompShaderDesc.mStages[0] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
+	eastl::string VolumetricCloudCompShaderFullPath[1];
+	ShaderPath(shaderPath, (char*)"volumetricCloud.comp", VolumetricCloudCompShaderFullPath[0]);
+	VolumetricCloudCompShaderDesc.mStages[0] = { VolumetricCloudCompShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &VolumetricCloudCompShaderDesc, &pVolumetricCloudCompShader);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc VolumetricCloudWithDepthCompShaderDesc = {};
-	ShaderPath(shaderPath, (char*)"volumetricCloudWithDepth.comp", shaderFullPath);
-	VolumetricCloudWithDepthCompShaderDesc.mStages[0] = { shaderFullPath.c_str(), NULL, 0, FSR_SrcShaders };
+	eastl::string VolumetricCloudWithDepthCompShaderFullPath[1];
+	ShaderPath(shaderPath, (char*)"volumetricCloudWithDepth.comp", VolumetricCloudWithDepthCompShaderFullPath[0]);
+	VolumetricCloudWithDepthCompShaderDesc.mStages[0] = { VolumetricCloudWithDepthCompShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &VolumetricCloudWithDepthCompShaderDesc, &pVolumetricCloudWithDepthCompShader);
 
@@ -756,12 +772,47 @@ bool VolumetricClouds::Init(Renderer* renderer)
 	addDescriptorBinder(pRenderer, 0, 1, ReprojectionCompDescriptorBinderDesc, &pReprojectionCompDescriptorBinder);
 */
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	BlendStateDesc blendStateSkyBoxDesc = {};
+	blendStateSkyBoxDesc.mBlendModes[0] = BM_ADD;
+	blendStateSkyBoxDesc.mBlendAlphaModes[0] = BM_ADD;
+
+	blendStateSkyBoxDesc.mSrcFactors[0] = BC_SRC_ALPHA;// BC_ONE;// BC_ONE_MINUS_DST_ALPHA;
+	blendStateSkyBoxDesc.mDstFactors[0] = BC_ONE_MINUS_SRC_ALPHA;// BC_ZERO;// BC_DST_ALPHA;
+
+	blendStateSkyBoxDesc.mSrcAlphaFactors[0] = BC_ONE;
+	blendStateSkyBoxDesc.mDstAlphaFactors[0] = BC_ZERO;
+
+	blendStateSkyBoxDesc.mMasks[0] = ALL;
+	blendStateSkyBoxDesc.mRenderTargetMask = BLEND_STATE_TARGET_0;
+	addBlendState(pRenderer, &blendStateSkyBoxDesc, &pBlendStateSkyBox);
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	blendStateSkyBoxDesc = {};
+	blendStateSkyBoxDesc.mBlendModes[0] = BM_ADD;
+	blendStateSkyBoxDesc.mBlendAlphaModes[0] = BM_ADD;
+
+	blendStateSkyBoxDesc.mSrcFactors[0] = BC_ONE;
+	blendStateSkyBoxDesc.mDstFactors[0] = BC_ONE;
+
+	blendStateSkyBoxDesc.mSrcAlphaFactors[0] = BC_ZERO;
+	blendStateSkyBoxDesc.mDstAlphaFactors[0] = BC_ONE;
+
+	blendStateSkyBoxDesc.mMasks[0] = ALL;
+	blendStateSkyBoxDesc.mRenderTargetMask = BLEND_STATE_TARGET_0;
+	addBlendState(pRenderer, &blendStateSkyBoxDesc, &pBlendStateGodray);
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 	const char* pVCSamplerNames[] = { "g_LinearWrapSampler", "g_LinearClampSampler", "g_PointClampSampler", "g_LinearBorderSampler" };
 	Sampler* pVCSamplers[] = { pBilinearSampler, pBiClampSampler, pPointClampSampler, pLinearBorderSampler };
 
-	Shader*           shaders[] = { pVolumetricCloudShader, pReprojectionShader, pPostProcessShader, pPostProcessWithBlurShader, pGodrayShader, pGodrayAddShader, pCompositeShader, pCompositeOverlayShader };
+	Shader*           shaders[] = { pVolumetricCloudShader, pReprojectionShader, pPostProcessShader, pPostProcessWithBlurShader, pGodrayShader, pGodrayAddShader, pCompositeShader/*, pCompositeOverlayShader*/ };
 	RootSignatureDesc rootDesc = {};
-	rootDesc.mShaderCount = 8;
+	rootDesc.mShaderCount = 7;
 	rootDesc.ppShaders = shaders;
 	rootDesc.mStaticSamplerCount = 4;
 	rootDesc.ppStaticSamplerNames = pVCSamplerNames;
@@ -802,12 +853,12 @@ bool VolumetricClouds::Init(Renderer* renderer)
 	screenQuadVbDesc.ppBuffer = &pTriangularScreenVertexBuffer;
 	addResource(&screenQuadVbDesc);
 
-	gHighFrequencyOriginTexture = eastl::vector<Texture*>(gHighFreq3DTextureSize);
+	gHighFrequencyOriginTexture.resize(gHighFreq3DTextureSize);
 
 #if defined(_DURANGO)
 	eastl::string gHighFrequencyOriginTextureName("Textures/hiResCloudShape/hiResClouds (");
 #else
-	eastl::string gHighFrequencyOriginTextureName("../../../../Ephemeris/VolumetricClouds/resources/Textures/hiResCloudShape/hiResClouds (");
+	eastl::string gHighFrequencyOriginTextureName("../../../Ephemeris/VolumetricClouds/resources/Textures/hiResCloudShape/hiResClouds (");
 #endif
 
 	for (uint32_t i = 0; i < gHighFreq3DTextureSize; ++i)
@@ -820,23 +871,21 @@ bool VolumetricClouds::Init(Renderer* renderer)
 		gHighFrequencyNameLocal += eastl::string(stringInt);
 		gHighFrequencyNameLocal += eastl::string(")");
 
-		TextureLoadDesc highFrequencyOrigin3DTextureDesc = {};
-
-		highFrequencyOrigin3DTextureDesc.mRoot = FSR_OtherFiles;
-		highFrequencyOrigin3DTextureDesc.pFilename = gHighFrequencyNameLocal.c_str();
+		TextureLoadDesc highFrequencyOrigin3DTextureDesc = {};		
+		PathHandle highFrequencyOrigin3DTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, gHighFrequencyNameLocal.c_str());
+		highFrequencyOrigin3DTextureDesc.pFilePath = highFrequencyOrigin3DTextureFilePath;
 		highFrequencyOrigin3DTextureDesc.ppTexture = &gHighFrequencyOriginTexture[i];
-		//highFrequencyOrigin3DTextureDesc.mSrgb = false;
 		addResource(&highFrequencyOrigin3DTextureDesc, false);
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////////////
 
-	gLowFrequencyOriginTexture = eastl::vector<Texture*>(gLowFreq3DTextureSize);
+	gLowFrequencyOriginTexture.resize(gLowFreq3DTextureSize);
 
 #if defined(_DURANGO)
 	eastl::string	gLowFrequencyOriginTextureName("Textures/lowResCloudShape/lowResCloud(");
 #else
-	eastl::string	gLowFrequencyOriginTextureName("../../../../Ephemeris/VolumetricClouds/resources/Textures/lowResCloudShape/lowResCloud(");
+	eastl::string	gLowFrequencyOriginTextureName("../../../Ephemeris/VolumetricClouds/resources/Textures/lowResCloudShape/lowResCloud(");
 #endif	
 
 	for (uint32_t i = 0; i < gLowFreq3DTextureSize; ++i)
@@ -850,11 +899,9 @@ bool VolumetricClouds::Init(Renderer* renderer)
 		gLowFrequencyNameLocal += eastl::string(")");
 
 		TextureLoadDesc lowFrequencyOrigin3DTextureDesc = {};
-
-		lowFrequencyOrigin3DTextureDesc.mRoot = FSR_OtherFiles;
-		lowFrequencyOrigin3DTextureDesc.pFilename = gLowFrequencyNameLocal.c_str();
+		PathHandle lowFrequencyOrigin3DTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, gLowFrequencyNameLocal.c_str());
+		lowFrequencyOrigin3DTextureDesc.pFilePath = lowFrequencyOrigin3DTextureFilePath;
 		lowFrequencyOrigin3DTextureDesc.ppTexture = &gLowFrequencyOriginTexture[i];
-		//lowFrequencyOrigin3DTextureDesc.mSrgb = false;
 		addResource(&lowFrequencyOrigin3DTextureDesc, false);
 	}
 
@@ -927,27 +974,25 @@ bool VolumetricClouds::Init(Renderer* renderer)
 	//////////////////////////////////////////////////////////////////////////////////////////////
 
 	TextureLoadDesc curlNoiseTextureDesc = {};
-	curlNoiseTextureDesc.mRoot = FSR_OtherFiles;
 #if defined(_DURANGO)
-	curlNoiseTextureDesc.pFilename = "Textures/CurlNoiseFBM";
+	PathHandle curlNoiseTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/CurlNoiseFBM");	
 #else
-	curlNoiseTextureDesc.pFilename = "../../../../Ephemeris/VolumetricClouds/resources/Textures/CurlNoiseFBM";
+	PathHandle curlNoiseTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/VolumetricClouds/resources/Textures/CurlNoiseFBM");
 #endif	
+	curlNoiseTextureDesc.pFilePath = curlNoiseTextureFilePath;
 	curlNoiseTextureDesc.ppTexture = &pCurlNoiseTexture;
-	//curlNoiseTextureDesc.mSrgb = false;
 	addResource(&curlNoiseTextureDesc, false);
 
 	//////////////////////////////////////////////////////////////////////////////////////////////
 
 	TextureLoadDesc weathereTextureDesc = {};
-	weathereTextureDesc.mRoot = FSR_OtherFiles;
 #if defined(_DURANGO)
-	weathereTextureDesc.pFilename = "Textures/WeatherMap";
+	PathHandle weathereTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/WeatherMap");
 #else
-	weathereTextureDesc.pFilename = "../../../../Ephemeris/VolumetricClouds/resources/Textures/WeatherMap";
-#endif	
+	PathHandle weathereTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/VolumetricClouds/resources/Textures/WeatherMap");
+#endif
+	weathereTextureDesc.pFilePath = weathereTextureFilePath;
 	weathereTextureDesc.ppTexture = &pWeatherTexture;
-	//weathereTextureDesc.mSrgb = false;
 	addResource(&weathereTextureDesc, false);
 
 	TextureDesc WeatherCompactTextureDesc = {};
@@ -1410,11 +1455,21 @@ void VolumetricClouds::Exit()
 	conf_free(gHighFrequencyOriginTextureStorage);
 	conf_free(gLowFrequencyOriginTextureStorage);
 
+	gHighFrequencyOriginTexturePacked.set_capacity(0);
+	gHighFrequencyOriginTexturePacked.clear();
+	gLowFrequencyOriginTexturePacked.set_capacity(0);
+	gLowFrequencyOriginTexturePacked.clear();
+
+	gHighFrequencyOriginTexture.set_capacity(0);
+	gHighFrequencyOriginTexture.clear();
+	gLowFrequencyOriginTexture.set_capacity(0);
+	gLowFrequencyOriginTexture.clear();
+
 	//removePipeline(pRenderer, c);
 
 	removeResource(pTriangularScreenVertexBuffer);
 
-	removeShader(pRenderer, pCompositeOverlayShader);
+	//removeShader(pRenderer, pCompositeOverlayShader);
 	//removeRootSignature(pRenderer, pCompositeOverlayRootSignature);
 	//removeDescriptorBinder(pRenderer, pCompositeOverlayDescriptorBinder);
 
@@ -1689,39 +1744,7 @@ bool VolumetricClouds::Load(RenderTarget** rts, uint32_t count)
   }
 */
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	BlendStateDesc blendStateSkyBoxDesc = {};
-	blendStateSkyBoxDesc.mBlendModes[0] = BM_ADD;
-	blendStateSkyBoxDesc.mBlendAlphaModes[0] = BM_ADD;
-
-	blendStateSkyBoxDesc.mSrcFactors[0] = BC_SRC_ALPHA;// BC_ONE;// BC_ONE_MINUS_DST_ALPHA;
-	blendStateSkyBoxDesc.mDstFactors[0] = BC_ONE_MINUS_SRC_ALPHA;// BC_ZERO;// BC_DST_ALPHA;
-
-	blendStateSkyBoxDesc.mSrcAlphaFactors[0] = BC_ONE;
-	blendStateSkyBoxDesc.mDstAlphaFactors[0] = BC_ZERO;
-
-	blendStateSkyBoxDesc.mMasks[0] = ALL;
-	blendStateSkyBoxDesc.mRenderTargetMask = BLEND_STATE_TARGET_0;
-	addBlendState(pRenderer, &blendStateSkyBoxDesc, &pBlendStateSkyBox);
-
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	blendStateSkyBoxDesc = {};
-	blendStateSkyBoxDesc.mBlendModes[0] = BM_ADD;
-	blendStateSkyBoxDesc.mBlendAlphaModes[0] = BM_ADD;
-
-	blendStateSkyBoxDesc.mSrcFactors[0] = BC_ONE;
-	blendStateSkyBoxDesc.mDstFactors[0] = BC_ONE;
-
-	blendStateSkyBoxDesc.mSrcAlphaFactors[0] = BC_ZERO;
-	blendStateSkyBoxDesc.mDstAlphaFactors[0] = BC_ONE;
-
-	blendStateSkyBoxDesc.mMasks[0] = ALL;
-	blendStateSkyBoxDesc.mRenderTargetMask = BLEND_STATE_TARGET_0;
-	addBlendState(pRenderer, &blendStateSkyBoxDesc, &pBlendStateGodray);
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	PipelineDesc pipelineDescGodrayAdd;
 	{
@@ -1775,7 +1798,7 @@ bool VolumetricClouds::Load(RenderTarget** rts, uint32_t count)
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+/*
 	PipelineDesc pipelineDescCompositeOverlay;
 	{
 		pipelineDescCompositeOverlay.mType = PIPELINE_TYPE_GRAPHICS;
@@ -1799,7 +1822,7 @@ bool VolumetricClouds::Load(RenderTarget** rts, uint32_t count)
 
 		addPipeline(pRenderer, &pipelineDescCompositeOverlay, &pCompositeOverlayPipeline);
 	}
-
+*/
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -2008,7 +2031,7 @@ void VolumetricClouds::Unload()
 {
 	removePipeline(pRenderer, pPostProcessPipeline);
 	removePipeline(pRenderer, pPostProcessWithBlurPipeline);
-	removePipeline(pRenderer, pCompositeOverlayPipeline);
+	//removePipeline(pRenderer, pCompositeOverlayPipeline);
 	removePipeline(pRenderer, pCompositePipeline);
 	removePipeline(pRenderer, pVolumetricCloudPipeline);
 	removePipeline(pRenderer, pReprojectionPipeline);

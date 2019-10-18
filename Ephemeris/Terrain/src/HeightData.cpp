@@ -13,9 +13,6 @@
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IFileSystem.h"
 #include "../../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
 
-FileSystem mFileSystem;
-File mFile;
-
 // Creates data source from the specified raw data file
 HeightData::HeightData(const char* filePath, float heightScale) :
 	patchSize(128),
@@ -24,38 +21,41 @@ HeightData::HeightData(const char* filePath, float heightScale) :
 	rowOffset(924)
 {	
 	// open file
-	//FileHandle file = FILESYSTEM->OpenFile(filePath, FM_ReadBinary, FSR_Textures);	
-	mFile.Open(eastl::string(filePath), FM_ReadBinary, FSR_OtherFiles);
+	//mFile.Open(eastl::string(filePath), FM_ReadBinary, FSR_OtherFiles);
+	PathHandle FilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, filePath);
+	FileStream* modelFile0FH = fsOpenFile(FilePath, FM_READ_BINARY);
 	
-	if (!mFile.IsOpen())
+	if (!modelFile0FH)
 	{
 		char output[256];
 		sprintf(output, "\"%s\": Image file not found.", filePath);
 		//ErrorMsg(output);
 		return;
 	}
-	FileHandle* fileHandle = (FileHandle*)mFile.GetHandle();
+	//FileHandle* fileHandle = (FileHandle*)mFile.GetHandle();
 	
-	// load file into memory
-	//size_t length = FILESYSTEM->FileSize(file);
-	uint length = mFileSystem.GetFileSize(fileHandle);
+	// load file into memory	
+	//uint length = mFileSystem.GetFileSize(fileHandle);
+	uint length = (uint)fsGetStreamFileSize(modelFile0FH);
 	if (length == 0)
 	{
 		char output[256];
 		sprintf(output, "\"%s\": Image file is empty.", filePath);
 		//ErrorMsg(output);
-		//FILESYSTEM->FileClose(file);
-		mFile.Close();
+		//mFile.Close();
+		fsCloseStream(modelFile0FH);
 		return;
 	}
 
 	// read and close file.
-	char *heightMap = new char[length];
-	
-	//FILESYSTEM->FileRead(heightMap, length, file);
-	//FILESYSTEM->FileClose(file);
-	mFile.Read(heightMap, length);
-	mFile.Close();
+	eastl::vector<char> heightMap;
+	// = new char[length];	
+	heightMap.resize(length);
+	//mFile.Read(heightMap, length);
+	//mFile.Close();
+
+	fsReadFromStream(modelFile0FH, heightMap.data(), fsGetStreamFileSize(modelFile0FH));
+	fsCloseStream(modelFile0FH);
 
 	uint32 width = (uint32)sqrtf((float)length / 4.0f);
 	uint32 height = width;
@@ -84,7 +84,7 @@ HeightData::HeightData(const char* filePath, float heightScale) :
 	
 	for (uint32 row = 0; row < height; ++row)
 	{
-		memcpy((&data.front()) + colCount * row, heightMap + row * width * 4, width * 4);
+		memcpy((&data.front()) + colCount * row, heightMap.data() + row * width * 4, width * 4);
 	}
 
 	// Duplicate the last row and column
@@ -100,7 +100,8 @@ HeightData::HeightData(const char* filePath, float heightScale) :
 		data[i] *= heightScale;
 	}
 
-	delete [] heightMap;
+	//delete [] heightMap;
+	heightMap.clear();
 }
 
 HeightData::~HeightData(void)

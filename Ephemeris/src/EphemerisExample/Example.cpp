@@ -30,10 +30,12 @@
 #include "../../../../The-Forge/Middleware_3/UI/AppUI.h"
 #include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
 #include "../../../../The-Forge/Common_3/Renderer/ResourceLoader.h"
-#include "../../../../The-Forge/Common_3/Renderer/GpuProfiler.h"
+//#include "../../../../The-Forge/Common_3/Renderer/GpuProfiler.h"
 
 //Math
 #include "../../../../The-Forge/Common_3/OS/Math/MathTypes.h"
+
+//Memory
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IMemory.h"
 
 const uint32_t      gImageCount = 3;
@@ -130,21 +132,6 @@ VolumetricClouds	gVolumetricClouds;
 Terrain				gTerrain;
 Sky					gSky;
 
-const char* pszBases[FSR_Count] =
-{
-	"../../../src/EphemerisExample/",                  // FSR_BinShaders
-	"../../../src/EphemerisExample/",                  // FSR_SrcShaders
-	"../../../Resources/",                             // FSR_Textures
-	"../../../Resources/",                             // FSR_Meshes
-	"../../../Resources/",                             // FSR_Builtin_Fonts
-	"../../../src/EphemerisExample/",                  // FSR_GpuConfig
-	"",                                                // FSR_Animation
-	"",                                                // FSR_Audio
-	"",                                                // FSR_OtherFiles
-	"../../../../../The-Forge/Middleware_3/Text/",     // FSR_MIDDLEWARE_TEXT
-	"../../../../../The-Forge/Middleware_3/UI/",       // FSR_MIDDLEWARE_UI
-};
-
 TextDrawDesc gFrameTimeDraw = TextDrawDesc(0, 0xff00ffff, 18);
 TextDrawDesc gDefaultTextDrawDesc = TextDrawDesc(0, 0xffffffff, 16);
 
@@ -161,6 +148,21 @@ public:
 
 	bool Init()
 	{
+		// FILE PATHS
+		PathHandle programDirectory = fsCopyProgramDirectoryPath();
+		if (!fsPlatformUsesBundledResources())
+		{
+			PathHandle resourceDirRoot = fsAppendPathComponent(programDirectory, "../../../src/EphemerisExample");
+			fsSetResourceDirectoryRootPath(resourceDirRoot);
+
+			fsSetRelativePathForResourceDirectory(RD_TEXTURES,				"../../Resources/");
+			fsSetRelativePathForResourceDirectory(RD_MESHES,					"../../Resources/");
+			fsSetRelativePathForResourceDirectory(RD_BUILTIN_FONTS,		"../../Resources/Fonts");
+			fsSetRelativePathForResourceDirectory(RD_ANIMATIONS,			"");
+			fsSetRelativePathForResourceDirectory(RD_MIDDLEWARE_TEXT, "../../../../The-Forge/Middleware_3/Text/");
+			fsSetRelativePathForResourceDirectory(RD_MIDDLEWARE_UI,		"../../../../The-Forge/Middleware_3/UI/");
+		}
+
 		// window and renderer setup
 		RendererDesc settings = { 0 };
 		initRenderer(GetName(), &settings, &pRenderer);
@@ -213,14 +215,15 @@ public:
 		addSampler(pRenderer, &samplerClampDesc, &pBilinearClampSampler);
 
 		eastl::string shaderPath("");
-		eastl::string shaderFullPath;
+		//eastl::string shaderFullPath;
 
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		ShaderLoadDesc basicShader = {};
-		ShaderPath(shaderPath, (char*)"Triangular.vert", shaderFullPath);
-		basicShader.mStages[0] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
-		ShaderPath(shaderPath, (char*)"present.frag", shaderFullPath);
-		basicShader.mStages[1] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
+		eastl::string basicShaderFullPath[2];
+		ShaderPath(shaderPath, (char*)"Triangular.vert", basicShaderFullPath[0]);
+		basicShader.mStages[0] = { basicShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+		ShaderPath(shaderPath, (char*)"present.frag", basicShaderFullPath[1]);
+		basicShader.mStages[1] = { basicShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
 		addShader(pRenderer, &basicShader, &pPresentShader);
 
 		RootSignatureDesc rootDesc = {};
@@ -231,10 +234,11 @@ public:
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		ShaderLoadDesc depthLinearizationResolveShader = {};
-		ShaderPath(shaderPath, (char*)"Triangular.vert", shaderFullPath);
-		depthLinearizationResolveShader.mStages[0] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
-		ShaderPath(shaderPath, (char*)"depthLinearization.frag", shaderFullPath);
-		depthLinearizationResolveShader.mStages[1] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
+		eastl::string depthLinearizationResolveShaderFullPath[2];
+		ShaderPath(shaderPath, (char*)"Triangular.vert", depthLinearizationResolveShaderFullPath[0]);
+		depthLinearizationResolveShader.mStages[0] = { depthLinearizationResolveShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+		ShaderPath(shaderPath, (char*)"depthLinearization.frag", depthLinearizationResolveShaderFullPath[1]);
+		depthLinearizationResolveShader.mStages[1] = { depthLinearizationResolveShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
 		addShader(pRenderer, &depthLinearizationResolveShader, &pLinearDepthResolveShader);
 
 		rootDesc = { 0 };
@@ -243,8 +247,9 @@ public:
 
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		ShaderLoadDesc depthLinearizationShader = {};
-		ShaderPath(shaderPath, (char*)"depthLinearization.comp", shaderFullPath);
-		depthLinearizationShader.mStages[0] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
+		eastl::string depthLinearizationShaderFullPath[2];
+		ShaderPath(shaderPath, (char*)"depthLinearization.comp", depthLinearizationShaderFullPath[0]);
+		depthLinearizationShader.mStages[0] = { depthLinearizationShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
 		addShader(pRenderer, &depthLinearizationShader, &pLinearDepthCompShader);
 
 		rootDesc = {};
@@ -308,7 +313,7 @@ public:
 		if (!gAppUI.Init(pRenderer))
 			return false;
 
-		gAppUI.LoadFont("TitilliumText/TitilliumText-Bold.otf", FSR_Builtin_Fonts);
+		gAppUI.LoadFont("TitilliumText/TitilliumText-Bold.otf", RD_BUILTIN_FONTS);
 
 		CameraMotionParameters cmp{ 3200.0f, 12000.0f, 4000.0f };
 
@@ -324,16 +329,14 @@ public:
 
 		//InputSystem::RegisterInputEvent(cameraInputEvent);
 
-
 		gTerrain.Initialize(gImageCount, pCameraController, pGraphicsQueue, ppTransCmds, pTransitionCompleteFences, pGraphicsGpuProfiler, &gAppUI);
-		gTerrain.Init(pRenderer);
+		gTerrain.Init(pRenderer);		
 
 		gSky.Initialize(gImageCount, pCameraController, pGraphicsQueue, ppTransCmds, pTransitionCompleteFences, pGraphicsGpuProfiler, &gAppUI, pTransmittanceBuffer);
-		gSky.Init(pRenderer);
+		gSky.Init(pRenderer);		
 
 		gVolumetricClouds.Initialize(gImageCount, pCameraController, pGraphicsQueue, ppTransCmds, pTransitionCompleteFences, pRenderCompleteFences, pGraphicsGpuProfiler, &gAppUI, pTransmittanceBuffer);
 		gVolumetricClouds.Init(pRenderer);
-
 
 		GuiDesc guiDesc = {};
 		guiDesc.mStartPosition = vec2(960.0f / getDpiScale().getX(), 700.0f / getDpiScale().getY());
@@ -397,7 +400,6 @@ public:
 		addInputAction(&actionDesc);
 		actionDesc = { InputBindings::BUTTON_R3, [](InputActionContext* ctx) { gTogglePerformance = !gTogglePerformance; return true; } };
 		addInputAction(&actionDesc);
-
 
 		return true;
 	}

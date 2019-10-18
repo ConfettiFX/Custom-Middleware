@@ -28,9 +28,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Camera\CameraController.cpp" />
-    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Core\FileSystem.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Core\ThreadSystem.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Core\Timer.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\FileSystemInternal.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\MemoryStream.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\SystemFileStream.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\SystemRun.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\ZipFileStream.cpp" />
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\ZipFileSystem.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Image\Image.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Input\InputSystem.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Logging\Log.cpp" />
@@ -60,9 +65,6 @@
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerBase.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerWidgetsUI.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\TinyEXR\tinyexr.cpp" />
-    <ClCompile Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\BaseComponent.cpp" />
-    <ClCompile Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\ComponentRepresentation.cpp" />
-    <ClCompile Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\EntityManager.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Middleware_3\Text\Fontstash.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Middleware_3\UI\AppUI.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Middleware_3\UI\ImguiGUIDriver.cpp" />
@@ -73,6 +75,11 @@
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Core\GPUConfig.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Core\RingBuffer.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Core\ThreadSystem.h" />
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\FileSystemInternal.h" />
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\MemoryStream.h" />
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\SystemFileStream.h" />
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\ZipFileStream.h" />
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\ZipFileSystem.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Image\Image.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Image\ImageEnums.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Interfaces\IApp.h" />
@@ -94,9 +101,6 @@
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerBase.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerHTML.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerWidgetsUI.h" />
-    <ClInclude Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\BaseComponent.h" />
-    <ClInclude Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\ComponentRepresentation.h" />
-    <ClInclude Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\EntityManager.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Middleware_3\Text\Fontstash.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Middleware_3\UI\AppUI.h" />
   </ItemGroup>

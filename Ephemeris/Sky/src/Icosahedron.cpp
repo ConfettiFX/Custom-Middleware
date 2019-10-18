@@ -108,8 +108,8 @@ eastl::vector<TriangleIndex> Icosahedron::Subdivide(eastl::vector<TriangleVertex
 
 void Icosahedron::CreateIcosphere(int subdivisions, eastl::vector<float> &vertices, eastl::vector<uint32_t> &indices)
 {
-  triangleVertices.clear();
-  triangleIndices.clear();
+	eastl::vector<TriangleVertex> triangleVertices;
+	eastl::vector<TriangleIndex> triangleIndices;
 
   GetBasicData(triangleVertices, triangleIndices);
 
@@ -131,5 +131,6 @@ void Icosahedron::CreateIcosphere(int subdivisions, eastl::vector<float> &vertic
     indices.push_back(triangleIndices[i].index[1]);
     indices.push_back(triangleIndices[i].index[2]);
   }
- 
+
+	IndexCout = (uint)indices.size();
 }

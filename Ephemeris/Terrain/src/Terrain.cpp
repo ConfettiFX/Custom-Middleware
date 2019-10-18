@@ -30,18 +30,18 @@ char TextureNormalTileFilePaths[5][255] = {
   "Textures/Tiles/gravel_NM" };
 #else
 char TextureTileFilePaths[5][255] = {
-  "../../../../Ephemeris/Terrain/resources/Textures/Tiles/grass_DM",
-  "../../../../Ephemeris/Terrain/resources/Textures/Tiles/cliff_DM",
-  "../../../../Ephemeris/Terrain/resources/Textures/Tiles/snow_DM",
-  "../../../../Ephemeris/Terrain/resources/Textures/Tiles/grassDark_DM",
-  "../../../../Ephemeris/Terrain/resources/Textures/Tiles/gravel_DM" };
+  "../../../Ephemeris/Terrain/resources/Textures/Tiles/grass_DM",
+  "../../../Ephemeris/Terrain/resources/Textures/Tiles/cliff_DM",
+  "../../../Ephemeris/Terrain/resources/Textures/Tiles/snow_DM",
+  "../../../Ephemeris/Terrain/resources/Textures/Tiles/grassDark_DM",
+  "../../../Ephemeris/Terrain/resources/Textures/Tiles/gravel_DM" };
 
 char TextureNormalTileFilePaths[5][255] = {
-  "../../../../Ephemeris/Terrain/resources/Textures/Tiles/grass_NM",
-  "../../../../Ephemeris/Terrain/resources/Textures/Tiles/cliff_NM",
-  "../../../../Ephemeris/Terrain/resources/Textures/Tiles/Snow_NM",
-  "../../../../Ephemeris/Terrain/resources/Textures/Tiles/grass_NM",
-  "../../../../Ephemeris/Terrain/resources/Textures/Tiles/gravel_NM" };
+  "../../../Ephemeris/Terrain/resources/Textures/Tiles/grass_NM",
+  "../../../Ephemeris/Terrain/resources/Textures/Tiles/cliff_NM",
+  "../../../Ephemeris/Terrain/resources/Textures/Tiles/Snow_NM",
+  "../../../Ephemeris/Terrain/resources/Textures/Tiles/grass_NM",
+  "../../../Ephemeris/Terrain/resources/Textures/Tiles/gravel_NM" };
 #endif
 
 // Pre Stage
@@ -166,17 +166,16 @@ bool Terrain::Init(Renderer* renderer)
 #elif defined(METAL)
 	eastl::string shaderPath("../../../../../Ephemeris/Terrain/resources/Shaders/Metal/");
 #endif
-	eastl::string shaderFullPath;
-
 	const char* pStaticSamplerNames[] = { "g_LinearMirror", "g_LinearWrap" };
 	Sampler* pStaticSamplers[] = { pLinearMirrorSampler, pLinearWrapSampler };
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc terrainNormalShader = {};
-	ShaderPath(shaderPath, (char*)"GenNormalMap.vert", shaderFullPath);
-	terrainNormalShader.mStages[0] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
-	ShaderPath(shaderPath, (char*)"GenNormalMap.frag", shaderFullPath);
-	terrainNormalShader.mStages[1] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
+	eastl::string terrainNormalShaderPath[2];
+	ShaderPath(shaderPath, (char*)"GenNormalMap.vert", terrainNormalShaderPath[0]);
+	terrainNormalShader.mStages[0] = { terrainNormalShaderPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"GenNormalMap.frag", terrainNormalShaderPath[1]);
+	terrainNormalShader.mStages[1] = { terrainNormalShaderPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
 	addShader(pRenderer, &terrainNormalShader, &pGenTerrainNormalShader);
 
 	RootSignatureDesc rootDesc = {};
@@ -189,30 +188,33 @@ bool Terrain::Init(Renderer* renderer)
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc terrainShader = {};
-	ShaderPath(shaderPath, (char*)"terrain.vert", shaderFullPath);
-	terrainShader.mStages[0] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
-	ShaderPath(shaderPath, (char*)"terrain.frag", shaderFullPath);
-	terrainShader.mStages[1] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
+	eastl::string terrainShaderPath[2];
+	ShaderPath(shaderPath, (char*)"terrain.vert", terrainShaderPath[0]);
+	terrainShader.mStages[0] = { terrainShaderPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"terrain.frag", terrainShaderPath[1]);
+	terrainShader.mStages[1] = { terrainShaderPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &terrainShader, &pTerrainShader);
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc terrainRenderShader = {};
-	ShaderPath(shaderPath, (char*)"RenderTerrain.vert", shaderFullPath);
-	terrainRenderShader.mStages[0] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
-	ShaderPath(shaderPath, (char*)"RenderTerrain.frag", shaderFullPath);
-	terrainRenderShader.mStages[1] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
+	eastl::string terrainRenderShaderPath[2];
+	ShaderPath(shaderPath, (char*)"RenderTerrain.vert", terrainRenderShaderPath[0]);
+	terrainRenderShader.mStages[0] = { terrainRenderShaderPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"RenderTerrain.frag", terrainRenderShaderPath[1]);
+	terrainRenderShader.mStages[1] = { terrainRenderShaderPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &terrainRenderShader, &pRenderTerrainShader);
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc terrainlightingShader = {};
-	ShaderPath(shaderPath, (char*)"LightingTerrain.vert", shaderFullPath);
-	terrainlightingShader.mStages[0] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
-	ShaderPath(shaderPath, (char*)"LightingTerrain.frag", shaderFullPath);
-	terrainlightingShader.mStages[1] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
+	eastl::string terrainLightingShaderPath[2];
+	ShaderPath(shaderPath, (char*)"LightingTerrain.vert", terrainLightingShaderPath[0]);
+	terrainlightingShader.mStages[0] = { terrainLightingShaderPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"LightingTerrain.frag", terrainLightingShaderPath[1]);
+	terrainlightingShader.mStages[1] = { terrainLightingShaderPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &terrainlightingShader, &pLightingTerrainShader);
 
@@ -396,8 +398,18 @@ void Terrain::Exit()
 	removeResource(pTerrainHeightMap);
 	removeRenderTarget(pRenderer, pNormalMapFromHeightmapRT);
 
+	meshSegments.set_capacity(0);
 	meshSegments.clear();
 
+	pTerrainTiledColorTextures.set_capacity(0);
+	pTerrainTiledColorTextures.clear();
+	pTerrainTiledNormalTextures.set_capacity(0);
+	pTerrainTiledNormalTextures.clear();
+
+	gTerrainTiledColorTexturesPacked.set_capacity(0);
+	gTerrainTiledColorTexturesPacked.clear();
+	gTerrainTiledNormalTexturesPacked.set_capacity(0);
+	gTerrainTiledNormalTexturesPacked.clear();
 }
 
 void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
@@ -409,7 +421,7 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 #if defined(_DURANGO)
 	HeightData dataSource("Textures/HeightMap.r32", height);
 #else
-	HeightData dataSource("../../../../Ephemeris/Terrain/resources/Textures/HeightMap.r32", height);
+	HeightData dataSource("../../../Ephemeris/Terrain/resources/Textures/HeightMap.r32", height);
 #endif
 	HemisphereBuilder hemisphereBuilder;
 	hemisphereBuilder.build(pRenderer, &dataSource, vertices, meshSegments, radius, 0.015f, 10, 15, 129);
@@ -430,12 +442,12 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 	// normalMapTexture = renderer->addTexture(subPathTexture, true);
 
 	TextureLoadDesc TerrainNormalTextureDesc = {};
-	TerrainNormalTextureDesc.mRoot = FSR_OtherFiles;
 #if defined(_DURANGO)
-	TerrainNormalTextureDesc.pFilename = "Textures/Normalmap";
+	PathHandle TerrainNormalTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/Normalmap");
 #else
-	TerrainNormalTextureDesc.pFilename = "../../../../Ephemeris/Terrain/resources/Textures/Normalmap";
+	PathHandle TerrainNormalTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Terrain/resources/Textures/Normalmap");
 #endif
+	TerrainNormalTextureDesc.pFilePath = TerrainNormalTextureFilePath;
 	TerrainNormalTextureDesc.ppTexture = &pTerrainNormalTexture;
 	addResource(&TerrainNormalTextureDesc, false);
 
@@ -443,12 +455,12 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 	// maskTexture = renderer->addTexture(maskTextureFilePath, true);
 
 	TextureLoadDesc TerrainMaskTextureDesc = {};
-	TerrainMaskTextureDesc.mRoot = FSR_OtherFiles;
 #if defined(_DURANGO)
-	TerrainMaskTextureDesc.pFilename = "Textures/Mask";
+	PathHandle TerrainMaskTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/Mask");
 #else
-	TerrainMaskTextureDesc.pFilename = "../../../../Ephemeris/Terrain/resources/Textures/Mask";
-#endif	
+	PathHandle TerrainMaskTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Terrain/resources/Textures/Mask");
+#endif
+	TerrainMaskTextureDesc.pFilePath = TerrainMaskTextureFilePath;
 	TerrainMaskTextureDesc.ppTexture = &pTerrainMaskTexture;
 	addResource(&TerrainMaskTextureDesc, false);
 
@@ -460,14 +472,14 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 	for (int i = 0; i < 5; ++i)
 	{
 		TextureLoadDesc TerrainTiledColorTextureDesc = {};
-		TerrainTiledColorTextureDesc.mRoot = FSR_OtherFiles;
-		TerrainTiledColorTextureDesc.pFilename = TextureTileFilePaths[i];
+		PathHandle TerrainTiledColorTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, TextureTileFilePaths[i]);
+		TerrainTiledColorTextureDesc.pFilePath = TerrainTiledColorTextureFilePath;
 		TerrainTiledColorTextureDesc.ppTexture = &pTerrainTiledColorTextures[i];
 		addResource(&TerrainTiledColorTextureDesc, false);
 
 		TextureLoadDesc TerrainTiledNormalTextureDesc = {};
-		TerrainTiledNormalTextureDesc.mRoot = FSR_OtherFiles;
-		TerrainTiledNormalTextureDesc.pFilename = TextureNormalTileFilePaths[i];
+		PathHandle TerrainTiledNormalTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, TextureNormalTileFilePaths[i]);
+		TerrainTiledNormalTextureDesc.pFilePath = TerrainTiledNormalTextureFilePath;
 		TerrainTiledNormalTextureDesc.ppTexture = &pTerrainTiledNormalTextures[i];
 		addResource(&TerrainTiledNormalTextureDesc, false);
 	}
@@ -491,12 +503,12 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 	///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	TextureLoadDesc TerrainHeightMapDesc = {};
-	TerrainHeightMapDesc.mRoot = FSR_OtherFiles;
 #if defined(_DURANGO)
-	TerrainHeightMapDesc.pFilename = "Textures/HeightMap_normgen";
+	PathHandle TerrainHeightMapFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/HeightMap_normgen");
 #else
-	TerrainHeightMapDesc.pFilename = "../../../../Ephemeris/Terrain/resources/Textures/HeightMap_normgen";
-#endif	
+	PathHandle TerrainHeightMapFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Terrain/resources/Textures/HeightMap_normgen");
+#endif
+	TerrainHeightMapDesc.pFilePath = TerrainHeightMapFilePath;
 	TerrainHeightMapDesc.ppTexture = &pTerrainHeightMap;
 	addResource(&TerrainHeightMapDesc, false);
 
