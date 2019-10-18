@@ -63,6 +63,9 @@ Check out the demo video by clicking the main image above!
 # News
 All releases happen in sync with [The Forge](https://github.com/ConfettiFX/The-Forge) and have therefore the same release number.
 
+## Release 1.36 - October 18th, 2019
+Maintenance release following the upate of the Forge.
+
 ## Release 1.35 - October 3rd, 2019
 Maintenance release following the upate of the Forge.
 
