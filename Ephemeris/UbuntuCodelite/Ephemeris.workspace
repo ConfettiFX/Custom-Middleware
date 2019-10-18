@@ -10,7 +10,7 @@
   <Project Name="zlib" Path="../../../The-Forge/Common_3/ThirdParty/OpenSource/assimp/4.1.0/linux/contrib/zlib/zlib.project" Active="No"/>
   <Project Name="EASTL" Path="../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/Linux/EASTL.project" Active="No"/>
   <BuildMatrix>
-    <WorkspaceConfiguration Name="Debug" Selected="yes">
+    <WorkspaceConfiguration Name="Debug" Selected="no">
       <Environment/>
       <Project Name="zlibstatic" ConfigName="NoConfig"/>
       <Project Name="SpirVTools" ConfigName="Debug"/>
@@ -29,7 +29,7 @@
       <Project Name="zlibstatic" ConfigName="NoConfig"/>
       <Project Name="EASTL" ConfigName="Debug"/>
     </WorkspaceConfiguration>
-    <WorkspaceConfiguration Name="Release" Selected="no">
+    <WorkspaceConfiguration Name="Release" Selected="yes">
       <Environment/>
       <Project Name="OS" ConfigName="Release"/>
       <Project Name="Ephemeris" ConfigName="Release"/>

@@ -259,6 +259,8 @@ private:
 			bounds.max.z = max(bounds.max.z, vert.z);
 		}
 
+		indices.clear();
+
 		return mesh;
 	}
 

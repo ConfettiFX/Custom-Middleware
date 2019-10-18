@@ -36,6 +36,24 @@
     <File Name="../../src/Perlin.cpp"/>
     <File Name="../../src/Perlin.h"/>
   </VirtualDirectory>
+  <Dependencies Name="Debug">
+    <Project Name="OS"/>
+    <Project Name="Renderer"/>
+    <Project Name="SpirVTools"/>
+    <Project Name="gainput"/>
+    <Project Name="zlibstatic"/>
+    <Project Name="assimp"/>
+    <Project Name="EASTL"/>
+  </Dependencies>
+  <Dependencies Name="Release">
+    <Project Name="OS"/>
+    <Project Name="Renderer"/>
+    <Project Name="SpirVTools"/>
+    <Project Name="zlibstatic"/>
+    <Project Name="assimp"/>
+    <Project Name="gainput"/>
+    <Project Name="EASTL"/>
+  </Dependencies>
   <Settings Type="Executable">
     <GlobalSettings>
       <Compiler Options="" C_Options="" Assembler="">
@@ -61,8 +79,8 @@
         <LibraryPath Value="$(ProjectPath)/../SpirVTools/Debug/"/>
         <LibraryPath Value="$(ProjectPath)/../../../../The-Forge/Common_3/ThirdParty/OpenSource/assimp/4.1.0/linux/Bin/"/>
         <LibraryPath Value="$(ProjectPath)/../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/Linux/Debug/"/>
-        <Library Value="libOS.a"/>
         <Library Value="libRenderer.a"/>
+        <Library Value="libOS.a"/>
         <Library Value="libX11.a"/>
         <Library Value="libSpirVTools.a"/>
         <Library Value="libvulkan.so"/>
@@ -120,8 +138,8 @@
         <LibraryPath Value="$(ProjectPath)/../SpirVTools/Release/"/>
         <LibraryPath Value="$(ProjectPath)/../../../../The-Forge/Common_3/ThirdParty/OpenSource/assimp/4.1.0/linux/Bin/"/>
         <LibraryPath Value="$(ProjectPath)/../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/Linux/Release/"/>
-        <Library Value="libOS.a"/>
         <Library Value="libRenderer.a"/>
+        <Library Value="libOS.a"/>
         <Library Value="libX11.a"/>
         <Library Value="libSpirVTools.a"/>
         <Library Value="libvulkan.so"/>
@@ -165,22 +183,4 @@
       </Completion>
     </Configuration>
   </Settings>
-  <Dependencies Name="Debug">
-    <Project Name="OS"/>
-    <Project Name="Renderer"/>
-    <Project Name="SpirVTools"/>
-    <Project Name="gainput"/>
-    <Project Name="zlibstatic"/>
-    <Project Name="assimp"/>
-    <Project Name="EASTL"/>
-  </Dependencies>
-  <Dependencies Name="Release">
-    <Project Name="OS"/>
-    <Project Name="Renderer"/>
-    <Project Name="SpirVTools"/>
-    <Project Name="zlibstatic"/>
-    <Project Name="assimp"/>
-    <Project Name="gainput"/>
-    <Project Name="EASTL"/>
-  </Dependencies>
 </CodeLite_Project>

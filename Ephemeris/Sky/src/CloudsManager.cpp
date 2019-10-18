@@ -324,9 +324,9 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 
     ShaderLoadDesc skyShader = {};
     ShaderPath(shaderPath, (char*)"clDistanceCloud.vert", shaderFullPath);
-    skyShader.mStages[0] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
+    skyShader.mStages[0] = { shaderFullPath.c_str(), NULL, 0, RD_SHADER_SOURCES };
     ShaderPath(shaderPath, (char*)"clDistanceCloud.frag", shaderFullPath);
-    skyShader.mStages[1] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
+    skyShader.mStages[1] = { shaderFullPath.c_str(), NULL, 0, RD_SHADER_SOURCES };
 
     addShader(pRenderer, &skyShader, &pClDistanceCloudShader);
 
@@ -372,11 +372,11 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 
     ShaderLoadDesc spaceShader = {};
     ShaderPath(shaderPath, (char*)"clCumulusCloud.vert", shaderFullPath);
-    spaceShader.mStages[0] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
+    spaceShader.mStages[0] = { shaderFullPath.c_str(), NULL, 0, RD_SHADER_SOURCES };
     ShaderPath(shaderPath, (char*)"clCumulusCloud.geom", shaderFullPath);
-    spaceShader.mStages[1] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
+    spaceShader.mStages[1] = { shaderFullPath.c_str(), NULL, 0, RD_SHADER_SOURCES };
     ShaderPath(shaderPath, (char*)"clCumulusCloud.frag", shaderFullPath);
-    spaceShader.mStages[2] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
+    spaceShader.mStages[2] = { shaderFullPath.c_str(), NULL, 0, RD_SHADER_SOURCES };
 
     addShader(pRenderer, &spaceShader, &pClCumulusCloudShader);
 
@@ -446,9 +446,9 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 
       ShaderLoadDesc impostorShader = {};
       ShaderPath(shaderPath, (char*)"clImpostorCloud.vert", shaderFullPath);
-      impostorShader.mStages[0] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
+      impostorShader.mStages[0] = { shaderFullPath.c_str(), NULL, 0, RD_SHADER_SOURCES };
       ShaderPath(shaderPath, (char*)"clImpostorCloud.frag", shaderFullPath);
-      impostorShader.mStages[1] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
+      impostorShader.mStages[1] = { shaderFullPath.c_str(), NULL, 0, RD_SHADER_SOURCES };
 
       addShader(pRenderer, &impostorShader, &pImposterCloudShader);
 
@@ -497,22 +497,26 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 	if (!bShadersInited) return false;
 	
   TextureLoadDesc CloudFlatTextureDesc = {};
-  CloudFlatTextureDesc.mRoot = FSR_OtherFiles;
 #if defined(_DURANGO)
-  CloudFlatTextureDesc.pFilename = "Textures/flat.dds";
+	//CloudFlatTextureDesc.pFilename = "Textures/flat.dds";
+	PathHandle textureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/flat.dds");  
 #else
-  CloudFlatTextureDesc.pFilename = "../../../../Ephemeris/Sky/resources/Textures/flat.dds";
+  //CloudFlatTextureDesc.pFilename = "../../../../Ephemeris/Sky/resources/Textures/flat.dds";
+	PathHandle textureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../../Ephemeris/Sky/resources/Textures/flat.dds");
 #endif	
+	CloudFlatTextureDesc.pFilePath = textureFilePath;
   CloudFlatTextureDesc.ppTexture = &m_tDistantCloud;
   addResource(&CloudFlatTextureDesc, false);
 
   TextureLoadDesc CloudCumulusTextureDesc = {};
-  CloudCumulusTextureDesc.mRoot = FSR_OtherFiles;
 #if defined(_DURANGO)
-  CloudCumulusTextureDesc.pFilename = "Textures/cumulus_particles.dds";
+  //CloudCumulusTextureDesc.pFilename = "Textures/cumulus_particles.dds";
+	PathHandle textureFilePath01 = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/cumulus_particles.dds");
 #else
-  CloudCumulusTextureDesc.pFilename = "../../../../Ephemeris/Sky/resources/Textures/cumulus_particles.dds";
+  //CloudCumulusTextureDesc.pFilename = "../../../../Ephemeris/Sky/resources/Textures/cumulus_particles.dds";
+	PathHandle textureFilePath01 = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../../Ephemeris/Sky/resources/Textures/cumulus_particles.dds");
 #endif	
+	CloudCumulusTextureDesc.pFilePath = textureFilePath01;
   CloudCumulusTextureDesc.ppTexture = &m_tCumulusCloud;
   addResource(&CloudCumulusTextureDesc, false);
 

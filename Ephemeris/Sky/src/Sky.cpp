@@ -255,42 +255,51 @@ mat4 MakeRotationMatrix(float angle, vec3 axis)
 void Sky::CalculateLookupData()
 {
 	TextureLoadDesc SkyTransmittanceTextureDesc = {};
-	SkyTransmittanceTextureDesc.mRoot = FSR_OtherFiles;
 #if defined(_DURANGO)
-	SkyTransmittanceTextureDesc.pFilename = "Textures/Transmittance.dds";
+	//SkyTransmittanceTextureDesc.pFilename = "Textures/Transmittance.dds";
+	PathHandle textureFilePath00 = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/Transmittance.dds");
 #else
-	SkyTransmittanceTextureDesc.pFilename = "../../../../Ephemeris/Sky/resources/Textures/Transmittance.dds";
+	//SkyTransmittanceTextureDesc.pFilename = "../../../../Ephemeris/Sky/resources/Textures/Transmittance.dds";
+	PathHandle textureFilePath00 = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Transmittance.dds");
 #endif
+	SkyTransmittanceTextureDesc.pFilePath = textureFilePath00;
 	SkyTransmittanceTextureDesc.ppTexture = &pTransmittanceTexture;
 	addResource(&SkyTransmittanceTextureDesc, false);
 
 	TextureLoadDesc SkyIrradianceTextureDesc = {};
-	SkyIrradianceTextureDesc.mRoot = FSR_OtherFiles;
+	//SkyIrradianceTextureDesc.mRoot = FSR_OtherFiles;
 #if defined(_DURANGO)
-	SkyIrradianceTextureDesc.pFilename = "Textures/Irradiance.dds";
+	//SkyIrradianceTextureDesc.pFilename = "Textures/Irradiance.dds";
+	PathHandle textureFilePath01 = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/Irradiance.dds");
 #else
-	SkyIrradianceTextureDesc.pFilename = "../../../../Ephemeris/Sky/resources/Textures/Irradiance.dds";
+	//SkyIrradianceTextureDesc.pFilename = "../../../../Ephemeris/Sky/resources/Textures/Irradiance.dds";
+	PathHandle textureFilePath01 = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Irradiance.dds");
 #endif
+	SkyIrradianceTextureDesc.pFilePath = textureFilePath01;
 	SkyIrradianceTextureDesc.ppTexture = &pIrradianceTexture;
 	addResource(&SkyIrradianceTextureDesc, false);
 
-	TextureLoadDesc SkyInscatterTextureDesc = {};
-	SkyInscatterTextureDesc.mRoot = FSR_OtherFiles;
+	TextureLoadDesc SkyInscatterTextureDesc = {};	
 #if defined(_DURANGO)
-	SkyInscatterTextureDesc.pFilename = "Textures/Inscatter.dds";
+	//SkyInscatterTextureDesc.pFilename = "Textures/Inscatter.dds";
+	PathHandle textureFilePath02 = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/Inscatter.dds");
 #else
-	SkyInscatterTextureDesc.pFilename = "../../../../Ephemeris/Sky/resources/Textures/Inscatter.dds";
+	//SkyInscatterTextureDesc.pFilename = "../../../../Ephemeris/Sky/resources/Textures/Inscatter.dds";
+	PathHandle textureFilePath02 = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Inscatter.dds");
 #endif
+	SkyInscatterTextureDesc.pFilePath = textureFilePath02;
 	SkyInscatterTextureDesc.ppTexture = &pInscatterTexture;
 	addResource(&SkyInscatterTextureDesc, false);
 
 	TextureLoadDesc SkyMoonTextureDesc = {};
-	SkyMoonTextureDesc.mRoot = FSR_OtherFiles;
 #if defined(_DURANGO)
-	SkyMoonTextureDesc.pFilename = "Textures/Moon.dds";
+	//SkyMoonTextureDesc.pFilename = "Textures/Moon.dds";
+	PathHandle textureFilePath03 = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/Moon.dds");
 #else
-	SkyMoonTextureDesc.pFilename = "../../../../Ephemeris/Sky/resources/Textures/Moon.dds";
+	//SkyMoonTextureDesc.pFilename = "../../../../Ephemeris/Sky/resources/Textures/Moon.dds";
+	PathHandle textureFilePath03 = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Moon.dds");
 #endif
+	SkyMoonTextureDesc.pFilePath = textureFilePath03;
 	SkyMoonTextureDesc.ppTexture = &pMoonTexture;
 	addResource(&SkyMoonTextureDesc, false);
 }
@@ -631,23 +640,26 @@ bool Sky::Init(Renderer* const renderer)
 #elif defined(METAL)
 	eastl::string shaderPath("../../../../../Ephemeris/Sky/resources/Shaders/Metal/");
 #endif
-	eastl::string shaderFullPath;
-
+	
 	ShaderLoadDesc skyShader = {};
-	ShaderPath(shaderPath, (char*)"RenderSky.vert", shaderFullPath);
-	skyShader.mStages[0] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
-	ShaderPath(shaderPath, (char*)"RenderSky.frag", shaderFullPath);
-	skyShader.mStages[1] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
+	eastl::string skyShaderVertFullPath;
+	ShaderPath(shaderPath, (char*)"RenderSky.vert", skyShaderVertFullPath);
+	skyShader.mStages[0] = { skyShaderVertFullPath.c_str(), NULL, 0, RD_SHADER_SOURCES };
+	eastl::string skyShaderFragFullPath;
+	ShaderPath(shaderPath, (char*)"RenderSky.frag", skyShaderFragFullPath);
+	skyShader.mStages[1] = { skyShaderFragFullPath.c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &skyShader, &pPAS_Shader);
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc spaceShader = {};
-	ShaderPath(shaderPath, (char*)"Space.vert", shaderFullPath);
-	spaceShader.mStages[0] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
-	ShaderPath(shaderPath, (char*)"Space.frag", shaderFullPath);
-	spaceShader.mStages[1] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
+	eastl::string spaceShaderVertFullPath;
+	ShaderPath(shaderPath, (char*)"Space.vert", spaceShaderVertFullPath);
+	spaceShader.mStages[0] = { spaceShaderVertFullPath.c_str(), NULL, 0, RD_SHADER_SOURCES };
+	eastl::string spaceShaderFragFullPath;
+	ShaderPath(shaderPath, (char*)"Space.frag", spaceShaderFragFullPath);
+	spaceShader.mStages[1] = { spaceShaderFragFullPath.c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &spaceShader, &pSpaceShader);
 
@@ -655,17 +667,19 @@ bool Sky::Init(Renderer* const renderer)
 
 	ShaderLoadDesc sunShader = {};
 #if !defined(METAL)
-	ShaderPath(shaderPath, (char*)"Sun.vert", shaderFullPath);
-	sunShader.mStages[0] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
-	ShaderPath(shaderPath, (char*)"Sun.geom", shaderFullPath);
-	sunShader.mStages[1] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
-	ShaderPath(shaderPath, (char*)"Sun.frag", shaderFullPath);
-	sunShader.mStages[2] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
+	eastl::string sunShaderFullPath[3];
+	ShaderPath(shaderPath, (char*)"Sun.vert", sunShaderFullPath[0]);
+	sunShader.mStages[0] = { sunShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"Sun.geom", sunShaderFullPath[1]);
+	sunShader.mStages[1] = { sunShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"Sun.frag", sunShaderFullPath[2]);
+	sunShader.mStages[2] = { sunShaderFullPath[2].c_str(), NULL, 0, RD_SHADER_SOURCES };
 #else
-	ShaderPath(shaderPath, (char*)"Sun.vert", shaderFullPath);
-	sunShader.mStages[0] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
-	ShaderPath(shaderPath, (char*)"Sun.frag", shaderFullPath);
-	sunShader.mStages[1] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
+	eastl::string sunShaderFullPath[2];
+	ShaderPath(shaderPath, (char*)"Sun.vert", sunShaderFullPath[0]);
+	sunShader.mStages[0] = { sunShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"Sun.frag", sunShaderFullPath[1]);
+	sunShader.mStages[1] = { sunShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
 #endif
 	addShader(pRenderer, &sunShader, &pSunShader);
 
@@ -673,27 +687,30 @@ bool Sky::Init(Renderer* const renderer)
 
 	ShaderLoadDesc starShader = {};
 #if !defined(METAL)
-	ShaderPath(shaderPath, (char*)"Star.vert", shaderFullPath);
-	starShader.mStages[0] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
-	ShaderPath(shaderPath, (char*)"Star.geom", shaderFullPath);
-	starShader.mStages[1] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
-	ShaderPath(shaderPath, (char*)"Star.frag", shaderFullPath);
-	starShader.mStages[2] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
+	eastl::string starShaderFullPath[3];
+	ShaderPath(shaderPath, (char*)"Star.vert", starShaderFullPath[0]);
+	starShader.mStages[0] = { starShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"Star.geom", starShaderFullPath[1]);
+	starShader.mStages[1] = { starShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"Star.frag", starShaderFullPath[2]);
+	starShader.mStages[2] = { starShaderFullPath[2].c_str(), NULL, 0, RD_SHADER_SOURCES };
 #else
-	ShaderPath(shaderPath, (char*)"Star.vert", shaderFullPath);
-	starShader.mStages[0] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
-	ShaderPath(shaderPath, (char*)"Star.frag", shaderFullPath);
-	starShader.mStages[1] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
+	eastl::string starShaderFullPath[3];
+	ShaderPath(shaderPath, (char*)"Star.vert", starShaderFullPath[0]);
+	starShader.mStages[0] = { starShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"Star.frag", starShaderFullPath[1]);
+	starShader.mStages[1] = { starShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
 #endif
 	addShader(pRenderer, &starShader, &pStarShader);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc MilkyWayShader = {};
-	ShaderPath(shaderPath, (char*)"MilkyWay.vert", shaderFullPath);
-	MilkyWayShader.mStages[0] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
-	ShaderPath(shaderPath, (char*)"MilkyWay.frag", shaderFullPath);
-	MilkyWayShader.mStages[1] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
+	eastl::string milkyWayShaderFullPath[2];
+	ShaderPath(shaderPath, (char*)"MilkyWay.vert", milkyWayShaderFullPath[0]);
+	MilkyWayShader.mStages[0] = { milkyWayShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"MilkyWay.frag", milkyWayShaderFullPath[1]);
+	MilkyWayShader.mStages[1] = { milkyWayShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &MilkyWayShader, &pMilkyWayShader);
 
@@ -701,25 +718,28 @@ bool Sky::Init(Renderer* const renderer)
 
 	ShaderLoadDesc AuroraShader = {};
 #if !defined(METAL)
-	ShaderPath(shaderPath, (char*)"Aurora.vert", shaderFullPath);
-	AuroraShader.mStages[0] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
-	ShaderPath(shaderPath, (char*)"Aurora.geom", shaderFullPath);
-	AuroraShader.mStages[1] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
-	ShaderPath(shaderPath, (char*)"Aurora.frag", shaderFullPath);
-	AuroraShader.mStages[2] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
+	eastl::string auroraShaderFullPath[3];
+	ShaderPath(shaderPath, (char*)"Aurora.vert", auroraShaderFullPath[0]);
+	AuroraShader.mStages[0] = { auroraShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"Aurora.geom", auroraShaderFullPath[1]);
+	AuroraShader.mStages[1] = { auroraShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"Aurora.frag", auroraShaderFullPath[2]);
+	AuroraShader.mStages[2] = { auroraShaderFullPath[2].c_str(), NULL, 0, RD_SHADER_SOURCES };
 #else
-	ShaderPath(shaderPath, (char*)"Aurora.vert", shaderFullPath);
-	AuroraShader.mStages[0] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
-	ShaderPath(shaderPath, (char*)"Aurora.frag", shaderFullPath);
-	AuroraShader.mStages[1] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
+	eastl::string auroraShaderFullPath[2];
+	ShaderPath(shaderPath, (char*)"Aurora.vert", auroraShaderFullPath[0]);
+	AuroraShader.mStages[0] = { auroraShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"Aurora.frag", auroraShaderFullPath[1]);
+	AuroraShader.mStages[1] = { auroraShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
 #endif
 	addShader(pRenderer, &AuroraShader, &pAuroraShader);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc AuroraComputeShader = {};
-	ShaderPath(shaderPath, (char*)"Aurora.comp", shaderFullPath);
-	AuroraComputeShader.mStages[0] = { shaderFullPath, NULL, 0, FSR_SrcShaders };
+	eastl::string auroraComputeShaderFullPath[1];
+	ShaderPath(shaderPath, (char*)"Aurora.comp", auroraComputeShaderFullPath[0]);
+	AuroraComputeShader.mStages[0] = { auroraComputeShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &AuroraComputeShader, &pAuroraComputeShader);
 
@@ -992,7 +1012,6 @@ bool Sky::Init(Renderer* const renderer)
 		addResource(&sunUniformDesc);
 	}
 
-	// Need to free memory;
 	conf_free(pSpherePoints);
 
 	///////////////////////////////////////////////////////////////////
@@ -1085,6 +1104,8 @@ void Sky::Exit()
 	removeResource(gParticleSystem.pParticleVertexBuffer);
 	removeResource(gParticleSystem.pParticleInstanceBuffer);
 
+	gParticleSystem.particleDataSet.ParticleDataArray.set_capacity(0);
+	gParticleSystem.particleDataSet.ParticleDataArray.clear();
 	for (uint i = 0; i < gImageCount; i++)
 	{
 		removeResource(pRenderSkyUniformBuffer[i]);
@@ -1596,7 +1617,7 @@ void Sky::Draw(Cmd* cmd)
 
 		cmdBindVertexBuffer(cmd, 1, &pSphereVertexBuffer, NULL);
 		cmdBindIndexBuffer(cmd, pSphereIndexBuffer, 0);
-		cmdDrawIndexed(cmd, (uint32_t)sphere.triangleIndices.size() * 3, 0, 0);
+		cmdDrawIndexed(cmd, (uint32_t)sphere.IndexCout, 0, 0);
 
 		cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
 

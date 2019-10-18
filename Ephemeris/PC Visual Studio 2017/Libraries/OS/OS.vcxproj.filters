@@ -58,11 +58,11 @@
     <Filter Include="OS\Middleware_3\Text">
       <UniqueIdentifier>{ea71056b-4bfe-454e-b0e4-312881420a89}</UniqueIdentifier>
     </Filter>
+    <Filter Include="OS\FileSystem">
+      <UniqueIdentifier>{2073a8e9-c1f1-457a-abdf-1f421e2369e2}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\BaseComponent.cpp" />
-    <ClCompile Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\ComponentRepresentation.cpp" />
-    <ClCompile Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\EntityManager.cpp" />
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\EASTL\allocator_forge.cpp">
       <Filter>Dependencies\EASTL</Filter>
     </ClCompile>
@@ -95,9 +95,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Camera\CameraController.cpp">
       <Filter>OS\Camera</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Core\FileSystem.cpp">
-      <Filter>OS\Core</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\Core\ThreadSystem.cpp">
       <Filter>OS\Core</Filter>
@@ -171,11 +168,26 @@
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerWidgetsUI.cpp">
       <Filter>OS\Profiler</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\FileSystemInternal.cpp">
+      <Filter>OS\FileSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\MemoryStream.cpp">
+      <Filter>OS\FileSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\SystemFileStream.cpp">
+      <Filter>OS\FileSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\SystemRun.cpp">
+      <Filter>OS\FileSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\ZipFileStream.cpp">
+      <Filter>OS\FileSystem</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\ZipFileSystem.cpp">
+      <Filter>OS\FileSystem</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\BaseComponent.h" />
-    <ClInclude Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\ComponentRepresentation.h" />
-    <ClInclude Include="..\..\..\..\..\The-Forge\Middleware_3\ECS\EntityManager.h" />
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\Core\Atomics.h">
       <Filter>OS\Core</Filter>
     </ClInclude>
@@ -259,6 +271,21 @@
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\MicroProfile\ProfilerWidgetsUI.h">
       <Filter>OS\Profiler</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\FileSystemInternal.h">
+      <Filter>OS\FileSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\MemoryStream.h">
+      <Filter>OS\FileSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\SystemFileStream.h">
+      <Filter>OS\FileSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\ZipFileStream.h">
+      <Filter>OS\FileSystem</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\ZipFileSystem.h">
+      <Filter>OS\FileSystem</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
