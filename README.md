@@ -57,17 +57,17 @@ All releases happen in sync with [The Forge](https://github.com/ConfettiFX/The-F
 
 ## Release 1.37 - October 28th, 2019
 * New features
- * Add Earth radius: controls the radius of clouds' radius with scale factor. The clouds field will be flatter and the user can see further along the horizon if the radius increase
- * Add noise flow: controls the direction and intensity of clouds' noise flow
- * Add rotation: rotates clouds based on a certain pivot position.
- * Add the second layer: it is possible to generate the second cloud layer which can act, independently
- * Add FXAA
+  * Add Earth radius: controls the radius of clouds' radius with scale factor. The clouds field will be flatter and the user can see further along the horizon if the radius increase
+  * Add noise flow: controls the direction and intensity of clouds' noise flow
+  * Add rotation: rotates clouds based on a certain pivot position.
+  * Add the second layer: it is possible to generate the second cloud layer which can act, independently
+  * Add FXAA
 
 * Improvement
- * Ray-marching: now, hard-edge artifact is significantly reduced
- * Silver-lining: improved its quality
- * God ray: improved its quality
- * Performance: up to 25% performance increased
+  * Ray-marching: now, hard-edge artifact is significantly reduced
+  * Silver-lining: improved its quality
+  * God ray: improved its quality
+  * Performance: up to 25% performance increased
 
 ## Release 1.36 - October 18th, 2019
 Maintenance release following the upate of the Forge.
