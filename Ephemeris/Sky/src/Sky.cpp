@@ -17,18 +17,21 @@
 #define SKY_NEAR 50.0f
 #define SKY_FAR 100000000.0f
 
+#define SPACE_NEAR 100000.0f
+#define SPACE_FAR 2000000000.0f
+
+#define EARTH_RADIUS 6360000.0f
+
 int				        gNumberOfSpherePoints;
 int				        gNumberOfSphereIndices;
 
-#if defined(_DURANGO)
-const int				gSphereResolution = 4;    // Increase for higher resolution spheres
+#if _DEBUG
+const int				gSphereResolution = 3;    // Increase for higher resolution spheres
 #else
-const int				gSphereResolution = 5;    // Increase for higher resolution spheres
+const int				gSphereResolution = 6;    // Increase for higher resolution spheres
 #endif
-const float				gSphereDiameter = 1.0f;
 
-#define USING_MILKYWAY	0
-#define USING_AURORA	0
+const float				gSphereDiameter = 1.0f;
 
 //Precomputed Atmospheric Sacttering
 Shader*				    pPAS_Shader = NULL;
@@ -37,68 +40,16 @@ Pipeline*			    pPAS_Pipeline = NULL;
 Shader*           pSpaceShader = NULL;
 Pipeline*         pSpacePipeline = NULL;
 
-BlendState*		  pBlendStateSpace;
-BlendState*		  pBlendStateSun;
-BlendState*       pBlendStateStar;
-
-Shader*           pSunShader = NULL;
-Pipeline*         pSunPipeline = NULL;
-
-Shader*           pStarShader = NULL;
-Pipeline*         pStarPipeline = NULL;
-
-Shader*           pMoonShader = NULL;
-Pipeline*         pMoonPipeline = NULL;
-
-Shader*           pMilkyWayShader = NULL;
-Pipeline*         pMilkyWayPipeline = NULL;
-
-Shader*           pAuroraShader = NULL;
-Pipeline*         pAuroraPipeline = NULL;
-
-Shader*           pAuroraComputeShader = NULL;
-Pipeline*         pAuroraComputePipeline = NULL;
+BlendState*				pBlendStateSpace;
 
 DescriptorSet*    pSkyDescriptorSet[2] = { NULL };
 RootSignature*    pSkyRootSignature = NULL;
-RootSignature*    pSkyRootSignatureCompute = NULL;
 
 Buffer*           pSphereVertexBuffer = NULL;
 Buffer*           pSphereIndexBuffer = NULL;
 
-#if USING_MILKYWAY
-Buffer*           pMilkyWayVertexBuffer = NULL;
-Buffer*           pMilkyWayIndexBuffer = NULL;
-uint32_t          MilkyWayIndexCount = 0;
-#endif
-
 Buffer*           pRenderSkyUniformBuffer[3] = { NULL };
 Buffer*           pSpaceUniformBuffer[3] = { NULL };
-Buffer*           pStarUniformBuffer[3] = { NULL };
-Buffer*           pSunUniformBuffer[3] = { NULL };
-
-typedef struct ParticleData
-{
-	vec4 ParticlePositions;
-	vec4 ParticleColors;
-	vec4 ParticleInfo;        // x: temperature, y: particle size, z: blink time seed,
-}ParticleData;
-
-typedef struct ParticleDataSet
-{
-	eastl::vector<ParticleData> ParticleDataArray;
-}ParticleDataSet;
-
-typedef struct ParticleSystem
-{
-	Buffer* pParticleVertexBuffer;
-	Buffer* pParticleInstanceBuffer;
-	ParticleDataSet particleDataSet;
-} ParticleSystem;
-
-ParticleSystem gParticleSystem;
-
-mat4	  ViewProjMat;
 
 static float g_ElapsedTime = 0.0f;
 
@@ -114,20 +65,22 @@ typedef struct SkySettings
 
 SkySettings	gSkySettings;
 
-static float      SunSize = 30000.0f;
+static float      SunSize = 20000000.0f;
 
-static float      SpaceScale = 10000000.0f;
+static float      SpaceScale = EARTH_RADIUS * 100.0f;
 static float      NebulaScale = 9.453f;
 static float      StarIntensity = 1.5f;
-static float      StarDensity = 15.0f;
-static float      StarDistribution = 2000000.0f;
+static float      StarDensity = 10.0f;
+static float      StarDistribution = 20000000.0f;
 //static float ParticleScale = 100.0f;
-static float ParticleSize = 20000.0f;
+static float ParticleSize = 1000000.0f;
 
-uint32_t NebulaHighColor = 0x5D3E2878;
-uint32_t NebulaMidColor = 0x06272EFF;
-uint32_t NebulaLowColor = 0x06041CFF;
+uint32_t NebulaHighColor = 0x412C1D78;
+uint32_t NebulaMidColor = 0x041D22FF;
+uint32_t NebulaLowColor = 0x040315FF;
 
+static mat4 rotMat = mat4::identity();
+static mat4 rotMatStarField = mat4::identity();
 
 struct RenderSkyUniformBuffer
 {
@@ -152,54 +105,6 @@ struct SpaceUniformBuffer
 	float4 NebulaLowColor;
 };
 
-struct SunUniformBuffer
-{
-	mat4 ViewMat;
-	mat4 ViewProjMat;
-	float4 LightDirection;
-	float4 Dx;
-	float4 Dy;
-};
-
-struct AuroraParticle
-{
-	float4 PrevPosition;			// PrePosition and movable flag
-	float4 Position;				// Position and mass
-	float4 Acceleration;
-};
-
-struct AuroraConstraint
-{
-	uint IndexP0;
-	uint IndexP1;
-	float RestDistance;
-	float Padding00;
-	float Padding01;
-	float Padding02;
-	float Padding03;
-	float Padding04;
-};
-
-struct AuroraUniformStruct
-{
-	uint        maxVertex;
-	float       heightOffset;
-	float       height;
-	float       deltaTime;
-
-	mat4        ViewProjMat;
-};
-
-AuroraUniformStruct gAuroraUniformStruct;
-
-Buffer*               pAuroraVertexBuffer;
-Buffer*               pAuroraParticle;
-Buffer*               pAuroraConstraint;
-Buffer*               pAuroraUniformBuffer;
-
-const float AuroraWidth = 100000.0f;
-const float AuroraHeight = 4000.0f;
-const uint32_t AuroraParticleNum = 64;
 
 #if defined(VULKAN)
 static void TransitionRenderTargets(RenderTarget *pRT, ResourceState state, Renderer* renderer, Cmd* cmd, Queue* queue, Fence* fence)
@@ -256,52 +161,33 @@ void Sky::CalculateLookupData()
 {
 	TextureLoadDesc SkyTransmittanceTextureDesc = {};
 #if defined(_DURANGO)
-	//SkyTransmittanceTextureDesc.pFilename = "Textures/Transmittance.dds";
-	PathHandle textureFilePath00 = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/Transmittance.dds");
+	PathHandle SkyTransmittanceTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/Transmittance.dds");
 #else
-	//SkyTransmittanceTextureDesc.pFilename = "../../../../Ephemeris/Sky/resources/Textures/Transmittance.dds";
-	PathHandle textureFilePath00 = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Transmittance.dds");
+	PathHandle SkyTransmittanceTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Transmittance.dds");
 #endif
-	SkyTransmittanceTextureDesc.pFilePath = textureFilePath00;
+	SkyTransmittanceTextureDesc.pFilePath = SkyTransmittanceTextureFilePath;
 	SkyTransmittanceTextureDesc.ppTexture = &pTransmittanceTexture;
 	addResource(&SkyTransmittanceTextureDesc, false);
 
 	TextureLoadDesc SkyIrradianceTextureDesc = {};
-	//SkyIrradianceTextureDesc.mRoot = FSR_OtherFiles;
 #if defined(_DURANGO)
-	//SkyIrradianceTextureDesc.pFilename = "Textures/Irradiance.dds";
-	PathHandle textureFilePath01 = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/Irradiance.dds");
+	PathHandle SkyIrradianceTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/Irradiance.dds");
 #else
-	//SkyIrradianceTextureDesc.pFilename = "../../../../Ephemeris/Sky/resources/Textures/Irradiance.dds";
-	PathHandle textureFilePath01 = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Irradiance.dds");
+	PathHandle SkyIrradianceTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Irradiance.dds");
 #endif
-	SkyIrradianceTextureDesc.pFilePath = textureFilePath01;
+	SkyIrradianceTextureDesc.pFilePath = SkyIrradianceTextureFilePath;
 	SkyIrradianceTextureDesc.ppTexture = &pIrradianceTexture;
 	addResource(&SkyIrradianceTextureDesc, false);
 
-	TextureLoadDesc SkyInscatterTextureDesc = {};	
+	TextureLoadDesc SkyInscatterTextureDesc = {};
 #if defined(_DURANGO)
-	//SkyInscatterTextureDesc.pFilename = "Textures/Inscatter.dds";
-	PathHandle textureFilePath02 = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/Inscatter.dds");
+	PathHandle SkyInscatterTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/Inscatter.dds");
 #else
-	//SkyInscatterTextureDesc.pFilename = "../../../../Ephemeris/Sky/resources/Textures/Inscatter.dds";
-	PathHandle textureFilePath02 = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Inscatter.dds");
+	PathHandle SkyInscatterTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Inscatter.dds");
 #endif
-	SkyInscatterTextureDesc.pFilePath = textureFilePath02;
+	SkyInscatterTextureDesc.pFilePath = SkyInscatterTextureFilePath;
 	SkyInscatterTextureDesc.ppTexture = &pInscatterTexture;
 	addResource(&SkyInscatterTextureDesc, false);
-
-	TextureLoadDesc SkyMoonTextureDesc = {};
-#if defined(_DURANGO)
-	//SkyMoonTextureDesc.pFilename = "Textures/Moon.dds";
-	PathHandle textureFilePath03 = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/Moon.dds");
-#else
-	//SkyMoonTextureDesc.pFilename = "../../../../Ephemeris/Sky/resources/Textures/Moon.dds";
-	PathHandle textureFilePath03 = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Moon.dds");
-#endif
-	SkyMoonTextureDesc.pFilePath = textureFilePath03;
-	SkyMoonTextureDesc.ppTexture = &pMoonTexture;
-	addResource(&SkyMoonTextureDesc, false);
 }
 
 //	<https://www.shadertoy.com/view/4dS3Wd>
@@ -361,63 +247,6 @@ float3 ColorTemperatureToRGB(float temperatureInKelvins)
 	return retColor;
 }
 
-void Sky::GenerateRing(eastl::vector<float> &vertices, eastl::vector<uint32_t> &indices, uint32_t WidthDividor, uint32_t HeightDividor, float radius, float height)
-{
-
-	float DegreeToRadian = PI / 180.0f;
-
-	float angle = 360.0f / (float)WidthDividor * DegreeToRadian;
-
-	float currentAngle;
-
-	float heightGap = height / (float)HeightDividor;
-	float y = height * 0.5f;
-
-	for (uint32_t i = 0; i < HeightDividor; i++)
-	{
-		currentAngle = 0.0f;
-		for (uint32_t w = 0; w <= WidthDividor; w++)
-		{
-			// POS
-			vertices.push_back(cos(currentAngle) * radius);
-			vertices.push_back(y);
-			vertices.push_back(sin(currentAngle) * radius);
-
-			vec3 normailzedVertex = normalize(vec3(cos(currentAngle), 0.0f, sin(currentAngle)));
-
-			// NOR
-			vertices.push_back(normailzedVertex.getX());
-			vertices.push_back(0.0f);
-			vertices.push_back(normailzedVertex.getZ());
-
-			// Info
-			vertices.push_back(0.0f);
-			vertices.push_back(0.0f);
-			vertices.push_back(0.0f);
-
-			currentAngle += angle;
-		}
-		y -= heightGap;
-	}
-
-	uint WidthRow = (WidthDividor + 1);
-
-	for (uint h = 0; h < HeightDividor - 1; h++)
-	{
-		for (uint w = 0; w < WidthDividor; w++)
-		{
-			indices.push_back(w + (h * WidthRow));
-			indices.push_back(w + (WidthRow)+(h * WidthRow));
-			indices.push_back(w + 1 + (h * WidthRow));
-
-			indices.push_back(w + 1 + (h * WidthRow));
-			indices.push_back(w + (WidthRow)+(h * WidthRow));
-			indices.push_back(w + (WidthRow + 1) + (h * WidthRow));
-		}
-	}
-}
-
-
 // Generates an array of vertices and normals for a sphere
 void Sky::GenerateIcosahedron(float **ppPoints, eastl::vector<float> &vertices, eastl::vector<uint32_t> &indices, int numberOfDivisions, float radius)
 {
@@ -437,8 +266,9 @@ void Sky::GenerateIcosahedron(float **ppPoints, eastl::vector<float> &vertices, 
 	for (int i = 0; i < numVertex; ++i)
 	{
 		vec3 tempPosition = vec3(position[i * 3], position[i * 3 + 1], position[i * 3 + 2]);
-		pPoints[vertexCounter++] = v3ToF3(tempPosition) * SpaceScale;
-
+		pPoints[vertexCounter] = v3ToF3(tempPosition) * SpaceScale;
+		pPoints[vertexCounter].setY(pPoints[vertexCounter].getY() - EARTH_RADIUS * 10.0f);
+		vertexCounter++;
 		vec3 normalizedPosition = normalize(tempPosition);
 		pPoints[vertexCounter++] = v3ToF3(normalizedPosition);
 
@@ -469,7 +299,7 @@ void Sky::GenerateIcosahedron(float **ppPoints, eastl::vector<float> &vertices, 
 		maxVal = max(maxVal, NoiseValue03);
 		minVal = min(minVal, NoiseValue03);
 
-		pPoints[vertexCounter++] = float3(NoiseValue01, NoiseValue02, NoiseValue03); //   float3((float)rand()/RAND_MAX, 0.0f, 0.0f);
+		pPoints[vertexCounter++] = float3(NoiseValue01, NoiseValue02, NoiseValue03);
 	}
 
 	float len = maxVal - minVal;
@@ -481,12 +311,14 @@ void Sky::GenerateIcosahedron(float **ppPoints, eastl::vector<float> &vertices, 
 		pPoints[index] = (pPoints[index] - float3(minVal, minVal, minVal)) / len;
 
 		float Density = (pPoints[index].getX() + pPoints[index].getY() + pPoints[index].getZ()) / 3.0f;
-		Density = pow(Density, 3.0f);
+		Density = pow(Density, 1.5f);
 		int maxStar = (int)(StarDensity * Density);
 		for (int j = 0; j < maxStar; j++)
 		{
-			vec3 Positions = f3Tov3(pPoints[index - 2]);
+			vec3 Positions = f3Tov3(pPoints[index - 1])* SpaceScale;
 			Positions += (vec3((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX) * 2.0f - vec3(1.0f, 1.0f, 1.0f)) * StarDistribution;
+			Positions = normalize(Positions) * SpaceScale;
+			Positions.setY(Positions.getY() - EARTH_RADIUS * 10.0f);
 
 			float temperature = ((float)rand() / RAND_MAX) * 30000.0f + 3700.0f;
 			vec3 StarColor = f3Tov3(ColorTemperatureToRGB(temperature));
@@ -511,101 +343,6 @@ void Sky::GenerateIcosahedron(float **ppPoints, eastl::vector<float> &vertices, 
 
 bool Sky::Init(Renderer* const renderer)
 {
-	/*
-	Timer t;
-
-	B_Spline test;
-	eastl::vector<float> times;
-
-
-	uint numberOfPts = 64;
-
-	for (uint i = 0; i < numberOfPts; i++)
-	{
-	  times.push_back((float)i / (float)numberOfPts);
-	}
-
-	times.push_back(0.0f);
-	times.push_back(0.1f);
-	times.push_back(0.2f);
-	times.push_back(0.3f);
-	times.push_back(0.4f);
-	times.push_back(0.5f);
-	times.push_back(0.6f);
-	times.push_back(0.7f);
-	times.push_back(0.8f);
-	times.push_back(0.9f);
-	times.push_back(1.0f);
-
-	eastl::vector<vec3> points;
-	points.push_back(vec3(-1.0f, 0.0, 0.0f));
-	points.push_back(vec3(-0.5f, 0.0, 0.5f));
-	points.push_back(vec3(0.5f, 0.0, -0.5f));
-	points.push_back(vec3(1.0f, 0.0, 0.0f));
-
-	eastl::vector<float> knots;
-	knots.push_back(0.0f);
-	knots.push_back(0.0f);
-	knots.push_back(0.0f);
-	knots.push_back(1.0f);
-	knots.push_back(2.0f);
-	knots.push_back(2.0f);
-	knots.push_back(2.0f);
-	eastl::vector<float> weights;
-	eastl::vector<vec3> results;
-	test.interpolate(times, 2, points, knots, weights, results);
-
-	LOGF(LogLevel::eINFO, "B_Spline CPU: %f", t.GetMSec(false) * 0.001f);
-	*/
-
-
-	//gAurora.Init(100000.0f,4000.0f,64, 1);
-
-
-
-	eastl::vector< AuroraParticle > initialAuroraData;
-
-	for (uint32_t x = 0; x < AuroraParticleNum; x++)
-	{
-		AuroraParticle tempParticle;
-		tempParticle.Position = float4(AuroraWidth * ((float)x / (float)AuroraParticleNum), 0.0f, 0.0f, 1.0f);
-		tempParticle.PrevPosition = float4(tempParticle.Position.getX(), tempParticle.Position.getY(), tempParticle.Position.getZ(), 1.0);
-		tempParticle.Acceleration = float4(0.0f, 0.0f, 0.0f, 0.0f);
-
-		initialAuroraData.push_back(tempParticle);
-	}
-
-	eastl::vector< AuroraConstraint > initialAuroraConstraintData;
-
-	for (uint32_t x = 0; x < AuroraParticleNum - 1; x++)
-	{
-		AuroraConstraint tempParticle;
-		tempParticle.IndexP0 = x;
-		tempParticle.IndexP1 = x + 1;
-
-		float3 p0 = initialAuroraData[x].Position.getXYZ();
-		float3 p1 = initialAuroraData[x + 1].Position.getXYZ();
-
-		float x2 = p0.getX() - p1.getX();
-		x2 *= x2;
-
-		float y2 = p0.getY() - p1.getY();
-		y2 *= y2;
-
-		float z2 = p0.getZ() - p1.getZ();
-		z2 *= z2;
-
-		tempParticle.RestDistance = sqrt(x2 + y2 + z2);
-
-		tempParticle.Padding00 = 0.0f;
-		tempParticle.Padding01 = 0.0f;
-		tempParticle.Padding02 = 0.0f;
-		tempParticle.Padding03 = 0.0f;
-		tempParticle.Padding04 = 0.0f;
-
-		initialAuroraConstraintData.push_back(tempParticle);
-	}
-
 	pRenderer = renderer;
 
 	RasterizerStateDesc rasterizerStateDesc = {};
@@ -639,129 +376,40 @@ bool Sky::Init(Renderer* const renderer)
 	eastl::string shaderPath("../../../../../Ephemeris/Sky/resources/Shaders/Vulkan/");
 #elif defined(METAL)
 	eastl::string shaderPath("../../../../../Ephemeris/Sky/resources/Shaders/Metal/");
-#endif
-	
+#endif	
+
 	ShaderLoadDesc skyShader = {};
-	eastl::string skyShaderVertFullPath;
-	ShaderPath(shaderPath, (char*)"RenderSky.vert", skyShaderVertFullPath);
-	skyShader.mStages[0] = { skyShaderVertFullPath.c_str(), NULL, 0, RD_SHADER_SOURCES };
-	eastl::string skyShaderFragFullPath;
-	ShaderPath(shaderPath, (char*)"RenderSky.frag", skyShaderFragFullPath);
-	skyShader.mStages[1] = { skyShaderFragFullPath.c_str(), NULL, 0, RD_SHADER_SOURCES };
+	eastl::string skyShaderFullPath[2];
+	ShaderPath(shaderPath, (char*)"RenderSky.vert", skyShaderFullPath[0]);
+	skyShader.mStages[0] = { skyShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"RenderSky.frag", skyShaderFullPath[1]);
+	skyShader.mStages[1] = { skyShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &skyShader, &pPAS_Shader);
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc spaceShader = {};
-	eastl::string spaceShaderVertFullPath;
-	ShaderPath(shaderPath, (char*)"Space.vert", spaceShaderVertFullPath);
-	spaceShader.mStages[0] = { spaceShaderVertFullPath.c_str(), NULL, 0, RD_SHADER_SOURCES };
-	eastl::string spaceShaderFragFullPath;
-	ShaderPath(shaderPath, (char*)"Space.frag", spaceShaderFragFullPath);
-	spaceShader.mStages[1] = { spaceShaderFragFullPath.c_str(), NULL, 0, RD_SHADER_SOURCES };
+	eastl::string spaceShaderFullPath[2];
+	ShaderPath(shaderPath, (char*)"Space.vert", spaceShaderFullPath[0]);
+	spaceShader.mStages[0] = { spaceShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"Space.frag", spaceShaderFullPath[1]);
+	spaceShader.mStages[1] = { spaceShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &spaceShader, &pSpaceShader);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	ShaderLoadDesc sunShader = {};
-#if !defined(METAL)
-	eastl::string sunShaderFullPath[3];
-	ShaderPath(shaderPath, (char*)"Sun.vert", sunShaderFullPath[0]);
-	sunShader.mStages[0] = { sunShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-	ShaderPath(shaderPath, (char*)"Sun.geom", sunShaderFullPath[1]);
-	sunShader.mStages[1] = { sunShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
-	ShaderPath(shaderPath, (char*)"Sun.frag", sunShaderFullPath[2]);
-	sunShader.mStages[2] = { sunShaderFullPath[2].c_str(), NULL, 0, RD_SHADER_SOURCES };
-#else
-	eastl::string sunShaderFullPath[2];
-	ShaderPath(shaderPath, (char*)"Sun.vert", sunShaderFullPath[0]);
-	sunShader.mStages[0] = { sunShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-	ShaderPath(shaderPath, (char*)"Sun.frag", sunShaderFullPath[1]);
-	sunShader.mStages[1] = { sunShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
-#endif
-	addShader(pRenderer, &sunShader, &pSunShader);
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	ShaderLoadDesc starShader = {};
-#if !defined(METAL)
-	eastl::string starShaderFullPath[3];
-	ShaderPath(shaderPath, (char*)"Star.vert", starShaderFullPath[0]);
-	starShader.mStages[0] = { starShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-	ShaderPath(shaderPath, (char*)"Star.geom", starShaderFullPath[1]);
-	starShader.mStages[1] = { starShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
-	ShaderPath(shaderPath, (char*)"Star.frag", starShaderFullPath[2]);
-	starShader.mStages[2] = { starShaderFullPath[2].c_str(), NULL, 0, RD_SHADER_SOURCES };
-#else
-	eastl::string starShaderFullPath[3];
-	ShaderPath(shaderPath, (char*)"Star.vert", starShaderFullPath[0]);
-	starShader.mStages[0] = { starShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-	ShaderPath(shaderPath, (char*)"Star.frag", starShaderFullPath[1]);
-	starShader.mStages[1] = { starShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
-#endif
-	addShader(pRenderer, &starShader, &pStarShader);
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	ShaderLoadDesc MilkyWayShader = {};
-	eastl::string milkyWayShaderFullPath[2];
-	ShaderPath(shaderPath, (char*)"MilkyWay.vert", milkyWayShaderFullPath[0]);
-	MilkyWayShader.mStages[0] = { milkyWayShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-	ShaderPath(shaderPath, (char*)"MilkyWay.frag", milkyWayShaderFullPath[1]);
-	MilkyWayShader.mStages[1] = { milkyWayShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
-
-	addShader(pRenderer, &MilkyWayShader, &pMilkyWayShader);
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	ShaderLoadDesc AuroraShader = {};
-#if !defined(METAL)
-	eastl::string auroraShaderFullPath[3];
-	ShaderPath(shaderPath, (char*)"Aurora.vert", auroraShaderFullPath[0]);
-	AuroraShader.mStages[0] = { auroraShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-	ShaderPath(shaderPath, (char*)"Aurora.geom", auroraShaderFullPath[1]);
-	AuroraShader.mStages[1] = { auroraShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
-	ShaderPath(shaderPath, (char*)"Aurora.frag", auroraShaderFullPath[2]);
-	AuroraShader.mStages[2] = { auroraShaderFullPath[2].c_str(), NULL, 0, RD_SHADER_SOURCES };
-#else
-	eastl::string auroraShaderFullPath[2];
-	ShaderPath(shaderPath, (char*)"Aurora.vert", auroraShaderFullPath[0]);
-	AuroraShader.mStages[0] = { auroraShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-	ShaderPath(shaderPath, (char*)"Aurora.frag", auroraShaderFullPath[1]);
-	AuroraShader.mStages[1] = { auroraShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
-#endif
-	addShader(pRenderer, &AuroraShader, &pAuroraShader);
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	ShaderLoadDesc AuroraComputeShader = {};
-	eastl::string auroraComputeShaderFullPath[1];
-	ShaderPath(shaderPath, (char*)"Aurora.comp", auroraComputeShaderFullPath[0]);
-	AuroraComputeShader.mStages[0] = { auroraComputeShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-
-	addShader(pRenderer, &AuroraComputeShader, &pAuroraComputeShader);
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////
 	const char* pSkySamplerNames[] = { "g_LinearClamp", "g_LinearBorder" };
 	Sampler* pSkySamplers[] = { pLinearClampSampler, pLinearBorderSampler };
-	Shader*           shaders[] = { pPAS_Shader, pSpaceShader, pSunShader, pStarShader, pMilkyWayShader, pAuroraShader };
+	Shader*           shaders[] = { pPAS_Shader, pSpaceShader };
 	RootSignatureDesc rootDesc = {};
-	rootDesc.mShaderCount = 6;
+	rootDesc.mShaderCount = 2;
 	rootDesc.ppShaders = shaders;
 	rootDesc.mStaticSamplerCount = 2;
 	rootDesc.ppStaticSamplerNames = pSkySamplerNames;
 	rootDesc.ppStaticSamplers = pSkySamplers;
 
 	addRootSignature(pRenderer, &rootDesc, &pSkyRootSignature);
-
-	Shader*           shaderComputes[] = { pAuroraComputeShader };
-	rootDesc = {};
-	rootDesc.mShaderCount = 1;
-	rootDesc.ppShaders = shaderComputes;
-
-	addRootSignature(pRenderer, &rootDesc, &pSkyRootSignatureCompute);
 
 	DescriptorSetDesc setDesc = { pSkyRootSignature, DESCRIPTOR_UPDATE_FREQ_NONE, 1 };
 	addDescriptorSet(pRenderer, &setDesc, &pSkyDescriptorSet[0]);
@@ -784,39 +432,6 @@ bool Sky::Init(Renderer* const renderer)
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	BlendStateDesc blendStateSunDesc = {};
-	blendStateSunDesc.mBlendModes[0] = BM_ADD;
-	blendStateSunDesc.mBlendAlphaModes[0] = BM_ADD;
-
-	blendStateSunDesc.mSrcFactors[0] = BC_SRC_ALPHA;
-	blendStateSunDesc.mDstFactors[0] = BC_ONE;
-
-	blendStateSunDesc.mSrcAlphaFactors[0] = BC_ONE;
-	blendStateSunDesc.mDstAlphaFactors[0] = BC_ZERO;
-
-	blendStateSunDesc.mMasks[0] = ALL;
-	blendStateSunDesc.mRenderTargetMask = BLEND_STATE_TARGET_0;
-	addBlendState(pRenderer, &blendStateSunDesc, &pBlendStateSun);
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	BlendStateDesc blendStateAdditiveDesc = {};
-	blendStateAdditiveDesc.mBlendModes[0] = BM_ADD;
-	blendStateAdditiveDesc.mBlendAlphaModes[0] = BM_ADD;
-
-	blendStateAdditiveDesc.mSrcFactors[0] = BC_SRC_ALPHA;
-	blendStateAdditiveDesc.mDstFactors[0] = BC_ONE;
-
-	blendStateAdditiveDesc.mSrcAlphaFactors[0] = BC_SRC_ALPHA;
-	blendStateAdditiveDesc.mDstAlphaFactors[0] = BC_ONE;
-
-	blendStateAdditiveDesc.mMasks[0] = ALL;
-	blendStateAdditiveDesc.mRenderTargetMask = BLEND_STATE_TARGET_0;
-	addBlendState(pRenderer, &blendStateAdditiveDesc, &pBlendStateStar);
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 	float screenQuadPoints[] = {
 		0.0f,  0.0f, 0.5f, 0.0f, 0.0f,
 		0.0f,  0.0f, 0.5f, 0.0f, 0.0f,
@@ -834,35 +449,6 @@ bool Sky::Init(Renderer* const renderer)
 	addResource(&TriangularVbDesc);
 
 	CalculateLookupData();
-
-#if USING_MILKYWAY
-
-	eastl::vector<float> MilkyWayVertices;
-	eastl::vector<uint32_t> MilkyWayIndices;
-
-	GenerateRing(MilkyWayVertices, MilkyWayIndices, 128, 10, 1000000.0f, 100000.0f);
-
-	BufferLoadDesc MilkyWayVbDesc = {};
-	MilkyWayVbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_VERTEX_BUFFER;
-	MilkyWayVbDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
-	MilkyWayVbDesc.mDesc.mVertexStride = sizeof(float3) * 3;
-	MilkyWayVbDesc.mDesc.mSize = (uint64_t)MilkyWayVertices.size() / 3 * MilkyWayVbDesc.mDesc.mVertexStride;
-	MilkyWayVbDesc.pData = MilkyWayVertices.data();
-	MilkyWayVbDesc.ppBuffer = &pMilkyWayVertexBuffer;
-	addResource(&MilkyWayVbDesc);
-
-	BufferLoadDesc MilkyWayIbDesc = {};
-	MilkyWayIbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_INDEX_BUFFER;
-	MilkyWayIbDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
-	MilkyWayIbDesc.mDesc.mSize = (uint64_t)MilkyWayIndices.size() * sizeof(uint32_t);
-	MilkyWayIbDesc.mDesc.mIndexType = INDEX_TYPE_UINT32;
-	MilkyWayIbDesc.pData = MilkyWayIndices.data();
-	MilkyWayIbDesc.ppBuffer = &pMilkyWayIndexBuffer;
-	addResource(&MilkyWayIbDesc);
-
-	MilkyWayIndexCount = (uint32_t)MilkyWayIndices.size();
-
-#endif
 
 	// Generate sphere vertex buffer
 	eastl::vector<float> IcosahedronVertices;
@@ -916,60 +502,6 @@ bool Sky::Init(Renderer* const renderer)
 	sphereIbDesc.ppBuffer = &pSphereIndexBuffer;
 	addResource(&sphereIbDesc);
 
-	BufferLoadDesc AuroraVbDesc = {};
-	AuroraVbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_VERTEX_BUFFER;
-	AuroraVbDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
-	AuroraVbDesc.mDesc.mVertexStride = sizeof(float3) * 3;
-	AuroraVbDesc.mDesc.mSize = (uint64_t)AuroraParticleNum * AuroraVbDesc.mDesc.mVertexStride;
-	AuroraVbDesc.ppBuffer = &pAuroraVertexBuffer;
-	addResource(&AuroraVbDesc);
-
-	BufferLoadDesc AuroraParticleDesc = {};
-	AuroraParticleDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_BUFFER | DESCRIPTOR_TYPE_RW_BUFFER;
-	AuroraParticleDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
-	AuroraParticleDesc.mDesc.mElementCount = (uint64_t)AuroraParticleNum;
-	AuroraParticleDesc.mDesc.mStructStride = sizeof(AuroraParticle);
-	AuroraParticleDesc.mDesc.mSize = AuroraParticleDesc.mDesc.mElementCount * AuroraParticleDesc.mDesc.mStructStride;
-	AuroraParticleDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT | BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
-	AuroraParticleDesc.pData = initialAuroraData.data();
-
-	// for(unsigned int i=0; i<gImageCount; i++)
-	// {
-	AuroraParticleDesc.ppBuffer = &pAuroraParticle;
-	addResource(&AuroraParticleDesc);
-	// }
-
-	BufferLoadDesc AuroraConstraintDesc = {};
-	AuroraConstraintDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_BUFFER | DESCRIPTOR_TYPE_RW_BUFFER;
-	AuroraConstraintDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
-	AuroraConstraintDesc.mDesc.mElementCount = (uint64_t)AuroraParticleNum - 1;
-	AuroraConstraintDesc.mDesc.mStructStride = sizeof(AuroraConstraint);
-	AuroraConstraintDesc.mDesc.mSize = AuroraConstraintDesc.mDesc.mElementCount * AuroraConstraintDesc.mDesc.mStructStride;
-	AuroraConstraintDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT | BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
-	AuroraConstraintDesc.pData = initialAuroraConstraintData.data();
-
-	// for (unsigned int i = 0; i < gImageCount; i++)
-	// {
-	AuroraConstraintDesc.ppBuffer = &pAuroraConstraint;
-	addResource(&AuroraConstraintDesc);
-	// }
-
-
-	BufferLoadDesc AuroraUniformDesc = {};
-	AuroraUniformDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	AuroraUniformDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
-	AuroraUniformDesc.mDesc.mElementCount = 1;
-	AuroraUniformDesc.mDesc.mStructStride = sizeof(AuroraUniformStruct);
-	AuroraUniformDesc.mDesc.mSize = AuroraUniformDesc.mDesc.mElementCount * AuroraUniformDesc.mDesc.mStructStride;
-	AuroraUniformDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT | BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
-
-	// for (unsigned int i = 0; i < gImageCount; i++)
-	// {
-	AuroraUniformDesc.ppBuffer = &pAuroraUniformBuffer;
-	addResource(&AuroraUniformDesc);
-	// }
-
-
 	BufferLoadDesc renderSkybDesc = {};
 	renderSkybDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	renderSkybDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
@@ -996,22 +528,7 @@ bool Sky::Init(Renderer* const renderer)
 		addResource(&spaceUniformDesc);
 	}
 
-	BufferLoadDesc sunUniformDesc = {};
-	sunUniformDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	sunUniformDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
-	sunUniformDesc.mDesc.mSize = sizeof(SunUniformBuffer);
-	sunUniformDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT | BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
-	sunUniformDesc.pData = NULL;
-
-	for (uint i = 0; i < gImageCount; i++)
-	{
-		sunUniformDesc.ppBuffer = &pSunUniformBuffer[i];
-		addResource(&sunUniformDesc);
-
-		sunUniformDesc.ppBuffer = &pStarUniformBuffer[i];
-		addResource(&sunUniformDesc);
-	}
-
+	// Need to free memory;
 	conf_free(pSpherePoints);
 
 	///////////////////////////////////////////////////////////////////
@@ -1026,7 +543,7 @@ bool Sky::Init(Renderer* const renderer)
 	gSkySettings.SkyInfo.x = 0.12f;
 	gSkySettings.SkyInfo.y = 3.0f;
 	gSkySettings.SkyInfo.z = 1.0f;
-	gSkySettings.SkyInfo.w = 0.322f;
+	gSkySettings.SkyInfo.w = 0.1f;
 
 	gSkySettings.OriginLocation.x = -167.0f;
 	gSkySettings.OriginLocation.y = -532.0f;
@@ -1057,23 +574,13 @@ bool Sky::Init(Renderer* const renderer)
 void Sky::Exit()
 {
 	removeBlendState(pBlendStateSpace);
-	removeBlendState(pBlendStateSun);
-	removeBlendState(pBlendStateStar);
 
 	removeShader(pRenderer, pPAS_Shader);
 	removeShader(pRenderer, pSpaceShader);
-	removeShader(pRenderer, pMilkyWayShader);
-	removeShader(pRenderer, pAuroraShader);
-	removeShader(pRenderer, pAuroraComputeShader);
-	removeShader(pRenderer, pSunShader);
-	removeShader(pRenderer, pStarShader);
-
 
 	removeRootSignature(pRenderer, pSkyRootSignature);
-	removeRootSignature(pRenderer, pSkyRootSignatureCompute);
 	removeDescriptorSet(pRenderer, pSkyDescriptorSet[0]);
 	removeDescriptorSet(pRenderer, pSkyDescriptorSet[1]);
-
 
 	removeSampler(pRenderer, pLinearClampSampler);
 	removeSampler(pRenderer, pLinearBorderSampler);
@@ -1081,43 +588,21 @@ void Sky::Exit()
 	removeResource(pSphereVertexBuffer);
 	removeResource(pSphereIndexBuffer);
 
-	removeResource(pAuroraVertexBuffer);
-
-	/*
-  for (uint i = 0; i < gImageCount; i++)
-  {
-	removeResource(pAuroraParticle[i]);
-	removeResource(pAuroraConstraint[i]);
-	removeResource(pAuroraUniformBuffer[i]);
-  }
-  */
-
-	removeResource(pAuroraParticle);
-	removeResource(pAuroraConstraint);
-	removeResource(pAuroraUniformBuffer);
-
-#if USING_MILKYWAY
-	removeResource(pMilkyWayVertexBuffer);
-	removeResource(pMilkyWayIndexBuffer);
-#endif
+	for (uint i = 0; i < gImageCount; i++)
+	{
+		removeResource(pRenderSkyUniformBuffer[i]);
+		removeResource(pSpaceUniformBuffer[i]);
+	}
 
 	removeResource(gParticleSystem.pParticleVertexBuffer);
 	removeResource(gParticleSystem.pParticleInstanceBuffer);
 
 	gParticleSystem.particleDataSet.ParticleDataArray.set_capacity(0);
 	gParticleSystem.particleDataSet.ParticleDataArray.clear();
-	for (uint i = 0; i < gImageCount; i++)
-	{
-		removeResource(pRenderSkyUniformBuffer[i]);
-		removeResource(pSpaceUniformBuffer[i]);
-		removeResource(pSunUniformBuffer[i]);
-		removeResource(pStarUniformBuffer[i]);
-	}
 
 	removeResource(pTransmittanceTexture);
 	removeResource(pIrradianceTexture);
 	removeResource(pInscatterTexture);
-	removeResource(pMoonTexture);
 
 	removeResource(pGlobalTriangularVertexBuffer);
 	removeRasterizerState(pRasterizerForSky);
@@ -1136,6 +621,7 @@ bool Sky::Load(RenderTarget** rts, uint32_t count)
 	//float vertical_fov = 2.0f * atan(tan(horizontal_fov*0.5f) * aspectInverse);
 
 	SkyProjectionMatrix = mat4::perspective(horizontal_fov, aspectInverse, SKY_NEAR, SKY_FAR);
+	SpaceProjectionMatrix = mat4::perspective(horizontal_fov, aspectInverse, SPACE_NEAR, SPACE_FAR);
 
 	//layout and pipeline for ScreenQuad
 	VertexLayout vertexLayout = {};
@@ -1180,7 +666,6 @@ bool Sky::Load(RenderTarget** rts, uint32_t count)
 		pipelineSettings.mRenderTargetCount = 1;
 
 		pipelineSettings.pColorFormats = &pSkyRenderTarget->mDesc.mFormat;
-		//pipelineSettings.pSrgbValues = &pSkyRenderTarget->mDesc.mSrgb;
 		pipelineSettings.mSampleCount = pSkyRenderTarget->mDesc.mSampleCount;
 		pipelineSettings.mSampleQuality = pSkyRenderTarget->mDesc.mSampleQuality;
 
@@ -1221,7 +706,6 @@ bool Sky::Load(RenderTarget** rts, uint32_t count)
 		pipelineSettings.mRenderTargetCount = 1;
 
 		pipelineSettings.pColorFormats = &pSkyRenderTarget->mDesc.mFormat;
-		//pipelineSettings.pSrgbValues = &pSkyRenderTarget->mDesc.mSrgb;
 		pipelineSettings.mSampleCount = pSkyRenderTarget->mDesc.mSampleCount;
 		pipelineSettings.mSampleQuality = pSkyRenderTarget->mDesc.mSampleQuality;
 
@@ -1232,97 +716,6 @@ bool Sky::Load(RenderTarget** rts, uint32_t count)
 		pipelineSettings.pBlendState = pBlendStateSpace;
 
 		addPipeline(pRenderer, &pipelineDescSpace, &pSpacePipeline);
-	}
-
-
-	PipelineDesc pipelineDescMilkyWay;
-	{
-		pipelineDescMilkyWay.mType = PIPELINE_TYPE_GRAPHICS;
-		GraphicsPipelineDesc &pipelineSettings = pipelineDescMilkyWay.mGraphicsDesc;
-
-		pipelineSettings = { 0 };
-
-		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
-		pipelineSettings.mRenderTargetCount = 1;
-
-		pipelineSettings.pColorFormats = &pSkyRenderTarget->mDesc.mFormat;
-		//pipelineSettings.pSrgbValues = &pSkyRenderTarget->mDesc.mSrgb;
-		pipelineSettings.mSampleCount = pSkyRenderTarget->mDesc.mSampleCount;
-		pipelineSettings.mSampleQuality = pSkyRenderTarget->mDesc.mSampleQuality;
-
-		pipelineSettings.pRootSignature = pSkyRootSignature;
-		pipelineSettings.pShaderProgram = pMilkyWayShader;
-		pipelineSettings.pVertexLayout = &vertexLayout;
-		pipelineSettings.pRasterizerState = pRasterizerForSky;
-		pipelineSettings.pBlendState = pBlendStateSpace;
-
-		addPipeline(pRenderer, &pipelineDescMilkyWay, &pMilkyWayPipeline);
-	}
-
-	PipelineDesc pipelineDescAurora;
-	{
-		pipelineDescAurora.mType = PIPELINE_TYPE_GRAPHICS;
-		GraphicsPipelineDesc &pipelineSettings = pipelineDescAurora.mGraphicsDesc;
-
-		pipelineSettings = { 0 };
-
-		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_POINT_LIST;
-		pipelineSettings.mRenderTargetCount = 1;
-
-		pipelineSettings.pColorFormats = &pSkyRenderTarget->mDesc.mFormat;
-		//pipelineSettings.pSrgbValues      = &pSkyRenderTarget->mDesc.mSrgb;
-		pipelineSettings.mSampleCount = pSkyRenderTarget->mDesc.mSampleCount;
-		pipelineSettings.mSampleQuality = pSkyRenderTarget->mDesc.mSampleQuality;
-
-		pipelineSettings.pRootSignature = pSkyRootSignature;
-		pipelineSettings.pShaderProgram = pAuroraShader;
-		pipelineSettings.pVertexLayout = &vertexLayout;
-		pipelineSettings.pRasterizerState = pRasterizerForSky;
-		pipelineSettings.pBlendState = pBlendStateSun;
-
-		addPipeline(pRenderer, &pipelineDescAurora, &pAuroraPipeline);
-	}
-
-	PipelineDesc pipelineDescAuroraCompute;
-	{
-		pipelineDescAuroraCompute.mType = PIPELINE_TYPE_COMPUTE;
-		ComputePipelineDesc &pipelineSettings = pipelineDescAuroraCompute.mComputeDesc;
-
-		pipelineSettings = { 0 };
-
-		pipelineSettings.pRootSignature = pSkyRootSignatureCompute;
-		pipelineSettings.pShaderProgram = pAuroraComputeShader;
-
-		addPipeline(pRenderer, &pipelineDescAuroraCompute, &pAuroraComputePipeline);
-	}
-
-
-	PipelineDesc pipelineDesSun;
-	{
-		pipelineDesSun.mType = PIPELINE_TYPE_GRAPHICS;
-		GraphicsPipelineDesc &pipelineSettings = pipelineDesSun.mGraphicsDesc;
-
-		pipelineSettings = { 0 };
-
-#if !defined(METAL)
-		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_POINT_LIST;
-#else
-		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_STRIP;
-#endif
-		pipelineSettings.mRenderTargetCount = 1;
-
-		pipelineSettings.pColorFormats = &pSkyRenderTarget->mDesc.mFormat;
-		//pipelineSettings.pSrgbValues = &pSkyRenderTarget->mDesc.mSrgb;
-		pipelineSettings.mSampleCount = pSkyRenderTarget->mDesc.mSampleCount;
-		pipelineSettings.mSampleQuality = pSkyRenderTarget->mDesc.mSampleQuality;
-
-		pipelineSettings.pRootSignature = pSkyRootSignature;
-		pipelineSettings.pShaderProgram = pSunShader;
-		pipelineSettings.pVertexLayout = &vertexLayout;
-		pipelineSettings.pRasterizerState = pRasterizerForSky;
-		pipelineSettings.pBlendState = pBlendStateSun;
-
-		addPipeline(pRenderer, &pipelineDesSun, &pSunPipeline);
 	}
 
 	vertexLayout = {};
@@ -1360,38 +753,10 @@ bool Sky::Load(RenderTarget** rts, uint32_t count)
 	vertexLayout.mAttribs[4].mOffset = 8 * sizeof(float);
 	vertexLayout.mAttribs[4].mRate = VERTEX_ATTRIB_RATE_INSTANCE;
 
-	PipelineDesc pipelineDescStar;
-	{
-		pipelineDescStar.mType = PIPELINE_TYPE_GRAPHICS;
-		GraphicsPipelineDesc &pipelineSettings = pipelineDescStar.mGraphicsDesc;
-
-		pipelineSettings = { 0 };
-
-#if !defined(METAL)
-		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_POINT_LIST;
-#else
-		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_STRIP;
-#endif
-		pipelineSettings.mRenderTargetCount = 1;
-
-		pipelineSettings.pColorFormats = &pSkyRenderTarget->mDesc.mFormat;
-		//pipelineSettings.pSrgbValues = &pSkyRenderTarget->mDesc.mSrgb;
-		pipelineSettings.mSampleCount = pSkyRenderTarget->mDesc.mSampleCount;
-		pipelineSettings.mSampleQuality = pSkyRenderTarget->mDesc.mSampleQuality;
-
-		pipelineSettings.pRootSignature = pSkyRootSignature;
-		pipelineSettings.pShaderProgram = pStarShader;
-		pipelineSettings.pVertexLayout = &vertexLayout;
-		pipelineSettings.pRasterizerState = pRasterizerForSky;
-		pipelineSettings.pBlendState = pBlendStateStar;
-
-		addPipeline(pRenderer, &pipelineDescStar, &pStarPipeline);
-	}
-
 	// Prepare descriptor sets
 	// Sky
 	{
-		DescriptorData ScParams[7] = {};
+		DescriptorData ScParams[8] = {};
 		ScParams[0].pName = "SceneColorTexture";
 		ScParams[0].ppTextures = &pPreStageRenderTarget->pTexture;
 		ScParams[1].pName = "Depth";
@@ -1404,9 +769,7 @@ bool Sky::Load(RenderTarget** rts, uint32_t count)
 		ScParams[4].ppBuffers = &pTransmittanceBuffer;
 		ScParams[5].pName = "depthTexture";
 		ScParams[5].ppTextures = &pDepthBuffer->pTexture;
-		ScParams[6].pName = "moonAtlas";
-		ScParams[6].ppTextures = &pMoonTexture;
-		updateDescriptorSet(pRenderer, 0, pSkyDescriptorSet[0], 7, ScParams);
+		updateDescriptorSet(pRenderer, 0, pSkyDescriptorSet[0], 6, ScParams);
 
 		for (uint32_t i = 0; i < gImageCount; ++i)
 		{
@@ -1414,14 +777,9 @@ bool Sky::Load(RenderTarget** rts, uint32_t count)
 			ScParams[0].ppBuffers = &pRenderSkyUniformBuffer[i];
 			ScParams[1].pName = "SpaceUniform";
 			ScParams[1].ppBuffers = &pSpaceUniformBuffer[i];
-			ScParams[2].pName = "StarUniform";
-			ScParams[2].ppBuffers = &pStarUniformBuffer[i];
-			ScParams[3].pName = "SunUniform";
-			ScParams[3].ppBuffers = &pSunUniformBuffer[i];
-			updateDescriptorSet(pRenderer, i, pSkyDescriptorSet[1], 4, ScParams);
+			updateDescriptorSet(pRenderer, i, pSkyDescriptorSet[1], 2, ScParams);
 		}
 	}
-
 
 	return false;
 }
@@ -1431,43 +789,14 @@ void Sky::Unload()
 	removeRenderTarget(pRenderer, pSkyRenderTarget);
 	removePipeline(pRenderer, pPAS_Pipeline);
 	removePipeline(pRenderer, pSpacePipeline);
-	removePipeline(pRenderer, pMilkyWayPipeline);
-	removePipeline(pRenderer, pAuroraPipeline);
-	removePipeline(pRenderer, pAuroraComputePipeline);
-	removePipeline(pRenderer, pSunPipeline);
-	removePipeline(pRenderer, pStarPipeline);
 }
 
 void Sky::Update(float deltaTime)
 {
 	g_ElapsedTime += deltaTime;
 
-	/*
-  gAurora.addForce(normalize(vec3(1.0f, 0.0f, 1.0f)));
-  gAurora.update(deltaTime);
-
-  eastl::vector<float3> tempPos;
-
-  for(uint i = 0; i < (uint)gAurora.particles.size(); i++)
-  {
-	tempPos.push_back( v3ToF3(gAurora.particles[i].position) );
-  }
-
-  BufferUpdateDesc BufferAuroraInfoSettingDesc = { pAuroraInfoBuffer[gFrameIndex], tempPos.data() };
-  updateResource(&BufferAuroraInfoSettingDesc);
-  */
-
-	gAuroraUniformStruct.maxVertex = (uint32_t)AuroraParticleNum;
-	gAuroraUniformStruct.heightOffset = 4000.0f;
-	gAuroraUniformStruct.height = 4000.0f;
-	gAuroraUniformStruct.deltaTime = deltaTime;
-	gAuroraUniformStruct.ViewProjMat = SkyProjectionMatrix * pCameraController->getViewMatrix();
-
-	//BufferUpdateDesc BufferAuroraUniformSettingDesc = { pAuroraUniformBuffer[gFrameIndex], &gAuroraUniformStruct };
-	BufferUpdateDesc BufferAuroraUniformSettingDesc = { pAuroraUniformBuffer, &gAuroraUniformStruct };
-	updateResource(&BufferAuroraUniformSettingDesc);
-
-
+	rotMat = mat4::translation(vec3(0.0f, -EARTH_RADIUS * 10.0f, 0.0f)) * (mat4::rotationY(-Azimuth) * mat4::rotationZ(Elevation)) * mat4::translation(vec3(0.0f, EARTH_RADIUS* 10.0f, 0.0f));
+	rotMatStarField = (mat4::rotationY(-Azimuth) * mat4::rotationZ(Elevation));
 }
 
 
@@ -1548,9 +877,6 @@ void Sky::Draw(Cmd* cmd)
 
 	/////////////////////////////////////////////////////////////////////////////////////
 
-
-	mat4 rotMat = mat4::rotationY(-Azimuth) * mat4::rotationZ(Elevation);
-
 	if (lightDir.getY() < 0.2f)
 	{
 		cmdBeginGpuTimestampQuery(cmd, pGraphicsGpuProfiler, "Draw Night Sky", true);
@@ -1602,7 +928,7 @@ void Sky::Draw(Cmd* cmd)
 		data.NebulaLowColor = float4((float)red / 255.0f, (float)green / 255.0f, (float)blue / 255.0f, (float)alpha / 255.0f);
 
 
-		data.viewProjMat = SkyProjectionMatrix * pCameraController->getViewMatrix() * rotMat;
+		data.viewProjMat = SpaceProjectionMatrix * pCameraController->getViewMatrix() * rotMat;
 		data.LightDirection = float4(LightDirection, 0.0f);
 		data.ScreenSize = float4((float)pSkyRenderTarget->mDesc.mWidth, (float)pSkyRenderTarget->mDesc.mHeight, 0.0f, 0.0f);
 
@@ -1617,165 +943,16 @@ void Sky::Draw(Cmd* cmd)
 
 		cmdBindVertexBuffer(cmd, 1, &pSphereVertexBuffer, NULL);
 		cmdBindIndexBuffer(cmd, pSphereIndexBuffer, 0);
-		cmdDrawIndexed(cmd, (uint32_t)sphere.IndexCout, 0, 0);
+		cmdDrawIndexed(cmd, sphere.IndexCount, 0, 0);
 
 		cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
 
 		cmdEndGpuTimestampQuery(cmd, pGraphicsGpuProfiler);
-
-#if USING_MILKYWAY
-		{
-			cmdBeginGpuTimestampQuery(cmd, pGraphicsGpuProfiler, "Draw MilkyWay", true);
-
-			TextureBarrier barriersSky[] =
-			{
-			  { pSkyRenderTarget->pTexture, RESOURCE_STATE_RENDER_TARGET }
-			};
-
-			cmdResourceBarrier(cmd, 0, NULL, 1, barriersSky, false);
-
-			cmdBindRenderTargets(cmd, 1, &pSkyRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
-			cmdSetViewport(cmd, 0.0f, 0.0f, (float)pSkyRenderTarget->mDesc.mWidth, (float)pSkyRenderTarget->mDesc.mHeight, 0.0f, 1.0f);
-			cmdSetScissor(cmd, 0, 0, pSkyRenderTarget->mDesc.mWidth, pSkyRenderTarget->mDesc.mHeight);
-
-			DescriptorData MilkyWayParams[2] = {};
-
-			cmdBindPipeline(cmd, pMilkyWayPipeline);
-
-			MilkyWayParams[0].pName = "SpaceUniform";
-			MilkyWayParams[0].ppBuffers = &pSpaceUniformBuffer[gFrameIndex];
-			MilkyWayParams[1].pName = "depthTexture";
-			MilkyWayParams[1].ppTextures = &pDepthBuffer->pTexture;
-
-			cmdBindDescriptors(cmd, pSkyDescriptorBinder, pSkyRootSignature, 2, MilkyWayParams);
-
-			cmdBindVertexBuffer(cmd, 1, &pMilkyWayVertexBuffer, NULL);
-			cmdBindIndexBuffer(cmd, pMilkyWayIndexBuffer, 0);
-			cmdDrawIndexed(cmd, (uint32_t)MilkyWayIndexCount, 0, 0);
-
-			cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
-
-			cmdEndGpuTimestampQuery(cmd, pGraphicsGpuProfiler);
-		}
-#endif
-
-
-		cmdBeginGpuTimestampQuery(cmd, pGraphicsGpuProfiler, "Draw Starfield", true);
-
-		TextureBarrier barriersSky2[] =
-		{
-		  { pSkyRenderTarget->pTexture, RESOURCE_STATE_RENDER_TARGET }
-		};
-
-		cmdResourceBarrier(cmd, 0, NULL, 1, barriersSky2);
-
-		cmdBindRenderTargets(cmd, 1, &pSkyRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
-		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pSkyRenderTarget->mDesc.mWidth, (float)pSkyRenderTarget->mDesc.mHeight, 0.0f, 1.0f);
-		cmdSetScissor(cmd, 0, 0, pSkyRenderTarget->mDesc.mWidth, pSkyRenderTarget->mDesc.mHeight);
-
-		struct StarData
-		{
-			mat4 RotMat;
-			mat4 ViewProjMat;
-			float4 LightDirection;
-			float4 Dx;
-			float4 Dy;
-		} starData;
-
-		starData.RotMat = rotMat;
-		starData.ViewProjMat = SkyProjectionMatrix * pCameraController->getViewMatrix();
-		starData.LightDirection = float4(LightDirection, g_ElapsedTime * 2.0f);
-
-#if !defined(METAL)
-		starData.Dx = v4ToF4(pCameraController->getViewMatrix().getRow(0));
-		starData.Dy = v4ToF4(pCameraController->getViewMatrix().getRow(1));
-#else
-		starData.Dx = v4ToF4(pCameraController->getViewMatrix().getRow(0) * 100000.0f);
-		starData.Dy = v4ToF4(pCameraController->getViewMatrix().getRow(1) * 100000.0f);
-#endif
-
-
-
-		BufferUpdateDesc BufferUniformSettingDesc2 = { pStarUniformBuffer[gFrameIndex], &starData };
-		updateResource(&BufferUniformSettingDesc2);
-
-		DescriptorData StarParams[3] = {};
-
-		cmdBindPipeline(cmd, pStarPipeline);
-		cmdBindDescriptorSet(cmd, 0, pSkyDescriptorSet[0]);
-		cmdBindDescriptorSet(cmd, gFrameIndex, pSkyDescriptorSet[1]);
-
-		Buffer* particleVertexBuffers[] = { gParticleSystem.pParticleVertexBuffer, gParticleSystem.pParticleInstanceBuffer };
-		cmdBindVertexBuffer(cmd, 2, particleVertexBuffers, NULL);
-#if !defined(METAL)
-		cmdDrawInstanced(cmd, 1, 0, (uint32_t)gParticleSystem.particleDataSet.ParticleDataArray.size(), 0);
-#else
-		cmdDrawInstanced(cmd, 4, 0, (uint32_t)gParticleSystem.particleDataSet.ParticleDataArray.size(), 0);
-#endif
-
-
-		cmdEndGpuTimestampQuery(cmd, pGraphicsGpuProfiler);
+		
 		cmdEndGpuTimestampQuery(cmd, pGraphicsGpuProfiler);
 	}
-
-
 
 	////////////////////////////////////////////////////////////////////////
-	{
-		cmdBeginGpuTimestampQuery(cmd, pGraphicsGpuProfiler, "Draw Sun and Moon", true);
-
-		TextureBarrier barriersSky[] =
-		{
-			{ pSkyRenderTarget->pTexture, RESOURCE_STATE_RENDER_TARGET }
-		};
-
-		cmdResourceBarrier(cmd, 0, NULL, 1, barriersSky);
-
-		cmdBindRenderTargets(cmd, 1, &pSkyRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
-		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pSkyRenderTarget->mDesc.mWidth, (float)pSkyRenderTarget->mDesc.mHeight, 0.0f, 1.0f);
-		cmdSetScissor(cmd, 0, 0, pSkyRenderTarget->mDesc.mWidth, pSkyRenderTarget->mDesc.mHeight);
-
-		struct Data
-		{
-			mat4 ViewMat;
-			mat4 ViewProjMat;
-			float4 LightDirection;
-			float4 Dx;
-			float4 Dy;
-		} data;
-
-		data.ViewMat = pCameraController->getViewMatrix();
-		data.ViewProjMat = SkyProjectionMatrix * pCameraController->getViewMatrix();
-		data.LightDirection = float4(LightDirection * 1000000.0f, 0.0f);
-		data.Dx = v4ToF4(pCameraController->getViewMatrix().getRow(0) * SunSize);
-		data.Dy = v4ToF4(pCameraController->getViewMatrix().getRow(1) * SunSize);
-
-		BufferUpdateDesc BufferUniformSettingDesc = { pSunUniformBuffer[gFrameIndex], &data };
-		updateResource(&BufferUniformSettingDesc);
-
-		cmdBindPipeline(cmd, pSunPipeline);
-		cmdBindDescriptorSet(cmd, 0, pSkyDescriptorSet[0]);
-		cmdBindDescriptorSet(cmd, gFrameIndex, pSkyDescriptorSet[1]);
-
-#if !defined(METAL)
-		cmdDraw(cmd, 1, 0);
-#else
-		cmdBindVertexBuffer(cmd, 1, &pGlobalTriangularVertexBuffer, NULL);
-		cmdDraw(cmd, 4, 0);
-#endif
-		cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
-
-		TextureBarrier barriersSkyEnd[] = {
-					{ pSkyRenderTarget->pTexture, RESOURCE_STATE_SHADER_RESOURCE }
-		};
-
-		cmdResourceBarrier(cmd, 0, NULL, 1, barriersSkyEnd);
-
-		cmdEndGpuTimestampQuery(cmd, pGraphicsGpuProfiler);
-	}
-
-
-
 
 	////////////////////////////////////////////////////////////////////////
   /*
@@ -1997,4 +1174,20 @@ float3 Sky::GetSunColor()
 	float mu = dot(x, v) / r;
 
 	return v3ToF3(transmittanceWithShadowSmooth(r, mu));
+}
+
+
+Buffer*		Sky::GetParticleVertexBuffer()
+{
+	return gParticleSystem.pParticleVertexBuffer;
+}
+
+Buffer*		Sky::GetParticleInstanceBuffer()
+{
+	return gParticleSystem.pParticleInstanceBuffer;
+}
+
+uint32_t	Sky::GetParticleCount()
+{
+	return (uint32_t)gParticleSystem.particleDataSet.ParticleDataArray.size();
 }

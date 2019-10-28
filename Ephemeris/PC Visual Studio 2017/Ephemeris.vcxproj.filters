@@ -55,6 +55,15 @@
     <Filter Include="Shaders\Vulkan\Ephemeris\Example">
       <UniqueIdentifier>{b76dc82f-15c0-4a69-b010-c96ce328d29b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Ephemeris\SpaceObjects">
+      <UniqueIdentifier>{a33cd6e7-6ca3-467e-a0e2-6af9ed4af94a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\D3D12\Ephemeris\SpaceObjects">
+      <UniqueIdentifier>{8dfc4bd6-3edb-4c3d-984a-4df086a4da5d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Vulkan\Ephemeris\SpaceObjects">
+      <UniqueIdentifier>{91e2a9d7-6e6d-489c-b393-261584ec7843}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\EphemerisExample\Example.cpp">
@@ -102,6 +111,9 @@
     <ClCompile Include="..\Sky\src\Aurora.cpp">
       <Filter>Source Files\Ephemeris\Sky</Filter>
     </ClCompile>
+    <ClCompile Include="..\SpaceObjects\src\SpaceObjects.cpp">
+      <Filter>Source Files\Ephemeris\SpaceObjects</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Terrain\resources\Shaders\D3D12\GenNormalMap.frag">
@@ -132,15 +144,6 @@
       <Filter>Shaders\D3D12\Ephemeris\Sky</Filter>
     </None>
     <None Include="..\Sky\resources\Shaders\D3D12\Space.vert">
-      <Filter>Shaders\D3D12\Ephemeris\Sky</Filter>
-    </None>
-    <None Include="..\Sky\resources\Shaders\D3D12\Sun.frag">
-      <Filter>Shaders\D3D12\Ephemeris\Sky</Filter>
-    </None>
-    <None Include="..\Sky\resources\Shaders\D3D12\Sun.geom">
-      <Filter>Shaders\D3D12\Ephemeris\Sky</Filter>
-    </None>
-    <None Include="..\Sky\resources\Shaders\D3D12\Sun.vert">
       <Filter>Shaders\D3D12\Ephemeris\Sky</Filter>
     </None>
     <None Include="..\VolumetricClouds\resources\Shaders\D3D12\BlurHorizontal.comp">
@@ -219,15 +222,6 @@
       <Filter>Shaders\Vulkan\Ephemeris\Sky</Filter>
     </None>
     <None Include="..\Sky\resources\Shaders\Vulkan\Space.vert">
-      <Filter>Shaders\Vulkan\Ephemeris\Sky</Filter>
-    </None>
-    <None Include="..\Sky\resources\Shaders\Vulkan\Sun.frag">
-      <Filter>Shaders\Vulkan\Ephemeris\Sky</Filter>
-    </None>
-    <None Include="..\Sky\resources\Shaders\Vulkan\Sun.geom">
-      <Filter>Shaders\Vulkan\Ephemeris\Sky</Filter>
-    </None>
-    <None Include="..\Sky\resources\Shaders\Vulkan\Sun.vert">
       <Filter>Shaders\Vulkan\Ephemeris\Sky</Filter>
     </None>
     <None Include="..\Terrain\resources\Shaders\Vulkan\GenNormalMap.frag">
@@ -359,60 +353,6 @@
     <None Include="..\Sky\resources\Shaders\D3D12\clImpostorCloud.vert">
       <Filter>Shaders\D3D12\Ephemeris\Sky</Filter>
     </None>
-    <None Include="..\Sky\resources\Shaders\D3D12\Star.frag">
-      <Filter>Shaders\D3D12\Ephemeris\Sky</Filter>
-    </None>
-    <None Include="..\Sky\resources\Shaders\D3D12\Star.geom">
-      <Filter>Shaders\D3D12\Ephemeris\Sky</Filter>
-    </None>
-    <None Include="..\Sky\resources\Shaders\D3D12\Star.vert">
-      <Filter>Shaders\D3D12\Ephemeris\Sky</Filter>
-    </None>
-    <None Include="..\Sky\resources\Shaders\Vulkan\Star.frag">
-      <Filter>Shaders\Vulkan\Ephemeris\Sky</Filter>
-    </None>
-    <None Include="..\Sky\resources\Shaders\Vulkan\Star.geom">
-      <Filter>Shaders\Vulkan\Ephemeris\Sky</Filter>
-    </None>
-    <None Include="..\Sky\resources\Shaders\Vulkan\Star.vert">
-      <Filter>Shaders\Vulkan\Ephemeris\Sky</Filter>
-    </None>
-    <None Include="..\Sky\resources\Shaders\D3D12\Aurora.frag">
-      <Filter>Shaders\D3D12\Ephemeris\Sky</Filter>
-    </None>
-    <None Include="..\Sky\resources\Shaders\D3D12\Aurora.vert">
-      <Filter>Shaders\D3D12\Ephemeris\Sky</Filter>
-    </None>
-    <None Include="..\Sky\resources\Shaders\D3D12\MilkyWay.frag">
-      <Filter>Shaders\D3D12\Ephemeris\Sky</Filter>
-    </None>
-    <None Include="..\Sky\resources\Shaders\D3D12\MilkyWay.vert">
-      <Filter>Shaders\D3D12\Ephemeris\Sky</Filter>
-    </None>
-    <None Include="..\Sky\resources\Shaders\D3D12\Aurora.geom">
-      <Filter>Shaders\D3D12\Ephemeris\Sky</Filter>
-    </None>
-    <None Include="..\Sky\resources\Shaders\D3D12\Aurora.comp">
-      <Filter>Shaders\D3D12\Ephemeris\Sky</Filter>
-    </None>
-    <None Include="..\Sky\resources\Shaders\Vulkan\Aurora.comp">
-      <Filter>Shaders\Vulkan\Ephemeris\Sky</Filter>
-    </None>
-    <None Include="..\Sky\resources\Shaders\Vulkan\Aurora.frag">
-      <Filter>Shaders\Vulkan\Ephemeris\Sky</Filter>
-    </None>
-    <None Include="..\Sky\resources\Shaders\Vulkan\Aurora.geom">
-      <Filter>Shaders\Vulkan\Ephemeris\Sky</Filter>
-    </None>
-    <None Include="..\Sky\resources\Shaders\Vulkan\Aurora.vert">
-      <Filter>Shaders\Vulkan\Ephemeris\Sky</Filter>
-    </None>
-    <None Include="..\Sky\resources\Shaders\Vulkan\MilkyWay.frag">
-      <Filter>Shaders\Vulkan\Ephemeris\Sky</Filter>
-    </None>
-    <None Include="..\Sky\resources\Shaders\Vulkan\MilkyWay.vert">
-      <Filter>Shaders\Vulkan\Ephemeris\Sky</Filter>
-    </None>
     <None Include="..\src\EphemerisExample\Shaders\D3D12\depthLinearization.comp">
       <Filter>Shaders\D3D12\Ephemeris\Example</Filter>
     </None>
@@ -435,6 +375,93 @@
       <Filter>Shaders\Vulkan\Ephemeris\Example</Filter>
     </None>
     <None Include="..\src\EphemerisExample\Shaders\Vulkan\Triangular.vert">
+      <Filter>Shaders\Vulkan\Ephemeris\Example</Filter>
+    </None>
+    <None Include="..\VolumetricClouds\resources\Shaders\D3D12\volumetricCloud_2nd.comp">
+      <Filter>Shaders\D3D12\Ephemeris\VolumetricClouds</Filter>
+    </None>
+    <None Include="..\SpaceObjects\resources\Shaders\D3D12\Aurora.comp">
+      <Filter>Shaders\D3D12\Ephemeris\SpaceObjects</Filter>
+    </None>
+    <None Include="..\SpaceObjects\resources\Shaders\D3D12\Aurora.frag">
+      <Filter>Shaders\D3D12\Ephemeris\SpaceObjects</Filter>
+    </None>
+    <None Include="..\SpaceObjects\resources\Shaders\D3D12\Aurora.geom">
+      <Filter>Shaders\D3D12\Ephemeris\SpaceObjects</Filter>
+    </None>
+    <None Include="..\SpaceObjects\resources\Shaders\D3D12\Aurora.vert">
+      <Filter>Shaders\D3D12\Ephemeris\SpaceObjects</Filter>
+    </None>
+    <None Include="..\SpaceObjects\resources\Shaders\D3D12\MilkyWay.frag">
+      <Filter>Shaders\D3D12\Ephemeris\SpaceObjects</Filter>
+    </None>
+    <None Include="..\SpaceObjects\resources\Shaders\D3D12\MilkyWay.vert">
+      <Filter>Shaders\D3D12\Ephemeris\SpaceObjects</Filter>
+    </None>
+    <None Include="..\SpaceObjects\resources\Shaders\D3D12\Star.frag">
+      <Filter>Shaders\D3D12\Ephemeris\SpaceObjects</Filter>
+    </None>
+    <None Include="..\SpaceObjects\resources\Shaders\D3D12\Star.geom">
+      <Filter>Shaders\D3D12\Ephemeris\SpaceObjects</Filter>
+    </None>
+    <None Include="..\SpaceObjects\resources\Shaders\D3D12\Star.vert">
+      <Filter>Shaders\D3D12\Ephemeris\SpaceObjects</Filter>
+    </None>
+    <None Include="..\SpaceObjects\resources\Shaders\D3D12\Sun.frag">
+      <Filter>Shaders\D3D12\Ephemeris\SpaceObjects</Filter>
+    </None>
+    <None Include="..\SpaceObjects\resources\Shaders\D3D12\Sun.geom">
+      <Filter>Shaders\D3D12\Ephemeris\SpaceObjects</Filter>
+    </None>
+    <None Include="..\SpaceObjects\resources\Shaders\D3D12\Sun.vert">
+      <Filter>Shaders\D3D12\Ephemeris\SpaceObjects</Filter>
+    </None>
+    <None Include="..\SpaceObjects\resources\Shaders\Vulkan\Aurora.comp">
+      <Filter>Shaders\Vulkan\Ephemeris\SpaceObjects</Filter>
+    </None>
+    <None Include="..\SpaceObjects\resources\Shaders\Vulkan\Aurora.frag">
+      <Filter>Shaders\Vulkan\Ephemeris\SpaceObjects</Filter>
+    </None>
+    <None Include="..\SpaceObjects\resources\Shaders\Vulkan\Aurora.geom">
+      <Filter>Shaders\Vulkan\Ephemeris\SpaceObjects</Filter>
+    </None>
+    <None Include="..\SpaceObjects\resources\Shaders\Vulkan\Aurora.vert">
+      <Filter>Shaders\Vulkan\Ephemeris\SpaceObjects</Filter>
+    </None>
+    <None Include="..\SpaceObjects\resources\Shaders\Vulkan\MilkyWay.frag">
+      <Filter>Shaders\Vulkan\Ephemeris\SpaceObjects</Filter>
+    </None>
+    <None Include="..\SpaceObjects\resources\Shaders\Vulkan\MilkyWay.vert">
+      <Filter>Shaders\Vulkan\Ephemeris\SpaceObjects</Filter>
+    </None>
+    <None Include="..\SpaceObjects\resources\Shaders\Vulkan\Star.frag">
+      <Filter>Shaders\Vulkan\Ephemeris\SpaceObjects</Filter>
+    </None>
+    <None Include="..\SpaceObjects\resources\Shaders\Vulkan\Star.geom">
+      <Filter>Shaders\Vulkan\Ephemeris\SpaceObjects</Filter>
+    </None>
+    <None Include="..\SpaceObjects\resources\Shaders\Vulkan\Star.vert">
+      <Filter>Shaders\Vulkan\Ephemeris\SpaceObjects</Filter>
+    </None>
+    <None Include="..\SpaceObjects\resources\Shaders\Vulkan\Sun.frag">
+      <Filter>Shaders\Vulkan\Ephemeris\SpaceObjects</Filter>
+    </None>
+    <None Include="..\SpaceObjects\resources\Shaders\Vulkan\Sun.geom">
+      <Filter>Shaders\Vulkan\Ephemeris\SpaceObjects</Filter>
+    </None>
+    <None Include="..\SpaceObjects\resources\Shaders\Vulkan\Sun.vert">
+      <Filter>Shaders\Vulkan\Ephemeris\SpaceObjects</Filter>
+    </None>
+    <None Include="..\VolumetricClouds\resources\Shaders\Vulkan\volumetricCloud_2nd.comp">
+      <Filter>Shaders\Vulkan\Ephemeris\VolumetricClouds</Filter>
+    </None>
+    <None Include="..\VolumetricClouds\resources\Shaders\Vulkan\volumetricCloud_2ndWithDepth.comp">
+      <Filter>Shaders\Vulkan\Ephemeris\VolumetricClouds</Filter>
+    </None>
+    <None Include="..\src\EphemerisExample\Shaders\D3D12\FXAA.frag">
+      <Filter>Shaders\D3D12\Ephemeris\Example</Filter>
+    </None>
+    <None Include="..\src\EphemerisExample\Shaders\Vulkan\FXAA.frag">
       <Filter>Shaders\Vulkan\Ephemeris\Example</Filter>
     </None>
   </ItemGroup>
@@ -513,6 +540,9 @@
     </ClInclude>
     <ClInclude Include="..\Sky\src\Aurora.h">
       <Filter>Source Files\Ephemeris\Sky</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SpaceObjects\src\SpaceObjects.h">
+      <Filter>Source Files\Ephemeris\SpaceObjects</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

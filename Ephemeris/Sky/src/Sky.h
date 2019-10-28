@@ -12,8 +12,6 @@
 #include "SkyCommon.h"
 #include "Icosahedron.h"
 #include "../../src/Perlin.h"
-//#include "B_Spline.h"
-//#include "Aurora.h"
 
 #include "../../../../The-Forge/Common_3/OS/Interfaces/ICameraController.h"
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IMiddleware.h"
@@ -22,6 +20,27 @@
 #include "../../../../The-Forge/Middleware_3/UI/AppUI.h"
 #include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
 #include "../../../../The-Forge/Common_3/Renderer/GpuProfiler.h"
+
+typedef struct ParticleData
+{
+	vec4 ParticlePositions;
+	vec4 ParticleColors;
+	vec4 ParticleInfo;        // x: temperature, y: particle size, z: blink time seed,
+}ParticleData;
+
+typedef struct ParticleDataSet
+{
+	eastl::vector<ParticleData> ParticleDataArray;
+}ParticleDataSet;
+
+typedef struct ParticleSystem
+{
+	Buffer* pParticleVertexBuffer;
+	Buffer* pParticleInstanceBuffer;
+	ParticleDataSet particleDataSet;
+} ParticleSystem;
+
+
 
 class Sky : public IMiddleware
 {
@@ -43,7 +62,10 @@ public:
 	void CalculateLookupData();
 	float3 GetSunColor();
 	void GenerateIcosahedron(float **ppPoints, eastl::vector<float> &vertices, eastl::vector<uint32_t> &indices, int numberOfDivisions, float radius = 1.0f);
-	void GenerateRing(eastl::vector<float> &vertices, eastl::vector<uint32_t> &indices, uint32_t WidthDividor, uint32_t HeightDividor, float radius = 1.0f, float height = 1.0f);
+
+	Buffer*								GetParticleVertexBuffer();
+	Buffer*								GetParticleInstanceBuffer();
+	uint32_t							GetParticleCount();
 
 	uint                  gFrameIndex;
 
@@ -65,7 +87,6 @@ public:
 	Texture*              pTransmittanceTexture;
 	Texture*              pIrradianceTexture;		//unsigned int irradianceTexture;//unit 2, E table
 	Texture*              pInscatterTexture;		//unsigned int inscatterTexture;//unit 3, S table
-	Texture*              pMoonTexture;
 
 	Buffer*               pGlobalTriangularVertexBuffer;
 
@@ -86,8 +107,11 @@ public:
 	float4                LightColorAndIntensity;
 
 	mat4                  SkyProjectionMatrix;
+	mat4                  SpaceProjectionMatrix;
 
 	Buffer*               pTransmittanceBuffer;
 
 	Perlin                noiseGenerator;
+
+	ParticleSystem				gParticleSystem;
 };

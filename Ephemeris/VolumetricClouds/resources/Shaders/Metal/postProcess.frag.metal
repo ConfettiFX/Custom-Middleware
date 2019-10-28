@@ -46,15 +46,18 @@ struct Fragment_Shader
     float4 main(PSIn input)
     {
         float4 volumetricCloudsResult = g_SrcTexture2D.sample(g_LinearClampSampler, (input).TexCoord);
+		
         float intensity = volumetricCloudsResult.r;
 		float density = volumetricCloudsResult.a;
+		float atmosphereBlendFactor = min(volumetricCloudsResult.g, 1.0f);
+        
         float3 BackgroudColor = g_SkyBackgroudTexture.sample(g_LinearClampSampler, (input).TexCoord).rgb;
         float3 TransmittanceRGB = TransmittanceColor[0].rgb;
         float4 PostProcessedResult;
-        ((PostProcessedResult).a = density);
-        PostProcessedResult.rgb = (float3)(intensity) * mix(TransmittanceRGB, mix(VolumetricCloudsCBuffer.g_VolumetricClouds.lightColorAndIntensity.rgb, TransmittanceRGB, pow(saturate(1.0 - VolumetricCloudsCBuffer.g_VolumetricClouds.lightDirection.y), 0.5)), VolumetricCloudsCBuffer.g_VolumetricClouds.Test00) * (float3)(VolumetricCloudsCBuffer.g_VolumetricClouds.lightColorAndIntensity.a) * (float3)(VolumetricCloudsCBuffer.g_VolumetricClouds.CloudBrightness);
-        PostProcessedResult.rgb = mix((saturate(BackgroudColor) + (PostProcessedResult).rgb), (PostProcessedResult).rgb, min(PostProcessedResult.a * 1.0, (VolumetricCloudsCBuffer.g_VolumetricClouds).BackgroundBlendFactor));
-        PostProcessedResult.rgb = mix(BackgroudColor, (PostProcessedResult).rgb, VolumetricCloudsCBuffer.g_VolumetricClouds.BackgroundBlendFactor);
+		  PostProcessedResult.a = density;
+		  PostProcessedResult.rgb = (intensity / max(density, 0.000001)) * mix(TransmittanceRGB , mix(VolumetricCloudsCBuffer.g_VolumetricClouds.lightColorAndIntensity.rgb, TransmittanceRGB, pow(saturate(1.0 - VolumetricCloudsCBuffer.g_VolumetricClouds.lightDirection.y), 0.5)), VolumetricCloudsCBuffer.g_VolumetricClouds.Test00) * VolumetricCloudsCBuffer.g_VolumetricClouds.lightColorAndIntensity.a * VolumetricCloudsCBuffer.g_VolumetricClouds.CloudBrightness;
+		PostProcessedResult.rgb = mix(BackgroudColor, PostProcessedResult.rgb, PostProcessedResult.a * VolumetricCloudsCBuffer.g_VolumetricClouds.BackgroundBlendFactor);
+		PostProcessedResult.rgb = mix(PostProcessedResult.rgb, BackgroudColor, pow(atmosphereBlendFactor, 1.4));
         return float4(PostProcessedResult.xyz, 1.0);
     };
 

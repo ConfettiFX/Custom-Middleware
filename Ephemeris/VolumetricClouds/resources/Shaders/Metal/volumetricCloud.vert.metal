@@ -14,6 +14,7 @@ using namespace metal;
 
 struct Vertex_Shader
 {
+	
 	texture3d<float> highFreqNoiseTexture;
 	texture3d<float> lowFreqNoiseTexture;
 	texture2d<float> curlNoiseTexture;

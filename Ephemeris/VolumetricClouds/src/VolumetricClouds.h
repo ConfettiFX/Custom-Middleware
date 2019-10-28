@@ -16,163 +16,177 @@
 #include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
 #include "../../../../The-Forge/Common_3/Renderer/GpuProfiler.h"
 
-struct VolumetricCloudsCB
+struct DataPerEye
 {
-	mat4	m_WorldToProjMat_1st;			// Matrix for converting World to Projected Space for the first eye
-	mat4	m_ProjToWorldMat_1st;			// Matrix for converting Projected Space to World Matrix for the first eye
-	mat4	m_ViewToWorldMat_1st;			// Matrix for converting View Space to World for the first eye
-	mat4	m_PrevWorldToProjMat_1st;		// Matrix for converting Previous Projected Space to World for the first eye (it is used for reprojection)
+	mat4			m_WorldToProjMat;			// Matrix for converting World to Projected Space for the first eye
+	mat4			m_ProjToWorldMat;			// Matrix for converting Projected Space to World Matrix for the first eye
+	mat4			m_ViewToWorldMat;			// Matrix for converting View Space to World for the first eye
+	mat4			m_PrevWorldToProjMat;	// Matrix for converting Previous Projected Space to World for the first eye (it is used for reprojection)
+	mat4			m_LightToProjMat;			// Matrix for converting Light to Projected Space Matrix for the first eye
+	vec4			cameraPosition;
+};
 
-	mat4	m_WorldToProjMat_2nd;			// Matrix for converting World to Projected Space for the second eye
-	mat4	m_ProjToWorldMat_2nd;			// Matrix for converting Projected Space to World for the second eye
-	mat4	m_ViewToWorldMat_2nd;			// Matrix for converting View Space to World for the the second eye
-	mat4	m_PrevWorldToProjMat_2nd;		// Matrix for converting Previous Projected Space to World for the second eye (it is used for reprojection)
-
-	mat4	m_LightToProjMat_1st;			// Matrix for converting Light to Projected Space Matrix for the first eye
-	mat4	m_LightToProjMat_2nd;			// Matrix for converting Light to Projected Space Matrix for the second eye
-
-	uint	m_JitterX;						// the X offset of Re-projection
-	uint	m_JitterY;						// the Y offset of Re-projection
-	uint	MIN_ITERATION_COUNT;			// Minimum iteration number of ray-marching
-	uint	MAX_ITERATION_COUNT;			// Maximum iteration number of ray-marching
-
-	vec4	m_StepSize;						// Cap of the step size X: min, Y: max
-	//float	MAX_SAMPLE_STEP;				// Cap of the farthest step size
-
-	vec4	TimeAndScreenSize;				// X: EplasedTime, Y: RealTime, Z: FullWidth, W: FullHeight
-	vec4	lightDirection;
-	vec4	lightColorAndIntensity;
-	vec4	cameraPosition_1st;
-
-	vec4	cameraPosition_2nd;
-
-	//Wind
-	vec4	WindDirection;
-	vec4	StandardPosition;				// The current center location for applying wind
-
-	float	m_CorrectU;						// m_JitterX / FullWidth
-	float	m_CorrectV;						// m_JitterX / FullHeight
-
-	float	LayerThickness;
+struct DataPerLayer
+{
+	float					CloudsLayerStart;
+	float					EarthRadiusAddCloudsLayerStart;
+	float					EarthRadiusAddCloudsLayerStart2;
+	float					EarthRadiusAddCloudsLayerEnd;
+	float					EarthRadiusAddCloudsLayerEnd2;
+	float					LayerThickness;
 
 	//Cloud
-	float	CloudDensity;					// The overall density of clouds. Using bigger value makes more dense clouds, but it also makes ray-marching artifact worse.  
-	float	CloudCoverage;					// The overall coverage of clouds. Using bigger value makes more parts of the sky be covered by clouds. (But, it does not make clouds more dense)
-	float	CloudType;						// Add this value to control the overall clouds' type. 0.0 is for Stratus, 0.5 is for Stratocumulus, and 1.0 is for Cumulus.
-	float	CloudTopOffset;					// Intensity of skewing clouds along the wind direction.
+	float					CloudDensity;							// The overall density of clouds. Using bigger value makes more dense clouds, but it also makes ray-marching artifact worse.
+	float					CloudCoverage;						// The overall coverage of clouds. Using bigger value makes more parts of the sky be covered by clouds. (But, it does not make clouds more dense)
+	float					CloudType;								// Add this value to control the overall clouds' type. 0.0 is for Stratus, 0.5 is for Stratocumulus, and 1.0 is for Cumulus.
+
+	float					CloudTopOffset;						// Intensity of skewing clouds along the wind direction.
 
 	//Modeling
-	float	CloudSize;						// Overall size of the clouds. Using bigger value generates larger chunks of clouds.
-	float	BaseShapeTiling;				// Control the base shape of the clouds. Using bigger value makes smaller chunks of base clouds.
-	float	DetailShapeTiling;				// Control the detail shape of the clouds. Using bigger value makes smaller chunks of detail clouds.
-	float	DetailStrenth;					// Intensify the detail of the clouds. It is possible to lose whole shape of the clouds if the user uses too high value of it.
+	float					CloudSize;								// Overall size of the clouds. Using bigger value generates larger chunks of clouds.
 
-	float	CurlTextureTiling;				// Control the curl size of the clouds. Using bigger value makes smaller curl shapes.
-	float	CurlStrenth;					// Intensify the curl effect.
+	float					BaseShapeTiling;					// Control the base shape of the clouds. Using bigger value makes smaller chunks of base clouds.
+	float					DetailShapeTiling;				// Control the detail shape of the clouds. Using bigger value makes smaller chunks of detail clouds.
 
-	float UpstreamScale;
-	float UpstreamSpeed;
+	float					DetailStrenth;						// Intensify the detail of the clouds. It is possible to lose whole shape of the clouds if the user uses too high value of it.
+	float					CurlTextureTiling;				// Control the curl size of the clouds. Using bigger value makes smaller curl shapes.
 
-	float	AnvilBias;						// Using lower value makes anvil shape.
-	float	WeatherTextureSize;				// Control the size of Weather map, bigger value makes the world to be covered by larger clouds pattern.
-	float	WeatherTextureOffsetX;
-	float	WeatherTextureOffsetZ;
+	float					CurlStrenth;							// Intensify the curl effect.
+	float					AnvilBias;								// Using lower value makes anvil shape.
 
+	vec4					WindDirection;
+	vec4					StandardPosition;					// The current center location for applying wind
+
+	float					WeatherTextureSize;				// Control the size of Weather map, bigger value makes the world to be covered by larger clouds pattern.
+	float					WeatherTextureOffsetX;
+
+	float					WeatherTextureOffsetZ;
+	float					RotationPivotOffsetX;
+
+	float					RotationPivotOffsetZ;
+	float					RotationAngle;
+
+	float					RisingVaporScale;
+	float					RisingVaporUpDirection;
+	float					RisingVaporIntensity;
+};
+
+struct VolumetricCloudsCB
+{
+	uint					m_JitterX;						// the X offset of Re-projection
+	uint					m_JitterY;						// the Y offset of Re-projection
+	uint					MIN_ITERATION_COUNT;			// Minimum iteration number of ray-marching
+	uint					MAX_ITERATION_COUNT;			// Maximum iteration number of ray-marching
+
+	DataPerEye		m_DataPerEye[2];
+	DataPerLayer	m_DataPerLayer[2];
+
+	vec4					m_StepSize;						// Cap of the step size X: min, Y: max
+
+	vec4					TimeAndScreenSize;				// X: EplasedTime, Y: RealTime, Z: FullWidth, W: FullHeight
+	vec4					lightDirection;
+	vec4					lightColorAndIntensity;
+
+	vec4					EarthCenter;
+	float					EarthRadius;
+
+	float					m_MaxSampleDistance;
+
+	float					m_CorrectU;								// m_JitterX / FullWidth
+	float					m_CorrectV;								// m_JitterX / FullHeight
 
 	//Lighting
-	float	BackgroundBlendFactor;			// Blend clouds with the background, more background will be shown if this value is close to 0.0
-	float	Contrast;						// Contrast of the clouds' color 
-	float	Eccentricity;					// The bright highlights around the sun that the user needs at sunset
-	float	CloudBrightness;				// The brightness for clouds
+	float					BackgroundBlendFactor;			// Blend clouds with the background, more background will be shown if this value is close to 0.0
+	float					Contrast;						// Contrast of the clouds' color 
+	float					Eccentricity;					// The bright highlights around the sun that the user needs at sunset
+	float					CloudBrightness;				// The brightness for clouds
 
-	float	Precipitation;
-	float	SilverliningIntensity;			// Intensity of silver-lining
-	float	SilverliningSpread;				// Using bigger value spreads more silver-lining, but the intesity of it
-	float	Random00;						// Random seed for the first ray-marching offset
+	float					Precipitation;
+	float					SilverliningIntensity;			// Intensity of silver-lining
+	float					SilverliningSpread;				// Using bigger value spreads more silver-lining, but the intesity of it
+	float					Random00;						// Random seed for the first ray-marching offset
 
-	float	CameraFarClip;
-	float	Padding01;
+	float					CameraFarClip;
 
-	uint  EnabledDepthCulling;
-	uint	EnabledLodDepthCulling;
-	uint  DepthMapWidth;
-	uint  DepthMapHeight;
+	uint					EnabledDepthCulling;
+	uint					EnabledLodDepthCulling;
+	uint					DepthMapWidth;
+	uint					DepthMapHeight;
 
 	// VolumetricClouds' Light shaft
-	uint	GodNumSamples;					// Number of godray samples
+	uint					GodNumSamples;					// Number of godray samples
 
-	float	GodrayMaxBrightness;
-	float	GodrayExposure;					// Intensity of godray
+	float					GodrayMaxBrightness;
+	float					GodrayExposure;					// Intensity of godray
 
-	float	GodrayDecay;					// Using smaller value, the godray brightness applied to each iteration is reduced. The level of reduction is also reduced per iteration.
-	float	GodrayDensity;					// The distance between each interation.
-	float	GodrayWeight;					// Using smaller value, the godray brightness applied to each iteration is reduced. The level of reduction is not changed.
-	float	m_UseRandomSeed;
+	float					GodrayDecay;					// Using smaller value, the godray brightness applied to each iteration is reduced. The level of reduction is also reduced per iteration.
+	float					GodrayDensity;					// The distance between each interation.
+	float					GodrayWeight;					// Using smaller value, the godray brightness applied to each iteration is reduced. The level of reduction is not changed.
+	float					m_UseRandomSeed;
 
-	float	Test00;
-	float	Test01;
-	float	Test02;
-	float	Test03;
+	float					Test00;
+	float					Test01;
+	float					Test02;
+	float					Test03;
 
 	VolumetricCloudsCB()
 	{
-		m_WorldToProjMat_1st = mat4::identity();
-		m_ProjToWorldMat_1st = mat4::identity();
-		m_ViewToWorldMat_1st = mat4::identity();
-		m_PrevWorldToProjMat_1st = mat4::identity();
+		for (int i = 0; i < 2; i++)
+		{
+			m_DataPerEye[i].m_WorldToProjMat			= mat4::identity();
+			m_DataPerEye[i].m_ProjToWorldMat			= mat4::identity();
+			m_DataPerEye[i].m_ViewToWorldMat			= mat4::identity();
+			m_DataPerEye[i].m_PrevWorldToProjMat	= mat4::identity();
+			m_DataPerEye[i].m_LightToProjMat			= mat4::identity();
+		}
 
-		m_WorldToProjMat_2nd = mat4::identity();
-		m_ProjToWorldMat_2nd = mat4::identity();
-		m_ViewToWorldMat_2nd = mat4::identity();
-		m_PrevWorldToProjMat_2nd = mat4::identity();
-
-		m_LightToProjMat_1st = mat4::identity();
-		m_LightToProjMat_2nd = mat4::identity();
-
-		m_JitterX = 0;
-		m_JitterY = 0;
+		m_JitterX						= 0;
+		m_JitterY						= 0;
 		MIN_ITERATION_COUNT = 0;
 		MAX_ITERATION_COUNT = 0;
 
-		m_StepSize = vec4(0.0f, 0.0f, 0.0f, 0.0f);
-		//float	MAX_SAMPLE_STEP;				// Cap of the farthest step size
+		m_StepSize							= vec4(0.0f, 0.0f, 0.0f, 0.0f);
+		TimeAndScreenSize				= vec4(0.0f, 0.0f, 0.0f, 0.0f);
+		lightDirection					= vec4(0.0f, 0.0f, 0.0f, 0.0f);
+		lightColorAndIntensity	= vec4(0.0f, 0.0f, 0.0f, 0.0f);
 
-		TimeAndScreenSize = vec4(0.0f, 0.0f, 0.0f, 0.0f);
-		lightDirection = vec4(0.0f, 0.0f, 0.0f, 0.0f);
-		lightColorAndIntensity = vec4(0.0f, 0.0f, 0.0f, 0.0f);
-		cameraPosition_1st = vec4(0.0f, 0.0f, 0.0f, 0.0f);
-		cameraPosition_2nd = vec4(0.0f, 0.0f, 0.0f, 0.0f);
+		for (int i = 0; i < 2; i++)
+		{
+			m_DataPerEye[i].cameraPosition			= vec4(0.0f, 0.0f, 0.0f, 0.0f);
+			m_DataPerLayer[i].WindDirection			= vec4(0.0f, 0.0f, 0.0f, 0.0f);
+			m_DataPerLayer[i].StandardPosition	= vec4(0.0f, 0.0f, 0.0f, 0.0f);
+			m_DataPerLayer[i].LayerThickness		= 0.0f;
+	
+			//Cloud
+			m_DataPerLayer[i].CloudDensity						= 0.0f;
+			m_DataPerLayer[i].CloudCoverage						= 0.0f;
+			m_DataPerLayer[i].CloudType								= 0.0f;
+			m_DataPerLayer[i].CloudTopOffset					= 0.0f;
+
+			//Modeling
+			m_DataPerLayer[i].CloudSize								= 0.0f;
+			m_DataPerLayer[i].BaseShapeTiling					= 0.0f;
+			m_DataPerLayer[i].DetailShapeTiling				= 0.0f;
+			m_DataPerLayer[i].DetailStrenth						= 0.0f;
+
+			m_DataPerLayer[i].CurlTextureTiling				= 0.0f;
+			m_DataPerLayer[i].CurlStrenth							= 0.0f;
+
+			m_DataPerLayer[i].RotationPivotOffsetX		= 0.0;
+			m_DataPerLayer[i].RotationPivotOffsetZ		= 0.0;
+			m_DataPerLayer[i].RotationAngle						= 0.0;
+
+			m_DataPerLayer[i].RisingVaporScale				= 1.0f;
+			m_DataPerLayer[i].RisingVaporUpDirection	= 1.0f;
+			m_DataPerLayer[i].AnvilBias								= 0.0f;
+			m_DataPerLayer[i].WeatherTextureSize			= 0.0f;
+			m_DataPerLayer[i].WeatherTextureOffsetX		= 0.0f;
+			m_DataPerLayer[i].WeatherTextureOffsetZ		= 0.0f;
+		}
 
 		//Wind
-		WindDirection = vec4(0.0f, 0.0f, 0.0f, 0.0f);
-		StandardPosition = vec4(0.0f, 0.0f, 0.0f, 0.0f);
-
 		m_CorrectU = 0.0f;
 		m_CorrectV = 0.0f;
-
-		LayerThickness = 0.0f;
-
-		//Cloud
-		CloudDensity = 0.0f;
-		CloudCoverage = 0.0f;
-		CloudType = 0.0f;
-		CloudTopOffset = 0.0f;
-
-		//Modeling
-		CloudSize = 0.0f;
-		BaseShapeTiling = 0.0f;
-		DetailShapeTiling = 0.0f;
-		DetailStrenth = 0.0f;
-
-		CurlTextureTiling = 0.0f;
-		CurlStrenth = 0.0f;
-		UpstreamScale = 1.0f;
-		UpstreamSpeed = 1.0f;
-		AnvilBias = 0.0f;
-		WeatherTextureSize = 0.0f;
-		WeatherTextureOffsetX = 0.0f;
-		WeatherTextureOffsetZ = 0.0f;
-
 
 		//Lighting
 		BackgroundBlendFactor = 0.0f;
@@ -186,7 +200,6 @@ struct VolumetricCloudsCB
 		Random00 = 0.0f;
 
 		CameraFarClip = 0.0f;
-		Padding01 = 0.0f;
 
 		EnabledDepthCulling = 0;
 		EnabledLodDepthCulling = 0;
@@ -240,7 +253,9 @@ public:
 	float4 GetProjectionExtents(float fov, float aspect, float width, float height, float texelOffsetX, float texelOffsetY);
 
 	static void UseLowQualitySettings();
+	static void UseMiddleQualitySettings();
 	static void UseHighQualitySettings();
+	static void UseUltraQualitySettings();
 
 	Texture* GetWeatherMap();
 
@@ -277,6 +292,11 @@ public:
 
 	VolumetricCloudsCB      volumetricCloudsCB;
 	vec4                    g_StandardPosition;
+	vec4										g_StandardPosition_2nd;
 	vec4                    g_ShadowInfo;
 	Texture*                pDepthTexture = NULL;
+
+	Texture*                pSavePrevTexture = NULL;
+	
+	uint32_t								gDownsampledCloudSize;
 };

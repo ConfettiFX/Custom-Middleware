@@ -168,14 +168,15 @@ bool Terrain::Init(Renderer* renderer)
 #endif
 	const char* pStaticSamplerNames[] = { "g_LinearMirror", "g_LinearWrap" };
 	Sampler* pStaticSamplers[] = { pLinearMirrorSampler, pLinearWrapSampler };
+
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc terrainNormalShader = {};
-	eastl::string terrainNormalShaderPath[2];
-	ShaderPath(shaderPath, (char*)"GenNormalMap.vert", terrainNormalShaderPath[0]);
-	terrainNormalShader.mStages[0] = { terrainNormalShaderPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-	ShaderPath(shaderPath, (char*)"GenNormalMap.frag", terrainNormalShaderPath[1]);
-	terrainNormalShader.mStages[1] = { terrainNormalShaderPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	eastl::string terrainNormalShaderFullPath[2];
+	ShaderPath(shaderPath, (char*)"GenNormalMap.vert", terrainNormalShaderFullPath[0]);
+	terrainNormalShader.mStages[0] = { terrainNormalShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"GenNormalMap.frag", terrainNormalShaderFullPath[1]);
+	terrainNormalShader.mStages[1] = { terrainNormalShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
 	addShader(pRenderer, &terrainNormalShader, &pGenTerrainNormalShader);
 
 	RootSignatureDesc rootDesc = {};
@@ -185,36 +186,37 @@ bool Terrain::Init(Renderer* renderer)
 	rootDesc.ppStaticSamplerNames = pStaticSamplerNames;
 	rootDesc.ppStaticSamplers = pStaticSamplers;
 	addRootSignature(pRenderer, &rootDesc, &pGenTerrainNormalRootSignature);
+
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc terrainShader = {};
-	eastl::string terrainShaderPath[2];
-	ShaderPath(shaderPath, (char*)"terrain.vert", terrainShaderPath[0]);
-	terrainShader.mStages[0] = { terrainShaderPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-	ShaderPath(shaderPath, (char*)"terrain.frag", terrainShaderPath[1]);
-	terrainShader.mStages[1] = { terrainShaderPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	eastl::string terrainShaderFullPath[2];
+	ShaderPath(shaderPath, (char*)"terrain.vert", terrainShaderFullPath[0]);
+	terrainShader.mStages[0] = { terrainShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"terrain.frag", terrainShaderFullPath[1]);
+	terrainShader.mStages[1] = { terrainShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &terrainShader, &pTerrainShader);
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc terrainRenderShader = {};
-	eastl::string terrainRenderShaderPath[2];
-	ShaderPath(shaderPath, (char*)"RenderTerrain.vert", terrainRenderShaderPath[0]);
-	terrainRenderShader.mStages[0] = { terrainRenderShaderPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-	ShaderPath(shaderPath, (char*)"RenderTerrain.frag", terrainRenderShaderPath[1]);
-	terrainRenderShader.mStages[1] = { terrainRenderShaderPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	eastl::string terrainRenderShaderFullPath[2];
+	ShaderPath(shaderPath, (char*)"RenderTerrain.vert", terrainRenderShaderFullPath[0]);
+	terrainRenderShader.mStages[0] = { terrainRenderShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"RenderTerrain.frag", terrainRenderShaderFullPath[1]);
+	terrainRenderShader.mStages[1] = { terrainRenderShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &terrainRenderShader, &pRenderTerrainShader);
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc terrainlightingShader = {};
-	eastl::string terrainLightingShaderPath[2];
-	ShaderPath(shaderPath, (char*)"LightingTerrain.vert", terrainLightingShaderPath[0]);
-	terrainlightingShader.mStages[0] = { terrainLightingShaderPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-	ShaderPath(shaderPath, (char*)"LightingTerrain.frag", terrainLightingShaderPath[1]);
-	terrainlightingShader.mStages[1] = { terrainLightingShaderPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	eastl::string terrainlightingShaderFullPath[2];
+	ShaderPath(shaderPath, (char*)"LightingTerrain.vert", terrainlightingShaderFullPath[0]);
+	terrainlightingShader.mStages[0] = { terrainlightingShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	ShaderPath(shaderPath, (char*)"LightingTerrain.frag", terrainlightingShaderFullPath[1]);
+	terrainlightingShader.mStages[1] = { terrainlightingShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
 	addShader(pRenderer, &terrainlightingShader, &pLightingTerrainShader);
 
@@ -304,8 +306,6 @@ bool Terrain::Init(Renderer* renderer)
 		RenderTerrainUnifromBufferDesc.ppBuffer = &pRenderTerrainUniformBuffer[i];
 		addResource(&RenderTerrainUnifromBufferDesc);
 	}
-
-
 
 	BufferLoadDesc VolumetricCloudsShadowUnifromBufferDesc = {};
 	VolumetricCloudsShadowUnifromBufferDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -424,8 +424,11 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 	HeightData dataSource("../../../Ephemeris/Terrain/resources/Textures/HeightMap.r32", height);
 #endif
 	HemisphereBuilder hemisphereBuilder;
-	hemisphereBuilder.build(pRenderer, &dataSource, vertices, meshSegments, radius, 0.015f, 10, 15, 129);
-
+#if _DEBUG
+	hemisphereBuilder.build(pRenderer, &dataSource, vertices, meshSegments, radius * 10.0f - 720000.0f, 0.15f, 64, 15, 33);
+#else
+	hemisphereBuilder.build(pRenderer, &dataSource, vertices, meshSegments, radius * 10.0f - 720000.0f, 0.15f, 64, 15, 513);
+#endif
 
 	//vertexBufferPositions = renderer->addVertexBuffer((uint32)vertices.size() * sizeof(Vertex), STATIC, &vertices.front());
 	TerrainPathVertexCount = (uint32_t)vertices.size();
@@ -472,13 +475,17 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 	for (int i = 0; i < 5; ++i)
 	{
 		TextureLoadDesc TerrainTiledColorTextureDesc = {};
+
 		PathHandle TerrainTiledColorTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, TextureTileFilePaths[i]);
+
 		TerrainTiledColorTextureDesc.pFilePath = TerrainTiledColorTextureFilePath;
 		TerrainTiledColorTextureDesc.ppTexture = &pTerrainTiledColorTextures[i];
 		addResource(&TerrainTiledColorTextureDesc, false);
 
 		TextureLoadDesc TerrainTiledNormalTextureDesc = {};
+		
 		PathHandle TerrainTiledNormalTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, TextureNormalTileFilePaths[i]);
+
 		TerrainTiledNormalTextureDesc.pFilePath = TerrainTiledNormalTextureFilePath;
 		TerrainTiledNormalTextureDesc.ppTexture = &pTerrainTiledNormalTextures[i];
 		addResource(&TerrainTiledNormalTextureDesc, false);

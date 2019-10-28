@@ -35,6 +35,7 @@
 		B21F76C021420E7000DF2297 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B21F76BD21420E7000DF2297 /* Metal.framework */; };
 		B29604BF22E7C12F00A85674 /* libThe-Forge.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B29604BC22E7C06D00A85674 /* libThe-Forge.a */; };
 		B29604C022E7C14900A85674 /* libThe-Forge_iOS.a in Frameworks */ = {isa = PBXBuildFile; fileRef = B29604BE22E7C06D00A85674 /* libThe-Forge_iOS.a */; };
+		B2AF9DD2235E579C001AD833 /* SpaceObjects.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2AF9DD0235E579C001AD833 /* SpaceObjects.cpp */; };
 		B2BF7EA222F8B2AA0095A0C8 /* Perlin.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2BF7EA122F8B2AA0095A0C8 /* Perlin.cpp */; };
 		B2E2519A22F0F1BB00E37226 /* Icosahedron.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2E2519722F0F1BB00E37226 /* Icosahedron.cpp */; };
 		C95132FF2010E68A002E584B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C95132FE2010E68A002E584B /* Assets.xcassets */; };
@@ -142,11 +143,9 @@
 		65C55CD1229734BF008456ED /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		65E90D20229460C400549B03 /* libgainputstatic.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libgainputstatic.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		65E90DAA22947E9600549B03 /* Space.frag.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Space.frag.metal; sourceTree = "<group>"; };
-		65E90DAB22947E9600549B03 /* Sun.vert.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Sun.vert.metal; sourceTree = "<group>"; };
 		65E90DAC22947E9600549B03 /* RenderSky.vert.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = RenderSky.vert.metal; sourceTree = "<group>"; };
 		65E90DAD22947E9600549B03 /* RenderSky.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RenderSky.h; sourceTree = "<group>"; };
 		65E90DAE22947E9600549B03 /* RenderSky.frag.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = RenderSky.frag.metal; sourceTree = "<group>"; };
-		65E90DAF22947E9600549B03 /* Sun.frag.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Sun.frag.metal; sourceTree = "<group>"; };
 		65E90DB022947E9600549B03 /* SkyCommon.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SkyCommon.h; sourceTree = "<group>"; };
 		65E90DB122947E9600549B03 /* Space.vert.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Space.vert.metal; sourceTree = "<group>"; };
 		65E90DB82294837100549B03 /* copyTexture.comp.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = copyTexture.comp.metal; sourceTree = "<group>"; };
@@ -183,18 +182,26 @@
 		B21F76BB21420E7000DF2297 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS12.0.sdk/System/Library/Frameworks/UIKit.framework; sourceTree = DEVELOPER_DIR; };
 		B21F76BC21420E7000DF2297 /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS12.0.sdk/System/Library/Frameworks/MetalKit.framework; sourceTree = DEVELOPER_DIR; };
 		B21F76BD21420E7000DF2297 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS12.0.sdk/System/Library/Frameworks/Metal.framework; sourceTree = DEVELOPER_DIR; };
+		B27859C2236757150035CBA4 /* FXAA.frag.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = FXAA.frag.metal; sourceTree = "<group>"; };
 		B29604B522E7C06D00A85674 /* The-Forge.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = "The-Forge.xcodeproj"; path = "../The-Forge/The-Forge.xcodeproj"; sourceTree = "<group>"; };
+		B2AF9DB7235E56AA001AD833 /* MilkyWay.frag.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = MilkyWay.frag.metal; path = ../../../../SpaceObjects/resources/Shaders/Metal/MilkyWay.frag.metal; sourceTree = "<group>"; };
+		B2AF9DB8235E56AA001AD833 /* Star.frag.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = Star.frag.metal; path = ../../../../SpaceObjects/resources/Shaders/Metal/Star.frag.metal; sourceTree = "<group>"; };
+		B2AF9DB9235E56AA001AD833 /* Aurora.comp.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = Aurora.comp.metal; path = ../../../../SpaceObjects/resources/Shaders/Metal/Aurora.comp.metal; sourceTree = "<group>"; };
+		B2AF9DBA235E56AA001AD833 /* Star.vert.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = Star.vert.metal; path = ../../../../SpaceObjects/resources/Shaders/Metal/Star.vert.metal; sourceTree = "<group>"; };
+		B2AF9DBB235E56AA001AD833 /* Sun.vert.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = Sun.vert.metal; path = ../../../../SpaceObjects/resources/Shaders/Metal/Sun.vert.metal; sourceTree = "<group>"; };
+		B2AF9DBC235E56AA001AD833 /* Aurora.vert.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = Aurora.vert.metal; path = ../../../../SpaceObjects/resources/Shaders/Metal/Aurora.vert.metal; sourceTree = "<group>"; };
+		B2AF9DBD235E56AA001AD833 /* MilkyWay.vert.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = MilkyWay.vert.metal; path = ../../../../SpaceObjects/resources/Shaders/Metal/MilkyWay.vert.metal; sourceTree = "<group>"; };
+		B2AF9DBE235E56AB001AD833 /* Sun.frag.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = Sun.frag.metal; path = ../../../../SpaceObjects/resources/Shaders/Metal/Sun.frag.metal; sourceTree = "<group>"; };
+		B2AF9DBF235E56AB001AD833 /* Aurora.frag.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = Aurora.frag.metal; path = ../../../../SpaceObjects/resources/Shaders/Metal/Aurora.frag.metal; sourceTree = "<group>"; };
+		B2AF9DC9235E56C3001AD833 /* volumetricCloudWithDepth.frag.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = volumetricCloudWithDepth.frag.metal; sourceTree = "<group>"; };
+		B2AF9DCA235E56C3001AD833 /* volumetricCloud_2ndWithDepth.frag.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = volumetricCloud_2ndWithDepth.frag.metal; sourceTree = "<group>"; };
+		B2AF9DCB235E56C3001AD833 /* volumetricCloud_2nd.frag.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = volumetricCloud_2nd.frag.metal; sourceTree = "<group>"; };
+		B2AF9DD0235E579C001AD833 /* SpaceObjects.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = SpaceObjects.cpp; path = ../../../SpaceObjects/src/SpaceObjects.cpp; sourceTree = "<group>"; };
+		B2AF9DD1235E579C001AD833 /* SpaceObjects.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SpaceObjects.h; path = ../../../SpaceObjects/src/SpaceObjects.h; sourceTree = "<group>"; };
 		B2BF7EA022F8B2AA0095A0C8 /* Perlin.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Perlin.h; path = ../../src/Perlin.h; sourceTree = "<group>"; };
 		B2BF7EA122F8B2AA0095A0C8 /* Perlin.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = Perlin.cpp; path = ../../src/Perlin.cpp; sourceTree = "<group>"; };
-		B2E2518E22F0E92A00E37226 /* Star.vert.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = Star.vert.metal; path = ../../../../Sky/resources/Shaders/Metal/Star.vert.metal; sourceTree = "<group>"; };
-		B2E2519122F0E92A00E37226 /* Star.frag.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = Star.frag.metal; path = ../../../../Sky/resources/Shaders/Metal/Star.frag.metal; sourceTree = "<group>"; };
 		B2E2519722F0F1BB00E37226 /* Icosahedron.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = Icosahedron.cpp; path = ../../Sky/src/Icosahedron.cpp; sourceTree = "<group>"; };
 		B2E2519B22F0F1C800E37226 /* Icosahedron.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Icosahedron.h; path = ../../Sky/src/Icosahedron.h; sourceTree = "<group>"; };
-		B2E2519F22F0FCEA00E37226 /* Aurora.comp.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = Aurora.comp.metal; path = ../../../../Sky/resources/Shaders/Metal/Aurora.comp.metal; sourceTree = "<group>"; };
-		B2E251A022F0FCEB00E37226 /* Aurora.frag.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = Aurora.frag.metal; path = ../../../../Sky/resources/Shaders/Metal/Aurora.frag.metal; sourceTree = "<group>"; };
-		B2E251A122F0FCEB00E37226 /* Aurora.vert.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = Aurora.vert.metal; path = ../../../../Sky/resources/Shaders/Metal/Aurora.vert.metal; sourceTree = "<group>"; };
-		B2E251A222F0FCEB00E37226 /* MilkyWay.frag.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = MilkyWay.frag.metal; path = ../../../../Sky/resources/Shaders/Metal/MilkyWay.frag.metal; sourceTree = "<group>"; };
-		B2E251A322F0FCEB00E37226 /* MilkyWay.vert.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; name = MilkyWay.vert.metal; path = ../../../../Sky/resources/Shaders/Metal/MilkyWay.vert.metal; sourceTree = "<group>"; };
 		C95132ED2010E68A002E584B /* Ephemeris_iOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Ephemeris_iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C95132FE2010E68A002E584B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C95133012010E68A002E584B /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
@@ -234,6 +241,8 @@
 		28A5AB66201F377A000E571F /* Shaders */ = {
 			isa = PBXGroup;
 			children = (
+				B27859C2236757150035CBA4 /* FXAA.frag.metal */,
+				B2AF9DB6235E566E001AD833 /* SpaceObjects */,
 				6543D9462293337A0098B17B /* depthLinearization.comp.metal */,
 				6543D9452293337A0098B17B /* depthLinearization.frag.metal */,
 				6543D9442293337A0098B17B /* Triangular.vert.metal */,
@@ -288,6 +297,7 @@
 		6543D8EA22932EC80098B17B /* Ephemeris */ = {
 			isa = PBXGroup;
 			children = (
+				B2AF9DCF235E5783001AD833 /* SpaceObjects */,
 				B2BF7EA122F8B2AA0095A0C8 /* Perlin.cpp */,
 				B2BF7EA022F8B2AA0095A0C8 /* Perlin.h */,
 				6543D8EF22932F950098B17B /* VolumetricClouds */,
@@ -340,21 +350,12 @@
 		6543D9062293306D0098B17B /* Sky */ = {
 			isa = PBXGroup;
 			children = (
-				B2E2519F22F0FCEA00E37226 /* Aurora.comp.metal */,
-				B2E251A022F0FCEB00E37226 /* Aurora.frag.metal */,
-				B2E251A122F0FCEB00E37226 /* Aurora.vert.metal */,
-				B2E251A222F0FCEB00E37226 /* MilkyWay.frag.metal */,
-				B2E251A322F0FCEB00E37226 /* MilkyWay.vert.metal */,
-				B2E2519122F0E92A00E37226 /* Star.frag.metal */,
-				B2E2518E22F0E92A00E37226 /* Star.vert.metal */,
 				65E90DAE22947E9600549B03 /* RenderSky.frag.metal */,
 				65E90DAD22947E9600549B03 /* RenderSky.h */,
 				65E90DAC22947E9600549B03 /* RenderSky.vert.metal */,
 				65E90DB022947E9600549B03 /* SkyCommon.h */,
 				65E90DAA22947E9600549B03 /* Space.frag.metal */,
 				65E90DB122947E9600549B03 /* Space.vert.metal */,
-				65E90DAF22947E9600549B03 /* Sun.frag.metal */,
-				65E90DAB22947E9600549B03 /* Sun.vert.metal */,
 			);
 			name = Sky;
 			path = ../../../../Sky/resources/Shaders/Metal;
@@ -379,6 +380,9 @@
 		6543D908229330820098B17B /* VolumetricClouds */ = {
 			isa = PBXGroup;
 			children = (
+				B2AF9DCB235E56C3001AD833 /* volumetricCloud_2nd.frag.metal */,
+				B2AF9DCA235E56C3001AD833 /* volumetricCloud_2ndWithDepth.frag.metal */,
+				B2AF9DC9235E56C3001AD833 /* volumetricCloudWithDepth.frag.metal */,
 				65E90DE72295ACE200549B03 /* composite.frag.metal */,
 				65E90DE82295ACE200549B03 /* compositeOverlay.frag.metal */,
 				65E90DE52294BD5D00549B03 /* reprojection.comp.metal */,
@@ -416,6 +420,31 @@
 				B29604BE22E7C06D00A85674 /* libThe-Forge_iOS.a */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		B2AF9DB6235E566E001AD833 /* SpaceObjects */ = {
+			isa = PBXGroup;
+			children = (
+				B2AF9DB9235E56AA001AD833 /* Aurora.comp.metal */,
+				B2AF9DBF235E56AB001AD833 /* Aurora.frag.metal */,
+				B2AF9DBC235E56AA001AD833 /* Aurora.vert.metal */,
+				B2AF9DB7235E56AA001AD833 /* MilkyWay.frag.metal */,
+				B2AF9DBD235E56AA001AD833 /* MilkyWay.vert.metal */,
+				B2AF9DB8235E56AA001AD833 /* Star.frag.metal */,
+				B2AF9DBA235E56AA001AD833 /* Star.vert.metal */,
+				B2AF9DBE235E56AB001AD833 /* Sun.frag.metal */,
+				B2AF9DBB235E56AA001AD833 /* Sun.vert.metal */,
+			);
+			name = SpaceObjects;
+			sourceTree = "<group>";
+		};
+		B2AF9DCF235E5783001AD833 /* SpaceObjects */ = {
+			isa = PBXGroup;
+			children = (
+				B2AF9DD0235E579C001AD833 /* SpaceObjects.cpp */,
+				B2AF9DD1235E579C001AD833 /* SpaceObjects.h */,
+			);
+			path = SpaceObjects;
 			sourceTree = "<group>";
 		};
 		C95132EE2010E68A002E584B /* Ephemeris_iOS */ = {
@@ -614,6 +643,7 @@
 				6543D8EC22932F7A0098B17B /* Example.cpp in Sources */,
 				6543D8F922932FC20098B17B /* Sky.cpp in Sources */,
 				6543D90522932FEB0098B17B /* VolumetricClouds.cpp in Sources */,
+				B2AF9DD2235E579C001AD833 /* SpaceObjects.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

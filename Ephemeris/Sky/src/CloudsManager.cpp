@@ -303,8 +303,6 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 #elif defined(METAL)
   eastl::string shaderPath("../../../../../Ephemeris/Sky/resources/Shaders/Metal/");
 #endif
-  eastl::string shaderFullPath;
-
   //layout and pipeline for ScreenQuad
   VertexLayout vertexLayout = {};
   vertexLayout.mAttribCount = 1;
@@ -323,10 +321,11 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 
 
     ShaderLoadDesc skyShader = {};
-    ShaderPath(shaderPath, (char*)"clDistanceCloud.vert", shaderFullPath);
-    skyShader.mStages[0] = { shaderFullPath.c_str(), NULL, 0, RD_SHADER_SOURCES };
-    ShaderPath(shaderPath, (char*)"clDistanceCloud.frag", shaderFullPath);
-    skyShader.mStages[1] = { shaderFullPath.c_str(), NULL, 0, RD_SHADER_SOURCES };
+	eastl::string skyShaderFullPath[2];
+    ShaderPath(shaderPath, (char*)"clDistanceCloud.vert", skyShaderFullPath[0]);
+    skyShader.mStages[0] = { skyShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+    ShaderPath(shaderPath, (char*)"clDistanceCloud.frag", skyShaderFullPath[1]);
+    skyShader.mStages[1] = { skyShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
     addShader(pRenderer, &skyShader, &pClDistanceCloudShader);
 
@@ -371,12 +370,13 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     ShaderLoadDesc spaceShader = {};
-    ShaderPath(shaderPath, (char*)"clCumulusCloud.vert", shaderFullPath);
-    spaceShader.mStages[0] = { shaderFullPath.c_str(), NULL, 0, RD_SHADER_SOURCES };
-    ShaderPath(shaderPath, (char*)"clCumulusCloud.geom", shaderFullPath);
-    spaceShader.mStages[1] = { shaderFullPath.c_str(), NULL, 0, RD_SHADER_SOURCES };
-    ShaderPath(shaderPath, (char*)"clCumulusCloud.frag", shaderFullPath);
-    spaceShader.mStages[2] = { shaderFullPath.c_str(), NULL, 0, RD_SHADER_SOURCES };
+	eastl::string spaceShaderFullPath[3];
+    ShaderPath(shaderPath, (char*)"clCumulusCloud.vert", spaceShaderFullPath[0]);
+    spaceShader.mStages[0] = { spaceShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+    ShaderPath(shaderPath, (char*)"clCumulusCloud.geom", spaceShaderFullPath[1]);
+    spaceShader.mStages[1] = { spaceShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
+    ShaderPath(shaderPath, (char*)"clCumulusCloud.frag", spaceShaderFullPath[2]);
+    spaceShader.mStages[2] = { spaceShaderFullPath[2].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
     addShader(pRenderer, &spaceShader, &pClCumulusCloudShader);
 
@@ -444,11 +444,12 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 			//if ((m_shImpostorCloud = pRenderer->addShader("clImpostorCloud.shd", szFixedExtra)) == SHADER_NONE) break;
 			//cnf_free(szFixedExtra);
 
-      ShaderLoadDesc impostorShader = {};
-      ShaderPath(shaderPath, (char*)"clImpostorCloud.vert", shaderFullPath);
-      impostorShader.mStages[0] = { shaderFullPath.c_str(), NULL, 0, RD_SHADER_SOURCES };
-      ShaderPath(shaderPath, (char*)"clImpostorCloud.frag", shaderFullPath);
-      impostorShader.mStages[1] = { shaderFullPath.c_str(), NULL, 0, RD_SHADER_SOURCES };
+    ShaderLoadDesc impostorShader = {};
+	eastl::string impostorShaderFullPath[3];
+    ShaderPath(shaderPath, (char*)"clImpostorCloud.vert", impostorShaderFullPath[0]);
+    impostorShader.mStages[0] = { impostorShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+    ShaderPath(shaderPath, (char*)"clImpostorCloud.frag", impostorShaderFullPath[1]);
+    impostorShader.mStages[1] = { impostorShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
 
       addShader(pRenderer, &impostorShader, &pImposterCloudShader);
 
@@ -498,25 +499,21 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 	
   TextureLoadDesc CloudFlatTextureDesc = {};
 #if defined(_DURANGO)
-	//CloudFlatTextureDesc.pFilename = "Textures/flat.dds";
-	PathHandle textureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/flat.dds");  
+	PathHandle CloudFlatTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/flat.dds");
 #else
-  //CloudFlatTextureDesc.pFilename = "../../../../Ephemeris/Sky/resources/Textures/flat.dds";
-	PathHandle textureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../../Ephemeris/Sky/resources/Textures/flat.dds");
-#endif	
-	CloudFlatTextureDesc.pFilePath = textureFilePath;
+	PathHandle CloudFlatTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/flat.dds");
+#endif
+	CloudFlatTextureDesc.pFilePath = CloudFlatTextureFilePath;
   CloudFlatTextureDesc.ppTexture = &m_tDistantCloud;
   addResource(&CloudFlatTextureDesc, false);
 
   TextureLoadDesc CloudCumulusTextureDesc = {};
 #if defined(_DURANGO)
-  //CloudCumulusTextureDesc.pFilename = "Textures/cumulus_particles.dds";
-	PathHandle textureFilePath01 = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/cumulus_particles.dds");
+	PathHandle CloudCumulusTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/cumulus_particles.dds");
 #else
-  //CloudCumulusTextureDesc.pFilename = "../../../../Ephemeris/Sky/resources/Textures/cumulus_particles.dds";
-	PathHandle textureFilePath01 = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../../Ephemeris/Sky/resources/Textures/cumulus_particles.dds");
-#endif	
-	CloudCumulusTextureDesc.pFilePath = textureFilePath01;
+	PathHandle CloudCumulusTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/cumulus_particles.dds");
+#endif
+	CloudCumulusTextureDesc.pFilePath = CloudCumulusTextureFilePath;
   CloudCumulusTextureDesc.ppTexture = &m_tCumulusCloud;
   addResource(&CloudCumulusTextureDesc, false);
 

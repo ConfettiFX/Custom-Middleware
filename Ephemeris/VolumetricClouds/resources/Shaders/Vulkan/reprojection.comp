@@ -12,11 +12,11 @@
 #extension GL_EXT_samplerless_texture_functions : enable
 
 
-layout(UPDATE_FREQ_NONE, binding = 0) uniform texture2D LowResCloudTexture;
-layout(UPDATE_FREQ_NONE, binding = 1) uniform texture2D PrevFrameTexture;
-layout(UPDATE_FREQ_NONE, binding = 3) uniform sampler BilinearClampSampler;
-layout(UPDATE_FREQ_NONE, binding = 4) uniform sampler PointClampSampler;
-layout(UPDATE_FREQ_NONE, binding = 5, rgba32f) uniform image2D DstTexture;
+layout(set = 0, binding = 0) uniform texture2D LowResCloudTexture;
+layout(set = 0, binding = 1) uniform texture2D PrevFrameTexture;
+layout(set = 0, binding = 3) uniform sampler BilinearClampSampler;
+layout(set = 0, binding = 4) uniform sampler PointClampSampler;
+layout(set = 0, binding = 5, rgba32f) uniform image2D DstTexture;
 layout(push_constant) uniform uniformGlobalInfoRootConstant_Block
 {
     vec2 _Time;

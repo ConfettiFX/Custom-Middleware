@@ -33,7 +33,7 @@ struct Fragment_Shader
     };
     float main(PSIn input)
     {
-        return (DepthLinearization(SrcTexture.sample(g_LinearClamp, (input).TexCoord).r) * CameraInfoRootConstant.farPlane);
+        return DepthLinearization(SrcTexture.sample(g_LinearClamp, input.TexCoord).r);
     };
 
     Fragment_Shader(

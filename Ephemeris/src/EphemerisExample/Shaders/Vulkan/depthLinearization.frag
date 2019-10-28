@@ -27,16 +27,6 @@ float DepthLinearization(float depth)
     return ((float (2.0) * CameraInfoRootConstant.nearPlane) / ((CameraInfoRootConstant.farPlane + CameraInfoRootConstant.nearPlane) - (depth * (CameraInfoRootConstant.farPlane - CameraInfoRootConstant.nearPlane))));
 }
 
-float PackFloat16(float value)
-{
-  return value * 0.001f;
-}
-
-float UnPackFloat16(float value)
-{
-  return value * 1000.0f;
-}
-
 struct PSIn
 {
     vec4 Position;
@@ -44,7 +34,7 @@ struct PSIn
 };
 float HLSLmain(PSIn input0)
 {
-    return PackFloat16((DepthLinearization((texture(sampler2D( SrcTexture, g_LinearClamp), vec2((input0).TexCoord))).r) * CameraInfoRootConstant.farPlane));
+    return DepthLinearization((texture(sampler2D( SrcTexture, g_LinearClamp), vec2((input0).TexCoord))).r);
 }
 void main()
 {

@@ -29,6 +29,14 @@ struct Fragment_Shader
 	texture2d<float> g_PostProcessedTexture;
 	texture2d<float> g_PrevVolumetricCloudTexture;
 	
+	float getAtmosphereBlendForComposite(float distance)
+    {
+        float rate = mix(0.75f, 0.4f, saturate(VolumetricCloudsCBuffer.g_VolumetricClouds.m_MaxSampleDistance / MAX_SAMPLE_STEP_DISTANCE));
+        float Threshold = VolumetricCloudsCBuffer.g_VolumetricClouds.m_MaxSampleDistance * rate;
+        float InvThreshold = VolumetricCloudsCBuffer.g_VolumetricClouds.m_MaxSampleDistance - Threshold;
+        return saturate(max(distance * MAX_SAMPLE_STEP_DISTANCE - Threshold, 0.0f) / InvThreshold);
+    }
+	
     struct PSIn
     {
         float4 Position [[position]];
@@ -40,14 +48,14 @@ struct Fragment_Shader
     {
         float4 volumetricCloudsResult = g_PostProcessedTexture.sample(g_LinearClampSampler, (input).TexCoord);
         float sceneDepth = depthTexture.sample(g_LinearClampSampler, (input).TexCoord, level(0)).r;
-		float atmosphericBlendFactor = volumetricCloud::UnPackFloat16(g_PrevVolumetricCloudTexture.sample(g_LinearClampSampler, (input).TexCoord, level(0)).g);
+		float atmosphericBlendFactor = g_PrevVolumetricCloudTexture.sample(g_LinearClampSampler, (input).TexCoord, level(0)).g;
         if (((float)((VolumetricCloudsCBuffer.g_VolumetricClouds).EnabledDepthCulling) > (float)(0.5)))
         {
-			return float4(volumetricCloudsResult.r, volumetricCloudsResult.g, volumetricCloudsResult.b, (((sceneDepth >= 1.0 /*VolumetricCloudsCBuffer.g_VolumetricClouds.CameraFarClip*/))?(((float)(1.0) - volumetricCloud::getAtmosphereBlendForComposite(atmosphericBlendFactor))):(0.0)));
+			return float4(volumetricCloudsResult.r, volumetricCloudsResult.g, volumetricCloudsResult.b, sceneDepth >= 1.0 ? 1.0 - getAtmosphereBlendForComposite(atmosphericBlendFactor) : 0.0);
         }
         else
         {
-            return float4(volumetricCloudsResult.r, volumetricCloudsResult.g, volumetricCloudsResult.b, ((float)(1.0) - volumetricCloud::getAtmosphereBlendForComposite(atmosphericBlendFactor)));
+            return float4(volumetricCloudsResult.r, volumetricCloudsResult.g, volumetricCloudsResult.b, ((float)(1.0) - getAtmosphereBlendForComposite(atmosphericBlendFactor)));
         }
     };
 

@@ -35,17 +35,18 @@ vec4 HLSLmain(PSIn input0)
 
   float intensity = volumetricCloudsResult.r;
   float density = volumetricCloudsResult.a;
-
+  float atmosphereBlendFactor = min(volumetricCloudsResult.g, 1.0f);
   vec3 BackgroudColor = texture(sampler2D(g_SkyBackgroudTexture, g_LinearClampSampler), input0.TexCoord).rgb;
 
   vec3 TransmittanceRGB = TransmittanceColor_Data[0].rgb;
 
-  vec4 PostProcessedResult;
-  PostProcessedResult.a = density;
-  PostProcessedResult.rgb = intensity * mix(TransmittanceRGB , mix(VolumetricCloudsCBuffer.g_VolumetricClouds.lightColorAndIntensity.rgb, TransmittanceRGB, pow(clamp(1.0 - VolumetricCloudsCBuffer.g_VolumetricClouds.lightDirection.y, 0.0, 1.0), 0.5)), VolumetricCloudsCBuffer.g_VolumetricClouds.Test00) * VolumetricCloudsCBuffer.g_VolumetricClouds.lightColorAndIntensity.a * VolumetricCloudsCBuffer.g_VolumetricClouds.CloudBrightness;
-  PostProcessedResult.rgb = mix(clamp(BackgroudColor, 0.0, 1.0) + PostProcessedResult.rgb, PostProcessedResult.rgb, min(PostProcessedResult.a, VolumetricCloudsCBuffer.g_VolumetricClouds.BackgroundBlendFactor));
-  PostProcessedResult.rgb = mix(BackgroudColor, PostProcessedResult.rgb, VolumetricCloudsCBuffer.g_VolumetricClouds.BackgroundBlendFactor);
-  return vec4(PostProcessedResult.rgb, 1.0);
+	vec4 PostProcessedResult;
+	PostProcessedResult.a = density;
+	PostProcessedResult.rgb = (intensity / max(density, 0.000001)) * mix(TransmittanceRGB , mix(VolumetricCloudsCBuffer.g_VolumetricClouds.lightColorAndIntensity.rgb, TransmittanceRGB, pow(clamp(1.0 - VolumetricCloudsCBuffer.g_VolumetricClouds.lightDirection.y, 0.0, 1.0), 0.5)), VolumetricCloudsCBuffer.g_VolumetricClouds.Test00) * VolumetricCloudsCBuffer.g_VolumetricClouds.lightColorAndIntensity.a * VolumetricCloudsCBuffer.g_VolumetricClouds.CloudBrightness;
+	PostProcessedResult.rgb = mix(BackgroudColor, PostProcessedResult.rgb, PostProcessedResult.a * VolumetricCloudsCBuffer.g_VolumetricClouds.BackgroundBlendFactor);
+	PostProcessedResult.rgb = mix(PostProcessedResult.rgb, BackgroudColor, pow(atmosphereBlendFactor, 1.4));
+
+	return vec4(PostProcessedResult.rgb, 1.0);
 }
 
 void main()

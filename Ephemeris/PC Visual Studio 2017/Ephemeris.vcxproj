@@ -29,6 +29,7 @@
     <ClCompile Include="..\Sky\src\Icosahedron.cpp" />
     <ClCompile Include="..\Sky\src\LocalTime.cpp" />
     <ClCompile Include="..\Sky\src\Sky.cpp" />
+    <ClCompile Include="..\SpaceObjects\src\SpaceObjects.cpp" />
     <ClCompile Include="..\src\EphemerisExample\Example.cpp" />
     <ClCompile Include="..\src\Perlin.cpp" />
     <ClCompile Include="..\Terrain\src\HeightData.cpp" />
@@ -36,10 +37,6 @@
     <ClCompile Include="..\VolumetricClouds\src\VolumetricClouds.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\Sky\resources\Shaders\D3D12\Aurora.comp" />
-    <None Include="..\Sky\resources\Shaders\D3D12\Aurora.frag" />
-    <None Include="..\Sky\resources\Shaders\D3D12\Aurora.geom" />
-    <None Include="..\Sky\resources\Shaders\D3D12\Aurora.vert" />
     <None Include="..\Sky\resources\Shaders\D3D12\clCumulusCloud.frag" />
     <None Include="..\Sky\resources\Shaders\D3D12\clCumulusCloud.geom" />
     <None Include="..\Sky\resources\Shaders\D3D12\clCumulusCloud.vert" />
@@ -47,40 +44,46 @@
     <None Include="..\Sky\resources\Shaders\D3D12\clDistanceCloud.vert" />
     <None Include="..\Sky\resources\Shaders\D3D12\clImpostorCloud.frag" />
     <None Include="..\Sky\resources\Shaders\D3D12\clImpostorCloud.vert" />
-    <None Include="..\Sky\resources\Shaders\D3D12\MilkyWay.frag" />
-    <None Include="..\Sky\resources\Shaders\D3D12\MilkyWay.vert" />
     <None Include="..\Sky\resources\Shaders\D3D12\RenderSky.frag" />
     <None Include="..\Sky\resources\Shaders\D3D12\RenderSky.vert" />
     <None Include="..\Sky\resources\Shaders\D3D12\Space.frag" />
     <None Include="..\Sky\resources\Shaders\D3D12\Space.vert" />
-    <None Include="..\Sky\resources\Shaders\D3D12\Star.frag" />
-    <None Include="..\Sky\resources\Shaders\D3D12\Star.geom" />
-    <None Include="..\Sky\resources\Shaders\D3D12\Star.vert" />
-    <None Include="..\Sky\resources\Shaders\D3D12\Sun.frag" />
-    <None Include="..\Sky\resources\Shaders\D3D12\Sun.geom" />
-    <None Include="..\Sky\resources\Shaders\D3D12\Sun.vert" />
-    <None Include="..\Sky\resources\Shaders\Vulkan\Aurora.comp" />
-    <None Include="..\Sky\resources\Shaders\Vulkan\Aurora.frag" />
-    <None Include="..\Sky\resources\Shaders\Vulkan\Aurora.geom" />
-    <None Include="..\Sky\resources\Shaders\Vulkan\Aurora.vert" />
-    <None Include="..\Sky\resources\Shaders\Vulkan\MilkyWay.frag" />
-    <None Include="..\Sky\resources\Shaders\Vulkan\MilkyWay.vert" />
     <None Include="..\Sky\resources\Shaders\Vulkan\RenderSky.frag" />
     <None Include="..\Sky\resources\Shaders\Vulkan\RenderSky.vert" />
     <None Include="..\Sky\resources\Shaders\Vulkan\Space.frag" />
     <None Include="..\Sky\resources\Shaders\Vulkan\Space.vert" />
-    <None Include="..\Sky\resources\Shaders\Vulkan\Star.frag" />
-    <None Include="..\Sky\resources\Shaders\Vulkan\Star.geom" />
-    <None Include="..\Sky\resources\Shaders\Vulkan\Star.vert" />
-    <None Include="..\Sky\resources\Shaders\Vulkan\Sun.frag" />
-    <None Include="..\Sky\resources\Shaders\Vulkan\Sun.geom" />
-    <None Include="..\Sky\resources\Shaders\Vulkan\Sun.vert" />
+    <None Include="..\SpaceObjects\resources\Shaders\D3D12\Aurora.comp" />
+    <None Include="..\SpaceObjects\resources\Shaders\D3D12\Aurora.frag" />
+    <None Include="..\SpaceObjects\resources\Shaders\D3D12\Aurora.geom" />
+    <None Include="..\SpaceObjects\resources\Shaders\D3D12\Aurora.vert" />
+    <None Include="..\SpaceObjects\resources\Shaders\D3D12\MilkyWay.frag" />
+    <None Include="..\SpaceObjects\resources\Shaders\D3D12\MilkyWay.vert" />
+    <None Include="..\SpaceObjects\resources\Shaders\D3D12\Star.frag" />
+    <None Include="..\SpaceObjects\resources\Shaders\D3D12\Star.geom" />
+    <None Include="..\SpaceObjects\resources\Shaders\D3D12\Star.vert" />
+    <None Include="..\SpaceObjects\resources\Shaders\D3D12\Sun.frag" />
+    <None Include="..\SpaceObjects\resources\Shaders\D3D12\Sun.geom" />
+    <None Include="..\SpaceObjects\resources\Shaders\D3D12\Sun.vert" />
+    <None Include="..\SpaceObjects\resources\Shaders\Vulkan\Aurora.comp" />
+    <None Include="..\SpaceObjects\resources\Shaders\Vulkan\Aurora.frag" />
+    <None Include="..\SpaceObjects\resources\Shaders\Vulkan\Aurora.geom" />
+    <None Include="..\SpaceObjects\resources\Shaders\Vulkan\Aurora.vert" />
+    <None Include="..\SpaceObjects\resources\Shaders\Vulkan\MilkyWay.frag" />
+    <None Include="..\SpaceObjects\resources\Shaders\Vulkan\MilkyWay.vert" />
+    <None Include="..\SpaceObjects\resources\Shaders\Vulkan\Star.frag" />
+    <None Include="..\SpaceObjects\resources\Shaders\Vulkan\Star.geom" />
+    <None Include="..\SpaceObjects\resources\Shaders\Vulkan\Star.vert" />
+    <None Include="..\SpaceObjects\resources\Shaders\Vulkan\Sun.frag" />
+    <None Include="..\SpaceObjects\resources\Shaders\Vulkan\Sun.geom" />
+    <None Include="..\SpaceObjects\resources\Shaders\Vulkan\Sun.vert" />
     <None Include="..\src\EphemerisExample\Shaders\D3D12\depthLinearization.comp" />
     <None Include="..\src\EphemerisExample\Shaders\D3D12\depthLinearization.frag" />
+    <None Include="..\src\EphemerisExample\Shaders\D3D12\FXAA.frag" />
     <None Include="..\src\EphemerisExample\Shaders\D3D12\present.frag" />
     <None Include="..\src\EphemerisExample\Shaders\D3D12\Triangular.vert" />
     <None Include="..\src\EphemerisExample\Shaders\Vulkan\depthLinearization.comp" />
     <None Include="..\src\EphemerisExample\Shaders\Vulkan\depthLinearization.frag" />
+    <None Include="..\src\EphemerisExample\Shaders\Vulkan\FXAA.frag" />
     <None Include="..\src\EphemerisExample\Shaders\Vulkan\present.frag" />
     <None Include="..\src\EphemerisExample\Shaders\Vulkan\Triangular.vert" />
     <None Include="..\Terrain\resources\Shaders\D3D12\GenNormalMap.frag" />
@@ -123,6 +126,7 @@
     <None Include="..\VolumetricClouds\resources\Shaders\D3D12\volumetricCloud.frag" />
     <None Include="..\VolumetricClouds\resources\Shaders\D3D12\volumetricCloud.vert" />
     <None Include="..\VolumetricClouds\resources\Shaders\D3D12\volumetricCloudWithDepth.comp" />
+    <None Include="..\VolumetricClouds\resources\Shaders\D3D12\volumetricCloud_2nd.comp" />
     <None Include="..\VolumetricClouds\resources\Shaders\Vulkan\BlurHorizontal.comp" />
     <None Include="..\VolumetricClouds\resources\Shaders\Vulkan\BlurVertical.comp" />
     <None Include="..\VolumetricClouds\resources\Shaders\Vulkan\castShadow.frag" />
@@ -147,6 +151,8 @@
     <None Include="..\VolumetricClouds\resources\Shaders\Vulkan\volumetricCloud.frag" />
     <None Include="..\VolumetricClouds\resources\Shaders\Vulkan\volumetricCloud.vert" />
     <None Include="..\VolumetricClouds\resources\Shaders\Vulkan\volumetricCloudWithDepth.comp" />
+    <None Include="..\VolumetricClouds\resources\Shaders\Vulkan\volumetricCloud_2nd.comp" />
+    <None Include="..\VolumetricClouds\resources\Shaders\Vulkan\volumetricCloud_2ndWithDepth.comp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Sky\resources\Shaders\D3D12\RenderSky.h" />
@@ -166,6 +172,7 @@
     <ClInclude Include="..\Sky\src\Sky.h" />
     <ClInclude Include="..\Sky\src\SkyCommon.h" />
     <ClInclude Include="..\Sky\src\SkyDomeParams.h" />
+    <ClInclude Include="..\SpaceObjects\src\SpaceObjects.h" />
     <ClInclude Include="..\src\Perlin.h" />
     <ClInclude Include="..\Terrain\src\HeightData.h" />
     <ClInclude Include="..\Terrain\src\Hemisphere.h" />
@@ -230,28 +237,28 @@
     <LinkIncremental>true</LinkIncremental>
     <IntDir>$(SolutionDir)\$(Platform)\$(Configuration)\Intermediate\$(ProjectName)\</IntDir>
     <IncludePath>$(VULKAN_SDK)\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\Libraries\Win64\Debug\;$(SolutionDir)\$(Platform)\$(Configuration);$(VULKAN_SDK)\Lib;$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\Bin\Debug\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)\$(Platform)\$(Configuration);$(VULKAN_SDK)\Lib;$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\Bin\Debug\;$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\Libraries\Win64\Debug\;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugDx|x64'">
     <LinkIncremental>true</LinkIncremental>
     <IntDir>$(SolutionDir)\$(Platform)\$(Configuration)\Intermediate\$(ProjectName)\</IntDir>
     <IncludePath>$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\Libraries\Win64\Debug\;$(SolutionDir)\$(Platform)\$(Configuration);$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\Bin\Debug\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)\$(Platform)\$(Configuration);$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\Bin\Debug\;$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\Libraries\Win64\Debug\;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseVk|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(SolutionDir)\$(Platform)\$(Configuration)\Intermediate\$(ProjectName)\</IntDir>
     <IncludePath>$(VULKAN_SDK)\Include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\Libraries\Win64\Release\;$(SolutionDir)\$(Platform)\$(Configuration);$(VULKAN_SDK)\Lib;$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\Bin\Release\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)\$(Platform)\$(Configuration);$(VULKAN_SDK)\Lib;$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\Bin\Release\;$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\Libraries\Win64\Release\;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDx|x64'">
     <LinkIncremental>false</LinkIncremental>
     <IntDir>$(SolutionDir)\$(Platform)\$(Configuration)\Intermediate\$(ProjectName)\</IntDir>
     <IncludePath>$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\Libraries\Win64\Release\;$(SolutionDir)\$(Platform)\$(Configuration);$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\Bin\Release\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)\$(Platform)\$(Configuration);$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\assimp\4.1.0\win64\Bin\Release\;$(SolutionDir)\..\..\..\The-Forge\Common_3\ThirdParty\OpenSource\Libraries\Win64\Release\;$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugVk|x64'">

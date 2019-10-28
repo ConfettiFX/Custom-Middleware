@@ -21,7 +21,6 @@ HeightData::HeightData(const char* filePath, float heightScale) :
 	rowOffset(924)
 {	
 	// open file
-	//mFile.Open(eastl::string(filePath), FM_ReadBinary, FSR_OtherFiles);
 	PathHandle FilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, filePath);
 	FileStream* modelFile0FH = fsOpenFile(FilePath, FM_READ_BINARY);
 	
@@ -29,37 +28,28 @@ HeightData::HeightData(const char* filePath, float heightScale) :
 	{
 		char output[256];
 		sprintf(output, "\"%s\": Image file not found.", filePath);
-		//ErrorMsg(output);
 		return;
 	}
-	//FileHandle* fileHandle = (FileHandle*)mFile.GetHandle();
 	
-	// load file into memory	
-	//uint length = mFileSystem.GetFileSize(fileHandle);
+	// load file into memory
 	uint length = (uint)fsGetStreamFileSize(modelFile0FH);
 	if (length == 0)
 	{
 		char output[256];
 		sprintf(output, "\"%s\": Image file is empty.", filePath);
-		//ErrorMsg(output);
-		//mFile.Close();
 		fsCloseStream(modelFile0FH);
 		return;
 	}
 
 	// read and close file.
 	eastl::vector<char> heightMap;
-	// = new char[length];	
 	heightMap.resize(length);
-	//mFile.Read(heightMap, length);
-	//mFile.Close();
-
+	
 	fsReadFromStream(modelFile0FH, heightMap.data(), fsGetStreamFileSize(modelFile0FH));
 	fsCloseStream(modelFile0FH);
 
 	uint32 width = (uint32)sqrtf((float)length / 4.0f);
-	uint32 height = width;
-	
+	uint32 height = width;	
 
 	// Calculate minimal number of columns and rows
 	// in the form 2^n+1 that encompass the data
@@ -100,7 +90,6 @@ HeightData::HeightData(const char* filePath, float heightScale) :
 		data[i] *= heightScale;
 	}
 
-	//delete [] heightMap;
 	heightMap.clear();
 }
 

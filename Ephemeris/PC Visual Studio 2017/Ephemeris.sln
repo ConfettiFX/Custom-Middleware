@@ -2,10 +2,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{21A6980D-04AA-430D-BE3D-74F151226C8B}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{6CF62059-3AC3-43CD-A29E-2F1E01EA4115}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Ephemeris", "Ephemeris.vcxproj", "{12E2663B-7168-466C-BBD1-07947D088409}"
 	ProjectSection(ProjectDependencies) = postProject
 		{DFAAEF2D-9A5E-475E-86BA-59529DD39CF3} = {DFAAEF2D-9A5E-475E-86BA-59529DD39CF3}
@@ -14,6 +10,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Ephemeris", "Ephemeris.vcxp
 		{30DD3D57-0026-48C8-BFD1-6392F319E23A} = {30DD3D57-0026-48C8-BFD1-6392F319E23A}
 		{EBC1C8D7-D49B-409A-A575-5AB53111E4D7} = {EBC1C8D7-D49B-409A-A575-5AB53111E4D7}
 	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{21A6980D-04AA-430D-BE3D-74F151226C8B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Examples", "Examples", "{6CF62059-3AC3-43CD-A29E-2F1E01EA4115}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AssimpImporter", "Libraries\Tools\AssimpImporter.vcxproj", "{1018594F-0769-4244-BED4-CEB06EBBAE22}"
 	ProjectSection(ProjectDependencies) = postProject

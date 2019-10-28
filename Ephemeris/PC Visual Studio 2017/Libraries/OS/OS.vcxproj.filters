@@ -58,8 +58,8 @@
     <Filter Include="OS\Middleware_3\Text">
       <UniqueIdentifier>{ea71056b-4bfe-454e-b0e4-312881420a89}</UniqueIdentifier>
     </Filter>
-    <Filter Include="OS\FileSystem">
-      <UniqueIdentifier>{2073a8e9-c1f1-457a-abdf-1f421e2369e2}</UniqueIdentifier>
+    <Filter Include="OS\FileSystems">
+      <UniqueIdentifier>{c1eba150-149e-484b-916a-d87a24af543d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -169,22 +169,22 @@
       <Filter>OS\Profiler</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\FileSystemInternal.cpp">
-      <Filter>OS\FileSystem</Filter>
+      <Filter>OS\FileSystems</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\MemoryStream.cpp">
-      <Filter>OS\FileSystem</Filter>
+      <Filter>OS\FileSystems</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\SystemFileStream.cpp">
-      <Filter>OS\FileSystem</Filter>
+      <Filter>OS\FileSystems</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\SystemRun.cpp">
-      <Filter>OS\FileSystem</Filter>
+      <Filter>OS\FileSystems</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\ZipFileStream.cpp">
-      <Filter>OS\FileSystem</Filter>
+      <Filter>OS\FileSystems</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\The-Forge\Common_3\OS\FileSystem\ZipFileSystem.cpp">
-      <Filter>OS\FileSystem</Filter>
+      <Filter>OS\FileSystems</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

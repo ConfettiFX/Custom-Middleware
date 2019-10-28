@@ -29,7 +29,7 @@ vec4 HLSLmain(PSIn input0)
 {
     vec4 volumetricCloudsResult = texture(sampler2D( g_PostProcessedTexture, g_LinearClampSampler), vec2((input0).TexCoord));
     float sceneDepth = float ((textureLod(sampler2D( depthTexture, g_LinearClampSampler), vec2((input0).TexCoord), float (0))).r);
-    float atmosphericBlendFactor = UnPackFloat16(float ((textureLod(sampler2D( g_PrevVolumetricCloudTexture, g_LinearClampSampler), vec2((input0).TexCoord), float (0))).g));
+    float atmosphericBlendFactor = (textureLod(sampler2D( g_PrevVolumetricCloudTexture, g_LinearClampSampler), vec2((input0).TexCoord), float (0))).g;
 
     if (VolumetricCloudsCBuffer.g_VolumetricClouds.EnabledDepthCulling > 0.5)
       return vec4(volumetricCloudsResult.rgb, sceneDepth >= 1.0 /*VolumetricCloudsCBuffer.g_VolumetricClouds.CameraFarClip*/ ? 1.0 - getAtmosphereBlendForComposite(atmosphericBlendFactor) : 0.0f);

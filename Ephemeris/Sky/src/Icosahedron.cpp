@@ -132,5 +132,5 @@ void Icosahedron::CreateIcosphere(int subdivisions, eastl::vector<float> &vertic
     indices.push_back(triangleIndices[i].index[2]);
   }
 
-	IndexCout = (uint)indices.size();
+	IndexCount = (uint)indices.size();
 }
