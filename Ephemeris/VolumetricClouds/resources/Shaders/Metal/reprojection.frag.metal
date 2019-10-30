@@ -15,28 +15,30 @@ using namespace metal;
 
 struct Fragment_Shader
 {
-    texture3d<float> highFreqNoiseTexture;
+	texture3d<float> highFreqNoiseTexture;
     texture3d<float> lowFreqNoiseTexture;
     texture2d<float> curlNoiseTexture;
     texture2d<float> weatherTexture;
     texture2d<float> depthTexture;
     texture2d<float> LowResCloudTexture;
     texture2d<float> g_PrevFrameTexture;
+    texture2d<float> g_LinearDepthTexture;
+
     sampler g_LinearClampSampler;
     sampler g_LinearWrapSampler;
     sampler g_PointClampSampler;
     sampler g_LinearBorderSampler;
-    
+
     constant volumetricCloud::Uniforms_VolumetricCloudsCBuffer & VolumetricCloudsCBuffer;
-	constant uint4 & g_PrevFrameBuffer;
 	
-	float ShouldbeUpdated(float2 uv, float2 jitter)
-	{
-		float2 texelRelativePos = fmod((uv * ((VolumetricCloudsCBuffer.g_VolumetricClouds).TimeAndScreenSize).zw), 4.0);
-		(texelRelativePos -= jitter);
-		float2 valid = saturate(((float2)(2.0) * (float2(0.5, 0.5) - abs((texelRelativePos - float2(0.5, 0.5))))));
-		return ((valid).x * (valid).y);
-	};
+	// Check whether current texture coordinates should be updated or not
+    float ShouldbeUpdated(float2 uv, float2 jitter)
+    {
+		float2 texelRelativePos = fmod(uv * VolumetricCloudsCBuffer.g_VolumetricClouds.TimeAndScreenSize.zw, 4.0);
+        texelRelativePos -= jitter;
+        float2 valid = saturate(2.0 * (float2(0.5, 0.5) - abs(texelRelativePos - float2(0.5, 0.5))));
+        return valid.x * valid.y;
+    };
 	
     struct PSIn
     {
@@ -47,7 +49,6 @@ struct Fragment_Shader
 	
     float4 main(PSIn input)
     {
-        float2 db_uvs = (input).TexCoord;
         float outOfBound;
         float2 _Jitter = float2(float((VolumetricCloudsCBuffer.g_VolumetricClouds).m_JitterX), float((VolumetricCloudsCBuffer.g_VolumetricClouds).m_JitterY));
         float2 onePixeloffset = ((float2)(1.0) / ((VolumetricCloudsCBuffer.g_VolumetricClouds).TimeAndScreenSize).zw);
@@ -55,32 +56,22 @@ struct Fragment_Shader
         float4 currSample = LowResCloudTexture.sample(g_PointClampSampler, uv);
         float depth = volumetricCloud::UnPackFloat16((currSample).z);
         float4 prevUV;
-        float4 worldPos;
         float2 NDC = float2(((((input).TexCoord).x * (float)(2.0)) - (float)(1.0)), ((((float)(1.0) - ((input).TexCoord).y) * (float)(2.0)) - (float)(1.0)));
-        (worldPos = (((VolumetricCloudsCBuffer.g_VolumetricClouds).m_ProjToWorldMat_1st)*(float4(NDC, 0.0, 1.0))));
-        (worldPos /= (float4)((worldPos).w));
-        float3 viewDir = normalize(((worldPos).xyz - ((VolumetricCloudsCBuffer.g_VolumetricClouds).cameraPosition_1st).xyz));
-        float3 firstHitRayPos = ((viewDir * (float3)(depth)) + ((VolumetricCloudsCBuffer.g_VolumetricClouds).cameraPosition_1st).xyz);
-        (prevUV = (((VolumetricCloudsCBuffer.g_VolumetricClouds).m_PrevWorldToProjMat_1st)*(float4(firstHitRayPos, 1.0))));
+		
+		float4 worldPos = VolumetricCloudsCBuffer.g_VolumetricClouds.m_DataPerEye[0].m_ProjToWorldMat * float4(NDC, 0.0, 1.0);
+		worldPos /= worldPos.w;
+	    float4 CameraPosition = VolumetricCloudsCBuffer.g_VolumetricClouds.m_DataPerEye[0].cameraPosition;
+		
+        float3 viewDir = normalize(((worldPos).xyz - CameraPosition.xyz));
+        float3 firstHitRayPos = ((viewDir * (float3)(depth)) + (CameraPosition).xyz);
+		
+        (prevUV = (((VolumetricCloudsCBuffer.g_VolumetricClouds).m_DataPerEye[0].m_PrevWorldToProjMat)*(float4(firstHitRayPos, 1.0))));
+		
         (prevUV /= (float4)((prevUV).w));
         ((prevUV).xy = float2((((prevUV).x + (float)(1.0)) * (float)(0.5)), (((float)(1.0) - (prevUV).y) * (float)(0.5))));
         (outOfBound = step(0.0, max(max((-(prevUV).x), (-(prevUV).y)), (max((prevUV).x, (prevUV).y) - (float)(1.0)))));
 		
 		float4 prevSample = g_PrevFrameTexture.sample(g_LinearClampSampler, (prevUV).xy);
-		uint Y = (uint)VolumetricCloudsCBuffer.g_VolumetricClouds.TimeAndScreenSize.z * (uint)(VolumetricCloudsCBuffer.g_VolumetricClouds.TimeAndScreenSize.w * prevUV.y);
-		uint X = (uint)(VolumetricCloudsCBuffer.g_VolumetricClouds.TimeAndScreenSize.z * prevUV.x);
-		
-		//half4 data = g_PrevFrameBuffer[ X + Y ];
-		
-		//float4 prevSample = float4((float)data.x, (float)data.y, (float)data.z, (float)data.w);
-		
-		
-		
-		//uint4 prevSampleUint = g_PrevFrameBuffer[ X + Y ];
-		//float4 prevSample = float4( as_type<float>(prevSampleUint.x), as_type<float>(prevSampleUint.y), as_type<float>(prevSampleUint.z), as_type<float>(prevSampleUint.w) );
-		
-		
-		//float4 prevSample = g_PrevFrameTexture[uint2(VolumetricCloudsCBuffer.g_VolumetricClouds.TimeAndScreenSize.z * prevUV.x, VolumetricCloudsCBuffer.g_VolumetricClouds.TimeAndScreenSize.w * prevUV.y)];
 		
 		float blend = max(ShouldbeUpdated((input).TexCoord, _Jitter), outOfBound);
 		
@@ -101,8 +92,8 @@ struct Fragment_Shader
 					sampler g_LinearWrapSampler,
 					sampler g_PointClampSampler,
 					sampler g_LinearBorderSampler,
-					constant volumetricCloud::Uniforms_VolumetricCloudsCBuffer & VolumetricCloudsCBuffer,
-					constant uint4 & g_PrevFrameBuffer) :
+					constant volumetricCloud::Uniforms_VolumetricCloudsCBuffer & VolumetricCloudsCBuffer
+					) :
 	highFreqNoiseTexture(highFreqNoiseTexture),
 	lowFreqNoiseTexture(lowFreqNoiseTexture),
 	curlNoiseTexture(curlNoiseTexture),
@@ -114,8 +105,7 @@ struct Fragment_Shader
 	g_LinearWrapSampler(g_LinearWrapSampler),
 	g_PointClampSampler(g_PointClampSampler),
 	g_LinearBorderSampler(g_LinearBorderSampler),
-	VolumetricCloudsCBuffer(VolumetricCloudsCBuffer),
-	g_PrevFrameBuffer(g_PrevFrameBuffer) {}
+	VolumetricCloudsCBuffer(VolumetricCloudsCBuffer) {}
 };
 
 struct ArgsData
@@ -131,12 +121,11 @@ struct ArgsData
     sampler g_LinearWrapSampler;
     sampler g_PointClampSampler;
     sampler g_LinearBorderSampler;
-	constant uint4 & g_PrevFrameBuffer;
 };
 
 struct ArgsPerFrame
 {
-    constant volumetricCloud::Uniforms_VolumetricCloudsCBuffer & VolumetricCloudsCBuffer;
+	constant volumetricCloud::Uniforms_VolumetricCloudsCBuffer & VolumetricCloudsCBuffer;
 };
 
 fragment float4 stageMain(
@@ -161,7 +150,6 @@ fragment float4 stageMain(
     argBufferStatic.g_LinearWrapSampler,
     argBufferStatic.g_PointClampSampler,
     argBufferStatic.g_LinearBorderSampler,
-    argBufferPerFrame.VolumetricCloudsCBuffer,
-	argBufferStatic.g_PrevFrameBuffer);
+    argBufferPerFrame.VolumetricCloudsCBuffer);
     return main.main(input0);
 }

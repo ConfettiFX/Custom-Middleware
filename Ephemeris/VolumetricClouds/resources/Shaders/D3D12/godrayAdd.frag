@@ -26,10 +26,10 @@ float4 main(PSIn input) : SV_TARGET
 {
 	float2 db_uvs = input.TexCoord;
 
-	float3 sunWorldPos = g_VolumetricClouds.lightDirection.xyz * 1000000.0;
+	float3 sunWorldPos = g_VolumetricClouds.lightDirection.xyz * 63600000.0f;
 	float4 sunPos;
 	
-	sunPos = mul(g_VolumetricClouds.m_WorldToProjMat_1st, float4(sunWorldPos, 1.0));
+	sunPos = mul(g_VolumetricClouds.m_DataPerEye[0].m_WorldToProjMat, float4(sunWorldPos, 1.0));
 	
 	sunPos.xy /= sunPos.w;
 
@@ -37,11 +37,11 @@ float4 main(PSIn input) : SV_TARGET
 	float2 ScreenNDC = float2(input.TexCoord.x * 2.0 - 1.0, (1.0 - input.TexCoord.y) * 2.0 - 1.0);
 	float3 projectedPosition = float3(ScreenNDC.xy, 0.0);
 	
-	float4 worldPos = mul(g_VolumetricClouds.m_ProjToWorldMat_1st, float4(projectedPosition, 1.0));
+	float4 worldPos = mul(g_VolumetricClouds.m_DataPerEye[0].m_ProjToWorldMat, float4(projectedPosition, 1.0));
 	
 	worldPos /= worldPos.w;
 	
-	float4 CameraPosition = g_VolumetricClouds.cameraPosition_1st;
+	float4 CameraPosition = g_VolumetricClouds.m_DataPerEye[0].cameraPosition;
 	float3 viewDir = normalize(worldPos.xyz - CameraPosition.xyz);
 
 	float cosTheta = saturate(dot(viewDir, g_VolumetricClouds.lightDirection.xyz));

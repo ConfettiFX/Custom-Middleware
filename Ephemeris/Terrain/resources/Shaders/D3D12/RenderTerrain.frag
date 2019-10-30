@@ -54,6 +54,24 @@ float3 ReconstructNormal(in float4 sampleNormal, float intensity)
 	return tangentNormal;
 }
 
+float MipLevel( float2 uv )
+{
+  float TextureSize = 2048.0f;
+
+  float2 dx = ddx( uv * TextureSize );
+  float2 dy = ddy( uv * TextureSize );
+  float d = max( dot( dx, dx ), dot( dy, dy ) );
+
+  uint MipCount = uint(log2(TextureSize)) + 1;
+  
+  // Clamp the value to the max mip level counts
+  float rangeClamp = pow(2, MipCount - 1);
+  d = clamp(sqrt(d), 1.0, rangeClamp);
+      
+  float mipLevel = 0.75f * log2(d);
+  return mipLevel;
+}
+
 PsOut main(PsIn In)
 {
   PsOut Out;
@@ -61,10 +79,7 @@ PsOut main(PsIn In)
   float linearDepth = DepthLinearization(In.position.z, CameraInfo.x, CameraInfo.y);
 
   float dist = distance(CameraInfo.xyz, In.positionWS);
-  dist = dist / CameraInfo.w;
-
-  float lod = 4.0f;// pow(linearDepth, 0.2f) * 9.0f;
- 
+  dist = dist / CameraInfo.w; 
 
   float4 maskVal = MaskMap.SampleLevel(g_LinearMirror, In.texcoord, 0.0);
   //maskVal /= max( dot(maskVal, float4(1,1,1,1)) , 1 );
@@ -78,13 +93,18 @@ PsOut main(PsIn In)
   for(uint i = 0; i < 4; ++i)
   {
     //const float fThresholdWeight = 3.f/256.f;
-    result += tileTextures[i].SampleLevel(g_LinearWrap, In.texcoord * tileScale[i], lod).xyz * maskVal[i];
-    surfaceNrm += ReconstructNormal(tileTexturesNrm[i].SampleLevel(g_LinearWrap, In.texcoord * tileScale[i], lod), 1.0f) * maskVal[i];
+    float2 uv = In.texcoord * tileScale[i];
+    float lod = MipLevel(uv);
+
+    result += tileTextures[i].SampleLevel(g_LinearWrap, uv, lod).xyz * maskVal[i];
+    surfaceNrm += ReconstructNormal(tileTexturesNrm[i].SampleLevel(g_LinearWrap, uv, lod), 1.0f) * maskVal[i];
   }
 
-  float3 baseColor = tileTextures[4].SampleLevel(g_LinearWrap, In.texcoord * baseTileScale, lod).xyz * baseWeight;
+  float2 uv = In.texcoord * baseTileScale;
+  float lod = MipLevel(uv);
+  float3 baseColor = tileTextures[4].SampleLevel(g_LinearWrap, uv, lod).xyz * baseWeight;
   result += baseColor;
-  surfaceNrm += ReconstructNormal(tileTexturesNrm[4].SampleLevel(g_LinearWrap, In.texcoord * baseTileScale, lod), 1.0f) * baseWeight;
+  surfaceNrm += ReconstructNormal(tileTexturesNrm[4].SampleLevel(g_LinearWrap, uv, lod), 1.0f) * baseWeight;
 
   float3 EarthNormal = normalize(In.normal);
   float3 EarthTangent = normalize(In.tangent);
@@ -93,7 +113,7 @@ PsOut main(PsIn In)
   float3 f3TerrainNormal;
 
   if (TerrainInfo.y > 0.5f)
-  {
+  {   
 	  f3TerrainNormal.xzy = NormalMap.SampleLevel(g_LinearMirror, In.texcoord.xy, 0.0).xyz * 2 - 1;
 	  // Since UVs are mirrored, we have to adjust normal coords accordingly:
 	  float2 f2XZSign = sign(0.5 - frac(In.texcoord.xy / 2));

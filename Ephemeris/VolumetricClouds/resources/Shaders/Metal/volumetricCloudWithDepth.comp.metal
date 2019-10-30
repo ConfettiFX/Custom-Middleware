@@ -569,7 +569,7 @@ struct Compute_Shader
         float depth;
         float EARTH_RADIUS_ADD_CLOUDS_LAYER_END = ((float)(_EARTH_RADIUS_ADD_CLOUDS_LAYER_START) + (VolumetricCloudsCBuffer.g_VolumetricClouds).LayerThickness);
         float EARTH_RADIUS_ADD_CLOUDS_LAYER_END2 = (EARTH_RADIUS_ADD_CLOUDS_LAYER_END * EARTH_RADIUS_ADD_CLOUDS_LAYER_END);
-        float randomSeed = mix(0.0, (VolumetricCloudsCBuffer.g_VolumetricClouds).Random00, (VolumetricCloudsCBuffer.g_VolumetricClouds).m_UseRandomSeed);
+        float randomSeed = mix(frac(randomFromScreenUV(db_uvs * VolumetricCloudsCBuffer.g_VolumetricClouds.TimeAndScreenSize.zw)), (VolumetricCloudsCBuffer.g_VolumetricClouds).Random00, (VolumetricCloudsCBuffer.g_VolumetricClouds).m_UseRandomSeed);
         float dentisy = GetDensityWithComparingDepth((CameraPosition).xyz, (worldPos).xyz, viewDir, MAX_SAMPLE_DISTANCE, randomSeed, EARTH_RADIUS_ADD_CLOUDS_LAYER_END, EARTH_RADIUS_ADD_CLOUDS_LAYER_END2, intensity, atmosphereBlendFactor, depth, db_uvs);
         (DstTexture.write(float4(intensity, atmosphereBlendFactor, depth, dentisy), uint2(int2((DTid).xy))));
     };

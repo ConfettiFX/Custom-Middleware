@@ -9,9 +9,9 @@
 
 cbuffer SpaceUniform : register(b1, UPDATE_FREQ_PER_FRAME)
 {
-	float4x4 ViewProjMat;
-	float4 LightDirection;
-	float4 ScreenSize;
+    float4x4 ViewProjMat;
+    float4 LightDirection;
+    float4 ScreenSize;
   	float4 NebulaHighColor;
   	float4 NebulaMidColor;
   	float4 NebulaLowColor;

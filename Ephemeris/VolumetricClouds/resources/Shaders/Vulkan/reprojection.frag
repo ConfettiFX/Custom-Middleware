@@ -35,11 +35,11 @@ vec4 HLSLmain(in PSIn input0)
     vec4 prevUV;
     vec4 worldPos;
     vec2 NDC = vec2(((((input0).m_Tex0).x * float (2.0)) - float (1.0)), (((float (1.0) - ((input0).m_Tex0).y) * float (2.0)) - float (1.0)));
-    (worldPos = (((VolumetricCloudsCBuffer.g_VolumetricClouds).m_ProjToWorldMat_1st)*(vec4(NDC, 0.0, 1.0))));
+    (worldPos = (((VolumetricCloudsCBuffer.g_VolumetricClouds).m_DataPerEye[0].m_ProjToWorldMat)*(vec4(NDC, 0.0, 1.0))));
     (worldPos /= vec4 ((worldPos).w));
-    vec3 viewDir = normalize(((worldPos).xyz - ((VolumetricCloudsCBuffer.g_VolumetricClouds).cameraPosition_1st).xyz));
-    vec3 firstHitRayPos = ((viewDir * vec3 (depth)) + ((VolumetricCloudsCBuffer.g_VolumetricClouds).cameraPosition_1st).xyz);
-    (prevUV = (((VolumetricCloudsCBuffer.g_VolumetricClouds).m_PrevWorldToProjMat_1st)*(vec4(firstHitRayPos, 1.0))));
+    vec3 viewDir = normalize(((worldPos).xyz - ((VolumetricCloudsCBuffer.g_VolumetricClouds).m_DataPerEye[0].cameraPosition).xyz));
+    vec3 firstHitRayPos = ((viewDir * vec3 (depth)) + ((VolumetricCloudsCBuffer.g_VolumetricClouds).m_DataPerEye[0].cameraPosition).xyz);
+    (prevUV = (((VolumetricCloudsCBuffer.g_VolumetricClouds).m_DataPerEye[0].m_PrevWorldToProjMat)*(vec4(firstHitRayPos, 1.0))));
     (prevUV /= vec4 ((prevUV).w));
     ((prevUV).xy = vec2((((prevUV).x + float (1.0)) * float (0.5)), ((float (1.0) - (prevUV).y) * float (0.5))));
     (outOfBound = step(float (0.0), max(max((-(prevUV).x), (-(prevUV).y)), (max((prevUV).x, (prevUV).y) - float (1.0)))));

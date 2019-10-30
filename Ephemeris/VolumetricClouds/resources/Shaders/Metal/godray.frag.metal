@@ -37,13 +37,13 @@ struct Fragment_Shader
     {
         float2 db_uvs = (input).TexCoord;
         float3 sunWorldPos = (((VolumetricCloudsCBuffer.g_VolumetricClouds).lightDirection).xyz * (float3)(1000000.0));
-        float4 sunPos = (((VolumetricCloudsCBuffer.g_VolumetricClouds).m_WorldToProjMat_1st)*(float4(sunWorldPos, 1.0)));
+        float4 sunPos = (((VolumetricCloudsCBuffer.g_VolumetricClouds).m_DataPerEye[0].m_WorldToProjMat)*(float4(sunWorldPos, 1.0)));
         ((sunPos).xy /= (float2)((sunPos).w));
         float2 ScreenNDC = float2(((((input).TexCoord).x * (float)(2.0)) - (float)(1.0)), ((((float)(1.0) - ((input).TexCoord).y) * (float)(2.0)) - (float)(1.0)));
         float3 projectedPosition = float3((ScreenNDC).xy, 0.0);
-        float4 worldPos = (((VolumetricCloudsCBuffer.g_VolumetricClouds).m_ProjToWorldMat_1st)*(float4(projectedPosition, 1.0)));
+        float4 worldPos = (((VolumetricCloudsCBuffer.g_VolumetricClouds).m_DataPerEye[0].m_ProjToWorldMat)*(float4(projectedPosition, 1.0)));
         (worldPos /= (float4)((worldPos).w));
-        float4 CameraPosition = (VolumetricCloudsCBuffer.g_VolumetricClouds).cameraPosition_1st;
+        float4 CameraPosition = (VolumetricCloudsCBuffer.g_VolumetricClouds).m_DataPerEye[0].cameraPosition;
         float3 viewDir = normalize(((worldPos).xyz - (CameraPosition).xyz));
         float cosTheta = saturate(dot(viewDir, ((VolumetricCloudsCBuffer.g_VolumetricClouds).lightDirection).xyz));
         if (((cosTheta <= 0.0) || ((sunPos).z < (float)(0.0))))
@@ -54,7 +54,7 @@ struct Fragment_Shader
         float cosTheta4 = (cosTheta2 * cosTheta2);
         float cosTheta16 = (cosTheta4 * cosTheta4);
         float cosTheta32 = (cosTheta16 * cosTheta2);
-        float cosTheta64 = (cosTheta16 * cosTheta4);
+		
         float2 deltaTexCoord = float2((ScreenNDC - (sunPos).xy));
         if ((length(deltaTexCoord) > (float)(1.0)))
         {
@@ -69,13 +69,14 @@ struct Fragment_Shader
         for (uint i = 0; (i < (uint)(80)); (i++))
         {
             (texCoord -= deltaTexCoord);
-            float localDensity = ((float)(1.0) - (float)(g_PrevFrameTexture.sample(g_LinearBorderSampler, texCoord).a));
+            float localDensity = ((float)(1.0) - (float)(g_PrevFrameTexture.sample(g_LinearBorderSampler, texCoord, level(0)).a));
+           
             (localDensity *= (illuminationDecay * (VolumetricCloudsCBuffer.g_VolumetricClouds).GodrayWeight));
             (finalIntensity += localDensity);
             (illuminationDecay *= (VolumetricCloudsCBuffer.g_VolumetricClouds).GodrayDecay);
         }
         (finalIntensity *= (VolumetricCloudsCBuffer.g_VolumetricClouds).GodrayExposure);
-        (finalIntensity += min(((VolumetricCloudsCBuffer.g_VolumetricClouds).CloudCoverage * (float)(5.0)), 0.0));
+        (finalIntensity += min(((VolumetricCloudsCBuffer.g_VolumetricClouds).m_DataPerLayer[0].CloudCoverage * (float)(5.0)), 0.0));
         (finalIntensity = saturate(finalIntensity));
 		
 		float3 LightColor = VolumetricCloudsCBuffer.g_VolumetricClouds.lightColorAndIntensity.rgb * VolumetricCloudsCBuffer.g_VolumetricClouds.lightColorAndIntensity.a;

@@ -41,23 +41,23 @@ struct Fragment_Shader
 	
     float4 main(PSIn input)
     {
-        float2 db_uvs = (input).TexCoord;
-        float3 sunWorldPos = VolumetricCloudsCBuffer.g_VolumetricClouds.lightDirection.xyz * 1000000.0;
+        
+        float3 sunWorldPos = VolumetricCloudsCBuffer.g_VolumetricClouds.lightDirection.xyz * 63600000.0;
         float4 sunPos;
-        (sunPos = (((VolumetricCloudsCBuffer.g_VolumetricClouds).m_WorldToProjMat_1st)*(float4(sunWorldPos, 1.0))));
+        (sunPos = (((VolumetricCloudsCBuffer.g_VolumetricClouds).m_DataPerEye[0].m_WorldToProjMat)*(float4(sunWorldPos, 1.0))));
         ((sunPos).xy /= (float2)((sunPos).w));
         float2 ScreenNDC = float2(((((input).TexCoord).x * (float)(2.0)) - (float)(1.0)), ((((float)(1.0) - ((input).TexCoord).y) * (float)(2.0)) - (float)(1.0)));
         float3 projectedPosition = float3((ScreenNDC).xy, 0.0);
-        float4 worldPos = (((VolumetricCloudsCBuffer.g_VolumetricClouds).m_ProjToWorldMat_1st)*(float4(projectedPosition, 1.0)));
+        float4 worldPos = (((VolumetricCloudsCBuffer.g_VolumetricClouds).m_DataPerEye[0].m_ProjToWorldMat)*(float4(projectedPosition, 1.0)));
         (worldPos /= (float4)((worldPos).w));
-        float4 CameraPosition = (VolumetricCloudsCBuffer.g_VolumetricClouds).cameraPosition_1st;
+        float4 CameraPosition = (VolumetricCloudsCBuffer.g_VolumetricClouds).m_DataPerEye[0].cameraPosition;
         float3 viewDir = normalize(((worldPos).xyz - (CameraPosition).xyz));
         float cosTheta = saturate(dot(viewDir, ((VolumetricCloudsCBuffer.g_VolumetricClouds).lightDirection).xyz));
         if (((cosTheta <= 0.0) || ((sunPos).z < (float)(0.0))))
         {
             return float4(0.0, 0.0, 0.0, 0.0);
         }
-        float sceneDepth = depthTexture.sample(g_LinearClampSampler, (input).TexCoord, level(0)).r;
+        
         float4 GodrayColor = saturate(g_GodrayTexture.sample(g_LinearClampSampler, (input).TexCoord));
         return pow(GodrayColor, 1.0);
     };

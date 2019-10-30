@@ -24,7 +24,7 @@ float4 main(PSIn input) : SV_TARGET
 	float4 volumetricCloudsResult = g_PostProcessedTexture.Sample(g_LinearClampSampler, input.TexCoord);
 	float sceneDepth = depthTexture.SampleLevel(g_LinearClampSampler, input.TexCoord, 0).r;
 
-	float atmosphericBlendFactor = UnPackFloat16(g_PrevVolumetricCloudTexture.SampleLevel(g_LinearClampSampler, input.TexCoord, 0).g);
+	float atmosphericBlendFactor = g_PrevVolumetricCloudTexture.SampleLevel(g_LinearClampSampler, input.TexCoord, 0).g;
 
   if(g_VolumetricClouds.EnabledDepthCulling > 0.5)
 	  return float4(volumetricCloudsResult.rgb, sceneDepth >= 1.0 ? 1.0 - getAtmosphereBlendForComposite(atmosphericBlendFactor) : 0.0f);

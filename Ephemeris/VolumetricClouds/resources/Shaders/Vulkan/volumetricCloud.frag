@@ -34,21 +34,16 @@ vec4 HLSLmain(in PSIn input0)
     ((ScreenNDC).x = (((ScreenUV).x * float (2.0)) - float (1.0)));
     ((ScreenNDC).y = (((float (1.0) - (ScreenUV).y) * float (2.0)) - float (1.0)));
     vec3 projectedPosition = vec3((ScreenNDC).xy, 0.0);
-    vec4 worldPos = (((VolumetricCloudsCBuffer.g_VolumetricClouds).m_ProjToWorldMat_1st)*(vec4(projectedPosition, 1.0)));
-    vec4 CameraPosition = (VolumetricCloudsCBuffer.g_VolumetricClouds).cameraPosition_1st;
+    vec4 worldPos = (((VolumetricCloudsCBuffer.g_VolumetricClouds).m_DataPerEye[0].m_ProjToWorldMat)*(vec4(projectedPosition, 1.0)));
+    vec4 CameraPosition = (VolumetricCloudsCBuffer.g_VolumetricClouds).m_DataPerEye[0].cameraPosition;
     (worldPos /= vec4 ((worldPos).w));
     vec3 viewDir = normalize(((worldPos).xyz - (CameraPosition).xyz));
     float intensity;
     float atmosphereBlendFactor;
     float depth;
 
-    float EARTH_RADIUS_ADD_CLOUDS_LAYER_END = (_EARTH_RADIUS_ADD_CLOUDS_LAYER_START + VolumetricCloudsCBuffer.g_VolumetricClouds.LayerThickness);
-    float EARTH_RADIUS_ADD_CLOUDS_LAYER_END2 = EARTH_RADIUS_ADD_CLOUDS_LAYER_END * EARTH_RADIUS_ADD_CLOUDS_LAYER_END;
-
-    float randomSeed = mix(0.0, (VolumetricCloudsCBuffer.g_VolumetricClouds).Random00, (VolumetricCloudsCBuffer.g_VolumetricClouds).m_UseRandomSeed);
-    float dentisy = GetDensity((CameraPosition).xyz, (worldPos).xyz, viewDir, float (MAX_SAMPLE_DISTANCE), randomSeed,
-      EARTH_RADIUS_ADD_CLOUDS_LAYER_END, EARTH_RADIUS_ADD_CLOUDS_LAYER_END2,
-     intensity, atmosphereBlendFactor, depth, db_uvs);
+    float randomSeed = mix(0.0, (VolumetricCloudsCBuffer.g_VolumetricClouds).Random00, (VolumetricCloudsCBuffer.g_VolumetricClouds).m_UseRandomSeed);    
+    float dentisy = GetDensity(CameraPosition.xyz, worldPos.xyz, viewDir, randomSeed, intensity, atmosphereBlendFactor, depth, db_uvs);
     return vec4(intensity, atmosphereBlendFactor, depth, dentisy);
 }
 

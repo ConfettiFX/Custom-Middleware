@@ -58,13 +58,31 @@ struct Fragment_Shader
         return tangentNormal;
     }
 
+    float MipLevel( float2 uv )
+    {
+        float TextureSize = 2048.0f;
+
+        float2 dx = dfdx( uv * TextureSize );
+        float2 dy = dfdy( uv * TextureSize );
+        float d = max( dot( dx, dx ), dot( dy, dy ) );
+
+        uint MipCount = uint(log2(TextureSize)) + 1;
+        
+        // Clamp the value to the max mip level counts
+        float rangeClamp = pow(2.0f, (float)MipCount - 1.0f);
+        d = clamp(sqrt(d), 1.0, rangeClamp);
+            
+        float mipLevel = 0.75f * log2(d);
+        return mipLevel;
+    }
+
     PsOut main(PsIn In)
     {
         PsOut Out;
-        float linearDepth = DepthLinearization(((In).position).z, (RenderTerrainUniformBuffer.CameraInfo).x, (RenderTerrainUniformBuffer.CameraInfo).y);
+        
         float dist = distance((RenderTerrainUniformBuffer.CameraInfo).xyz, (In).positionWS);
         (dist = (dist / (RenderTerrainUniformBuffer.CameraInfo).w));
-        float lod = 4.0;
+        
         float4 maskVal = MaskMap.sample(g_LinearMirror, (In).texcoord, level(0.0));
         float baseWeight = saturate(((float)(1) - dot(maskVal, float4(1, 1, 1, 1))));
         float baseTileScale = 70;
@@ -73,14 +91,19 @@ struct Fragment_Shader
         float3 surfaceNrm = (float3)(0);
         for (uint i = 0; (i < (uint)(4)); (++i))
         {
-            (result += (float3)(tileTextures[i].sample(g_LinearWrap, ((In).texcoord * (float2)(tileScale[i])), level(lod)).xyz * (float3)(maskVal[i])));
-            //(surfaceNrm += ((float3)(tileTexturesNrm[i].sample(g_LinearWrap, ((In).texcoord * (float2)(tileScale[i])), level(lod)).xyz * (float3)(2) - (float3)(1)) * (float3)(maskVal[i])));
-            surfaceNrm += (float3)ReconstructNormal(tileTexturesNrm[i].sample(g_LinearWrap, In.texcoord * (float2)tileScale[i],  level(lod)), 1.0f) * (float3)maskVal[i];
+            float2 uv = In.texcoord * tileScale[i];
+            float lod = MipLevel(uv);
+            (result += (float3)(tileTextures[i].sample(g_LinearWrap, uv, level(lod)).xyz * (float3)(maskVal[i])));
+            //(surfaceNrm += ((float3)(tileTexturesNrm[i].sample(g_LinearWrap, uv, level(lod)).xyz * (float3)(2) - (float3)(1)) * (float3)(maskVal[i])));
+            surfaceNrm += (float3)ReconstructNormal(tileTexturesNrm[i].sample(g_LinearWrap, uv, level(lod)), 1.0f) * (float3)maskVal[i];
         }
-        float3 baseColor = tileTextures[4].sample(g_LinearWrap, ((In).texcoord * (float2)(baseTileScale)), level(lod)).xyz * (float3)(baseWeight);
+        
+        float2 uv = In.texcoord * baseTileScale;
+        float lod = MipLevel(uv);
+        float3 baseColor = tileTextures[4].sample(g_LinearWrap, uv, level(lod)).xyz * (float3)(baseWeight);
         (result += baseColor);
-        //(surfaceNrm += (float3)(tileTexturesNrm[4].sample(g_LinearWrap, ((In).texcoord * (float2)(baseTileScale)), level(lod)).xyz * (float3)(baseWeight)));
-        surfaceNrm += (float3)ReconstructNormal(tileTexturesNrm[4].sample(g_LinearWrap, In.texcoord * baseTileScale,  level(lod)), 1.0f) * (float3)baseWeight;
+        //(surfaceNrm += (float3)(tileTexturesNrm[4].sample(g_LinearWrap, uv, level(lod)).xyz * (float3)(baseWeight)));
+        surfaceNrm += (float3)ReconstructNormal(tileTexturesNrm[4].sample(g_LinearWrap, uv,  level(lod)), 1.0f) * (float3)baseWeight;
         float3 EarthNormal = normalize((In).normal);
         float3 EarthTangent = normalize((In).tangent);
         float3 EarthBitangent = normalize((In).bitangent);

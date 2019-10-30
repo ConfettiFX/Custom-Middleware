@@ -29,8 +29,8 @@ float4 main(in PSIn input) : SV_TARGET
 	ScreenNDC.y = (1.0 - ScreenUV.y) * 2.0 - 1.0;
 
 	float3 projectedPosition = float3(ScreenNDC.xy, 0.0);
-	float4 worldPos = mul(g_VolumetricClouds.m_ProjToWorldMat_1st, float4(projectedPosition, 1.0));
-	float4 CameraPosition = g_VolumetricClouds.cameraPosition_1st;
+	float4 worldPos = mul(g_VolumetricClouds.m_DataPerEye[0].m_ProjToWorldMat, float4(projectedPosition, 1.0));
+	float4 CameraPosition = g_VolumetricClouds.m_DataPerEye[0].cameraPosition;
 	worldPos /= worldPos.w;
 
 
@@ -39,15 +39,9 @@ float4 main(in PSIn input) : SV_TARGET
 	float intensity;
 	float atmosphereBlendFactor;
 	float depth;
-
-  float EARTH_RADIUS_ADD_CLOUDS_LAYER_END = (_EARTH_RADIUS_ADD_CLOUDS_LAYER_START + g_VolumetricClouds.LayerThickness);
-  float EARTH_RADIUS_ADD_CLOUDS_LAYER_END2 = EARTH_RADIUS_ADD_CLOUDS_LAYER_END * EARTH_RADIUS_ADD_CLOUDS_LAYER_END;
-
-	//_RaymarchOffset
-	//float randomSeed = lerp(frac(randomFromScreenUV(db_uvs * g_VolumetricClouds.TimeAndScreenSize.zw)), g_VolumetricClouds.Random00, g_VolumetricClouds.m_UseRandomSeed);
+	
 	float randomSeed = lerp(0.0f, g_VolumetricClouds.Random00, g_VolumetricClouds.m_UseRandomSeed);
-	float dentisy = GetDensity(CameraPosition.xyz, worldPos.xyz, viewDir, MAX_SAMPLE_DISTANCE, randomSeed,
-    EARTH_RADIUS_ADD_CLOUDS_LAYER_END, EARTH_RADIUS_ADD_CLOUDS_LAYER_END2,
+	float dentisy = GetDensity(CameraPosition.xyz, worldPos.xyz, viewDir, randomSeed,
     intensity, atmosphereBlendFactor, depth, db_uvs);
 		   
 	return float4(intensity, atmosphereBlendFactor, depth, dentisy);

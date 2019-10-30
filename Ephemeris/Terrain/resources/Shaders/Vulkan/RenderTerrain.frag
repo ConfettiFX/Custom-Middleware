@@ -17,22 +17,22 @@ layout(location = 4) in vec3 fragInput_Bitangent;
 layout(location = 0) out vec4 rast_FragData0; 
 layout(location = 1) out vec4 rast_FragData1; 
 
-layout(UPDATE_FREQ_PER_FRAME, binding = 0) uniform RenderTerrainUniformBuffer_Block
+layout(set = 1, binding = 0) uniform RenderTerrainUniformBuffer_Block
 {
     mat4 projView;
     vec4 TerrainInfo;
     vec4 CameraInfo;
 }RenderTerrainUniformBuffer;
 
-layout(UPDATE_FREQ_NONE, binding = 0) uniform texture2D NormalMap;
-layout(UPDATE_FREQ_NONE, binding = 1) uniform texture2D MaskMap;
-layout(UPDATE_FREQ_NONE, binding = 2) uniform texture2D tileTextures[5];
-layout(UPDATE_FREQ_NONE, binding = 7) uniform texture2D tileTexturesNrm[5];
-layout(UPDATE_FREQ_NONE, binding = 12) uniform texture2D shadowMap;
+layout(set = 0, binding = 0) uniform texture2D NormalMap;
+layout(set = 0, binding = 1) uniform texture2D MaskMap;
+layout(set = 0, binding = 2) uniform texture2D tileTextures[5];
+layout(set = 0, binding = 7) uniform texture2D tileTexturesNrm[5];
+layout(set = 0, binding = 12) uniform texture2D shadowMap;
 
-layout(UPDATE_FREQ_NONE, binding = 13) uniform sampler g_LinearMirror;
-layout(UPDATE_FREQ_NONE, binding = 14) uniform sampler g_LinearWrap;
-layout(UPDATE_FREQ_NONE, binding = 15) uniform sampler g_LinearBorder;
+layout(set = 0, binding = 13) uniform sampler g_LinearMirror;
+layout(set = 0, binding = 14) uniform sampler g_LinearWrap;
+layout(set = 0, binding = 15) uniform sampler g_LinearBorder;
 
 struct PsIn
 {
@@ -61,13 +61,31 @@ vec3 ReconstructNormal(in vec4 sampleNormal, float intensity)
   return tangentNormal;
 }
 
+float MipLevel( vec2 uv )
+{
+  float TextureSize = 2048.0f;
+
+  vec2 dx = dFdx( uv * TextureSize );
+  vec2 dy = dFdy( uv * TextureSize );
+  float d = max( dot( dx, dx ), dot( dy, dy ) );
+
+  uint MipCount = uint(log2(TextureSize)) + 1;
+  
+  // Clamp the value to the max mip level counts
+  float rangeClamp = pow(2, MipCount - 1);
+  d = clamp(sqrt(d), 1.0, rangeClamp);
+      
+  float mipLevel = 0.75f * log2(d);
+  return mipLevel;
+}
+
 PsOut HLSLmain(PsIn In)
 {
     PsOut Out;
     float linearDepth = DepthLinearization(((In).position).z, (RenderTerrainUniformBuffer.CameraInfo).x, (RenderTerrainUniformBuffer.CameraInfo).y);
     float dist = distance((RenderTerrainUniformBuffer.CameraInfo).xyz, (In).positionWS);
     (dist = (dist / (RenderTerrainUniformBuffer.CameraInfo).w));
-    float lod = 4.0;
+    
     vec4 maskVal = textureLod(sampler2D( MaskMap, g_LinearMirror), vec2((In).texcoord), int (0.0));
     float baseWeight = clamp((float (1) - dot(maskVal, vec4(1, 1, 1, 1))), 0.0, 1.0);
     float baseTileScale = float (70);
@@ -76,16 +94,20 @@ PsOut HLSLmain(PsIn In)
     vec3 surfaceNrm = vec3 (0);
     for (uint i = uint (0); (i < uint (4)); (++i))
     {
-        (result += vec3 (((textureLod(sampler2D( tileTextures[i], g_LinearWrap), vec2(((In).texcoord * vec2 (tileScale[i]))), lod)).xyz * vec3 (maskVal[i]))));
-        //(surfaceNrm += (vec3 ((((textureLod(sampler2D( tileTexturesNrm[i], g_LinearWrap), vec2(((In).texcoord * vec2 (tileScale[i]))), lod)).xyz * vec3 (2)) - vec3 (1))) * vec3 (maskVal[i])));
+        vec2 uv = In.texcoord * tileScale[i];
+        float lod = MipLevel(uv);
+        (result += vec3 (((textureLod(sampler2D( tileTextures[i], g_LinearWrap), uv, lod)).xyz * vec3 (maskVal[i]))));
+        //(surfaceNrm += (vec3 ((((textureLod(sampler2D( tileTexturesNrm[i], g_LinearWrap), uv, lod)).xyz * vec3 (2)) - vec3 (1))) * vec3 (maskVal[i])));
 
         surfaceNrm += ReconstructNormal(textureLod(sampler2D(tileTexturesNrm[i], g_LinearWrap), In.texcoord * tileScale[i], lod), 1.0f) * maskVal[i];
     }
-    vec3 baseColor = vec3 (((textureLod(sampler2D( tileTextures[4], g_LinearWrap), vec2(((In).texcoord * vec2 (baseTileScale))), lod)).xyz * vec3 (baseWeight)));
+    vec2 uv = In.texcoord * baseTileScale;
+    float lod = MipLevel(uv);
+    vec3 baseColor = vec3 (((textureLod(sampler2D( tileTextures[4], g_LinearWrap), uv, lod)).xyz * vec3 (baseWeight)));
     (result += baseColor);
-    //(surfaceNrm += vec3 (((textureLod(sampler2D( tileTexturesNrm[4], g_LinearWrap), vec2(((In).texcoord * vec2 (baseTileScale))), lod)).xyz * vec3 (baseWeight))));
+    //(surfaceNrm += vec3 (((textureLod(sampler2D( tileTexturesNrm[4], g_LinearWrap), uv, lod)).xyz * vec3 (baseWeight))));
 
-    surfaceNrm += ReconstructNormal(textureLod(sampler2D(tileTexturesNrm[4], g_LinearWrap), In.texcoord * baseTileScale, lod), 1.0f) * baseWeight;
+    surfaceNrm += ReconstructNormal(textureLod(sampler2D(tileTexturesNrm[4], g_LinearWrap), uv, lod), 1.0f) * baseWeight;
 
     vec3 EarthNormal = normalize((In).normal);
     vec3 EarthTangent = normalize((In).tangent);
