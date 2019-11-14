@@ -3328,7 +3328,7 @@ bool VolumetricClouds::AddVolumetricCloudsRenderTargets()
 	RenderTargetDesc PostProcessRT = {};
 	PostProcessRT.mArraySize = 1;
 	PostProcessRT.mDepth = 1;
-	PostProcessRT.mFormat = TinyImageFormat_B10G11R11_UFLOAT;
+	PostProcessRT.mFormat = TinyImageFormat_R10G10B10A2_UNORM;
 	PostProcessRT.mSampleCount = SAMPLE_COUNT_1;
 	PostProcessRT.mSampleQuality = 0;
 
@@ -3363,7 +3363,7 @@ bool VolumetricClouds::AddVolumetricCloudsRenderTargets()
 	RenderTargetDesc GodrayRT = {};
 	GodrayRT.mArraySize = 1;
 	GodrayRT.mDepth = 1;
-	GodrayRT.mFormat = TinyImageFormat_B10G11R11_UFLOAT;
+	GodrayRT.mFormat = TinyImageFormat_R10G10B10A2_UNORM;
 	GodrayRT.mSampleCount = SAMPLE_COUNT_1;
 	GodrayRT.mSampleQuality = 0;
 	GodrayRT.mFlags = TEXTURE_CREATION_FLAG_OWN_MEMORY_BIT;
