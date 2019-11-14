@@ -641,7 +641,7 @@ bool Sky::Load(RenderTarget** rts, uint32_t count)
 	RenderTargetDesc SkyRenderTarget = {};
 	SkyRenderTarget.mArraySize = 1;
 	SkyRenderTarget.mDepth = 1;
-	SkyRenderTarget.mFormat = TinyImageFormat_B10G11R11_UFLOAT;
+	SkyRenderTarget.mFormat = TinyImageFormat_R10G10B10A2_UNORM;
 	SkyRenderTarget.mSampleCount = SAMPLE_COUNT_1;
 	SkyRenderTarget.mSampleQuality = 0;
 	//SkyRenderTarget.mSrgb = false;
