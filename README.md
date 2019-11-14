@@ -47,6 +47,10 @@ Check out the demo video by clicking the main image above!
 # News
 All releases happen in sync with [The Forge](https://github.com/ConfettiFX/The-Forge) and have therefore the same release number.
 
+
+## Release 1.38 - November 14th - Cross-Platform Path Tracer
+Maintenance release following the update of The Forge. 
+
 ## Release 1.37 - October 28th, 2019
 * New features
   * Add Earth radius: controls the radius of clouds' radius with scale factor. The clouds field will be flatter and the user can see further along the horizon if the radius increase
