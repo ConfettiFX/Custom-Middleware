@@ -47,6 +47,24 @@ Check out the demo video by clicking the main image above!
 # News
 All releases happen in sync with [The Forge](https://github.com/ConfettiFX/The-Forge) and have therefore the same release number.
 
+## Release 1.39 - November 26th - Sparse Virtual Textures | Stormland
+Ephemeris 2 - the game Stormland from Insomniac was released. This game is using a custom version of Ephemeris 2. We worked for more than six months on this project.
+
+![Stormland](Screenshots/Stormland/Capture_2019_11_15_08_43_35_881.png) 
+
+![Stormland](Screenshots/Stormland/Capture_2019_11_15_08_43_21_794.png) 
+
+![Stormland](Screenshots/Stormland/Capture_2019_11_15_08_42_52_603.png) 
+
+![Stormland](Screenshots/Stormland/Capture_2019_11_15_08_42_19_713.png) 
+
+![Stormland](Screenshots/Stormland/Capture_2019_11_15_08_42_09_931.png) 
+
+![Stormland](Screenshots/Stormland/Capture_2019_11_15_08_42_09_931.png) 
+
+![Stormland](Screenshots/Stormland/Capture_2019_11_15_08_41_38_457.png) 
+
+
 
 ## Release 1.38 - November 14th - Cross-Platform Path Tracer
 Maintenance release following the update of The Forge. 
@@ -68,49 +86,6 @@ Maintenance release following the update of The Forge.
 ## Release 1.36 - October 18th, 2019
 Maintenance release following the upate of the Forge.
 
-## Release 1.35 - October 3rd, 2019
-Maintenance release following the upate of the Forge.
-
-## Release 1.34 - September 23rd
-Maintenance release following the upate of the Forge.
-
-## Release 1.33 - August 30th
-Maintenance release following the upate of the Forge.
-
-## Release 1.36 - October 18th, 2019
-Maintenance release following the upate of the Forge.
-
-## Release 1.35 - October 3rd, 2019
-Maintenance release following the upate of the Forge.
-
-## Release 1.34 - September 23rd
-Maintenance release following the upate of the Forge.
-
-## Release 1.33 - August 30th
-Maintenance release following the upate of the Forge.
-
-## Release 1.32 - August 9th - Ephemeris Night Sky update 
-* Add Procedural Night Sky and Star-field - the night sky's nebula colors are now customizable
-* Add Glow effects on Sun and Moon
-* Fix the issue that Godrays can be drawn on unexpected area
-
-Click on the following screenshot to see a movie:
-
- [![Ephemeris 2](Screenshots/NightSky02.png)](https://vimeo.com/352541826)
-
- More night scene screenshots:
-
-![Ephemeris 2](Screenshots/NightSky03.png)
-
-![Ephemeris 2](Screenshots/NightSky04.png)
-
-![Ephemeris 2](Screenshots/NightSky05.png)
-
-![Ephemeris 2](Screenshots/NightSky06.png)
-
-![Ephemeris 2](Screenshots/NightSky07.png)
-
-![Ephemeris 2](Screenshots/NightSky08.png)
 
  
 ## Installation
@@ -129,9 +104,22 @@ The release version of Ephemeris and the release version of The Forge need to be
 
 We can customize Ephemeris to fit your game engine (UE4, Unity, and even any custom engine)!
 
-Below is the list of our customers
+### [Insomniac Games](https://insomniac.games/) - the game Stormland is using a custom version of Ephemeris 2. We worked for more than six months on this project.
 
-- [Insomniac Games](https://insomniac.games/)
+![Stormland](Screenshots/Stormland/Capture_2019_11_15_08_43_35_881.png) 
+
+![Stormland](Screenshots/Stormland/Capture_2019_11_15_08_43_21_794.png) 
+
+![Stormland](Screenshots/Stormland/Capture_2019_11_15_08_42_52_603.png) 
+
+![Stormland](Screenshots/Stormland/Capture_2019_11_15_08_42_19_713.png) 
+
+![Stormland](Screenshots/Stormland/Capture_2019_11_15_08_42_09_931.png) 
+
+![Stormland](Screenshots/Stormland/Capture_2019_11_15_08_41_47_994.png) 
+
+![Stormland](Screenshots/Stormland/Capture_2019_11_15_08_41_38_457.png) 
+
 
 
 ## License
