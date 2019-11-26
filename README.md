@@ -58,7 +58,7 @@ Ephemeris 2 - the game Stormland from Insomniac was released. This game is using
 
 ![Stormland](Screenshots/Stormland/Capture_2019_11_15_08_42_19_713.png) 
 
-![Stormland](Screenshots/Stormland/Capture_2019_11_15_08_42_09_931.png) 
+![Stormland](Screenshots/Stormland/Capture_2019_11_15_08_41_47_994.png) 
 
 ![Stormland](Screenshots/Stormland/Capture_2019_11_15_08_42_09_931.png) 
 
