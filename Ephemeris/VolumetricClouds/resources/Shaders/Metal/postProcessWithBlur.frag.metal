@@ -71,11 +71,11 @@ struct ArgsData
     texture2d<float> weatherTexture;
     texture2d<float> depthTexture;
     texture2d<float> LowResCloudTexture;
-    texture2d<float> g_PrevFrameTexture;
-    sampler g_LinearClampSampler;
+	sampler g_LinearClampSampler;
     sampler g_LinearWrapSampler;
     sampler g_PointClampSampler;
     sampler g_LinearBorderSampler;
+    texture2d<float> g_PrevFrameTexture;    
     texture2d<float> g_SrcTexture2D;
     texture2d<float> g_SkyBackgroudTexture;
     device float4* TransmittanceColor;
