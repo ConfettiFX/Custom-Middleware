@@ -110,6 +110,8 @@
 		B2CFA581230F3E9B006E60B0 /* AppUI.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B264AF8C230F3AAD008F62F4 /* AppUI.cpp */; };
 		B2CFA582230F3E9B006E60B0 /* AppUI.h in Headers */ = {isa = PBXBuildFile; fileRef = B264AF8D230F3AAD008F62F4 /* AppUI.h */; };
 		B2CFA583230F3E9B006E60B0 /* ImguiGUIDriver.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B264AF88230F3AAD008F62F4 /* ImguiGUIDriver.cpp */; };
+		B2FC3D8623849D7600A55710 /* ParallelPrimitives.h in Headers */ = {isa = PBXBuildFile; fileRef = B2FC3D8423849D7500A55710 /* ParallelPrimitives.h */; };
+		B2FC3D8723849D7600A55710 /* ParallelPrimitives.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B2FC3D8523849D7600A55710 /* ParallelPrimitives.cpp */; };
 		E9BF1AA92318BEF8001F2264 /* basisu_transcoder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E9BF1AA52318BEF8001F2264 /* basisu_transcoder.cpp */; };
 /* End PBXBuildFile section */
 
@@ -253,6 +255,8 @@
 		B274BB33230F3CCF000724A9 /* ProfilerBase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ProfilerBase.h; path = ../ThirdParty/OpenSource/MicroProfile/ProfilerBase.h; sourceTree = "<group>"; };
 		B27E653B23340C45002CFCA3 /* ProfilerWidgetsUI.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ProfilerWidgetsUI.cpp; path = ../ThirdParty/OpenSource/MicroProfile/ProfilerWidgetsUI.cpp; sourceTree = "<group>"; };
 		B27E653C23340C45002CFCA3 /* ProfilerWidgetsUI.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ProfilerWidgetsUI.h; path = ../ThirdParty/OpenSource/MicroProfile/ProfilerWidgetsUI.h; sourceTree = "<group>"; };
+		B2FC3D8423849D7500A55710 /* ParallelPrimitives.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ParallelPrimitives.h; path = "../../../../../The-Forge/Middleware_3/ParallelPrimitives/ParallelPrimitives.h"; sourceTree = "<group>"; };
+		B2FC3D8523849D7600A55710 /* ParallelPrimitives.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = ParallelPrimitives.cpp; path = "../../../../../The-Forge/Middleware_3/ParallelPrimitives/ParallelPrimitives.cpp"; sourceTree = "<group>"; };
 		C91D461A1FD9974F00564C8B /* MemoryTracking.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; path = MemoryTracking.cpp; sourceTree = "<group>"; };
 		D205E2831F9F9EC600040CCE /* RingBuffer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RingBuffer.h; sourceTree = "<group>"; };
 		E9BF1AA52318BEF8001F2264 /* basisu_transcoder.cpp */ = {isa = PBXFileReference; explicitFileType = sourcecode.cpp.objcpp; fileEncoding = 4; name = basisu_transcoder.cpp; path = ../../ThirdParty/OpenSource/basis_universal/transcoder/basisu_transcoder.cpp; sourceTree = "<group>"; };
@@ -396,6 +400,7 @@
 		B236E5CC230F2CD800308647 /* Middleware_3 */ = {
 			isa = PBXGroup;
 			children = (
+				B2FC3D8323849D5500A55710 /* ParallelPrimitives */,
 				B236E5CF230F2CF400308647 /* UI */,
 				B236E5CE230F2CEE00308647 /* Text */,
 				B236E5CD230F2CE600308647 /* ECS */,
@@ -481,6 +486,15 @@
 			name = ImGUI;
 			path = "../../../../The-Forge/Common_3/ThirdParty";
 			sourceTree = SOURCE_ROOT;
+		};
+		B2FC3D8323849D5500A55710 /* ParallelPrimitives */ = {
+			isa = PBXGroup;
+			children = (
+				B2FC3D8523849D7600A55710 /* ParallelPrimitives.cpp */,
+				B2FC3D8423849D7500A55710 /* ParallelPrimitives.h */,
+			);
+			name = ParallelPrimitives;
+			sourceTree = "<group>";
 		};
 		D205E2811F9F9C1500040CCE /* FileSystem */ = {
 			isa = PBXGroup;
@@ -671,6 +685,7 @@
 				B2CFA576230F3D00006E60B0 /* ProfilerHTML.h in Headers */,
 				B236E5D1230F2D1600308647 /* Fontstash.h in Headers */,
 				B21CD72023593C1E00D0EDCC /* macOSAppDelegate.h in Headers */,
+				B2FC3D8623849D7600A55710 /* ParallelPrimitives.h in Headers */,
 				5C172F4E214148840074EE71 /* ResourceLoader.h in Headers */,
 				B2CFA574230F3D00006E60B0 /* ProfilerBase.h in Headers */,
 				B20C2A53230F3B010085635C /* imgui_internal.h in Headers */,
@@ -851,6 +866,7 @@
 				65545FC422A830010057C1D1 /* red_black_tree.cpp in Sources */,
 				B27E653D23340C45002CFCA3 /* ProfilerWidgetsUI.cpp in Sources */,
 				B20C2A54230F3B010085635C /* imgui_demo.cpp in Sources */,
+				B2FC3D8723849D7600A55710 /* ParallelPrimitives.cpp in Sources */,
 				B2CFA572230F3D00006E60B0 /* Profiler.cpp in Sources */,
 				5C5582F521413D550019960B /* RingBuffer.h in Sources */,
 				B21CD72E23593C7400D0EDCC /* UnixFileSystem.cpp in Sources */,
