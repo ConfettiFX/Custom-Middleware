@@ -10,7 +10,7 @@
 
 #include "CumulusCloud.h"
 
-#include "../../../../The-Forge/Common_3/Renderer/ResourceLoader.h"
+#include "../../../../The-Forge/Common_3/Renderer/IResourceLoader.h"
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IFileSystem.h"
 #include "../../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IMemory.h"
@@ -98,7 +98,7 @@ void CumulusCloud::moveCloud(const vec3 direction)
 void CumulusCloud::clipCloud( const vec3 & camPos, float XZClipR )
 {
 	//vec2 XZCloudPos = vec2(m_Transform.rows[0].w, m_Transform.rows[2].w);
-  vec2 XZCloudPos = vec2(m_Transform[3][0], m_Transform[3][2]);
+  vec2 XZCloudPos = vec2((float)m_Transform[3][0], m_Transform[3][2]);
 
 	//vec2 XZCamPos = vec2(camPos.x, camPos.z);
   vec2 XZCamPos = vec2(camPos.getX(), camPos.getZ());

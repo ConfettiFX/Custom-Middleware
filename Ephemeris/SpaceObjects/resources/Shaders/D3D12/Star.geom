@@ -44,7 +44,7 @@ void PushVertex(inout TriangleStream<PsIn> Stream, float3 pos, float3 color, flo
 	Out.screenCoord = float2((Out.position.x + 1.0) * 0.5, (1.0 - Out.position.y) * 0.5);
 
 	Out.texCoord.xy = baseTC + vOffset;
-   Out.color = color;
+  Out.color = color;
   
 	Stream.Append(Out);
 }

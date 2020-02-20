@@ -284,11 +284,11 @@ void CloudImpostor::setupRenderer( Cmd *cmd, CumulusCloud *pCloud, const vec3 &c
 	//Renderer.changeRenderTarget(m_tImpostor);
 	//pRenderer->changeRenderTarget(m_tImpostor);
 
-  TextureBarrier barriersImposter[] = {
-      { m_tImpostor->pTexture, RESOURCE_STATE_RENDER_TARGET }
+  RenderTargetBarrier barriersImposter[] = {
+      { m_tImpostor, RESOURCE_STATE_RENDER_TARGET }
 };
 
-  cmdResourceBarrier(cmd, 0, NULL, 1, barriersImposter);
+  cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriersImposter);
 
 	//Renderer.clear(true, false, false);
 	//	TODO: A: clear to neutral color

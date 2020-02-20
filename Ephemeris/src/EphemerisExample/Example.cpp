@@ -8,8 +8,6 @@
 */
 
 //asimp importer
-#include "../../../../The-Forge/Common_3/Tools/AssimpImporter/AssimpImporter.h"
-
 //stl
 #include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/vector.h"
 #include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/string.h"
@@ -31,7 +29,7 @@
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IProfiler.h"
 #include "../../../../The-Forge/Middleware_3/UI/AppUI.h"
 #include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
-#include "../../../../The-Forge/Common_3/Renderer/ResourceLoader.h"
+#include "../../../../The-Forge/Common_3/Renderer/IResourceLoader.h"
 //#include "../../../../The-Forge/Common_3/Renderer/GpuProfiler.h"
 
 //Math
@@ -131,9 +129,11 @@ struct Vertex
 struct FXAAINFO
 {
 	vec2 ScreenSize;
-	uint Use;
-	uint padding00;
+	float Use;
+	float Time;
 };
+
+FXAAINFO gFXAAinfo;
 
 #if defined(TARGET_IOS) || defined(__ANDROID__)
 VirtualJoystickUI   gVirtualJoystick;
@@ -173,7 +173,7 @@ public:
 		PathHandle programDirectory = fsCopyProgramDirectoryPath();
 		if (!fsPlatformUsesBundledResources())
 		{
-			PathHandle resourceDirRoot = fsAppendPathComponent(programDirectory, "../../../src/EphemerisExample");
+			PathHandle resourceDirRoot = fsAppendPathComponent(programDirectory, "../../../../../../CustomMiddleware/Ephemeris/src/EphemerisExample");
 			fsSetResourceDirectoryRootPath(resourceDirRoot);
 
 			fsSetRelativePathForResourceDirectory(RD_TEXTURES, "../../Resources/");
@@ -192,14 +192,19 @@ public:
 			return false;
 
 		QueueDesc queueDesc = {};
-		queueDesc.mType = CMD_POOL_DIRECT;
+		queueDesc.mType = QUEUE_TYPE_GRAPHICS;
 		queueDesc.mFlag = QUEUE_FLAG_INIT_MICROPROFILE;
 		addQueue(pRenderer, &queueDesc, &pGraphicsQueue);
-		addCmdPool(pRenderer, pGraphicsQueue, false, &pGraphicsCmdPool);
-		addCmd_n(pGraphicsCmdPool, false, gImageCount, &ppGraphicsCmds);
+		CmdPoolDesc cmdPoolDesc = {};
+		cmdPoolDesc.pQueue = pGraphicsQueue;
+		addCmdPool(pRenderer, &cmdPoolDesc, &pGraphicsCmdPool);
+		CmdDesc cmdDesc = {};
+		cmdDesc.pPool = pGraphicsCmdPool;
+		addCmd_n(pRenderer, &cmdDesc, gImageCount, &ppGraphicsCmds);
 
-		addCmdPool(pRenderer, pGraphicsQueue, false, &pTransCmdPool);
-		addCmd_n(pTransCmdPool, false, 1, &ppTransCmds);
+		addCmdPool(pRenderer, &cmdPoolDesc, &pTransCmdPool);
+		cmdDesc.pPool = pTransCmdPool;
+		addCmd_n(pRenderer, &cmdDesc, 1, &ppTransCmds);
 
 		addFence(pRenderer, &pTransitionCompleteFences);
 
@@ -314,7 +319,7 @@ public:
 		screenQuadVbDesc.mDesc.mVertexStride = sizeof(float) * 5;
 		screenQuadVbDesc.pData = screenQuadPoints;
 		screenQuadVbDesc.ppBuffer = &pScreenQuadVertexBuffer;
-		addResource(&screenQuadVbDesc);
+		addResource(&screenQuadVbDesc, NULL, LOAD_PRIORITY_NORMAL);
 
 		RasterizerStateDesc rasterizerStateDesc = {};
 		rasterizerStateDesc.mCullMode = CULL_MODE_NONE;
@@ -335,7 +340,7 @@ public:
 
 		//TransBufferDesc.pData = gInitializeVal.data();
 		TransBufferDesc.ppBuffer = &pTransmittanceBuffer;
-		addResource(&TransBufferDesc);
+		addResource(&TransBufferDesc, NULL, LOAD_PRIORITY_NORMAL);
 
 		if (!gAppUI.Init(pRenderer))
 			return false;
@@ -350,11 +355,9 @@ public:
 		vec3 lookAt{ 0.0f, h, 1.0f };
 
 		pCameraController = createFpsCameraController(camPos, lookAt);
-		//requestMouseCapture(true);
 
 		pCameraController->setMotionParameters(cmp);
 
-		//InputSystem::RegisterInputEvent(cameraInputEvent);
 		gTerrain.Initialize(gImageCount, pCameraController, pGraphicsQueue, ppTransCmds, pTransitionCompleteFences, pGraphicsGpuProfiler, &gAppUI);
 		gTerrain.Init(pRenderer);		
 
@@ -495,14 +498,14 @@ public:
 		}
 		removeSemaphore(pRenderer, pImageAcquiredSemaphore);
 
-		removeCmd_n(pGraphicsCmdPool, gImageCount, ppGraphicsCmds);
+		removeCmd_n(pRenderer, gImageCount, ppGraphicsCmds);
 		removeCmdPool(pRenderer, pGraphicsCmdPool);
 
-		removeCmd_n(pTransCmdPool, 1, ppTransCmds);
+		removeCmd_n(pRenderer, 1, ppTransCmds);
 		removeCmdPool(pRenderer, pTransCmdPool);
 
-		removeQueue(pGraphicsQueue);
-		removeResourceLoaderInterface(pRenderer);
+		removeQueue(pRenderer, pGraphicsQueue);
+		exitResourceLoaderInterface(pRenderer);
 
 		removeRenderer(pRenderer);
 	}
@@ -519,11 +522,11 @@ public:
 		if (!addDepthBuffer())
 			return false;
 
-		if (!gAppUI.Load(pSwapChain->ppSwapchainRenderTargets))
+		if (!gAppUI.Load(pSwapChain->ppRenderTargets))
 			return false;
 
 #if defined(TARGET_IOS) || defined(__ANDROID__)
-		if (!gVirtualJoystick.Load(pSwapChain->ppSwapchainRenderTargets[0], pDepthBuffer->mDesc.mFormat))
+		if (!gVirtualJoystick.Load(pSwapChain->ppRenderTargets[0], pDepthBuffer->mDesc.mFormat))
 			return false;
 #endif
 
@@ -536,7 +539,7 @@ public:
 		gSky.InitializeWithLoad(pDepthBuffer, pLinearDepthBuffer);
 		gSky.Load(&gTerrain.pTerrainRT);
 
-		gVolumetricClouds.InitializeWithLoad(pLinearDepthBuffer->pTexture, gSky.pSkyRenderTarget->pTexture, pDepthBuffer->pTexture);
+		gVolumetricClouds.InitializeWithLoad(pLinearDepthBuffer, gSky.pSkyRenderTarget, pDepthBuffer);
 		gVolumetricClouds.Load(&gSky.pSkyRenderTarget);
 
 		gSpaceObjects.InitializeWithLoad(pDepthBuffer, pLinearDepthBuffer, gVolumetricClouds.pSavePrevTexture, gSky.GetParticleVertexBuffer(), gSky.GetParticleInstanceBuffer(), gSky.GetParticleCount());
@@ -570,9 +573,9 @@ public:
 			pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
 			pipelineSettings.mRenderTargetCount = 1;
 			pipelineSettings.pDepthState = NULL;
-			pipelineSettings.pColorFormats = &pSwapChain->ppSwapchainRenderTargets[0]->mDesc.mFormat;
-			pipelineSettings.mSampleCount = pSwapChain->ppSwapchainRenderTargets[0]->mDesc.mSampleCount;
-			pipelineSettings.mSampleQuality = pSwapChain->ppSwapchainRenderTargets[0]->mDesc.mSampleQuality;
+			pipelineSettings.pColorFormats = &pSwapChain->ppRenderTargets[0]->mDesc.mFormat;
+			pipelineSettings.mSampleCount = pSwapChain->ppRenderTargets[0]->mDesc.mSampleCount;
+			pipelineSettings.mSampleQuality = pSwapChain->ppRenderTargets[0]->mDesc.mSampleQuality;
 			pipelineSettings.pRootSignature = pExampleRootSignature;
 			pipelineSettings.pShaderProgram = pPresentShader;
 			pipelineSettings.pVertexLayout = &vertexLayout;
@@ -589,9 +592,9 @@ public:
 			pipelineSettings.mRenderTargetCount = 1;
 			pipelineSettings.pDepthState = NULL;
 			pipelineSettings.pBlendState = NULL;
-			pipelineSettings.pColorFormats = &pSwapChain->ppSwapchainRenderTargets[0]->mDesc.mFormat;
-			pipelineSettings.mSampleCount = pSwapChain->ppSwapchainRenderTargets[0]->mDesc.mSampleCount;
-			pipelineSettings.mSampleQuality = pSwapChain->ppSwapchainRenderTargets[0]->mDesc.mSampleQuality;
+			pipelineSettings.pColorFormats = &pSwapChain->ppRenderTargets[0]->mDesc.mFormat;
+			pipelineSettings.mSampleCount = pSwapChain->ppRenderTargets[0]->mDesc.mSampleCount;
+			pipelineSettings.mSampleQuality = pSwapChain->ppRenderTargets[0]->mDesc.mSampleQuality;
 			pipelineSettings.pRootSignature = pExampleRootSignature;
 			pipelineSettings.pVertexLayout = &vertexLayout;
 			pipelineSettings.pRasterizerState = pPostProcessRast;
@@ -744,7 +747,11 @@ public:
 
 		gSpaceObjects.Update(deltaTime);
 		gSpaceObjects.LightDirection = v3ToF3(sunDirection);
-		gSpaceObjects.LightColorAndIntensity = LightColorAndIntensity;		
+		gSpaceObjects.LightColorAndIntensity = LightColorAndIntensity;
+		
+		gFXAAinfo.ScreenSize = vec2((float)mSettings.mWidth, (float)mSettings.mHeight);
+		gFXAAinfo.Use = gToggleFXAA ? 1.0f : 0.0f;
+		gFXAAinfo.Time = currentTime;
 
 		/************************************************************************/
 		// UI
@@ -803,12 +810,12 @@ public:
 		{
 			cmdBeginGpuTimestampQuery(cmd, pGraphicsGpuProfiler, "Depth Linearization", true);
 
-			TextureBarrier barriersLinearDepth[] = {
-			{ pDepthBuffer->pTexture, RESOURCE_STATE_SHADER_RESOURCE },
-			{ pLinearDepthBuffer->pTexture, RESOURCE_STATE_RENDER_TARGET }
+			RenderTargetBarrier barriersLinearDepth[] = {
+			{ pDepthBuffer, RESOURCE_STATE_SHADER_RESOURCE },
+			{ pLinearDepthBuffer, RESOURCE_STATE_RENDER_TARGET }
 			};
 
-			cmdResourceBarrier(cmd, 0, NULL, 2, barriersLinearDepth);
+			cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 2, barriersLinearDepth);
 
 			cmdBindRenderTargets(cmd, 1, &pLinearDepthBuffer, NULL, NULL, NULL, NULL, -1, -1);
 			cmdSetViewport(cmd, 0.0f, 0.0f, (float)pLinearDepthBuffer->mDesc.mWidth, (float)pLinearDepthBuffer->mDesc.mHeight, 0.0f, 1.0f);
@@ -822,11 +829,11 @@ public:
 
 			cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
 
-			TextureBarrier barriersLinearDepthEnd[] = {
-			{ pLinearDepthBuffer->pTexture, RESOURCE_STATE_SHADER_RESOURCE }
+			RenderTargetBarrier barriersLinearDepthEnd[] = {
+			{ pLinearDepthBuffer, RESOURCE_STATE_SHADER_RESOURCE }
 			};
 
-			cmdResourceBarrier(cmd, 0, NULL, 1, barriersLinearDepthEnd);
+			cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriersLinearDepthEnd);
 
 			cmdEndGpuTimestampQuery(cmd, pGraphicsGpuProfiler);
 		}
@@ -854,15 +861,15 @@ public:
 			else
 				cmdBeginGpuTimestampQuery(cmd, pGraphicsGpuProfiler, "PresentPipeline", true);
 
-			pRenderTarget = pSwapChain->ppSwapchainRenderTargets[gFrameIndex];
+			pRenderTarget = pSwapChain->ppRenderTargets[gFrameIndex];
 
-			TextureBarrier barriers[] =
+			RenderTargetBarrier barriers[] =
 			{
-				{ pRenderTarget->pTexture, RESOURCE_STATE_RENDER_TARGET },
-				{ pSkydomeResultRT->pTexture, RESOURCE_STATE_SHADER_RESOURCE }
+				{ pRenderTarget, RESOURCE_STATE_RENDER_TARGET },
+				{ pSkydomeResultRT, RESOURCE_STATE_SHADER_RESOURCE }
 			};
 
-			cmdResourceBarrier(cmd, 0, NULL, 2, barriers);
+			cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 2, barriers);
 
 			LoadActionsDesc loadActions = {};
 			loadActions.mLoadActionsColor[0] = LOAD_ACTION_CLEAR;
@@ -874,18 +881,12 @@ public:
 
 			cmdBindRenderTargets(cmd, 1, &pRenderTarget, NULL, &loadActions, NULL, NULL, -1, -1);
 			cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mDesc.mWidth, (float)pRenderTarget->mDesc.mHeight, 0.0f, 1.0f);
-			cmdSetScissor(cmd, 0, 0, pRenderTarget->mDesc.mWidth, pRenderTarget->mDesc.mHeight);
-
-			
+			cmdSetScissor(cmd, 0, 0, pRenderTarget->mDesc.mWidth, pRenderTarget->mDesc.mHeight);			
 
 			cmdBindPipeline(cmd, pFXAAPipeline);
 
-			FXAAINFO FXAAinfo;
-			FXAAinfo.ScreenSize = vec2((float)mSettings.mWidth, (float)mSettings.mHeight);
-			FXAAinfo.Use = gToggleFXAA ? 1 : 0;
-
 			cmdBindDescriptorSet(cmd, 1, pExampleDescriptorSet);
-			cmdBindPushConstants(cmd, pExampleRootSignature, "FXAARootConstant", &FXAAinfo);
+			cmdBindPushConstants(cmd, pExampleRootSignature, "FXAARootConstant", &gFXAAinfo);
 
 			cmdBindVertexBuffer(cmd, 1, &pScreenQuadVertexBuffer, NULL);
 			cmdDraw(cmd, 3, 0);
@@ -899,7 +900,7 @@ public:
 		{
 			cmdBeginGpuTimestampQuery(cmd, pGraphicsGpuProfiler, "PresentPipeline", true);
 
-			pRenderTarget = pSwapChain->ppSwapchainRenderTargets[gFrameIndex];
+			pRenderTarget = pSwapChain->ppRenderTargets[gFrameIndex];
 
 			TextureBarrier barriers88[] = {
 					{ pRenderTarget->pTexture, RESOURCE_STATE_RENDER_TARGET },
@@ -926,7 +927,7 @@ public:
 		{
 			cmdBeginGpuTimestampQuery(cmd, pGraphicsGpuProfiler, "Draw UI", true);
 
-			pRenderTarget = pSwapChain->ppSwapchainRenderTargets[gFrameIndex];
+			pRenderTarget = pSwapChain->ppRenderTargets[gFrameIndex];
 
 			cmdBindRenderTargets(cmd, 1, &pRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
 			cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mDesc.mWidth, (float)pRenderTarget->mDesc.mHeight, 0.0f, 1.0f);
@@ -952,14 +953,14 @@ public:
 			
 			gAppUI.Gui(pMainGuiWindow);
 			gAppUI.Gui(gSky.pGuiWindow);
-			gAppUI.Gui(gVolumetricClouds.pGuiWindow);			
+			gAppUI.Gui(gVolumetricClouds.pGuiWindow);
 
 			gAppUI.Draw(cmd);
 
 			cmdBindRenderTargets(cmd, 0, NULL, NULL, NULL, NULL, NULL, -1, -1);
 
-			TextureBarrier barriers[] = { pRenderTarget->pTexture, RESOURCE_STATE_PRESENT };
-			cmdResourceBarrier(cmd, 0, NULL, 1, barriers);
+			RenderTargetBarrier barriers[] = { { pRenderTarget, RESOURCE_STATE_PRESENT } };
+			cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriers);
 
 			cmdEndGpuTimestampQuery(cmd, pGraphicsGpuProfiler);
 		}
@@ -967,8 +968,22 @@ public:
 		cmdEndGpuFrameProfile(cmd, pGraphicsGpuProfiler);
 		endCmd(cmd);
 
-		queueSubmit(pGraphicsQueue, 1, &cmd, pRenderCompleteFence, 1, &pImageAcquiredSemaphore, 1, &pRenderCompleteSemaphore);
-		queuePresent(pGraphicsQueue, pSwapChain, gFrameIndex, 1, &pRenderCompleteSemaphore);
+		QueueSubmitDesc submitDesc = {};
+		submitDesc.mCmdCount = 1;
+		submitDesc.mSignalSemaphoreCount = 1;
+		submitDesc.mWaitSemaphoreCount = 1;
+		submitDesc.ppCmds = &cmd;
+		submitDesc.ppSignalSemaphores = &pRenderCompleteSemaphore;
+		submitDesc.ppWaitSemaphores = &pImageAcquiredSemaphore;
+		submitDesc.pSignalFence = pRenderCompleteFence;
+		queueSubmit(pGraphicsQueue, &submitDesc);
+		QueuePresentDesc presentDesc = {};
+		presentDesc.mIndex = gFrameIndex;
+		presentDesc.mWaitSemaphoreCount = 1;
+		presentDesc.ppWaitSemaphores = &pRenderCompleteSemaphore;
+		presentDesc.pSwapChain = pSwapChain;
+		presentDesc.mSubmitDone = true;
+		queuePresent(pGraphicsQueue, &presentDesc);
 		flipProfiler();
 
 		//for next frame
@@ -981,7 +996,7 @@ public:
 			gSpaceObjects.Unload();
 			gVolumetricClouds.Unload();
 
-			gVolumetricClouds.InitializeWithLoad(pLinearDepthBuffer->pTexture, gSky.pSkyRenderTarget->pTexture, pDepthBuffer->pTexture);
+			gVolumetricClouds.InitializeWithLoad(pLinearDepthBuffer, gSky.pSkyRenderTarget, pDepthBuffer);
 			gVolumetricClouds.Load(&gSky.pSkyRenderTarget);
 
 			gSpaceObjects.InitializeWithLoad(pDepthBuffer, pLinearDepthBuffer, gVolumetricClouds.pSavePrevTexture, gSky.GetParticleVertexBuffer(), gSky.GetParticleInstanceBuffer(), gSky.GetParticleCount());
@@ -1018,13 +1033,18 @@ public:
 		// Transition render targets to desired state
 		beginCmd(ppTransCmds[0]);
 
-		TextureBarrier barrier[] = {
-			   { pRT->pTexture, state }
+		RenderTargetBarrier barrier[] = {
+			   { pRT, state }
 		};
 
-		cmdResourceBarrier(ppTransCmds[0], 0, NULL, 1, barrier);
+		cmdResourceBarrier(ppTransCmds[0], 0, NULL, 0, NULL, 1, barrier);
 		endCmd(ppTransCmds[0]);
-		queueSubmit(pGraphicsQueue, 1, &ppTransCmds[0], pTransitionCompleteFences, 0, NULL, 0, NULL);
+		QueueSubmitDesc submitDesc = {};
+		submitDesc.mCmdCount = 1;
+		submitDesc.ppCmds = &ppTransCmds[0];
+		submitDesc.pSignalFence = pTransitionCompleteFences;
+		submitDesc.mSubmitDone = true;
+		queueSubmit(pGraphicsQueue, &submitDesc);
 		waitForFences(pRenderer, 1, &pTransitionCompleteFences);
 	}
 

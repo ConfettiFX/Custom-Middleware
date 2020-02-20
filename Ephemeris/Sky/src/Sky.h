@@ -88,8 +88,6 @@ public:
 	Texture*              pIrradianceTexture;		//unsigned int irradianceTexture;//unit 2, E table
 	Texture*              pInscatterTexture;		//unsigned int inscatterTexture;//unit 3, S table
 
-	Buffer*               pGlobalTriangularVertexBuffer;
-
 	Sampler*              pLinearClampSampler;
 	Sampler*              pLinearBorderSampler;
 

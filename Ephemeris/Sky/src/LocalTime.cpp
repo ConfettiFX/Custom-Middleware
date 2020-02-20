@@ -7,12 +7,12 @@
 *
 */
 
-#if !defined(METAL) && !defined(__linux__)
+#if !defined(__APPLE__) && !defined(__linux__)
 
 #include "LocalTime.h"
 
 #include <time.h>
-#ifndef	SN_TARGET_PS3
+#ifndef	ORBIS
 #include <sys/timeb.h>
 #endif	//	SN_TARGET_PS3
 #include <math.h>
@@ -56,7 +56,7 @@ LocalTime::LocalTime( bool bNow/*=false*/ ):
 {
 	if (bNow)
 	{
-#ifdef	SN_TARGET_PS3
+#ifdef ORBIS
 		time_t currentTime = time(NULL);
 		tm			sysTime;
 		sysTime = *localtime(&currentTime);
@@ -76,7 +76,7 @@ LocalTime::LocalTime( bool bNow/*=false*/ ):
 		m_localSeconds = sysTime.tm_sec;
 
 
-#ifdef	SN_TARGET_PS3
+#ifdef ORBIS
 		tm			utcTime;
 		utcTime = *gmtime(&currentTime);
 		time_t offsTime = mktime(&utcTime);

@@ -16,6 +16,12 @@
 #include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
 #include "../../../../The-Forge/Common_3/Renderer/GpuProfiler.h"
 
+#if defined(METAL)
+#define				USE_VC_FRAGMENTSHADER 1
+#else
+#define				USE_VC_FRAGMENTSHADER 0
+#endif
+
 struct DataPerEye
 {
 	mat4			m_WorldToProjMat;			// Matrix for converting World to Projected Space for the first eye
@@ -32,12 +38,15 @@ struct DataPerLayer
 	float					EarthRadiusAddCloudsLayerStart;
 	float					EarthRadiusAddCloudsLayerStart2;
 	float					EarthRadiusAddCloudsLayerEnd;
+	//======================================================
 	float					EarthRadiusAddCloudsLayerEnd2;
 	float					LayerThickness;
 
 	//Cloud
 	float					CloudDensity;							// The overall density of clouds. Using bigger value makes more dense clouds, but it also makes ray-marching artifact worse.
 	float					CloudCoverage;						// The overall coverage of clouds. Using bigger value makes more parts of the sky be covered by clouds. (But, it does not make clouds more dense)
+	//======================================================
+
 	float					CloudType;								// Add this value to control the overall clouds' type. 0.0 is for Stratus, 0.5 is for Stratocumulus, and 1.0 is for Cumulus.
 
 	float					CloudTopOffset;						// Intensity of skewing clouds along the wind direction.
@@ -46,13 +55,21 @@ struct DataPerLayer
 	float					CloudSize;								// Overall size of the clouds. Using bigger value generates larger chunks of clouds.
 
 	float					BaseShapeTiling;					// Control the base shape of the clouds. Using bigger value makes smaller chunks of base clouds.
+	//======================================================
+
 	float					DetailShapeTiling;				// Control the detail shape of the clouds. Using bigger value makes smaller chunks of detail clouds.
 
 	float					DetailStrenth;						// Intensify the detail of the clouds. It is possible to lose whole shape of the clouds if the user uses too high value of it.
 	float					CurlTextureTiling;				// Control the curl size of the clouds. Using bigger value makes smaller curl shapes.
 
 	float					CurlStrenth;							// Intensify the curl effect.
+	//======================================================
+
 	float					AnvilBias;								// Using lower value makes anvil shape.
+	float					PadA;
+	float					PadB;
+	float					PadC;
+	//======================================================
 
 	vec4					WindDirection;
 	vec4					StandardPosition;					// The current center location for applying wind
@@ -62,13 +79,20 @@ struct DataPerLayer
 
 	float					WeatherTextureOffsetZ;
 	float					RotationPivotOffsetX;
+	//======================================================
 
 	float					RotationPivotOffsetZ;
 	float					RotationAngle;
 
 	float					RisingVaporScale;
 	float					RisingVaporUpDirection;
+	//======================================================
+
 	float					RisingVaporIntensity;
+	float					PadD;
+	float					PadE;
+	float					PadF;
+	//======================================================
 };
 
 struct VolumetricCloudsCB
@@ -233,7 +257,7 @@ public:
 	virtual void Update(float deltaTime) final;
 
 
-	void InitializeWithLoad(Texture* InLinearDepthTexture, Texture* InSceneColorTexture, Texture* InDepthTexture);
+	void InitializeWithLoad(RenderTarget* InLinearDepthTexture, RenderTarget* InSceneColorTexture, RenderTarget* InDepthTexture);
 
 
 	void Initialize(uint InImageCount,
@@ -267,8 +291,8 @@ public:
 
 	uint                    gFrameIndex;
 
-	Texture*                pLinearDepthTexture = NULL;
-	Texture*                pSceneColorTexture = NULL;
+	RenderTarget*           pLinearDepthTexture = NULL;
+	RenderTarget*           pSceneColorTexture = NULL;
 	ICameraController*      pCameraController = NULL;
 
 
@@ -292,11 +316,11 @@ public:
 
 	VolumetricCloudsCB      volumetricCloudsCB;
 	vec4                    g_StandardPosition;
-	vec4										g_StandardPosition_2nd;
+	vec4                    g_StandardPosition_2nd;
 	vec4                    g_ShadowInfo;
-	Texture*                pDepthTexture = NULL;
+	RenderTarget*           pDepthTexture = NULL;
 
 	Texture*                pSavePrevTexture = NULL;
 	
-	uint32_t								gDownsampledCloudSize;
+	uint32_t                gDownsampledCloudSize;
 };

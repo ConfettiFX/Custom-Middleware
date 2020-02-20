@@ -52,6 +52,9 @@ struct DataPerLayer
 
 	float					CurlStrenth;						// Intensify the curl effect.
 	float					AnvilBias;							// Using lower value makes anvil shape.
+	float					PadA;
+	float					PadB;
+	float					PadC;
 
 	float4					WindDirection;
 	float4					StandardPosition;					// The current center location for applying wind
@@ -68,6 +71,9 @@ struct DataPerLayer
 	float					RisingVaporScale;
 	float					RisingVaporUpDirection;
 	float					RisingVaporIntensity;
+	float					PadD;
+	float					PadE;
+	float					PadF;
 };
 
 struct volumetricCloud
