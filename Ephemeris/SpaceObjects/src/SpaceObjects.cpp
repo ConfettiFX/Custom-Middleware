@@ -9,7 +9,7 @@
 
 #include "SpaceObjects.h"
 
-#include "../../../../The-Forge/Common_3/Renderer/ResourceLoader.h"
+#include "../../../../The-Forge/Common_3/Renderer/IResourceLoader.h"
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IFileSystem.h"
 #include "../../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IMemory.h"
@@ -132,14 +132,18 @@ static void TransitionRenderTargets(RenderTarget *pRT, ResourceState state, Rend
 	// Transition render targets to desired state
 	beginCmd(cmd);
 
-	TextureBarrier barrier[] = {
-		   { pRT->pTexture, state }
+	RenderTargetBarrier barrier[] = {
+		   { pRT, state }
 	};
 
-	cmdResourceBarrier(cmd, 0, NULL, 1, barrier);
+	cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barrier);
 	endCmd(cmd);
 
-	queueSubmit(queue, 1, &cmd, fence, 0, NULL, 0, NULL);
+	QueueSubmitDesc submitDesc = {};
+	submitDesc.mCmdCount = 1;
+	submitDesc.ppCmds = &cmd;
+	submitDesc.pSignalFence = fence;
+	queueSubmit(queue, &submitDesc);
 	waitForFences(renderer, 1, &fence);
 }
 #endif
@@ -330,7 +334,7 @@ bool SpaceObjects::Init(Renderer* const renderer)
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#if defined(_DURANGO)
+#if defined(_DURANGO) || defined(ORBIS)
 	eastl::string shaderPath("");
 #elif defined(DIRECT3D12)
 	eastl::string shaderPath("../../../../../Ephemeris/SpaceObjects/resources/Shaders/D3D12/");
@@ -479,7 +483,7 @@ bool SpaceObjects::Init(Renderer* const renderer)
 	addBlendState(pRenderer, &blendStateAdditiveDesc, &pBlendStateStar);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+	SyncToken token = {};
 
 	float screenQuadPoints[] = {
 		0.0f,  0.0f, 0.5f, 0.0f, 0.0f,
@@ -495,17 +499,17 @@ bool SpaceObjects::Init(Renderer* const renderer)
 	TriangularVbDesc.mDesc.mSize = (uint64_t)(TriangularVbDesc.mDesc.mVertexStride * 4);
 	TriangularVbDesc.pData = screenQuadPoints;
 	TriangularVbDesc.ppBuffer = &pGlobalTriangularVertexBuffer;
-	addResource(&TriangularVbDesc);
+	addResource(&TriangularVbDesc, &token, LOAD_PRIORITY_NORMAL);
 
 	TextureLoadDesc SkyMoonTextureDesc = {};
-#if defined(_DURANGO)
-	PathHandle SkyMoonTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/Moon.dds");
+#if defined(_DURANGO) || defined(ORBIS)
+	PathHandle SkyMoonTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/Moon");
 #else
-	PathHandle SkyMoonTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Moon.dds");
+	PathHandle SkyMoonTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Moon");
 #endif
 	SkyMoonTextureDesc.pFilePath = SkyMoonTextureFilePath;
 	SkyMoonTextureDesc.ppTexture = &pMoonTexture;
-	addResource(&SkyMoonTextureDesc, false);
+	addResource(&SkyMoonTextureDesc, &token, LOAD_PRIORITY_NORMAL);
 
 #if USING_MILKYWAY
 
@@ -521,7 +525,7 @@ bool SpaceObjects::Init(Renderer* const renderer)
 	MilkyWayVbDesc.mDesc.mSize = (uint64_t)MilkyWayVertices.size() / 3 * MilkyWayVbDesc.mDesc.mVertexStride;
 	MilkyWayVbDesc.pData = MilkyWayVertices.data();
 	MilkyWayVbDesc.ppBuffer = &pMilkyWayVertexBuffer;
-	addResource(&MilkyWayVbDesc);
+	addResource(&MilkyWayVbDesc, &token, LOAD_PRIORITY_NORMAL);
 
 	BufferLoadDesc MilkyWayIbDesc = {};
 	MilkyWayIbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_INDEX_BUFFER;
@@ -530,7 +534,7 @@ bool SpaceObjects::Init(Renderer* const renderer)
 	MilkyWayIbDesc.mDesc.mIndexType = INDEX_TYPE_UINT32;
 	MilkyWayIbDesc.pData = MilkyWayIndices.data();
 	MilkyWayIbDesc.ppBuffer = &pMilkyWayIndexBuffer;
-	addResource(&MilkyWayIbDesc);
+	addResource(&MilkyWayIbDesc, &token, LOAD_PRIORITY_NORMAL);
 
 	MilkyWayIndexCount = (uint32_t)MilkyWayIndices.size();
 
@@ -546,7 +550,7 @@ bool SpaceObjects::Init(Renderer* const renderer)
 	AuroraVbDesc.mDesc.mVertexStride = sizeof(float3) * 3;
 	AuroraVbDesc.mDesc.mSize = (uint64_t)AuroraParticleNum * AuroraVbDesc.mDesc.mVertexStride;
 	AuroraVbDesc.ppBuffer = &pAuroraVertexBuffer;
-	addResource(&AuroraVbDesc);
+	addResource(&AuroraVbDesc, &token, LOAD_PRIORITY_NORMAL);
 
 	BufferLoadDesc AuroraParticleDesc = {};
 	AuroraParticleDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_BUFFER | DESCRIPTOR_TYPE_RW_BUFFER;
@@ -560,7 +564,7 @@ bool SpaceObjects::Init(Renderer* const renderer)
 	// for(unsigned int i=0; i<gImageCount; i++)
 	// {
 	AuroraParticleDesc.ppBuffer = &pAuroraParticle;
-	addResource(&AuroraParticleDesc);
+	addResource(&AuroraParticleDesc, &token, LOAD_PRIORITY_NORMAL);
 	// }
 
 	BufferLoadDesc AuroraConstraintDesc = {};
@@ -575,7 +579,7 @@ bool SpaceObjects::Init(Renderer* const renderer)
 	// for (unsigned int i = 0; i < gImageCount; i++)
 	// {
 	AuroraConstraintDesc.ppBuffer = &pAuroraConstraint;
-	addResource(&AuroraConstraintDesc);
+	addResource(&AuroraConstraintDesc, &token, LOAD_PRIORITY_NORMAL);
 	// }
 
 
@@ -590,7 +594,7 @@ bool SpaceObjects::Init(Renderer* const renderer)
 	// for (unsigned int i = 0; i < gImageCount; i++)
 	// {
 	AuroraUniformDesc.ppBuffer = &pAuroraUniformBuffer;
-	addResource(&AuroraUniformDesc);
+	addResource(&AuroraUniformDesc, &token, LOAD_PRIORITY_NORMAL);
 	// }
 
 	BufferLoadDesc sunUniformDesc = {};
@@ -603,10 +607,10 @@ bool SpaceObjects::Init(Renderer* const renderer)
 	for (uint i = 0; i < gImageCount; i++)
 	{
 		sunUniformDesc.ppBuffer = &pSunUniformBuffer[i];
-		addResource(&sunUniformDesc);
+		addResource(&sunUniformDesc, &token, LOAD_PRIORITY_NORMAL);
 
 		sunUniformDesc.ppBuffer = &pStarUniformBuffer[i];
-		addResource(&sunUniformDesc);
+		addResource(&sunUniformDesc, &token, LOAD_PRIORITY_NORMAL);
 	}
 
 	///////////////////////////////////////////////////////////////////
@@ -617,7 +621,8 @@ bool SpaceObjects::Init(Renderer* const renderer)
 	guiDesc.mStartPosition = vec2(1280.0f / getDpiScale().getX(), 700.0f / getDpiScale().getY());
 	guiDesc.mStartSize = vec2(300.0f / getDpiScale().getX(), 250.0f / getDpiScale().getY());
 	pGuiWindow = pGAppUI->AddGuiComponent("Space Objects", &guiDesc);
-
+	
+	waitForToken(&token);
 
 	return true;
 }
@@ -799,7 +804,9 @@ bool SpaceObjects::Load(RenderTarget** rts, uint32_t count)
 
 		pipelineSettings.pRootSignature = pSpaceObjectsRootSignature;
 		pipelineSettings.pShaderProgram = pSunShader;
+#if defined(METAL)
 		pipelineSettings.pVertexLayout = &vertexLayout;
+#endif
 		pipelineSettings.pRasterizerState = pRasterizerForSpaceObjects;
 		pipelineSettings.pBlendState = pBlendStateSun;
 
@@ -878,7 +885,13 @@ bool SpaceObjects::Load(RenderTarget** rts, uint32_t count)
 		ScParams[1].ppTextures = &pMoonTexture;
 		ScParams[2].pName = "volumetricCloudsTexture";
 		ScParams[2].ppTextures = &pSavePrevTexture;
+#if defined(ORBIS)
+		ScParams[3].pName = "starInstanceBuffer";
+		ScParams[3].ppBuffers = &pParticleInstanceBuffer;
+		updateDescriptorSet(pRenderer, 0, pSpaceObjectsDescriptorSet[0], 4, ScParams);
+#else
 		updateDescriptorSet(pRenderer, 0, pSpaceObjectsDescriptorSet[0], 3, ScParams);
+#endif
 
 		for (uint32_t i = 0; i < gImageCount; ++i)
 		{
@@ -990,12 +1003,12 @@ void SpaceObjects::Draw(Cmd* cmd)
 	{
 		cmdBeginGpuTimestampQuery(cmd, pGraphicsGpuProfiler, "Draw Starfield", true);
 
-		TextureBarrier barriersSky2[] =
+		RenderTargetBarrier barriersSky2[] =
 		{
-			{ pPreStageRenderTarget->pTexture, RESOURCE_STATE_RENDER_TARGET }
+			{ pPreStageRenderTarget, RESOURCE_STATE_RENDER_TARGET }
 		};
 
-		cmdResourceBarrier(cmd, 0, NULL, 1, barriersSky2);
+		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriersSky2);
 
 		cmdBindRenderTargets(cmd, 1, &pPreStageRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
 		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pPreStageRenderTarget->mDesc.mWidth, (float)pPreStageRenderTarget->mDesc.mHeight, 0.0f, 1.0f);
@@ -1022,19 +1035,19 @@ void SpaceObjects::Draw(Cmd* cmd)
 		starData.Dy = v4ToF4(pCameraController->getViewMatrix().getRow(1) * 100000.0f);
 #endif
 
-
-
-		BufferUpdateDesc BufferUniformSettingDesc2 = { pStarUniformBuffer[gFrameIndex], &starData };
-		updateResource(&BufferUniformSettingDesc2);
-
-		DescriptorData StarParams[3] = {};
+		BufferUpdateDesc BufferUniformSettingDesc2 = { pStarUniformBuffer[gFrameIndex] };
+		beginUpdateResource(&BufferUniformSettingDesc2);
+		*(StarData*)BufferUniformSettingDesc2.pMappedData = starData;
+		endUpdateResource(&BufferUniformSettingDesc2, NULL);
 
 		cmdBindPipeline(cmd, pStarPipeline);
 		cmdBindDescriptorSet(cmd, 0, pSpaceObjectsDescriptorSet[0]);
 		cmdBindDescriptorSet(cmd, gFrameIndex, pSpaceObjectsDescriptorSet[1]);
 
+#if !defined(ORBIS)
 		Buffer* particleVertexBuffers[] = { pParticleVertexBuffer, pParticleInstanceBuffer };
 		cmdBindVertexBuffer(cmd, 2, particleVertexBuffers, NULL);
+#endif
 #if !defined(METAL)
 		cmdDrawInstanced(cmd, 1, 0, ParticleCount, 0);
 #else
@@ -1048,12 +1061,12 @@ void SpaceObjects::Draw(Cmd* cmd)
 	{
 		cmdBeginGpuTimestampQuery(cmd, pGraphicsGpuProfiler, "Draw Sun and Moon", true);
 
-		TextureBarrier barriersSky[] =
+		RenderTargetBarrier barriersSky[] =
 		{
-			{ pPreStageRenderTarget->pTexture, RESOURCE_STATE_RENDER_TARGET }
+			{ pPreStageRenderTarget, RESOURCE_STATE_RENDER_TARGET }
 		};
 
-		cmdResourceBarrier(cmd, 0, NULL, 1, barriersSky);
+		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriersSky);
 
 		cmdBindRenderTargets(cmd, 1, &pPreStageRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
 		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pPreStageRenderTarget->mDesc.mWidth, (float)pPreStageRenderTarget->mDesc.mHeight, 0.0f, 1.0f);
@@ -1074,8 +1087,10 @@ void SpaceObjects::Draw(Cmd* cmd)
 		data.Dx = v4ToF4(pCameraController->getViewMatrix().getRow(0) * SunSize);
 		data.Dy = v4ToF4(pCameraController->getViewMatrix().getRow(1) * SunSize);
 
-		BufferUpdateDesc BufferUniformSettingDesc = { pSunUniformBuffer[gFrameIndex], &data };
-		updateResource(&BufferUniformSettingDesc);
+		BufferUpdateDesc BufferUniformSettingDesc = { pSunUniformBuffer[gFrameIndex] };
+		beginUpdateResource(&BufferUniformSettingDesc);
+		*(Data*)BufferUniformSettingDesc.pMappedData = data;
+		endUpdateResource(&BufferUniformSettingDesc, NULL);
 
 		cmdBindPipeline(cmd, pSunPipeline);
 		cmdBindDescriptorSet(cmd, 0, pSpaceObjectsDescriptorSet[0]);
@@ -1089,11 +1104,11 @@ void SpaceObjects::Draw(Cmd* cmd)
 #endif
 		cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
 
-		TextureBarrier barriersSkyEnd[] = {
-					{ pPreStageRenderTarget->pTexture, RESOURCE_STATE_SHADER_RESOURCE }
+		RenderTargetBarrier barriersSkyEnd[] = {
+					{ pPreStageRenderTarget, RESOURCE_STATE_SHADER_RESOURCE }
 		};
 
-		cmdResourceBarrier(cmd, 0, NULL, 1, barriersSkyEnd);
+		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriersSkyEnd);
 
 		cmdEndGpuTimestampQuery(cmd, pGraphicsGpuProfiler);
 	}

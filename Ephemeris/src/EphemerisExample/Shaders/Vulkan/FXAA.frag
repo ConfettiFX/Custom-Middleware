@@ -7,14 +7,14 @@
 layout(location = 0) in vec2 TexCoord;
 layout(location = 0) out vec4 rast_FragData0; 
 
-layout(UPDATE_FREQ_NONE, binding = 3) uniform texture2D SrcTexture;
-layout(UPDATE_FREQ_NONE, binding = 4) uniform sampler g_LinearClamp;
+layout(set = 0, binding = 3) uniform texture2D SrcTexture;
+layout(set = 0, binding = 4) uniform sampler g_LinearClamp;
 
 layout(row_major, push_constant) uniform FXAARootConstant_Block
 {
     vec2 ScreenSize;
-    uint Use;
-    uint padding00;
+    float Use;
+    float Time;
 }FXAARootConstant;
 
 float rgb2luma(vec3 rgb)
@@ -153,6 +153,51 @@ vec3 FXAA(vec2 UV, ivec2 Pixel)
     }
     return vec3 ((texture(sampler2D( SrcTexture, g_LinearClamp), vec2(finalUv))).rgb);
 }
+
+// Dithering refered to https://www.shadertoy.com/view/MdVfz3
+// A single iteration of Bob Jenkins' One-At-A-Time hashing algorithm.
+uint hash( uint x ) {
+    x += ( x << 10u );
+    x ^= ( x >>  6u );
+    x += ( x <<  3u );
+    x ^= ( x >> 11u );
+    x += ( x << 15u );
+    return x;
+}
+
+// Compound versions of the hashing algorithm I whipped together.
+uint hash( uvec2 v ) { return hash( v.x ^ hash(v.y)                         ); }
+uint hash( uvec3 v ) { return hash( v.x ^ hash(v.y) ^ hash(v.z)             ); }
+uint hash( uvec4 v ) { return hash( v.x ^ hash(v.y) ^ hash(v.z) ^ hash(v.w) ); }
+
+// Construct a float with half-open range [0:1] using low 23 bits.
+// All zeroes yields 0.0, all ones yields the next smallest representable value below 1.0.
+float floatConstruct( uint m ) {
+    // const uint ieeeMantissa = 0x007FFFFFu; // binary32 mantissa bitmask
+    const uint ieeeMantissa = 0x00007FFFu;
+    const uint ieeeOne      = 0x3F800000u; // 1.0 in IEEE binary32
+
+    m &= ieeeMantissa;                     // Keep only mantissa bits (fractional part)
+    m |= ieeeOne;                          // Add fractional part to 1.0
+
+    float  f = uintBitsToFloat( m );       // Range [1:2]
+    return f - 1.0;                        // Range [0:1]
+}
+
+// Pseudo-random value in half-open range [0:1].
+// NL because of >>8 mantissa returns in range [0:1/256] which is perfect for quantising
+float random( float x ) { return floatConstruct(hash(floatBitsToUint(x))); }
+float random( vec2  v ) { return floatConstruct(hash(floatBitsToUint(v))); }
+float random( vec3  v ) { return floatConstruct(hash(floatBitsToUint(v))); }
+float random( vec4  v ) { return floatConstruct(hash(floatBitsToUint(v))); }
+
+/* stuff by nomadic lizard */
+
+vec3 quantise(in vec3 fragColor, in vec2 fragCoord)
+{
+    return fragColor + random(vec3(fragCoord, FXAARootConstant.Time));
+}
+
 struct PSIn
 {
     vec4 Position;
@@ -161,7 +206,7 @@ struct PSIn
 vec4 HLSLmain(PSIn input1)
 {
     vec3 result = vec3(0.0, 0.0, 0.0);
-    if(bool (FXAARootConstant.Use))
+    if(FXAARootConstant.Use > 0.5f)
     {
         (result = FXAA((input1).TexCoord, ivec2(((input1).TexCoord * FXAARootConstant.ScreenSize))));
     }
@@ -169,6 +214,9 @@ vec4 HLSLmain(PSIn input1)
     {
         (result = vec3 ((texture(sampler2D( SrcTexture, g_LinearClamp), vec2((input1).TexCoord))).rgb));
     }
+
+    result.xyz = quantise(result.xyz, input1.TexCoord); 
+
     return vec4((result).r, (result).g, (result).b, 1.0);
 }
 void main()

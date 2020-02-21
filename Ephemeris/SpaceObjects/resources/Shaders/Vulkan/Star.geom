@@ -20,7 +20,7 @@ layout(location = 1) out vec2 geomOutput_ScreenCoord;
 layout(location = 2) out vec3 geomOutput_Color;
 
 
-layout(UPDATE_FREQ_PER_FRAME, binding = 11) uniform StarUniform_Block
+layout(set = 1, binding = 11) uniform StarUniform_Block
 {
     mat4 RotMat;
     mat4 ViewProjMat;
@@ -49,14 +49,13 @@ void PushVertex(vec3 pos, vec3 color, vec3 dx, vec3 dy, vec2 vOffset, vec2 baseT
     PsIn Out;
     vec4 position = StarUniform.RotMat * vec4(pos.x, pos.y, pos.z, 1.0);
     gl_Position = StarUniform.ViewProjMat * vec4(position.xyz + (dx * vOffset.x) + (dy * vOffset.y), 1.0);
+    vec4 copiedPos = gl_Position;
 
-    geomOutput_TexCoord.z = gl_Position.z;    
-    gl_Position /= vec4 ((gl_Position).w);
+    geomOutput_TexCoord.z = gl_Position.z; 
+    copiedPos /= vec4(copiedPos.w);
 
-    geomOutput_ScreenCoord = vec2((((gl_Position).x + float (1.0)) * float (0.5)), ((float (1.0) - (gl_Position).y) * float (0.5)));
+    geomOutput_ScreenCoord = vec2((copiedPos.x + 1.0) * 0.5, (1.0 - copiedPos.y) * 0.5);
 
-    //(vOffset += vec2(1, (-1)));
-    //(vOffset *= vec2(0.5, (-0.5)));
     geomOutput_TexCoord.xy = (baseTC + vOffset);
     geomOutput_Color.xyz = color;
     EmitVertex();

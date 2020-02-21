@@ -10,8 +10,7 @@
 #pragma once
 
 //asimp importer
-#include "../../../../The-Forge/Common_3/Tools/AssimpImporter/AssimpImporter.h"
-#include "../../../../The-Forge/Common_3/Renderer/ResourceLoader.h"
+#include "../../../../The-Forge/Common_3/Renderer/IResourceLoader.h"
 
 #include "HeightData.h"
 #include "Visibility.h"
@@ -232,6 +231,7 @@ private:
 
 		mesh.indexCount = (uint32)indices.size();
 		
+		SyncToken token = {};
 		//mesh.indexBuffer = renderer->addIndexBuffer(mesh.indexCount, sizeof(uint32), STATIC, &indices.front());
 		BufferLoadDesc zoneIbDesc = {};
 		zoneIbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_INDEX_BUFFER;
@@ -241,7 +241,8 @@ private:
 		zoneIbDesc.mDesc.mIndexType = INDEX_TYPE_UINT32;
 		zoneIbDesc.pData = indices.data();
 		zoneIbDesc.ppBuffer = &mesh.indexBuffer;
-		addResource(&zoneIbDesc);		
+		addResource(&zoneIbDesc, &token, LOAD_PRIORITY_HIGH);
+		waitForToken(&token);
 
 		auto &bounds = mesh.boundingBox;
 		bounds.max = float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);

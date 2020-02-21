@@ -35,6 +35,7 @@
 **/.vs/
 **/.vscode/
 **/x64/
+**/ORBIS/
 **.vcxproj.user
 **.user
 **.log
@@ -45,6 +46,11 @@
 *.user
 *.userosscache
 *.sln.docstates
+
+# Orbis
+#Files copied to app project directory
+/**/PS4 Visual Studio 2017/**/Resources/
+/**/PS4 Visual Studio 2017/**/*.prx
 
 ##Xcode User settings
 xcuserdata/

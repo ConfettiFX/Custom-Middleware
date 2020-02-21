@@ -1,13 +1,7 @@
-# Ephemeris
+# Ephemeris 2
 ----
 
-| Day Scene (Click on Image to view a Video) | 
-|---|
-[![](Screenshots/main.png)](https://vimeo.com/369379476)
-
-| Night Scene (Click on Image to view a Video) |
-|---|
-[![](Screenshots/03.png)](https://vimeo.com/352541826)
+[![](Screenshots/main.png)](https://vimeo.com/344675521)
 
 Ephemeris 2 is a middleware solution for implementing a dynamic 24 hour Skydome System. It is running on top of [The Forge](https://github.com/ConfettiFX/The-Forge) and therefore supports the same platforms. We will release Ephemeris 1 for the iOS / Android mobile platforms in the future.
 
@@ -23,13 +17,17 @@ Check out the demo video by clicking the main image above!
   - Simulation of astronomically correct sun, stars and moon (coming soon)
   - 2.5D Clouds for mobile (coming soon with Ephemeris 1)
    
+| Dawn Scene |
+|---|
+|![](Screenshots/02.png)|
+
 | Day Scene |
 |---|
-|![](Screenshots/01.png)|
+|![](Screenshots/03.png)|
 
 | Twilight Scene |
 |---|
-|![](Screenshots/02.png)|
+|![](Screenshots/04.png)|
 
 | Night Scene |
 |---|
@@ -37,11 +35,11 @@ Check out the demo video by clicking the main image above!
 
 | Cloudy Scene |
 |---|
-|![](Screenshots/04.png)|
-
-| Space Scene |
-|---|
 |![](Screenshots/06.png)|
+
+| Above the Clouds |
+|---|
+|![](Screenshots/01.png)|
 
 
 # News
@@ -80,11 +78,12 @@ Maintenance release following the update of The Forge.
   * Add the second layer: it is possible to generate the second cloud layer which can act, independently
   * Add FXAA
 
-* Improvement
-  * Ray-marching: now, hard-edge artifact is significantly reduced
-  * Silver-lining: improved its quality
-  * God ray: improved its quality
-  * Performance: up to 25% performance increased
+## Release 1.32 - August 8th - 
+
+- Added Procedural Night Sky and Star-field
+  - Now, the user can costomize the night sky's nebula colors 
+- Added Glow effects on Sun and Moon
+- Fix a issue that Godrays can be drawn on unexpected area
 
 ## Release 1.36 - October 18th, 2019
 Maintenance release following the upate of the Forge.
@@ -99,8 +98,6 @@ Maintenance release following the upate of the Forge.
  The-Forge
  Custom-Middleware
  ```
-
-The release version of Ephemeris and the release version of The Forge need to be the same.
 
 
 ## Customization
