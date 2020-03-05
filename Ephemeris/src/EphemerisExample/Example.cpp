@@ -319,7 +319,7 @@ public:
 		screenQuadVbDesc.mDesc.mVertexStride = sizeof(float) * 5;
 		screenQuadVbDesc.pData = screenQuadPoints;
 		screenQuadVbDesc.ppBuffer = &pScreenQuadVertexBuffer;
-		addResource(&screenQuadVbDesc, NULL, LOAD_PRIORITY_NORMAL);
+		addResource(&screenQuadVbDesc);
 
 		RasterizerStateDesc rasterizerStateDesc = {};
 		rasterizerStateDesc.mCullMode = CULL_MODE_NONE;
@@ -340,7 +340,7 @@ public:
 
 		//TransBufferDesc.pData = gInitializeVal.data();
 		TransBufferDesc.ppBuffer = &pTransmittanceBuffer;
-		addResource(&TransBufferDesc, NULL, LOAD_PRIORITY_NORMAL);
+		addResource(&TransBufferDesc);
 
 		if (!gAppUI.Init(pRenderer))
 			return false;

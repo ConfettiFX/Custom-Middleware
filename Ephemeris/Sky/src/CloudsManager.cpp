@@ -496,8 +496,6 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 	//cnf_free(szExtra);
 #endif
 	if (!bShadersInited) return false;
-
-	SyncToken token = {};
 	
   TextureLoadDesc CloudFlatTextureDesc = {};
 #if defined(_DURANGO) || defined(ORBIS)
@@ -507,7 +505,7 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 #endif
 	CloudFlatTextureDesc.pFilePath = CloudFlatTextureFilePath;
   CloudFlatTextureDesc.ppTexture = &m_tDistantCloud;
-  addResource(&CloudFlatTextureDesc, &token, LOAD_PRIORITY_NORMAL);
+  addResource(&CloudFlatTextureDesc, false);
 
   TextureLoadDesc CloudCumulusTextureDesc = {};
 #if defined(_DURANGO) || defined(ORBIS)
@@ -517,7 +515,7 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 #endif
 	CloudCumulusTextureDesc.pFilePath = CloudCumulusTextureFilePath;
   CloudCumulusTextureDesc.ppTexture = &m_tCumulusCloud;
-  addResource(&CloudCumulusTextureDesc, &token, LOAD_PRIORITY_NORMAL);
+  addResource(&CloudCumulusTextureDesc, false);
 
 
   BufferLoadDesc CumulusUniformDesc = {};
@@ -530,7 +528,7 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
   for (uint i = 0; i < gImageCount; i++)
   {
     CumulusUniformDesc.ppBuffer = &pCumulusUniformBuffer[i];
-    addResource(&CumulusUniformDesc, &token, LOAD_PRIORITY_NORMAL);
+    addResource(&CumulusUniformDesc);
   }
 
   BufferLoadDesc DistantUniformDesc = {};
@@ -543,7 +541,7 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
   for (uint i = 0; i < gImageCount; i++)
   {
     DistantUniformDesc.ppBuffer = &pDistantUniformBuffer[i];
-    addResource(&DistantUniformDesc, &token, LOAD_PRIORITY_NORMAL);
+    addResource(&DistantUniformDesc);
   }
 
   BufferLoadDesc imposterUniformDesc = {};
@@ -556,10 +554,10 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
   for (uint i = 0; i < gImageCount; i++)
   {
     imposterUniformDesc.ppBuffer = &pImposterUniformBuffer[i];
-    addResource(&imposterUniformDesc, &token, LOAD_PRIORITY_NORMAL);
+    addResource(&imposterUniformDesc);
   }
 
-  waitForToken(&token);
+  
 	
 	return true;
 }
@@ -1128,12 +1126,13 @@ void CloudsManager::prepareImpostors(Cmd *cmd, const vec3 & camPos, const mat4 &
 
       cmdBindPipeline(cmd, pCumulusCloudPipeline);
 
-	  BufferUpdateDesc BufferUniformSettingDesc = { pCumulusUniformBuffer[gFrameIndex] };
-	  beginUpdateResource(&BufferUniformSettingDesc);
-      CumulusCloudUniformBuffer& tempBuffer = *(CumulusCloudUniformBuffer*)BufferUniformSettingDesc.pMappedData;
+      CumulusCloudUniformBuffer tempBuffer;
+      
+
       tempBuffer.model;
       memcpy(tempBuffer.OffsetScale, m_CumulusClouds[cumulusID].m_OffsetScales.data(), sizeof(vec4) *  MaxParticles);
       memcpy(tempBuffer.ParticleProps, m_CumulusClouds[cumulusID].m_particleProps.data(), sizeof(ParticleProps) * QMaxParticles);
+
       tempBuffer.vp = vp;
       tempBuffer.v = v;
       tempBuffer.dx = dx;
@@ -1143,7 +1142,10 @@ void CloudsManager::prepareImpostors(Cmd *cmd, const vec3 & camPos, const mat4 &
       //tempBuffer.zNear;
       //tempBuffer.packDepthParams;
       //tempBuffer.masterParticleRotation;
-	  endUpdateResource(&BufferUniformSettingDesc, NULL);
+    
+      BufferUpdateDesc BufferUniformSettingDesc = { pCumulusUniformBuffer[gFrameIndex], &tempBuffer };
+      beginUpdateResource(&BufferUniformSettingDesc);
+	  endUpdateResource(&BufferUniformSettingDesc);
 
 
 			//	TODO: Igor: fix it
@@ -1365,9 +1367,7 @@ void CloudsManager::renderDistantCloud(Cmd* cmd,
 
   cmdBindPipeline(cmd, pDistantCloudPipeline);
 
-  BufferUpdateDesc BufferUniformSettingDesc = { pDistantUniformBuffer[gFrameIndex] };
-  beginUpdateResource(&BufferUniformSettingDesc);
-  DistantCloudUniformBuffer& tempBuffer = *(DistantCloudUniformBuffer*)BufferUniformSettingDesc.pMappedData;
+  DistantCloudUniformBuffer tempBuffer;
   tempBuffer.AlphaSaturation = 0.0f;
   tempBuffer.Attenuation = 0.0f;
 
@@ -1407,7 +1407,11 @@ void CloudsManager::renderDistantCloud(Cmd* cmd,
  
   pRenderer->setShaderConstant3f("localSun", normalize(localSun.xyz()));
   */ 
-  endUpdateResource(&BufferUniformSettingDesc, NULL);
+  
+
+  BufferUpdateDesc BufferUniformSettingDesc = { pDistantUniformBuffer[gFrameIndex], &tempBuffer };
+  beginUpdateResource(&BufferUniformSettingDesc);
+  endUpdateResource(&BufferUniformSettingDesc);
 
 
   //	TODO: Igor: fix it
@@ -1540,9 +1544,7 @@ void CloudsManager::renderCumulusCloud(Cmd *cmd, Texture* Transmittance, Texture
 
   cmdBindPipeline(cmd, pDistantCloudPipeline);
 
-  BufferUpdateDesc BufferUniformSettingDesc = { pImposterUniformBuffer[gFrameIndex] };
-  beginUpdateResource(&BufferUniformSettingDesc);
-  ImposterUniformBuffer& tempBuffer = *(ImposterUniformBuffer*)BufferUniformSettingDesc.pMappedData;
+  ImposterUniformBuffer tempBuffer;
   tempBuffer.AlphaSaturation = 0.0f;
   tempBuffer.Attenuation = 0.0f;
 
@@ -1553,7 +1555,10 @@ void CloudsManager::renderCumulusCloud(Cmd *cmd, Texture* Transmittance, Texture
   tempBuffer.mvp = vp * m_Impostors[i].Transform();
   tempBuffer.offsetScale = offsetScaleToLocalKM;
   tempBuffer.SaturationFactor = 1.0f;
-  endUpdateResource(&BufferUniformSettingDesc, NULL);
+
+  BufferUpdateDesc BufferUniformSettingDesc = { pImposterUniformBuffer[gFrameIndex], &tempBuffer };
+  beginUpdateResource(&BufferUniformSettingDesc);
+  endUpdateResource(&BufferUniformSettingDesc);
 
 
   //	TODO: Igor: fix it

@@ -483,7 +483,7 @@ bool SpaceObjects::Init(Renderer* const renderer)
 	addBlendState(pRenderer, &blendStateAdditiveDesc, &pBlendStateStar);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	SyncToken token = {};
+
 
 	float screenQuadPoints[] = {
 		0.0f,  0.0f, 0.5f, 0.0f, 0.0f,
@@ -499,7 +499,7 @@ bool SpaceObjects::Init(Renderer* const renderer)
 	TriangularVbDesc.mDesc.mSize = (uint64_t)(TriangularVbDesc.mDesc.mVertexStride * 4);
 	TriangularVbDesc.pData = screenQuadPoints;
 	TriangularVbDesc.ppBuffer = &pGlobalTriangularVertexBuffer;
-	addResource(&TriangularVbDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&TriangularVbDesc);
 
 	TextureLoadDesc SkyMoonTextureDesc = {};
 #if defined(_DURANGO) || defined(ORBIS)
@@ -509,7 +509,7 @@ bool SpaceObjects::Init(Renderer* const renderer)
 #endif
 	SkyMoonTextureDesc.pFilePath = SkyMoonTextureFilePath;
 	SkyMoonTextureDesc.ppTexture = &pMoonTexture;
-	addResource(&SkyMoonTextureDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&SkyMoonTextureDesc, false);
 
 #if USING_MILKYWAY
 
@@ -525,7 +525,7 @@ bool SpaceObjects::Init(Renderer* const renderer)
 	MilkyWayVbDesc.mDesc.mSize = (uint64_t)MilkyWayVertices.size() / 3 * MilkyWayVbDesc.mDesc.mVertexStride;
 	MilkyWayVbDesc.pData = MilkyWayVertices.data();
 	MilkyWayVbDesc.ppBuffer = &pMilkyWayVertexBuffer;
-	addResource(&MilkyWayVbDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&MilkyWayVbDesc);
 
 	BufferLoadDesc MilkyWayIbDesc = {};
 	MilkyWayIbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_INDEX_BUFFER;
@@ -534,7 +534,7 @@ bool SpaceObjects::Init(Renderer* const renderer)
 	MilkyWayIbDesc.mDesc.mIndexType = INDEX_TYPE_UINT32;
 	MilkyWayIbDesc.pData = MilkyWayIndices.data();
 	MilkyWayIbDesc.ppBuffer = &pMilkyWayIndexBuffer;
-	addResource(&MilkyWayIbDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&MilkyWayIbDesc);
 
 	MilkyWayIndexCount = (uint32_t)MilkyWayIndices.size();
 
@@ -550,7 +550,7 @@ bool SpaceObjects::Init(Renderer* const renderer)
 	AuroraVbDesc.mDesc.mVertexStride = sizeof(float3) * 3;
 	AuroraVbDesc.mDesc.mSize = (uint64_t)AuroraParticleNum * AuroraVbDesc.mDesc.mVertexStride;
 	AuroraVbDesc.ppBuffer = &pAuroraVertexBuffer;
-	addResource(&AuroraVbDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&AuroraVbDesc);
 
 	BufferLoadDesc AuroraParticleDesc = {};
 	AuroraParticleDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_BUFFER | DESCRIPTOR_TYPE_RW_BUFFER;
@@ -564,7 +564,7 @@ bool SpaceObjects::Init(Renderer* const renderer)
 	// for(unsigned int i=0; i<gImageCount; i++)
 	// {
 	AuroraParticleDesc.ppBuffer = &pAuroraParticle;
-	addResource(&AuroraParticleDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&AuroraParticleDesc);
 	// }
 
 	BufferLoadDesc AuroraConstraintDesc = {};
@@ -579,7 +579,7 @@ bool SpaceObjects::Init(Renderer* const renderer)
 	// for (unsigned int i = 0; i < gImageCount; i++)
 	// {
 	AuroraConstraintDesc.ppBuffer = &pAuroraConstraint;
-	addResource(&AuroraConstraintDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&AuroraConstraintDesc);
 	// }
 
 
@@ -594,7 +594,7 @@ bool SpaceObjects::Init(Renderer* const renderer)
 	// for (unsigned int i = 0; i < gImageCount; i++)
 	// {
 	AuroraUniformDesc.ppBuffer = &pAuroraUniformBuffer;
-	addResource(&AuroraUniformDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&AuroraUniformDesc);
 	// }
 
 	BufferLoadDesc sunUniformDesc = {};
@@ -607,10 +607,10 @@ bool SpaceObjects::Init(Renderer* const renderer)
 	for (uint i = 0; i < gImageCount; i++)
 	{
 		sunUniformDesc.ppBuffer = &pSunUniformBuffer[i];
-		addResource(&sunUniformDesc, &token, LOAD_PRIORITY_NORMAL);
+		addResource(&sunUniformDesc);
 
 		sunUniformDesc.ppBuffer = &pStarUniformBuffer[i];
-		addResource(&sunUniformDesc, &token, LOAD_PRIORITY_NORMAL);
+		addResource(&sunUniformDesc);
 	}
 
 	///////////////////////////////////////////////////////////////////
@@ -621,8 +621,7 @@ bool SpaceObjects::Init(Renderer* const renderer)
 	guiDesc.mStartPosition = vec2(1280.0f / getDpiScale().getX(), 700.0f / getDpiScale().getY());
 	guiDesc.mStartSize = vec2(300.0f / getDpiScale().getX(), 250.0f / getDpiScale().getY());
 	pGuiWindow = pGAppUI->AddGuiComponent("Space Objects", &guiDesc);
-	
-	waitForToken(&token);
+
 
 	return true;
 }
@@ -804,9 +803,7 @@ bool SpaceObjects::Load(RenderTarget** rts, uint32_t count)
 
 		pipelineSettings.pRootSignature = pSpaceObjectsRootSignature;
 		pipelineSettings.pShaderProgram = pSunShader;
-#if defined(METAL)
 		pipelineSettings.pVertexLayout = &vertexLayout;
-#endif
 		pipelineSettings.pRasterizerState = pRasterizerForSpaceObjects;
 		pipelineSettings.pBlendState = pBlendStateSun;
 
@@ -1035,10 +1032,9 @@ void SpaceObjects::Draw(Cmd* cmd)
 		starData.Dy = v4ToF4(pCameraController->getViewMatrix().getRow(1) * 100000.0f);
 #endif
 
-		BufferUpdateDesc BufferUniformSettingDesc2 = { pStarUniformBuffer[gFrameIndex] };
+		BufferUpdateDesc BufferUniformSettingDesc2 = { pStarUniformBuffer[gFrameIndex], &starData };
 		beginUpdateResource(&BufferUniformSettingDesc2);
-		*(StarData*)BufferUniformSettingDesc2.pMappedData = starData;
-		endUpdateResource(&BufferUniformSettingDesc2, NULL);
+		endUpdateResource(&BufferUniformSettingDesc2);
 
 		cmdBindPipeline(cmd, pStarPipeline);
 		cmdBindDescriptorSet(cmd, 0, pSpaceObjectsDescriptorSet[0]);
@@ -1087,10 +1083,9 @@ void SpaceObjects::Draw(Cmd* cmd)
 		data.Dx = v4ToF4(pCameraController->getViewMatrix().getRow(0) * SunSize);
 		data.Dy = v4ToF4(pCameraController->getViewMatrix().getRow(1) * SunSize);
 
-		BufferUpdateDesc BufferUniformSettingDesc = { pSunUniformBuffer[gFrameIndex] };
+		BufferUpdateDesc BufferUniformSettingDesc = { pSunUniformBuffer[gFrameIndex], &data };
 		beginUpdateResource(&BufferUniformSettingDesc);
-		*(Data*)BufferUniformSettingDesc.pMappedData = data;
-		endUpdateResource(&BufferUniformSettingDesc, NULL);
+		endUpdateResource(&BufferUniformSettingDesc);
 
 		cmdBindPipeline(cmd, pSunPipeline);
 		cmdBindDescriptorSet(cmd, 0, pSpaceObjectsDescriptorSet[0]);
