@@ -40,8 +40,6 @@ Pipeline*			    pPAS_Pipeline = NULL;
 Shader*           pSpaceShader = NULL;
 Pipeline*         pSpacePipeline = NULL;
 
-BlendState*				pBlendStateSpace;
-
 DescriptorSet*    pSkyDescriptorSet[2] = { NULL };
 RootSignature*    pSkyRootSignature = NULL;
 
@@ -163,6 +161,8 @@ mat4 MakeRotationMatrix(float angle, vec3 axis)
 
 void Sky::CalculateLookupData()
 {
+	SyncToken token = {};
+
 	TextureLoadDesc SkyTransmittanceTextureDesc = {};
 #if defined(_DURANGO) || defined(ORBIS)
 	PathHandle SkyTransmittanceTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/Transmittance");
@@ -171,7 +171,7 @@ void Sky::CalculateLookupData()
 #endif
 	SkyTransmittanceTextureDesc.pFilePath = SkyTransmittanceTextureFilePath;
 	SkyTransmittanceTextureDesc.ppTexture = &pTransmittanceTexture;
-	addResource(&SkyTransmittanceTextureDesc, false);
+	addResource(&SkyTransmittanceTextureDesc, &token, LOAD_PRIORITY_NORMAL);
 
 	TextureLoadDesc SkyIrradianceTextureDesc = {};
 #if defined(_DURANGO) || defined(ORBIS)
@@ -181,7 +181,7 @@ void Sky::CalculateLookupData()
 #endif
 	SkyIrradianceTextureDesc.pFilePath = SkyIrradianceTextureFilePath;
 	SkyIrradianceTextureDesc.ppTexture = &pIrradianceTexture;
-	addResource(&SkyIrradianceTextureDesc, false);
+	addResource(&SkyIrradianceTextureDesc, &token, LOAD_PRIORITY_NORMAL);
 
 	TextureLoadDesc SkyInscatterTextureDesc = {};
 #if defined(_DURANGO) || defined(ORBIS)
@@ -191,7 +191,9 @@ void Sky::CalculateLookupData()
 #endif
 	SkyInscatterTextureDesc.pFilePath = SkyInscatterTextureFilePath;
 	SkyInscatterTextureDesc.ppTexture = &pInscatterTexture;
-	addResource(&SkyInscatterTextureDesc, false);
+	addResource(&SkyInscatterTextureDesc, &token, LOAD_PRIORITY_NORMAL);
+
+	waitForToken(&token);
 }
 
 //	<https://www.shadertoy.com/view/4dS3Wd>
@@ -348,11 +350,6 @@ void Sky::GenerateIcosahedron(float **ppPoints, eastl::vector<float> &vertices, 
 bool Sky::Init(Renderer* const renderer)
 {
 	pRenderer = renderer;
-
-	RasterizerStateDesc rasterizerStateDesc = {};
-	rasterizerStateDesc.mCullMode = CULL_MODE_NONE;
-	addRasterizerState(pRenderer, &rasterizerStateDesc, &pRasterizerForSky);
-
 	//////////////////////////////////// Samplers ///////////////////////////////////////////////////
 
 	SamplerDesc samplerClampDesc = {
@@ -419,21 +416,6 @@ bool Sky::Init(Renderer* const renderer)
 	addDescriptorSet(pRenderer, &setDesc, &pSkyDescriptorSet[0]);
 	setDesc = { pSkyRootSignature, DESCRIPTOR_UPDATE_FREQ_PER_FRAME, gImageCount };
 	addDescriptorSet(pRenderer, &setDesc, &pSkyDescriptorSet[1]);
-
-	BlendStateDesc blendStateSpaceDesc = {};
-	blendStateSpaceDesc.mBlendModes[0] = BM_ADD;
-	blendStateSpaceDesc.mBlendAlphaModes[0] = BM_ADD;
-
-	blendStateSpaceDesc.mSrcFactors[0] = BC_ONE;
-	blendStateSpaceDesc.mDstFactors[0] = BC_ONE_MINUS_SRC_ALPHA;
-
-	blendStateSpaceDesc.mSrcAlphaFactors[0] = BC_ONE;
-	blendStateSpaceDesc.mDstAlphaFactors[0] = BC_ZERO;
-
-	blendStateSpaceDesc.mMasks[0] = ALL;
-	blendStateSpaceDesc.mRenderTargetMask = BLEND_STATE_TARGET_0;
-	addBlendState(pRenderer, &blendStateSpaceDesc, &pBlendStateSpace);
-
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	CalculateLookupData();
 
@@ -443,11 +425,12 @@ bool Sky::Init(Renderer* const renderer)
 
 	GenerateIcosahedron(&pSpherePoints, IcosahedronVertices, IcosahedronIndices, gSphereResolution, gSphereDiameter);
 
+	SyncToken token = {};
+
 	BufferLoadDesc particleBufferDesc = {};
 	particleBufferDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_VERTEX_BUFFER;
 	particleBufferDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
-	particleBufferDesc.mDesc.mVertexStride = sizeof(float) * 6;
-	particleBufferDesc.mDesc.mSize = particleBufferDesc.mDesc.mVertexStride * 4;
+	particleBufferDesc.mDesc.mSize = sizeof(float) * 6 * 4;
 	particleBufferDesc.ppBuffer = &gParticleSystem.pParticleVertexBuffer;
 
 
@@ -459,37 +442,33 @@ bool Sky::Init(Renderer* const renderer)
 	};
 
 	particleBufferDesc.pData = screenQuadPointsForStar;
-
-	addResource(&particleBufferDesc);
+	addResource(&particleBufferDesc, &token, LOAD_PRIORITY_NORMAL);
 
 	particleBufferDesc = {};
 	particleBufferDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_VERTEX_BUFFER | DESCRIPTOR_TYPE_BUFFER;
 	particleBufferDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
-	particleBufferDesc.mDesc.mVertexStride = sizeof(ParticleData);
 	particleBufferDesc.mDesc.mStructStride = sizeof(ParticleData);
-	particleBufferDesc.mDesc.mSize = (uint64_t)gParticleSystem.particleDataSet.ParticleDataArray.size() * particleBufferDesc.mDesc.mVertexStride;
+	particleBufferDesc.mDesc.mSize = (uint64_t)gParticleSystem.particleDataSet.ParticleDataArray.size() * sizeof(ParticleData);
 	particleBufferDesc.mDesc.mElementCount = particleBufferDesc.mDesc.mSize / particleBufferDesc.mDesc.mStructStride;
 	particleBufferDesc.pData = gParticleSystem.particleDataSet.ParticleDataArray.data();
 	particleBufferDesc.ppBuffer = &gParticleSystem.pParticleInstanceBuffer;
-	addResource(&particleBufferDesc);
+	addResource(&particleBufferDesc, &token, LOAD_PRIORITY_NORMAL);
 
 	BufferLoadDesc sphereVbDesc = {};
 	sphereVbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_VERTEX_BUFFER;
 	sphereVbDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
-	sphereVbDesc.mDesc.mVertexStride = sizeof(float3) * 3;
-	sphereVbDesc.mDesc.mSize = (uint64_t)IcosahedronVertices.size() / 3 * sphereVbDesc.mDesc.mVertexStride;
+	sphereVbDesc.mDesc.mSize = (uint64_t)IcosahedronVertices.size() / 3 * sizeof(float3) * 3;
 	sphereVbDesc.pData = pSpherePoints;
 	sphereVbDesc.ppBuffer = &pSphereVertexBuffer;
-	addResource(&sphereVbDesc);
+	addResource(&sphereVbDesc, &token, LOAD_PRIORITY_NORMAL);
 
 	BufferLoadDesc sphereIbDesc = {};
 	sphereIbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_INDEX_BUFFER;
 	sphereIbDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
 	sphereIbDesc.mDesc.mSize = (uint64_t)IcosahedronIndices.size() * sizeof(uint32_t);
-	sphereIbDesc.mDesc.mIndexType = INDEX_TYPE_UINT32;
 	sphereIbDesc.pData = IcosahedronIndices.data();
 	sphereIbDesc.ppBuffer = &pSphereIndexBuffer;
-	addResource(&sphereIbDesc);
+	addResource(&sphereIbDesc, &token, LOAD_PRIORITY_NORMAL);
 
 	BufferLoadDesc renderSkybDesc = {};
 	renderSkybDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -501,7 +480,7 @@ bool Sky::Init(Renderer* const renderer)
 	for (uint i = 0; i < gImageCount; i++)
 	{
 		renderSkybDesc.ppBuffer = &pRenderSkyUniformBuffer[i];
-		addResource(&renderSkybDesc);
+		addResource(&renderSkybDesc, &token, LOAD_PRIORITY_NORMAL);
 	}
 
 	BufferLoadDesc spaceUniformDesc = {};
@@ -514,11 +493,8 @@ bool Sky::Init(Renderer* const renderer)
 	for (uint i = 0; i < gImageCount; i++)
 	{
 		spaceUniformDesc.ppBuffer = &pSpaceUniformBuffer[i];
-		addResource(&spaceUniformDesc);
+		addResource(&spaceUniformDesc, &token, LOAD_PRIORITY_NORMAL);
 	}
-
-	// Need to free memory;
-	conf_free(pSpherePoints);
 
 	///////////////////////////////////////////////////////////////////
 	// UI
@@ -557,13 +533,16 @@ bool Sky::Init(Renderer* const renderer)
 
 	pGuiWindow->AddWidget(CollapsingNebula);
 
+	waitForToken(&token);
+
+	// Need to free memory;
+	conf_free(pSpherePoints);
+
 	return true;
 }
 
 void Sky::Exit()
 {
-	removeBlendState(pBlendStateSpace);
-
 	removeShader(pRenderer, pPAS_Shader);
 	removeShader(pRenderer, pSpaceShader);
 
@@ -592,16 +571,14 @@ void Sky::Exit()
 	removeResource(pTransmittanceTexture);
 	removeResource(pIrradianceTexture);
 	removeResource(pInscatterTexture);
-
-	removeRasterizerState(pRasterizerForSky);
 }
 
 bool Sky::Load(RenderTarget** rts, uint32_t count)
 {
 	pPreStageRenderTarget = rts[0];
 
-	mWidth = pPreStageRenderTarget->mDesc.mWidth;
-	mHeight = pPreStageRenderTarget->mDesc.mHeight;
+	mWidth = pPreStageRenderTarget->mWidth;
+	mHeight = pPreStageRenderTarget->mHeight;
 
 	float aspect = (float)mWidth / (float)mHeight;
 	float aspectInverse = 1.0f / aspect;
@@ -633,8 +610,8 @@ bool Sky::Load(RenderTarget** rts, uint32_t count)
 	SkyRenderTarget.mSampleCount = SAMPLE_COUNT_1;
 	SkyRenderTarget.mSampleQuality = 0;
 	//SkyRenderTarget.mSrgb = false;
-	SkyRenderTarget.mWidth = pPreStageRenderTarget->mDesc.mWidth;
-	SkyRenderTarget.mHeight = pPreStageRenderTarget->mDesc.mHeight;
+	SkyRenderTarget.mWidth = pPreStageRenderTarget->mWidth;
+	SkyRenderTarget.mHeight = pPreStageRenderTarget->mHeight;
 	SkyRenderTarget.pDebugName = L"Sky RenderTarget";
 	SkyRenderTarget.mFlags = TEXTURE_CREATION_FLAG_OWN_MEMORY_BIT;
 	addRenderTarget(pRenderer, &SkyRenderTarget, &pSkyRenderTarget);
@@ -642,6 +619,22 @@ bool Sky::Load(RenderTarget** rts, uint32_t count)
 #if defined(VULKAN)
 	TransitionRenderTargets(pSkyRenderTarget, ResourceState::RESOURCE_STATE_RENDER_TARGET, pRenderer, ppTransCmds[0], pGraphicsQueue, pTransitionCompleteFences);
 #endif
+
+	RasterizerStateDesc rasterizerStateDesc = {};
+	rasterizerStateDesc.mCullMode = CULL_MODE_NONE;
+
+	BlendStateDesc blendStateSpaceDesc = {};
+	blendStateSpaceDesc.mBlendModes[0] = BM_ADD;
+	blendStateSpaceDesc.mBlendAlphaModes[0] = BM_ADD;
+
+	blendStateSpaceDesc.mSrcFactors[0] = BC_ONE;
+	blendStateSpaceDesc.mDstFactors[0] = BC_ONE_MINUS_SRC_ALPHA;
+
+	blendStateSpaceDesc.mSrcAlphaFactors[0] = BC_ONE;
+	blendStateSpaceDesc.mDstAlphaFactors[0] = BC_ZERO;
+
+	blendStateSpaceDesc.mMasks[0] = ALL;
+	blendStateSpaceDesc.mRenderTargetMask = BLEND_STATE_TARGET_0;
 
 	PipelineDesc pipelineDescPAS;
 	{
@@ -653,15 +646,14 @@ bool Sky::Load(RenderTarget** rts, uint32_t count)
 		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
 		pipelineSettings.mRenderTargetCount = 1;
 
-		pipelineSettings.pColorFormats = &pSkyRenderTarget->mDesc.mFormat;
-		pipelineSettings.mSampleCount = pSkyRenderTarget->mDesc.mSampleCount;
-		pipelineSettings.mSampleQuality = pSkyRenderTarget->mDesc.mSampleQuality;
+		pipelineSettings.pColorFormats = &pSkyRenderTarget->mFormat;
+		pipelineSettings.mSampleCount = pSkyRenderTarget->mSampleCount;
+		pipelineSettings.mSampleQuality = pSkyRenderTarget->mSampleQuality;
 
 		pipelineSettings.pRootSignature = pSkyRootSignature;
 		pipelineSettings.pShaderProgram = pPAS_Shader;
-		pipelineSettings.pVertexLayout = &vertexLayout;
-		pipelineSettings.pRasterizerState = pRasterizerForSky;
-
+		pipelineSettings.pVertexLayout = NULL;
+		pipelineSettings.pRasterizerState = &rasterizerStateDesc;
 		addPipeline(pRenderer, &pipelineDescPAS, &pPAS_Pipeline);
 	}
 
@@ -693,15 +685,15 @@ bool Sky::Load(RenderTarget** rts, uint32_t count)
 		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
 		pipelineSettings.mRenderTargetCount = 1;
 
-		pipelineSettings.pColorFormats = &pSkyRenderTarget->mDesc.mFormat;
-		pipelineSettings.mSampleCount = pSkyRenderTarget->mDesc.mSampleCount;
-		pipelineSettings.mSampleQuality = pSkyRenderTarget->mDesc.mSampleQuality;
+		pipelineSettings.pColorFormats = &pSkyRenderTarget->mFormat;
+		pipelineSettings.mSampleCount = pSkyRenderTarget->mSampleCount;
+		pipelineSettings.mSampleQuality = pSkyRenderTarget->mSampleQuality;
 
 		pipelineSettings.pRootSignature = pSkyRootSignature;
 		pipelineSettings.pShaderProgram = pSpaceShader;
 		pipelineSettings.pVertexLayout = &vertexLayout;
-		pipelineSettings.pRasterizerState = pRasterizerForSky;
-		pipelineSettings.pBlendState = pBlendStateSpace;
+		pipelineSettings.pRasterizerState = &rasterizerStateDesc;
+		pipelineSettings.pBlendState = &blendStateSpaceDesc;
 
 		addPipeline(pRenderer, &pipelineDescSpace, &pSpacePipeline);
 	}
@@ -790,13 +782,13 @@ void Sky::Update(float deltaTime)
 
 void Sky::Draw(Cmd* cmd)
 {
-	cmdBeginGpuTimestampQuery(cmd, pGraphicsGpuProfiler, "Sky", true);
+	cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Sky");
 
 	vec4 lightDir = vec4(f3Tov3(LightDirection));
 
 	//if (lightDir.getY() >= 0.0f)
 	{
-		cmdBeginGpuTimestampQuery(cmd, pGraphicsGpuProfiler, "Atmospheric Scattering", true);
+		cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Atmospheric Scattering");
 
 		RenderTargetBarrier rtBarriersSky[] =
 		{
@@ -820,8 +812,8 @@ void Sky::Draw(Cmd* cmd)
 		loadActions.mClearColorValues[0].a = 0.0f;
 
 		cmdBindRenderTargets(cmd, 1, &pSkyRenderTarget, NULL, &loadActions, NULL, NULL, -1, -1);
-		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pSkyRenderTarget->mDesc.mWidth, (float)pSkyRenderTarget->mDesc.mHeight, 0.0f, 1.0f);
-		cmdSetScissor(cmd, 0, 0, pSkyRenderTarget->mDesc.mWidth, pSkyRenderTarget->mDesc.mHeight);
+		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pSkyRenderTarget->mWidth, (float)pSkyRenderTarget->mHeight, 0.0f, 1.0f);
+		cmdSetScissor(cmd, 0, 0, pSkyRenderTarget->mWidth, pSkyRenderTarget->mHeight);
 
 		cmdBindPipeline(cmd, pPAS_Pipeline);
 		cmdBindDescriptorSet(cmd, 0, pSkyDescriptorSet[0]);
@@ -856,24 +848,25 @@ void Sky::Draw(Cmd* cmd)
 		_cbRootConstantStruct.InScatterParams = float4(inscatterParams.x, inscatterParams.y, 0.0f, 0.0f);
 		_cbRootConstantStruct.LightIntensity = LightColorAndIntensity;
 
-		BufferUpdateDesc BufferUniformSettingDesc = { pRenderSkyUniformBuffer[gFrameIndex], &_cbRootConstantStruct };
+		BufferUpdateDesc BufferUniformSettingDesc = { pRenderSkyUniformBuffer[gFrameIndex] };
 		beginUpdateResource(&BufferUniformSettingDesc);
-		endUpdateResource(&BufferUniformSettingDesc);
+		*(RenderSkyUniformBuffer*)BufferUniformSettingDesc.pMappedData = _cbRootConstantStruct;
+		endUpdateResource(&BufferUniformSettingDesc, NULL);
 
 		cmdDraw(cmd, 3, 0);
 
 		cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
 
-		cmdEndGpuTimestampQuery(cmd, pGraphicsGpuProfiler);
+		cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
 	}
 
 	/////////////////////////////////////////////////////////////////////////////////////
 
 	if (lightDir.getY() < 0.2f)
 	{
-		cmdBeginGpuTimestampQuery(cmd, pGraphicsGpuProfiler, "Draw Night Sky", true);
+		cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw Night Sky");
 
-		cmdBeginGpuTimestampQuery(cmd, pGraphicsGpuProfiler, "Draw Space", true);
+		cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw Space");
 
 		RenderTargetBarrier barriersSky[] =
 		{
@@ -883,8 +876,8 @@ void Sky::Draw(Cmd* cmd)
 		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriersSky);
 
 		cmdBindRenderTargets(cmd, 1, &pSkyRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
-		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pSkyRenderTarget->mDesc.mWidth, (float)pSkyRenderTarget->mDesc.mHeight, 0.0f, 1.0f);
-		cmdSetScissor(cmd, 0, 0, pSkyRenderTarget->mDesc.mWidth, pSkyRenderTarget->mDesc.mHeight);
+		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pSkyRenderTarget->mWidth, (float)pSkyRenderTarget->mHeight, 0.0f, 1.0f);
+		cmdSetScissor(cmd, 0, 0, pSkyRenderTarget->mWidth, pSkyRenderTarget->mHeight);
 
 		struct Data
 		{
@@ -922,11 +915,12 @@ void Sky::Draw(Cmd* cmd)
 
 		data.viewProjMat = SpaceProjectionMatrix * pCameraController->getViewMatrix() * rotMat;
 		data.LightDirection = float4(LightDirection, 0.0f);
-		data.ScreenSize = float4((float)pSkyRenderTarget->mDesc.mWidth, (float)pSkyRenderTarget->mDesc.mHeight, 0.0f, 0.0f);
+		data.ScreenSize = float4((float)pSkyRenderTarget->mWidth, (float)pSkyRenderTarget->mHeight, 0.0f, 0.0f);
 
-		BufferUpdateDesc BufferUniformSettingDesc = { pSpaceUniformBuffer[gFrameIndex], &data };
+		BufferUpdateDesc BufferUniformSettingDesc = { pSpaceUniformBuffer[gFrameIndex] };
 		beginUpdateResource(&BufferUniformSettingDesc);
-		endUpdateResource(&BufferUniformSettingDesc);
+		*(Data*)BufferUniformSettingDesc.pMappedData = data;
+		endUpdateResource(&BufferUniformSettingDesc, NULL);
 
 		DescriptorData SpaceParams[2] = {};
 
@@ -934,15 +928,16 @@ void Sky::Draw(Cmd* cmd)
 		cmdBindDescriptorSet(cmd, 0, pSkyDescriptorSet[0]);
 		cmdBindDescriptorSet(cmd, gFrameIndex, pSkyDescriptorSet[1]);
 
-		cmdBindVertexBuffer(cmd, 1, &pSphereVertexBuffer, NULL);
-		cmdBindIndexBuffer(cmd, pSphereIndexBuffer, 0);
+		const uint32_t sphereStride = sizeof(float3) * 3;
+		cmdBindVertexBuffer(cmd, 1, &pSphereVertexBuffer, &sphereStride, NULL);
+		cmdBindIndexBuffer(cmd, pSphereIndexBuffer, INDEX_TYPE_UINT32, 0);
 		cmdDrawIndexed(cmd, sphere.IndexCount, 0, 0);
 
 		cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
 
-		cmdEndGpuTimestampQuery(cmd, pGraphicsGpuProfiler);
+		cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
 		
-		cmdEndGpuTimestampQuery(cmd, pGraphicsGpuProfiler);
+		cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
 	}
 
 	////////////////////////////////////////////////////////////////////////
@@ -988,8 +983,8 @@ void Sky::Draw(Cmd* cmd)
 	  cmdBeginGpuTimestampQuery(cmd, pGraphicsGpuProfiler, "Draw Aurora", true);
 
 	  cmdBindRenderTargets(cmd, 1, &pSkyRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
-	  cmdSetViewport(cmd, 0.0f, 0.0f, (float)pSkyRenderTarget->mDesc.mWidth, (float)pSkyRenderTarget->mDesc.mHeight, 0.0f, 1.0f);
-	  cmdSetScissor(cmd, 0, 0, pSkyRenderTarget->mDesc.mWidth, pSkyRenderTarget->mDesc.mHeight);
+	  cmdSetViewport(cmd, 0.0f, 0.0f, (float)pSkyRenderTarget->mWidth, (float)pSkyRenderTarget->mHeight, 0.0f, 1.0f);
+	  cmdSetScissor(cmd, 0, 0, pSkyRenderTarget->mWidth, pSkyRenderTarget->mHeight);
 
 	  DescriptorData AuroraParams[2] = {};
 
@@ -1019,12 +1014,12 @@ void Sky::Draw(Cmd* cmd)
   #endif
   */
 
-	cmdEndGpuTimestampQuery(cmd, pGraphicsGpuProfiler);
+	cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
 }
 
 void Sky::Initialize(uint InImageCount,
 	ICameraController* InCameraController, Queue*	InGraphicsQueue,
-	Cmd** InTransCmds, Fence* InTransitionCompleteFences, GpuProfiler*	InGraphicsGpuProfiler, UIApp* InGAppUI, Buffer*	InTransmittanceBuffer)
+	Cmd** InTransCmds, Fence* InTransitionCompleteFences, ProfileToken InGraphicsGpuProfiler, UIApp* InGAppUI, Buffer*	InTransmittanceBuffer)
 {
 	gImageCount = InImageCount;
 
@@ -1032,7 +1027,7 @@ void Sky::Initialize(uint InImageCount,
 	pGraphicsQueue = InGraphicsQueue;
 	ppTransCmds = InTransCmds;
 	pTransitionCompleteFences = InTransitionCompleteFences;
-	pGraphicsGpuProfiler = InGraphicsGpuProfiler;
+	gGpuProfileToken = InGraphicsGpuProfiler;
 	pGAppUI = InGAppUI;
 	pTransmittanceBuffer = InTransmittanceBuffer;
 }

@@ -231,16 +231,17 @@ private:
 
 		mesh.indexCount = (uint32)indices.size();
 		
+		SyncToken token = {};
 		//mesh.indexBuffer = renderer->addIndexBuffer(mesh.indexCount, sizeof(uint32), STATIC, &indices.front());
 		BufferLoadDesc zoneIbDesc = {};
 		zoneIbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_INDEX_BUFFER;
 		zoneIbDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
 		zoneIbDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
 		zoneIbDesc.mDesc.mSize = (uint64_t)(mesh.indexCount * sizeof(uint32));
-		zoneIbDesc.mDesc.mIndexType = INDEX_TYPE_UINT32;
 		zoneIbDesc.pData = indices.data();
 		zoneIbDesc.ppBuffer = &mesh.indexBuffer;
-		addResource(&zoneIbDesc);		
+		addResource(&zoneIbDesc, &token, LOAD_PRIORITY_HIGH);
+		waitForToken(&token);
 
 		auto &bounds = mesh.boundingBox;
 		bounds.max = float3(-FLT_MAX, -FLT_MAX, -FLT_MAX);

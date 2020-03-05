@@ -306,11 +306,11 @@ void CloudImpostor::setupRenderer( Cmd *cmd, CumulusCloud *pCloud, const vec3 &c
   loadActions.mClearColorValues[0].g = 0.0f;
   loadActions.mClearColorValues[0].b = 0.0f;
   loadActions.mClearColorValues[0].a = 0.0f;
-  //loadActions.mClearDepth = pDepthBuffer->mDesc.mClearValue;
+  //loadActions.mClearDepth = pDepthBuffer->mClearValue;
 
   cmdBindRenderTargets(cmd, 1, &m_tImpostor, NULL, &loadActions, NULL, NULL, -1, -1);
-  cmdSetViewport(cmd, 0.0f, 0.0f, (float)m_tImpostor->mDesc.mWidth, (float)m_tImpostor->mDesc.mHeight, 0.0f, 1.0f);
-  cmdSetScissor(cmd, 0, 0, m_tImpostor->mDesc.mWidth, m_tImpostor->mDesc.mHeight);
+  cmdSetViewport(cmd, 0.0f, 0.0f, (float)m_tImpostor->mWidth, (float)m_tImpostor->mHeight, 0.0f, 1.0f);
+  cmdSetScissor(cmd, 0, 0, m_tImpostor->mWidth, m_tImpostor->mHeight);
 
 #endif	//	USE_MULTIPLICATIVE_DENSITY_ACCUMULTAION
 	

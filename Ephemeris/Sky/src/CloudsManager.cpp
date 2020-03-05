@@ -139,8 +139,7 @@ RootSignature*pImposterCloudRootSignature;
 
 CloudsManager::CloudsManager(void) :
 	//m_pRenderer(0), m_pDevice(0),
-	noCull(NULL), noDepthWrite(NULL), linearClamp(NULL), trilinearClamp(NULL),
-	alphaBlend(NULL), impostorBlend(NULL), addBlend(NULL),
+	linearClamp(NULL), trilinearClamp(NULL),
 	m_shDistantCloud(NULL),
 	m_shCumulusCloud(NULL),
 	m_tDistantCloud(NULL),
@@ -180,24 +179,18 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 
   RasterizerStateDesc rasterizerStateDesc = {};
   rasterizerStateDesc.mCullMode = CULL_MODE_NONE;
-  addRasterizerState(pRenderer, &rasterizerStateDesc, &noCull);
 
 	//if ((noDepthWrite  = pRenderer->addDepthState(true, false)) == DS_NONE) return false;
 
-  DepthStateDesc depthStateDesc = {};
-  depthStateDesc.mDepthTest = true;
-  depthStateDesc.mDepthWrite = false;
-  depthStateDesc.mDepthFunc = CMP_LEQUAL;
-  addDepthState(pRenderer, &depthStateDesc, &noDepthWrite);
+  DepthStateDesc depthStateNoWriteDesc = {};
+  depthStateNoWriteDesc.mDepthTest = true;
+  depthStateNoWriteDesc.mDepthWrite = false;
+  depthStateNoWriteDesc.mDepthFunc = CMP_LEQUAL;
 
-
-	//if ((noDepthAtAll  = pRenderer->addDepthState(false, false)) == DS_NONE) return false;
-
-  depthStateDesc = {};
-  depthStateDesc.mDepthTest = false;
-  depthStateDesc.mDepthWrite = false;
-  depthStateDesc.mDepthFunc = CMP_LEQUAL;
-  addDepthState(pRenderer, &depthStateDesc, &noDepthAtAll);
+  DepthStateDesc depthStateDisableDesc = {};
+  depthStateDisableDesc.mDepthTest = false;
+  depthStateDisableDesc.mDepthWrite = false;
+  depthStateDisableDesc.mDepthFunc = CMP_LEQUAL;
 
 	//if ((linearClamp = pRenderer->addSamplerState(BILINEAR, CLAMP, CLAMP, CLAMP)) == SS_NONE) return false;
 
@@ -217,58 +210,55 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 
 	//if ((alphaBlend = pRenderer->addBlendState(SRC_ALPHA, ONE_MINUS_SRC_ALPHA, SRC_ALPHA, ONE_MINUS_SRC_ALPHA)) == BS_NONE) return false;
 
-  BlendStateDesc blendStateSpaceDesc = {};
-  blendStateSpaceDesc.mBlendModes[0] = BM_ADD;
-  blendStateSpaceDesc.mBlendAlphaModes[0] = BM_ADD;
+  BlendStateDesc blendStateAlphaDesc = {};
+  blendStateAlphaDesc.mBlendModes[0] = BM_ADD;
+  blendStateAlphaDesc.mBlendAlphaModes[0] = BM_ADD;
 
-  blendStateSpaceDesc.mSrcFactors[0] = BC_SRC_ALPHA;
-  blendStateSpaceDesc.mDstFactors[0] = BC_ONE_MINUS_SRC_ALPHA;
+  blendStateAlphaDesc.mSrcFactors[0] = BC_SRC_ALPHA;
+  blendStateAlphaDesc.mDstFactors[0] = BC_ONE_MINUS_SRC_ALPHA;
 
-  blendStateSpaceDesc.mSrcAlphaFactors[0] = BC_SRC_ALPHA;
-  blendStateSpaceDesc.mDstAlphaFactors[0] = BC_ONE_MINUS_SRC_ALPHA;
+  blendStateAlphaDesc.mSrcAlphaFactors[0] = BC_SRC_ALPHA;
+  blendStateAlphaDesc.mDstAlphaFactors[0] = BC_ONE_MINUS_SRC_ALPHA;
 
-  blendStateSpaceDesc.mMasks[0] = ALL;
-  blendStateSpaceDesc.mRenderTargetMask = BLEND_STATE_TARGET_0;
-  addBlendState(pRenderer, &blendStateSpaceDesc, &alphaBlend);
+  blendStateAlphaDesc.mMasks[0] = ALL;
+  blendStateAlphaDesc.mRenderTargetMask = BLEND_STATE_TARGET_0;
 
 	//if ((impostorBlend = pRenderer->addBlendState(ONE, ZERO, ONE, ONE_MINUS_SRC_ALPHA)) == BS_NONE) return false;
 	//if ((impostorBlend = pRenderer->addBlendState(SRC_ALPHA, ONE_MINUS_SRC_ALPHA, ONE, ONE_MINUS_SRC_ALPHA)) == BS_NONE) return false;
 	//	TODO: B: Use this? Igor: this makes clouds look as without reconstructed position.
 #ifdef	USE_MULTIPLICATIVE_DENSITY_ACCUMULTAION
 	//if ((impostorBlend = pRenderer->addBlendState(SRC_ALPHA, ONE_MINUS_SRC_ALPHA, ZERO, ONE_MINUS_SRC_ALPHA)) == BS_NONE) return false;
+  BlendStateDesc blendStateImposterDesc = {};
+  blendStateImposterDesc.mBlendModes[0] = BM_ADD;
+  blendStateImposterDesc.mBlendAlphaModes[0] = BM_ADD;
 
-  blendStateSpaceDesc = {};
-  blendStateSpaceDesc.mBlendModes[0] = BM_ADD;
-  blendStateSpaceDesc.mBlendAlphaModes[0] = BM_ADD;
+  blendStateImposterDesc.mSrcFactors[0] = BC_SRC_ALPHA;
+  blendStateImposterDesc.mDstFactors[0] = BC_ONE_MINUS_SRC_ALPHA;
 
-  blendStateSpaceDesc.mSrcFactors[0] = BC_SRC_ALPHA;
-  blendStateSpaceDesc.mDstFactors[0] = BC_ONE_MINUS_SRC_ALPHA;
+  blendStateImposterDesc.mSrcAlphaFactors[0] = BC_ZERO;
+  blendStateImposterDesc.mDstAlphaFactors[0] = BC_ONE_MINUS_SRC_ALPHA;
 
-  blendStateSpaceDesc.mSrcAlphaFactors[0] = BC_ZERO;
-  blendStateSpaceDesc.mDstAlphaFactors[0] = BC_ONE_MINUS_SRC_ALPHA;
+  blendStateImposterDesc.mMasks[0] = ALL;
+  blendStateImposterDesc.mRenderTargetMask = BLEND_STATE_TARGET_0;
 
-  blendStateSpaceDesc.mMasks[0] = ALL;
-  blendStateSpaceDesc.mRenderTargetMask = BLEND_STATE_TARGET_0;
-  addBlendState(pRenderer, &blendStateSpaceDesc, &impostorBlend);
 
 #else	//	USE_MULTIPLICATIVE_DENSITY_ACCUMULTAION
 	//if ((impostorBlend = pRenderer->addBlendState(SRC_ALPHA, ONE_MINUS_SRC_ALPHA, SRC_ALPHA, ONE_MINUS_SRC_ALPHA)) == BS_NONE) return false;
 	
   //if ((impostorBlend = pRenderer->addBlendState(SRC_ALPHA, ONE_MINUS_SRC_ALPHA, ONE, ONE_MINUS_SRC_ALPHA)) == BS_NONE) return false;
 
-  blendStateSpaceDesc = {};
-  blendStateSpaceDesc.mBlendModes[0] = BM_ADD;
-  blendStateSpaceDesc.mBlendAlphaModes[0] = BM_ADD;
+  BlendStateDesc blendStateImposterDesc = {};
+  blendStateImposterDesc.mBlendModes[0] = BM_ADD;
+  blendStateImposterDesc.mBlendAlphaModes[0] = BM_ADD;
 
-  blendStateSpaceDesc.mSrcFactors[0] = BC_SRC_ALPHA;
-  blendStateSpaceDesc.mDstFactors[0] = BC_ONE_MINUS_SRC_ALPHA;
+  blendStateImposterDesc.mSrcFactors[0] = BC_SRC_ALPHA;
+  blendStateImposterDesc.mDstFactors[0] = BC_ONE_MINUS_SRC_ALPHA;
 
-  blendStateSpaceDesc.mSrcAlphaFactors[0] = BC_ONE;
-  blendStateSpaceDesc.mDstAlphaFactors[0] = BC_ONE_MINUS_SRC_ALPHA;
+  blendStateImposterDesc.mSrcAlphaFactors[0] = BC_ONE;
+  blendStateImposterDesc.mDstAlphaFactors[0] = BC_ONE_MINUS_SRC_ALPHA;
 
-  blendStateSpaceDesc.mMasks[0] = ALL;
-  blendStateSpaceDesc.mRenderTargetMask = BLEND_STATE_TARGET_0;
-  addBlendState(pRenderer, &blendStateSpaceDesc, &impostorBlend);
+  blendStateImposterDesc.mMasks[0] = ALL;
+  blendStateImposterDesc.mRenderTargetMask = BLEND_STATE_TARGET_0;
 
 
 #endif	//	USE_MULTIPLICATIVE_DENSITY_ACCUMULTAION
@@ -350,17 +340,17 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
       pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
       pipelineSettings.mRenderTargetCount = 1;
 
-      pipelineSettings.pColorFormats = &pSkyRenderTarget->mDesc.mFormat;
-      //pipelineSettings.pSrgbValues = &pSkyRenderTarget->mDesc.mSrgb;
-      pipelineSettings.mSampleCount = pSkyRenderTarget->mDesc.mSampleCount;
-      pipelineSettings.mSampleQuality = pSkyRenderTarget->mDesc.mSampleQuality;
+      pipelineSettings.pColorFormats = &pSkyRenderTarget->mFormat;
+      //pipelineSettings.pSrgbValues = &pSkyRenderTarget->mSrgb;
+      pipelineSettings.mSampleCount = pSkyRenderTarget->mSampleCount;
+      pipelineSettings.mSampleQuality = pSkyRenderTarget->mSampleQuality;
 
       pipelineSettings.pRootSignature = pClDistanceCloudRootSignature;
       pipelineSettings.pShaderProgram = pClDistanceCloudShader;
       pipelineSettings.pVertexLayout = &vertexLayout;
-      pipelineSettings.pDepthState = noDepthWrite;
-      pipelineSettings.pBlendState = alphaBlend;
-      pipelineSettings.pRasterizerState = noCull;
+      pipelineSettings.pDepthState = &depthStateNoWriteDesc;
+      pipelineSettings.pBlendState = &blendStateAlphaDesc;
+      pipelineSettings.pRasterizerState = &rasterizerStateDesc;
 
       addPipeline(pRenderer, &pipelineDescClDistanceCloud, &pDistantCloudPipeline);
 
@@ -399,15 +389,15 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
       pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_POINT_LIST;
       pipelineSettings.mRenderTargetCount = 1;
 
-      pipelineSettings.pColorFormats = &pSkyRenderTarget->mDesc.mFormat;
-      //pipelineSettings.pSrgbValues = &pSkyRenderTarget->mDesc.mSrgb;
-      pipelineSettings.mSampleCount = pSkyRenderTarget->mDesc.mSampleCount;
-      pipelineSettings.mSampleQuality = pSkyRenderTarget->mDesc.mSampleQuality;
+      pipelineSettings.pColorFormats = &pSkyRenderTarget->mFormat;
+      //pipelineSettings.pSrgbValues = &pSkyRenderTarget->mSrgb;
+      pipelineSettings.mSampleCount = pSkyRenderTarget->mSampleCount;
+      pipelineSettings.mSampleQuality = pSkyRenderTarget->mSampleQuality;
 
       pipelineSettings.pRootSignature = pClCumulusCloudRootSignature;
       pipelineSettings.pShaderProgram = pClCumulusCloudShader;
       pipelineSettings.pVertexLayout = &vertexLayout;
-      pipelineSettings.pRasterizerState = noCull;
+      pipelineSettings.pRasterizerState = &rasterizerStateDesc;
 
       addPipeline(pRenderer, &pipelineDescClCumulusCloud, &pCumulusCloudPipeline);
     }
@@ -472,15 +462,15 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
         pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_POINT_LIST;
         pipelineSettings.mRenderTargetCount = 1;
 
-        pipelineSettings.pColorFormats = &pSkyRenderTarget->mDesc.mFormat;
-        //pipelineSettings.pSrgbValues = &pSkyRenderTarget->mDesc.mSrgb;
-        pipelineSettings.mSampleCount = pSkyRenderTarget->mDesc.mSampleCount;
-        pipelineSettings.mSampleQuality = pSkyRenderTarget->mDesc.mSampleQuality;
+        pipelineSettings.pColorFormats = &pSkyRenderTarget->mFormat;
+        //pipelineSettings.pSrgbValues = &pSkyRenderTarget->mSrgb;
+        pipelineSettings.mSampleCount = pSkyRenderTarget->mSampleCount;
+        pipelineSettings.mSampleQuality = pSkyRenderTarget->mSampleQuality;
 
         pipelineSettings.pRootSignature = pImposterCloudRootSignature;
         pipelineSettings.pShaderProgram = pImposterCloudShader;
         pipelineSettings.pVertexLayout = &vertexLayout;
-        pipelineSettings.pRasterizerState = noCull;
+        pipelineSettings.pRasterizerState = &rasterizerStateDesc;
 
         addPipeline(pRenderer, &pipelineDescImpostor, &pImposterCloudPipeline);
       }
@@ -496,6 +486,8 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 	//cnf_free(szExtra);
 #endif
 	if (!bShadersInited) return false;
+
+	SyncToken token = {};
 	
   TextureLoadDesc CloudFlatTextureDesc = {};
 #if defined(_DURANGO) || defined(ORBIS)
@@ -505,7 +497,7 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 #endif
 	CloudFlatTextureDesc.pFilePath = CloudFlatTextureFilePath;
   CloudFlatTextureDesc.ppTexture = &m_tDistantCloud;
-  addResource(&CloudFlatTextureDesc, false);
+  addResource(&CloudFlatTextureDesc, &token, LOAD_PRIORITY_NORMAL);
 
   TextureLoadDesc CloudCumulusTextureDesc = {};
 #if defined(_DURANGO) || defined(ORBIS)
@@ -515,7 +507,7 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 #endif
 	CloudCumulusTextureDesc.pFilePath = CloudCumulusTextureFilePath;
   CloudCumulusTextureDesc.ppTexture = &m_tCumulusCloud;
-  addResource(&CloudCumulusTextureDesc, false);
+  addResource(&CloudCumulusTextureDesc, &token, LOAD_PRIORITY_NORMAL);
 
 
   BufferLoadDesc CumulusUniformDesc = {};
@@ -528,7 +520,7 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
   for (uint i = 0; i < gImageCount; i++)
   {
     CumulusUniformDesc.ppBuffer = &pCumulusUniformBuffer[i];
-    addResource(&CumulusUniformDesc);
+    addResource(&CumulusUniformDesc, &token, LOAD_PRIORITY_NORMAL);
   }
 
   BufferLoadDesc DistantUniformDesc = {};
@@ -541,7 +533,7 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
   for (uint i = 0; i < gImageCount; i++)
   {
     DistantUniformDesc.ppBuffer = &pDistantUniformBuffer[i];
-    addResource(&DistantUniformDesc);
+    addResource(&DistantUniformDesc, &token, LOAD_PRIORITY_NORMAL);
   }
 
   BufferLoadDesc imposterUniformDesc = {};
@@ -554,10 +546,10 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
   for (uint i = 0; i < gImageCount; i++)
   {
     imposterUniformDesc.ppBuffer = &pImposterUniformBuffer[i];
-    addResource(&imposterUniformDesc);
+    addResource(&imposterUniformDesc, &token, LOAD_PRIORITY_NORMAL);
   }
 
-  
+  waitForToken(&token);
 	
 	return true;
 }
@@ -586,14 +578,8 @@ void CloudsManager::unload()
   removePipeline(pRenderer, pCumulusCloudPipeline);
   removePipeline(pRenderer, pImposterCloudPipeline);
 
-  removeRasterizerState(noCull);
-  removeDepthState(noDepthWrite);
-  removeDepthState(noDepthAtAll);
   removeSampler(pRenderer, linearClamp);
   removeSampler(pRenderer, trilinearClamp);
-
-  removeBlendState(alphaBlend);
-  removeBlendState(impostorBlend);
 
   for (uint i = 0; i < gImageCount; i++)
   {
@@ -1126,13 +1112,12 @@ void CloudsManager::prepareImpostors(Cmd *cmd, const vec3 & camPos, const mat4 &
 
       cmdBindPipeline(cmd, pCumulusCloudPipeline);
 
-      CumulusCloudUniformBuffer tempBuffer;
-      
-
+	  BufferUpdateDesc BufferUniformSettingDesc = { pCumulusUniformBuffer[gFrameIndex] };
+	  beginUpdateResource(&BufferUniformSettingDesc);
+      CumulusCloudUniformBuffer& tempBuffer = *(CumulusCloudUniformBuffer*)BufferUniformSettingDesc.pMappedData;
       tempBuffer.model;
       memcpy(tempBuffer.OffsetScale, m_CumulusClouds[cumulusID].m_OffsetScales.data(), sizeof(vec4) *  MaxParticles);
       memcpy(tempBuffer.ParticleProps, m_CumulusClouds[cumulusID].m_particleProps.data(), sizeof(ParticleProps) * QMaxParticles);
-
       tempBuffer.vp = vp;
       tempBuffer.v = v;
       tempBuffer.dx = dx;
@@ -1142,10 +1127,7 @@ void CloudsManager::prepareImpostors(Cmd *cmd, const vec3 & camPos, const mat4 &
       //tempBuffer.zNear;
       //tempBuffer.packDepthParams;
       //tempBuffer.masterParticleRotation;
-    
-      BufferUpdateDesc BufferUniformSettingDesc = { pCumulusUniformBuffer[gFrameIndex], &tempBuffer };
-      beginUpdateResource(&BufferUniformSettingDesc);
-	  endUpdateResource(&BufferUniformSettingDesc);
+	  endUpdateResource(&BufferUniformSettingDesc, NULL);
 
 
 			//	TODO: Igor: fix it
@@ -1367,7 +1349,9 @@ void CloudsManager::renderDistantCloud(Cmd* cmd,
 
   cmdBindPipeline(cmd, pDistantCloudPipeline);
 
-  DistantCloudUniformBuffer tempBuffer;
+  BufferUpdateDesc BufferUniformSettingDesc = { pDistantUniformBuffer[gFrameIndex] };
+  beginUpdateResource(&BufferUniformSettingDesc);
+  DistantCloudUniformBuffer& tempBuffer = *(DistantCloudUniformBuffer*)BufferUniformSettingDesc.pMappedData;
   tempBuffer.AlphaSaturation = 0.0f;
   tempBuffer.Attenuation = 0.0f;
 
@@ -1407,11 +1391,7 @@ void CloudsManager::renderDistantCloud(Cmd* cmd,
  
   pRenderer->setShaderConstant3f("localSun", normalize(localSun.xyz()));
   */ 
-  
-
-  BufferUpdateDesc BufferUniformSettingDesc = { pDistantUniformBuffer[gFrameIndex], &tempBuffer };
-  beginUpdateResource(&BufferUniformSettingDesc);
-  endUpdateResource(&BufferUniformSettingDesc);
+  endUpdateResource(&BufferUniformSettingDesc, NULL);
 
 
   //	TODO: Igor: fix it
@@ -1419,8 +1399,8 @@ void CloudsManager::renderDistantCloud(Cmd* cmd,
   //pRenderer->setTexture("base", m_CumulusClouds[cumulusID].Texture(), linearClamp);	
 
   cmdBindRenderTargets(cmd, 1, &pSkyRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
-  cmdSetViewport(cmd, 0.0f, 0.0f, (float)pSkyRenderTarget->mDesc.mWidth, (float)pSkyRenderTarget->mDesc.mHeight, 0.0f, 1.0f);
-  cmdSetScissor(cmd, 0, 0, pSkyRenderTarget->mDesc.mWidth, pSkyRenderTarget->mDesc.mHeight);
+  cmdSetViewport(cmd, 0.0f, 0.0f, (float)pSkyRenderTarget->mWidth, (float)pSkyRenderTarget->mHeight, 0.0f, 1.0f);
+  cmdSetScissor(cmd, 0, 0, pSkyRenderTarget->mWidth, pSkyRenderTarget->mHeight);
 
   DescriptorData preImpParams[4] = {};
 
@@ -1536,15 +1516,17 @@ void CloudsManager::renderCumulusCloud(Cmd *cmd, Texture* Transmittance, Texture
   loadActions.mClearColorValues[0].g = 0.0f;
   loadActions.mClearColorValues[0].b = 0.0f;
   loadActions.mClearColorValues[0].a = 0.0f;
-  //loadActions.mClearDepth = pDepthBuffer->mDesc.mClearValue;
+  //loadActions.mClearDepth = pDepthBuffer->mClearValue;
 
   cmdBindRenderTargets(cmd, 1, &pSkyRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
-  cmdSetViewport(cmd, 0.0f, 0.0f, (float)pSkyRenderTarget->mDesc.mWidth, (float)pSkyRenderTarget->mDesc.mHeight, 0.0f, 1.0f);
-  cmdSetScissor(cmd, 0, 0, pSkyRenderTarget->mDesc.mWidth, pSkyRenderTarget->mDesc.mHeight);
+  cmdSetViewport(cmd, 0.0f, 0.0f, (float)pSkyRenderTarget->mWidth, (float)pSkyRenderTarget->mHeight, 0.0f, 1.0f);
+  cmdSetScissor(cmd, 0, 0, pSkyRenderTarget->mWidth, pSkyRenderTarget->mHeight);
 
   cmdBindPipeline(cmd, pDistantCloudPipeline);
 
-  ImposterUniformBuffer tempBuffer;
+  BufferUpdateDesc BufferUniformSettingDesc = { pImposterUniformBuffer[gFrameIndex] };
+  beginUpdateResource(&BufferUniformSettingDesc);
+  ImposterUniformBuffer& tempBuffer = *(ImposterUniformBuffer*)BufferUniformSettingDesc.pMappedData;
   tempBuffer.AlphaSaturation = 0.0f;
   tempBuffer.Attenuation = 0.0f;
 
@@ -1555,10 +1537,7 @@ void CloudsManager::renderCumulusCloud(Cmd *cmd, Texture* Transmittance, Texture
   tempBuffer.mvp = vp * m_Impostors[i].Transform();
   tempBuffer.offsetScale = offsetScaleToLocalKM;
   tempBuffer.SaturationFactor = 1.0f;
-
-  BufferUpdateDesc BufferUniformSettingDesc = { pImposterUniformBuffer[gFrameIndex], &tempBuffer };
-  beginUpdateResource(&BufferUniformSettingDesc);
-  endUpdateResource(&BufferUniformSettingDesc);
+  endUpdateResource(&BufferUniformSettingDesc, NULL);
 
 
   //	TODO: Igor: fix it
