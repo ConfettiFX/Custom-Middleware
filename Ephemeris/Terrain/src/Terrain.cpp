@@ -236,8 +236,6 @@ bool Terrain::Init(Renderer* renderer)
 	rootDesc.mMaxBindlessTextures = 5;
 	addRootSignature(pRenderer, &rootDesc, &pTerrainRootSignature);
 
-	SyncToken token = {};
-
 #if USE_PROCEDUAL_TERRAIN
 	for (int j = 0; j < GRID_SIZE - 1; j++)
 	{
@@ -268,7 +266,7 @@ bool Terrain::Init(Renderer* renderer)
 	zoneIbDesc.mDesc.mIndexType = INDEX_TYPE_UINT32;
 	zoneIbDesc.pData = indexBuffer.data();
 	zoneIbDesc.ppBuffer = &pGlobalZoneIndexBuffer;
-	addResource(&zoneIbDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&zoneIbDesc);
 #endif
 
 	float screenQuadPoints[] = {
@@ -285,7 +283,7 @@ bool Terrain::Init(Renderer* renderer)
 	TriangularVbDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_OWN_MEMORY_BIT | BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
 	TriangularVbDesc.pData = screenQuadPoints;
 	TriangularVbDesc.ppBuffer = &pGlobalTriangularVertexBuffer;
-	addResource(&TriangularVbDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&TriangularVbDesc);
 
 	BufferLoadDesc LightingTerrainUnifromBufferDesc = {};
 	LightingTerrainUnifromBufferDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -297,7 +295,7 @@ bool Terrain::Init(Renderer* renderer)
 	for (uint i = 0; i < gImageCount; i++)
 	{
 		LightingTerrainUnifromBufferDesc.ppBuffer = &pLightingTerrainUniformBuffer[i];
-		addResource(&LightingTerrainUnifromBufferDesc, &token, LOAD_PRIORITY_NORMAL);
+		addResource(&LightingTerrainUnifromBufferDesc);
 	}
 
 	BufferLoadDesc RenderTerrainUnifromBufferDesc = {};
@@ -310,7 +308,7 @@ bool Terrain::Init(Renderer* renderer)
 	for (uint i = 0; i < gImageCount; i++)
 	{
 		RenderTerrainUnifromBufferDesc.ppBuffer = &pRenderTerrainUniformBuffer[i];
-		addResource(&RenderTerrainUnifromBufferDesc, &token, LOAD_PRIORITY_NORMAL);
+		addResource(&RenderTerrainUnifromBufferDesc);
 	}
 
 	BufferLoadDesc VolumetricCloudsShadowUnifromBufferDesc = {};
@@ -320,11 +318,9 @@ bool Terrain::Init(Renderer* renderer)
 	VolumetricCloudsShadowUnifromBufferDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT | BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
 	VolumetricCloudsShadowUnifromBufferDesc.pData = NULL;
 	VolumetricCloudsShadowUnifromBufferDesc.ppBuffer = &pVolumetricCloudsShadowBuffer;
-	addResource(&VolumetricCloudsShadowUnifromBufferDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&VolumetricCloudsShadowUnifromBufferDesc);
 
 	////////////////////////////////////////////////////////////////////////////////////////
-
-	waitForToken(&token);
 
 	GenerateTerrainFromHeightmap(HEIGHT_SCALE, EARTH_RADIUS);
 
@@ -438,8 +434,6 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 	hemisphereBuilder.build(pRenderer, &dataSource, vertices, meshSegments, radius * 10.0f - 720000.0f, 0.15f, 64, 15, 513);
 #endif
 
-	SyncToken token = {};
-
 	//vertexBufferPositions = renderer->addVertexBuffer((uint32)vertices.size() * sizeof(Vertex), STATIC, &vertices.front());
 	TerrainPathVertexCount = (uint32_t)vertices.size();
 	BufferLoadDesc zoneVbDesc = {};
@@ -449,7 +443,7 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 	zoneVbDesc.mDesc.mSize = (uint64_t)(zoneVbDesc.mDesc.mVertexStride * vertices.size());
 	zoneVbDesc.pData = vertices.data();
 	zoneVbDesc.ppBuffer = &pGlobalVertexBuffer;
-	addResource(&zoneVbDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&zoneVbDesc);
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////
 	// normalMapTexture = renderer->addTexture(subPathTexture, true);
@@ -462,7 +456,7 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 #endif
 	TerrainNormalTextureDesc.pFilePath = TerrainNormalTextureFilePath;
 	TerrainNormalTextureDesc.ppTexture = &pTerrainNormalTexture;
-	addResource(&TerrainNormalTextureDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&TerrainNormalTextureDesc, false);
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////
 	// maskTexture = renderer->addTexture(maskTextureFilePath, true);
@@ -475,7 +469,7 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 #endif
 	TerrainMaskTextureDesc.pFilePath = TerrainMaskTextureFilePath;
 	TerrainMaskTextureDesc.ppTexture = &pTerrainMaskTexture;
-	addResource(&TerrainMaskTextureDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&TerrainMaskTextureDesc, false);
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -490,7 +484,7 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 
 		TerrainTiledColorTextureDesc.pFilePath = TerrainTiledColorTextureFilePath;
 		TerrainTiledColorTextureDesc.ppTexture = &pTerrainTiledColorTextures[i];
-		addResource(&TerrainTiledColorTextureDesc, &token, LOAD_PRIORITY_NORMAL);
+		addResource(&TerrainTiledColorTextureDesc, false);
 
 		TextureLoadDesc TerrainTiledNormalTextureDesc = {};
 		
@@ -498,8 +492,26 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 
 		TerrainTiledNormalTextureDesc.pFilePath = TerrainTiledNormalTextureFilePath;
 		TerrainTiledNormalTextureDesc.ppTexture = &pTerrainTiledNormalTextures[i];
-		addResource(&TerrainTiledNormalTextureDesc, &token, LOAD_PRIORITY_NORMAL);
+		addResource(&TerrainTiledNormalTextureDesc, false);
 	}
+
+	gTerrainTiledColorTexturesStorage = (Texture*)conf_malloc(sizeof(Texture) * pTerrainTiledColorTextures.size());
+	gTerrainTiledNormalTexturesStorage = (Texture*)conf_malloc(sizeof(Texture) * pTerrainTiledNormalTextures.size());
+
+
+	for (uint32_t i = 0; i < (uint32_t)pTerrainTiledColorTextures.size(); ++i)
+	{
+		memcpy(&gTerrainTiledColorTexturesStorage[i], pTerrainTiledColorTextures[i], sizeof(Texture));
+		gTerrainTiledColorTexturesPacked.push_back(&gTerrainTiledColorTexturesStorage[i]);
+	}
+
+	for (uint32_t i = 0; i < (uint32_t)pTerrainTiledNormalTextures.size(); ++i)
+	{
+		memcpy(&gTerrainTiledNormalTexturesStorage[i], pTerrainTiledNormalTextures[i], sizeof(Texture));
+		gTerrainTiledNormalTexturesPacked.push_back(&gTerrainTiledNormalTexturesStorage[i]);
+	}
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	TextureLoadDesc TerrainHeightMapDesc = {};
 #if defined(_DURANGO) || defined(ORBIS)
@@ -509,8 +521,8 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 #endif
 	TerrainHeightMapDesc.pFilePath = TerrainHeightMapFilePath;
 	TerrainHeightMapDesc.ppTexture = &pTerrainHeightMap;
-	addResource(&TerrainHeightMapDesc, &token, LOAD_PRIORITY_HIGH);
-	waitForToken(&token);
+	addResource(&TerrainHeightMapDesc, false);
+
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	RenderTargetDesc NormalMapFromHeightmapRenderTarget = {};
@@ -527,24 +539,7 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 
 #if defined(VULKAN)
 	TransitionRenderTargets(pNormalMapFromHeightmapRT, ResourceState::RESOURCE_STATE_RENDER_TARGET, pRenderer, ppTransCmds[0], pGraphicsQueue, pTransitionCompleteFences);
-#endif
-
-	gTerrainTiledColorTexturesStorage = (Texture*)conf_malloc(sizeof(Texture) * pTerrainTiledColorTextures.size());
-	gTerrainTiledNormalTexturesStorage = (Texture*)conf_malloc(sizeof(Texture) * pTerrainTiledNormalTextures.size());
-
-	for (uint32_t i = 0; i < (uint32_t)pTerrainTiledColorTextures.size(); ++i)
-	{
-		memcpy(&gTerrainTiledColorTexturesStorage[i], pTerrainTiledColorTextures[i], sizeof(Texture));
-		gTerrainTiledColorTexturesPacked.push_back(&gTerrainTiledColorTexturesStorage[i]);
-	}
-
-	for (uint32_t i = 0; i < (uint32_t)pTerrainTiledNormalTextures.size(); ++i)
-	{
-		memcpy(&gTerrainTiledNormalTexturesStorage[i], pTerrainTiledNormalTextures[i], sizeof(Texture));
-		gTerrainTiledNormalTexturesPacked.push_back(&gTerrainTiledNormalTexturesStorage[i]);
-	}
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////////
+#endif  
 }
 
 bool Terrain::GenerateNormalMap(Cmd* cmd)
@@ -927,13 +922,15 @@ void Terrain::Draw(Cmd* cmd)
 		cmdBindPipeline(cmd, pRenderTerrainPipeline);
 
 		{
-			BufferUpdateDesc BufferUpdateDescDesc = { pRenderTerrainUniformBuffer[gFrameIndex] };
-			beginUpdateResource(&BufferUpdateDescDesc);
-			RenderTerrainUniformBuffer& _RenderTerrainUniformBuffer = *(RenderTerrainUniformBuffer*)BufferUpdateDescDesc.pMappedData;
+			RenderTerrainUniformBuffer _RenderTerrainUniformBuffer;
+
 			_RenderTerrainUniformBuffer.projView = TerrainProjectionMatrix * pCameraController->getViewMatrix();
 			_RenderTerrainUniformBuffer.TerrainInfo = float4(EARTH_RADIUS, 1.0f, HEIGHT_SCALE, 0.0f);
 			_RenderTerrainUniformBuffer.CameraInfo = float4(TERRAIN_NEAR, TERRAIN_FAR, TERRAIN_NEAR, TERRAIN_FAR);
-			endUpdateResource(&BufferUpdateDescDesc, NULL);
+
+			BufferUpdateDesc BufferUpdateDescDesc = { pRenderTerrainUniformBuffer[gFrameIndex], &_RenderTerrainUniformBuffer };
+			beginUpdateResource(&BufferUpdateDescDesc);
+			endUpdateResource(&BufferUpdateDescDesc);
 		}
 
 		cmdBindVertexBuffer(cmd, 1, &pGlobalVertexBuffer, NULL);
@@ -977,9 +974,7 @@ void Terrain::Draw(Cmd* cmd)
 		cmdBindPipeline(cmd, pLightingTerrainPipeline);
 
 		{
-			BufferUpdateDesc BufferUniformSettingDesc = { pLightingTerrainUniformBuffer[gFrameIndex] };
-			beginUpdateResource(&BufferUniformSettingDesc);
-			LightingTerrainUniformBuffer& cbTempRootConstantStruct = *(LightingTerrainUniformBuffer*)BufferUniformSettingDesc.pMappedData;
+			LightingTerrainUniformBuffer cbTempRootConstantStruct;
 
 			cbTempRootConstantStruct.InvViewProjMat = inverse(pCameraController->getViewMatrix()) * inverse(TerrainProjectionMatrix);
 			cbTempRootConstantStruct.ShadowViewProjMat = mat4::identity();
@@ -990,12 +985,14 @@ void Terrain::Draw(Cmd* cmd)
 			vec4 lightDir = vec4(f3Tov3(LightDirection));
 
 			cbTempRootConstantStruct.LightDirection = v4ToF4(lightDir);
-			endUpdateResource(&BufferUniformSettingDesc, NULL);
 
-			BufferUpdateDesc ShadowBufferUniformSettingDesc = { pVolumetricCloudsShadowBuffer };
+			BufferUpdateDesc BufferUniformSettingDesc = { pLightingTerrainUniformBuffer[gFrameIndex], &cbTempRootConstantStruct };
+			beginUpdateResource(&BufferUniformSettingDesc);
+			endUpdateResource(&BufferUniformSettingDesc);
+
+			BufferUpdateDesc ShadowBufferUniformSettingDesc = { pVolumetricCloudsShadowBuffer, &volumetricCloudsShadowCB };
 			beginUpdateResource(&ShadowBufferUniformSettingDesc);
-			*(VolumetricCloudsShadowCB*)ShadowBufferUniformSettingDesc.pMappedData = volumetricCloudsShadowCB;
-			endUpdateResource(&ShadowBufferUniformSettingDesc, NULL);
+			endUpdateResource(&ShadowBufferUniformSettingDesc);
 		}
 
 		// Deferred ambient pass
