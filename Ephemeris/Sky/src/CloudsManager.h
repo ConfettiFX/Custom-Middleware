@@ -119,15 +119,8 @@ private:
 
   eastl::vector<CloudSortData>  m_SortedClouds;
 
-	RasterizerState*	noCull;
-	DepthState*		noDepthWrite;
-  DepthState*		noDepthAtAll;
 	Sampler*		linearClamp;
   Sampler*		trilinearClamp;
-	BlendState*		alphaBlend;
-  BlendState*		impostorBlend;
-	//BlendStateID		oneAlphaBlend;
-  BlendState*		addBlend;
 
 	Shader*	m_shDistantCloud;
 #ifdef	USE_CLOUDS_DEPTH_RECONSTRUCTION

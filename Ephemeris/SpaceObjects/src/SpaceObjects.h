@@ -15,11 +15,11 @@
 
 #include "../../../../The-Forge/Common_3/OS/Interfaces/ICameraController.h"
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IMiddleware.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IProfiler.h"
 #include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/string.h"
 #include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/unordered_map.h"
 #include "../../../../The-Forge/Middleware_3/UI/AppUI.h"
 #include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
-#include "../../../../The-Forge/Common_3/Renderer/GpuProfiler.h"
 
 class SpaceObjects : public IMiddleware
 {
@@ -34,9 +34,9 @@ public:
 
 	void Initialize(uint InImageCount,
 		ICameraController* InCameraController, Queue*	InGraphicsQueue,
-		Cmd** InTransCmds, Fence* InTransitionCompleteFences, GpuProfiler*	InGraphicsGpuProfiler, UIApp* InGAppUI, Buffer*	pTransmittanceBuffer);
+		Cmd** InTransCmds, Fence* InTransitionCompleteFences, ProfileToken InGraphicsGpuProfiler, UIApp* InGAppUI, Buffer*	pTransmittanceBuffer);
 
-	void InitializeWithLoad(RenderTarget* InDepthRenderTarget, RenderTarget* InLinearDepthRenderTarget, Texture* SavePrevTexture, Buffer* ParticleVertexBuffer, Buffer* ParticleInstanceBuffer, uint32_t ParticleCountParam);
+	void InitializeWithLoad(RenderTarget* InDepthRenderTarget, RenderTarget* InLinearDepthRenderTarget, Texture* SavePrevTexture, Buffer* ParticleVertexBuffer, Buffer* ParticleInstanceBuffer, uint32_t ParticleCountParam, uint32_t ParticleVertexStride, uint32_t ParticleInstanceStride);
 
 
 	void GenerateRing(eastl::vector<float> &vertices, eastl::vector<uint32_t> &indices, uint32_t WidthDividor, uint32_t HeightDividor, float radius = 1.0f, float height = 1.0f);
@@ -56,7 +56,7 @@ public:
 	Cmd**                 ppTransCmds = NULL;
 	Fence*                pTransitionCompleteFences = NULL;
 
-	GpuProfiler*          pGraphicsGpuProfiler = NULL;
+    ProfileToken          gGpuProfileToken;
 
 	Texture*              pMoonTexture;
 
@@ -67,7 +67,6 @@ public:
 	Sampler*              pLinearClampSampler;
 	Sampler*              pLinearBorderSampler;
 
-	RasterizerState*      pRasterizerForSpaceObjects = NULL;
 	RenderTarget*         pPreStageRenderTarget;
 	//RenderTarget*         pSkyRenderTarget;
 	RenderTarget*         pDepthBuffer = NULL;
@@ -78,6 +77,8 @@ public:
 	Buffer*								pParticleVertexBuffer = NULL;
 	Buffer*								pParticleInstanceBuffer = NULL;
 	uint32_t							ParticleCount;
+	uint32_t							ParticleVertexStride;
+	uint32_t							ParticleInstanceStride;
 
 	mat4                  SpaceProjectionMatrix;
 

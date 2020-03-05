@@ -15,11 +15,11 @@
 
 #include "../../../../The-Forge/Common_3/OS/Interfaces/ICameraController.h"
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IMiddleware.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IProfiler.h"
 #include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/string.h"
 #include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/unordered_map.h"
 #include "../../../../The-Forge/Middleware_3/UI/AppUI.h"
 #include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
-#include "../../../../The-Forge/Common_3/Renderer/GpuProfiler.h"
 
 typedef struct ParticleData
 {
@@ -55,7 +55,7 @@ public:
 
 	void Initialize(uint InImageCount,
 		ICameraController* InCameraController, Queue*	InGraphicsQueue,
-		Cmd** InTransCmds, Fence* InTransitionCompleteFences, GpuProfiler*	InGraphicsGpuProfiler, UIApp* InGAppUI, Buffer*	pTransmittanceBuffer);
+		Cmd** InTransCmds, Fence* InTransitionCompleteFences, ProfileToken InGraphicsGpuProfiler, UIApp* InGAppUI, Buffer*	pTransmittanceBuffer);
 
 	void InitializeWithLoad(RenderTarget* InDepthRenderTarget, RenderTarget* InLinearDepthRenderTarget);
 
@@ -82,8 +82,6 @@ public:
 	Cmd**                 ppTransCmds = NULL;
 	Fence*                pTransitionCompleteFences = NULL;
 
-	GpuProfiler*          pGraphicsGpuProfiler = NULL;
-
 	Texture*              pTransmittanceTexture;
 	Texture*              pIrradianceTexture;		//unsigned int irradianceTexture;//unit 2, E table
 	Texture*              pInscatterTexture;		//unsigned int inscatterTexture;//unit 3, S table
@@ -91,7 +89,6 @@ public:
 	Sampler*              pLinearClampSampler;
 	Sampler*              pLinearBorderSampler;
 
-	RasterizerState*      pRasterizerForSky = NULL;
 	RenderTarget*         pPreStageRenderTarget;
 	RenderTarget*         pSkyRenderTarget;
 	RenderTarget*         pDepthBuffer = NULL;
@@ -110,6 +107,8 @@ public:
 	Buffer*               pTransmittanceBuffer;
 
 	Perlin                noiseGenerator;
+
+    ProfileToken          gGpuProfileToken;
 
 	ParticleSystem				gParticleSystem;
 };

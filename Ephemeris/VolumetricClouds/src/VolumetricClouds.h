@@ -11,10 +11,10 @@
 
 #include "../../../../The-Forge/Common_3/OS/Interfaces/ICameraController.h"
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IMiddleware.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IProfiler.h"
 #include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/string.h"
 #include "../../../../The-Forge/Middleware_3/UI/AppUI.h"
 #include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
-#include "../../../../The-Forge/Common_3/Renderer/GpuProfiler.h"
 
 #if defined(METAL)
 #define				USE_VC_FRAGMENTSHADER 1
@@ -262,7 +262,7 @@ public:
 
 	void Initialize(uint InImageCount,
 		ICameraController* InCameraController, Queue*	InGraphicsQueue,
-		Cmd** InTransCmds, Fence* InTransitionCompleteFences, Fence** InRenderCompleteFences, GpuProfiler* InGraphicsGpuProfiler, UIApp* InGAppUI, Buffer*	pTransmittanceBuffer);
+		Cmd** InTransCmds, Fence* InTransitionCompleteFences, Fence** InRenderCompleteFences, ProfileToken InGraphicsGpuProfiler, UIApp* InGAppUI, Buffer*	pTransmittanceBuffer);
 
 
 	void Update(uint frameIndex);
@@ -303,7 +303,7 @@ public:
 	Fence*                  pTransitionCompleteFences = NULL;
 	Fence**	                pRenderCompleteFences = NULL;
 
-	GpuProfiler*            pGraphicsGpuProfiler = NULL;
+    ProfileToken            gGpuProfileToken;
 
 	GuiComponent*           pGuiWindow = NULL;
 	RenderTarget*           pCastShadowRT = NULL;

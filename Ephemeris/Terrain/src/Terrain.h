@@ -15,11 +15,11 @@
 
 #include "../../../../The-Forge/Common_3/OS/Interfaces/ICameraController.h"
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IMiddleware.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IProfiler.h"
 #include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/string.h"
 #include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/unordered_map.h"
 #include "../../../../The-Forge/Middleware_3/UI/AppUI.h"
 #include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
-#include "../../../../The-Forge/Common_3/Renderer/GpuProfiler.h"
 
 #define GRID_SIZE 256
 #define TILE_CENTER 50
@@ -87,7 +87,7 @@ public:
 
 	void Initialize(uint InImageCount,
 		ICameraController* InCameraController, Queue*	InGraphicsQueue,
-		Cmd** InTransCmds, Fence* InTransitionCompleteFences, GpuProfiler*	InGraphicsGpuProfiler, UIApp* InGAppUI);
+		Cmd** InTransCmds, Fence* InTransitionCompleteFences, ProfileToken InGraphicsGpuProfiler, UIApp* InGAppUI);
 
 	bool Load(int32_t width, int32_t height);
 	void GenerateTerrainFromHeightmap(float height, float radius);
@@ -109,22 +109,16 @@ public:
 	Cmd**                     ppTransCmds = NULL;
 	Fence*                    pTransitionCompleteFences = NULL;
 
-	GpuProfiler*              pGraphicsGpuProfiler = NULL;
-
 	RenderTarget*             pDepthBuffer = NULL;
 	RenderTarget**            pFinalRT;
 
 	ICameraController*        pCameraController = NULL;
 
-	RasterizerState*          pRasterizerForTerrain = NULL;
-	RasterizerState*          pRasterizerForTerrain_CULLFRONT = NULL;
-	RasterizerState*          pRasterizerForTerrain_CULLBACK = NULL;
-
 	RenderTarget*             pTerrainRT = NULL;
 
-	DepthState*               pDepth = NULL;
-
 	Perlin                    noiseGenerator;
+
+    ProfileToken               gGpuProfileToken;
 
 	eastl::unordered_map < uint32_t, Zone* > gZoneMap;
 	eastl::vector <uint32_t>  indexBuffer;
