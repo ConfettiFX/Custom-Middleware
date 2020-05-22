@@ -52,6 +52,9 @@ Check out the demo video by clicking the main image above!
 # News
 All releases happen in sync with [The Forge](https://github.com/ConfettiFX/The-Forge) and have therefore the same release number.
 
+## Release 1.43 - May 22nd, 2020 - MTuner | macOS / iOS run-time
+Maintenance release following the update of The Forge.
+
 ## Release 1.42 - April 15th, 2020 - macOS / iOS run-time
 Maintenance release following the update of The Forge.
 
