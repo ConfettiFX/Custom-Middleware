@@ -164,18 +164,18 @@ public:
 	bool Init()
 	{
 		// FILE PATHS
-		PathHandle programDirectory = fsCopyProgramDirectoryPath();
+		PathHandle programDirectory = fsGetApplicationDirectory();
 		if (!fsPlatformUsesBundledResources())
 		{
 			PathHandle resourceDirRoot = fsAppendPathComponent(programDirectory, "../../../../../../Custom-Middleware/Ephemeris/src/EphemerisExample");
-			fsSetResourceDirectoryRootPath(resourceDirRoot);
+			fsSetResourceDirRootPath(resourceDirRoot);
 
-			fsSetRelativePathForResourceDirectory(RD_TEXTURES, "../../Resources/");
-			fsSetRelativePathForResourceDirectory(RD_MESHES, "../../Resources/");
-			fsSetRelativePathForResourceDirectory(RD_BUILTIN_FONTS, "../../Resources/Fonts");
-			fsSetRelativePathForResourceDirectory(RD_ANIMATIONS, "");
-			fsSetRelativePathForResourceDirectory(RD_MIDDLEWARE_TEXT, "../../../../The-Forge/Middleware_3/Text/");
-			fsSetRelativePathForResourceDirectory(RD_MIDDLEWARE_UI, "../../../../The-Forge/Middleware_3/UI/");
+			fsSetRelativePathForResourceDirEnum(RD_TEXTURES, "../../Resources/");
+			fsSetRelativePathForResourceDirEnum(RD_MESHES, "../../Resources/");
+			fsSetRelativePathForResourceDirEnum(RD_BUILTIN_FONTS, "../../Resources/Fonts");
+			fsSetRelativePathForResourceDirEnum(RD_ANIMATIONS, "");
+			fsSetRelativePathForResourceDirEnum(RD_MIDDLEWARE_TEXT, "../../../../The-Forge/Middleware_3/Text/");
+			fsSetRelativePathForResourceDirEnum(RD_MIDDLEWARE_UI, "../../../../The-Forge/Middleware_3/UI/");
 		}
 
 		// window and renderer setup
@@ -379,7 +379,7 @@ public:
 
 		pMainGuiWindow->AddWidget(SeparatorWidget());
 
-		SliderFloat4Widget LI("Light Color & Intensity", &LightColorAndIntensity, float(0.0f), float(10.0f), float(0.01f));
+		SliderFloat4Widget LI("Light Color & Intensity", &LightColorAndIntensity, float4(0.0f), float4(10.0f), float4(0.01f));
 		pMainGuiWindow->AddWidget(LI);
 
 		pMainGuiWindow->AddWidget(SeparatorWidget());

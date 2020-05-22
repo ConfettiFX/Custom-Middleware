@@ -10,18 +10,14 @@
 #include <metal_stdlib>
 using namespace metal;
 
+#include "terrain_argument_buffers.h"
+
 inline float3x3 matrix_ctor(float4x4 m)
 {
         return float3x3(m[0].xyz, m[1].xyz, m[2].xyz);
 }
 struct Fragment_Shader
 {
-    struct Uniforms_RenderTerrainUniformBuffer
-    {
-        float4x4 projView;
-        float4 TerrainInfo;
-        float4 CameraInfo;
-    };
     constant Uniforms_RenderTerrainUniformBuffer & RenderTerrainUniformBuffer;
     texture2d<float> NormalMap;
     texture2d<float> MaskMap;
@@ -144,27 +140,10 @@ struct Fragment_Shader
 RenderTerrainUniformBuffer(RenderTerrainUniformBuffer),NormalMap(NormalMap),MaskMap(MaskMap),tileTextures(tileTextures),tileTexturesNrm(tileTexturesNrm),shadowMap(shadowMap),g_LinearMirror(g_LinearMirror),g_LinearWrap(g_LinearWrap),g_LinearBorder(g_LinearBorder) {}
 };
 
-struct ArgsData
-{
-    texture2d<float> NormalMap;
-    texture2d<float> MaskMap;
-    const array<texture2d<float>, 5> tileTextures;
-    const array<texture2d<float>, 5> tileTexturesNrm;
-    texture2d<float> shadowMap;
-    sampler g_LinearMirror;
-    sampler g_LinearWrap;
-    sampler g_LinearBorder;
-};
-
-struct ArgsPerFrame
-{
-    constant Fragment_Shader::Uniforms_RenderTerrainUniformBuffer & RenderTerrainUniformBuffer;
-};
-
 fragment Fragment_Shader::PsOut stageMain(
     Fragment_Shader::PsIn In [[stage_in]],
-    constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
-    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+    constant ArgData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+    constant ArgDataPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
 )
 {
     Fragment_Shader::PsIn In0;

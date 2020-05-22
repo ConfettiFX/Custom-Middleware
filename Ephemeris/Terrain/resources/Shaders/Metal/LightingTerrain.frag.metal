@@ -10,28 +10,11 @@
 #include <metal_stdlib>
 using namespace metal;
 
+#include "terrain_argument_buffers.h"
+
 struct Fragment_Shader
 {
-    struct Uniforms_LightingTerrainUniformBuffer
-    {
-        float4x4 InvViewProjMat;
-        float4x4 ShadowViewProjMat;
-        float4 ShadowSpheres;
-        float4 LightDirection;
-        float4 SunColor;
-        float4 LightColor;
-    };
     constant Uniforms_LightingTerrainUniformBuffer & LightingTerrainUniformBuffer;
-    struct VolumetricCloudsShadowCB
-    {
-        float4 SettingInfo00;
-        float4 StandardPosition;
-        float4 ShadowInfo;
-    };
-    struct Uniforms_VolumetricCloudsShadowCB
-    {
-        VolumetricCloudsShadowCB g_VolumetricCloudsShadow;
-    };
     constant Uniforms_VolumetricCloudsShadowCB & VolumetricCloudsShadowCB;
     texture2d<float> BasicTexture;
     texture2d<float> NormalTexture;
@@ -106,27 +89,10 @@ constant Uniforms_LightingTerrainUniformBuffer & LightingTerrainUniformBuffer,co
 LightingTerrainUniformBuffer(LightingTerrainUniformBuffer),VolumetricCloudsShadowCB(VolumetricCloudsShadowCB),BasicTexture(BasicTexture),NormalTexture(NormalTexture),weatherTexture(weatherTexture),depthTexture(depthTexture),g_LinearMirror(g_LinearMirror),g_LinearWrap(g_LinearWrap) {}
 };
 
-struct ArgsData
-{
-    texture2d<float> BasicTexture;
-    texture2d<float> NormalTexture;
-    texture2d<float> weatherTexture;
-    texture2d<float> depthTexture;
-    sampler g_LinearMirror;
-    sampler g_LinearWrap;
-};
-
-struct ArgsPerFrame
-{
-    constant Fragment_Shader::Uniforms_LightingTerrainUniformBuffer & LightingTerrainUniformBuffer;
-    constant Fragment_Shader::Uniforms_VolumetricCloudsShadowCB & VolumetricCloudsShadowCB;
-};
-
-
 fragment float4 stageMain(
     Fragment_Shader::PsIn In [[stage_in]],
-    constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
-    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+    constant ArgData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+    constant ArgDataPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
 )
 {
     Fragment_Shader::PsIn In0;

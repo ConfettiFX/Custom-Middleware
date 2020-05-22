@@ -11,6 +11,8 @@
 #include <metal_compute>
 using namespace metal;
 
+#include "volumetricCloud.h"
+
 struct Compute_Shader
 {
 #define MAX_HEIGHT 1024
@@ -46,19 +48,13 @@ texture2d<float> InputTex,texture2d<float, access::read_write> OutputTex,constan
 InputTex(InputTex),OutputTex(OutputTex),RootConstantScreenSize(RootConstantScreenSize) {}
 };
 
-struct ArgsData
-{
-    texture2d<float> InputTex;
-    texture2d<float, access::read_write> OutputTex;
-};
-
 //[numthreads(1, 1024, 1)]
 kernel void stageMain(
 uint3 GroupId [[threadgroup_position_in_grid]],
 uint3 GroupThreadId [[thread_position_in_threadgroup]],
 uint GroupIndex [[thread_index_in_threadgroup]],
-    constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
-    constant Compute_Shader::Uniforms_RootConstantScreenSize & RootConstantScreenSize [[buffer(UPDATE_FREQ_USER + 5)]])
+    constant volumetricCloud::ComputeArgData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+    constant Compute_Shader::Uniforms_RootConstantScreenSize & RootConstantScreenSize [[buffer(UPDATE_FREQ_USER)]])
 {
     uint3 GroupId0;
     GroupId0 = GroupId;

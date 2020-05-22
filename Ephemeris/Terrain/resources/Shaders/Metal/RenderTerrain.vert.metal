@@ -10,6 +10,8 @@
 #include <metal_stdlib>
 using namespace metal;
 
+#include "terrain_argument_buffers.h"
+
 struct Vertex_Shader
 {
     struct VsIn
@@ -25,12 +27,6 @@ struct Vertex_Shader
         float3 normal;
         float3 tangent;
         float3 bitangent;
-    };
-    struct Uniforms_RenderTerrainUniformBuffer
-    {
-        float4x4 projView;
-        float4 TerrainInfo;
-        float4 CameraInfo;
     };
     constant Uniforms_RenderTerrainUniformBuffer & RenderTerrainUniformBuffer;
     PsIn main(VsIn In)
@@ -51,14 +47,9 @@ constant Uniforms_RenderTerrainUniformBuffer & RenderTerrainUniformBuffer) :
 RenderTerrainUniformBuffer(RenderTerrainUniformBuffer) {}
 };
 
-struct ArgsPerFrame
-{
-    constant Vertex_Shader::Uniforms_RenderTerrainUniformBuffer & RenderTerrainUniformBuffer;
-};
-
 vertex Vertex_Shader::PsIn stageMain(
     Vertex_Shader::VsIn In [[stage_in]],
-    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+    constant ArgDataPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
 )
 {
     Vertex_Shader::VsIn In0;

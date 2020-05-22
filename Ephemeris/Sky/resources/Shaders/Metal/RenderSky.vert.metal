@@ -109,26 +109,10 @@ constant RenderSky::Uniforms_RenderSkyUniformBuffer & RenderSkyUniformBuffer,
 	TransmittanceColor(TransmittanceColor) {}
 };
 
-struct ArgsData
-{
-    texture2d<float> SceneColorTexture;
-    texture2d<float> Depth;
-    texture2d<float> TransmittanceTexture;
-    //texture2d<float> IrradianceTexture;
-    texture3d<float> InscatterTexture;
-    sampler g_LinearClamp;
-    device float4* TransmittanceColor;
-};
-
-struct ArgsPerFrame
-{
-    constant RenderSky::Uniforms_RenderSkyUniformBuffer & RenderSkyUniformBuffer;
-};
-
 vertex Vertex_Shader::PsIn stageMain(
 uint VertexID [[vertex_id]],
-	constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
-    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+constant RenderSky::ArgData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+constant RenderSky::ArgDataPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
 )
 {
     uint VertexID0;

@@ -38,6 +38,37 @@ struct RenderSky
     texture3d<float> InscatterTexture;
 	
 	sampler g_LinearClamp;
+	
+    struct spaceUniform
+    {
+        float4x4 ViewProjMat;
+        float4 LightDirection;
+        float4 ScreenSize;
+        float4 NebulaHighColor;
+        float4 NebulaMidColor;
+        float4 NebulaLowColor;
+    };
+	
+	struct ArgData
+	{
+		texture2d<float> depthTexture;
+		
+		texture2d<float> SceneColorTexture;
+		texture2d<float> Depth;
+		texture2d<float> TransmittanceTexture;
+		//texture2d<float> IrradianceTexture;
+		texture3d<float> InscatterTexture;
+		sampler g_LinearClamp;
+		device float4* TransmittanceColor;
+	};
+	
+	struct ArgDataPerFrame
+	{
+		constant spaceUniform & SpaceUniform;
+		constant Uniforms_RenderSkyUniformBuffer & RenderSkyUniformBuffer;
+	};
+	
+	
 #define FIX
 #define IGOR_FIX_MOIRE
 #define IGOR_FIX_MU0

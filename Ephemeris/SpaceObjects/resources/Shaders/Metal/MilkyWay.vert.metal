@@ -11,15 +11,7 @@
 #include <metal_compute>
 using namespace metal;
 
-struct Uniforms_SpaceUniform
-{
-	float4x4 ViewProjMat;
-	float4 LightDirection;
-	float4 ScreenSize;
-	float4 NebulaHighColor;
-	float4 NebulaMidColor;
-	float4 NebulaLowColor;
-};
+#include "space_argument_buffers.h"
 
 struct VSInput
 {
@@ -36,12 +28,7 @@ struct VSOutput
 	float2 ScreenCoord;
 };
 
-struct ArgsPerFrame
-{
-	constant Uniforms_SpaceUniform & SpaceUniform;
-};
-
-vertex VSOutput stageMain(uint VertexID [[vertex_id]], VSInput Input [[stage_in]], uint InstanceID [[instance_id]], constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]])
+vertex VSOutput stageMain(uint VertexID [[vertex_id]], VSInput Input [[stage_in]], uint InstanceID [[instance_id]], constant ArgDataPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]])
 {
   VSOutput result;
 	result.Position = argBufferPerFrame.SpaceUniform.ViewProjMat * float4(Input.Position, 1.0);

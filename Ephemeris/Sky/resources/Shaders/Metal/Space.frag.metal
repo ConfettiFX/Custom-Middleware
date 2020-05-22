@@ -10,18 +10,11 @@
 #include <metal_stdlib>
 using namespace metal;
 
+#include "RenderSky.h"
+
 struct Fragment_Shader
 {
-    struct spaceUniform
-    {
-        float4x4 ViewProjMat;
-        float4 LightDirection;
-        float4 ScreenSize;
-        float4 NebulaHighColor;
-        float4 NebulaMidColor;
-        float4 NebulaLowColor;
-    };
-    constant spaceUniform & SpaceUniform;
+    constant RenderSky::spaceUniform & SpaceUniform;
     texture2d<float> Depth;
     struct VSOutput
     {
@@ -47,26 +40,16 @@ struct Fragment_Shader
     };
 
     Fragment_Shader(
-					constant spaceUniform & SpaceUniform,
+					constant RenderSky::spaceUniform & SpaceUniform,
 					texture2d<float> Depth) :
 					SpaceUniform(SpaceUniform),
 					Depth(Depth) {}
 };
 
-struct ArgsData
-{
-    texture2d<float> depthTexture;
-};
-
-struct ArgsPerFrame
-{
-    constant Fragment_Shader::spaceUniform & SpaceUniform;
-};
-
 fragment float4 stageMain(
     Fragment_Shader::VSOutput In [[stage_in]],
-	constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
-    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+  constant RenderSky::ArgData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+  constant RenderSky::ArgDataPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
 )
 {
     Fragment_Shader::VSOutput In0;

@@ -10,16 +10,10 @@
 #include <metal_stdlib>
 using namespace metal;
 
+#include "space_argument_buffers.h"
+
 struct Fragment_Shader
 {
-    struct Uniforms_cbRootConstant
-    {
-        float4x4 ViewMat;
-        float4x4 ViewProjMat;
-        float4 LightDirection;
-        float4 Dx;
-        float4 Dy;
-    };
     constant Uniforms_cbRootConstant & cbRootConstant;
     struct PsIn
     {
@@ -82,23 +76,10 @@ volumetricCloudsTexture(volumetricCloudsTexture),
 g_LinearBorder(g_LinearBorder) {}
 };
 
-struct ArgsData
-{
-    texture2d<float> depthTexture;
-    texture2d<float> moonAtlas;
-    texture2d<float> volumetricCloudsTexture;
-    sampler g_LinearBorder;
-};
-
-struct ArgsPerFrame
-{
-	constant Fragment_Shader::Uniforms_cbRootConstant & SunUniform;
-};
-
 fragment float4 stageMain(
     Fragment_Shader::PsIn In [[stage_in]],
-    constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
-    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+    constant ArgData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+    constant ArgDataPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
 )
 {
     Fragment_Shader::PsIn In0;

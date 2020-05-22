@@ -64,12 +64,12 @@ static float g_ElapsedTime = 0.0f;
 static float      SunSize = 20000000.0f;
 
 static float      SpaceScale = EARTH_RADIUS * 100.0f;
-static float      NebulaScale = 9.453f;
-static float      StarIntensity = 1.5f;
-static float      StarDensity = 10.0f;
-static float      StarDistribution = 20000000.0f;
+//static float      NebulaScale = 9.453f;
+//static float      StarIntensity = 1.5f;
+//static float      StarDensity = 10.0f;
+//static float      StarDistribution = 20000000.0f;
 //static float ParticleScale = 100.0f;
-static float ParticleSize = 1000000.0f;
+//static float ParticleSize = 1000000.0f;
 
 static mat4 rotMat = mat4::identity();
 static mat4 rotMatStarField = mat4::identity();
@@ -120,7 +120,7 @@ Buffer*               pAuroraConstraint;
 Buffer*               pAuroraUniformBuffer;
 
 const float AuroraWidth = 100000.0f;
-const float AuroraHeight = 4000.0f;
+//const float AuroraHeight = 4000.0f;
 const uint32_t AuroraParticleNum = 64;
 
 #if defined(VULKAN)
@@ -461,9 +461,9 @@ bool SpaceObjects::Init(Renderer* const renderer)
 
 	TextureLoadDesc SkyMoonTextureDesc = {};
 #if defined(_DURANGO) || defined(ORBIS)
-	PathHandle SkyMoonTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/Moon");
+	PathHandle SkyMoonTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "Textures/Moon");
 #else
-	PathHandle SkyMoonTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Moon");
+	PathHandle SkyMoonTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Moon");
 #endif
 	SkyMoonTextureDesc.pFilePath = SkyMoonTextureFilePath;
 	SkyMoonTextureDesc.ppTexture = &pMoonTexture;

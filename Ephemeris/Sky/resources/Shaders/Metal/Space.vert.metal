@@ -10,18 +10,11 @@
 #include <metal_stdlib>
 using namespace metal;
 
+#include "RenderSky.h"
+
 struct Vertex_Shader
 {
-    struct spaceUniform
-    {
-        float4x4 ViewProjMat;
-        float4 LightDirection;
-        float4 ScreenSize;
-        float4 NebulaHighColor;
-        float4 NebulaMidColor;
-        float4 NebulaLowColor;
-    };
-    constant spaceUniform & SpaceUniform;
+	constant RenderSky::spaceUniform & SpaceUniform;
     struct VSInput
     {
         float3 Position [[attribute(0)]];
@@ -47,18 +40,13 @@ struct Vertex_Shader
     };
 
     Vertex_Shader(
-constant spaceUniform & SpaceUniform) :
+constant RenderSky::spaceUniform & SpaceUniform) :
 SpaceUniform(SpaceUniform) {}
-};
-
-struct ArgsPerFrame
-{
-    constant Vertex_Shader::spaceUniform & SpaceUniform;
 };
 
 vertex Vertex_Shader::VSOutput stageMain(
     Vertex_Shader::VSInput Input [[stage_in]],
-    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+	 constant RenderSky::ArgDataPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
 )
 {
     Vertex_Shader::VSInput Input0;

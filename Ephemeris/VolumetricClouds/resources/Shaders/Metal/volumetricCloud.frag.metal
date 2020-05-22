@@ -530,30 +530,10 @@ struct Fragment_Shader
     VolumetricCloudsCBuffer(VolumetricCloudsCBuffer) {}
 };
 
-struct ArgsData
-{
-    texture3d<float> highFreqNoiseTexture;
-    texture3d<float> lowFreqNoiseTexture;
-    texture2d<float> curlNoiseTexture;
-    texture2d<float> weatherTexture;
-    texture2d<float> depthTexture;
-	texture2d<float> g_LinearDepthTexture;
-
-    sampler g_LinearClampSampler;
-    sampler g_LinearWrapSampler;
-    sampler g_PointClampSampler;
-    sampler g_LinearBorderSampler;
-};
-
-struct ArgsPerFrame
-{
-    constant volumetricCloud::Uniforms_VolumetricCloudsCBuffer & VolumetricCloudsCBuffer;
-};
-
 fragment float4 stageMain(
     Fragment_Shader::PSIn input [[stage_in]],
-    constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
-    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+    constant volumetricCloud::GraphicsArgData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+    constant volumetricCloud::GraphicsArgDataPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
 )
 {
     Fragment_Shader::PSIn input0;

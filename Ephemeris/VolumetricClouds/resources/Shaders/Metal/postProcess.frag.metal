@@ -93,33 +93,10 @@ struct Fragment_Shader
 					TransmittanceColor(TransmittanceColor) {}
 };
 
-struct ArgsData
-{
-    texture3d<float> highFreqNoiseTexture;
-    texture3d<float> lowFreqNoiseTexture;
-    texture2d<float> curlNoiseTexture;
-    texture2d<float> weatherTexture;
-    texture2d<float> depthTexture;
-    texture2d<float> LowResCloudTexture;
-	sampler g_LinearClampSampler;
-    sampler g_LinearWrapSampler;
-    sampler g_PointClampSampler;
-    sampler g_LinearBorderSampler;
-    texture2d<float> g_PrevFrameTexture;    
-    texture2d<float> g_SrcTexture2D;
-    texture2d<float> g_SkyBackgroudTexture;
-    device float4* TransmittanceColor;
-};
-
-struct ArgsPerFrame
-{
-    constant volumetricCloud::Uniforms_VolumetricCloudsCBuffer & VolumetricCloudsCBuffer;
-};
-
 fragment float4 stageMain(
     Fragment_Shader::PSIn input [[stage_in]],
-    constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
-    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+    constant volumetricCloud::GraphicsArgData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+    constant volumetricCloud::GraphicsArgDataPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
 )
 {
     Fragment_Shader::PSIn input0;

@@ -399,13 +399,13 @@ static int2 offset[] = {
 					{2,2}, {1,3}, {3,0}, {0,2}
 };
 
-static int4 bayerOffsets[] =
-{
-	{0,8,2,10 },
-	{12,4,14,6 },
-	{3,11,1,9 },
-	{15,7,13,5 }
-};
+//static int4 bayerOffsets[] =
+//{
+//	{0,8,2,10 },
+//	{12,4,14,6 },
+//	{3,11,1,9 },
+//	{15,7,13,5 }
+//};
 
 /*
 static int haltonSequence[] =
@@ -918,7 +918,7 @@ bool VolumetricClouds::Init(Renderer* renderer)
 
 		TextureLoadDesc highFrequencyOrigin3DTextureDesc = {};
 
-		PathHandle highFrequencyOrigin3DTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, gHighFrequencyNameLocal.c_str());
+		PathHandle highFrequencyOrigin3DTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, gHighFrequencyNameLocal.c_str());
 
 		highFrequencyOrigin3DTextureDesc.pFilePath = highFrequencyOrigin3DTextureFilePath;
 		highFrequencyOrigin3DTextureDesc.ppTexture = &gHighFrequencyOriginTexture[i];
@@ -947,7 +947,7 @@ bool VolumetricClouds::Init(Renderer* renderer)
 
 		TextureLoadDesc lowFrequencyOrigin3DTextureDesc = {};
 
-		PathHandle lowFrequencyOrigin3DTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, gLowFrequencyNameLocal.c_str());
+		PathHandle lowFrequencyOrigin3DTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, gLowFrequencyNameLocal.c_str());
 
 		lowFrequencyOrigin3DTextureDesc.pFilePath = lowFrequencyOrigin3DTextureFilePath;
 		lowFrequencyOrigin3DTextureDesc.ppTexture = &gLowFrequencyOriginTexture[i];
@@ -1028,9 +1028,9 @@ bool VolumetricClouds::Init(Renderer* renderer)
 
 	TextureLoadDesc curlNoiseTextureDesc = {};
 #if defined(_DURANGO) || defined(ORBIS)
-	PathHandle curlNoiseTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/CurlNoiseFBM");
+	PathHandle curlNoiseTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "Textures/CurlNoiseFBM");
 #else
-	PathHandle curlNoiseTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/VolumetricClouds/resources/Textures/CurlNoiseFBM");
+	PathHandle curlNoiseTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "../../../Ephemeris/VolumetricClouds/resources/Textures/CurlNoiseFBM");
 #endif
 	curlNoiseTextureDesc.pFilePath = curlNoiseTextureFilePath;
 	curlNoiseTextureDesc.ppTexture = &pCurlNoiseTexture;
@@ -1040,9 +1040,9 @@ bool VolumetricClouds::Init(Renderer* renderer)
 
 	TextureLoadDesc weathereTextureDesc = {};
 #if defined(_DURANGO) || defined(ORBIS)
-	PathHandle weathereTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/WeatherMap");
+	PathHandle weathereTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "Textures/WeatherMap");
 #else
-	PathHandle weathereTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/VolumetricClouds/resources/Textures/WeatherMap");
+	PathHandle weathereTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "../../../Ephemeris/VolumetricClouds/resources/Textures/WeatherMap");
 #endif
 	weathereTextureDesc.pFilePath = weathereTextureFilePath;
 	weathereTextureDesc.ppTexture = &pWeatherTexture;

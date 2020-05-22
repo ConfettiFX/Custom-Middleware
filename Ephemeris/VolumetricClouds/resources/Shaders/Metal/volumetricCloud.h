@@ -155,6 +155,52 @@ struct volumetricCloud
     };
 
     constant Uniforms_VolumetricCloudsCBuffer & VolumetricCloudsCBuffer;
+	
+	// Argument buffers
+	struct GraphicsArgData
+	{
+		texture3d<float> highFreqNoiseTexture;
+		texture3d<float> lowFreqNoiseTexture;
+		texture2d<float> curlNoiseTexture;
+		texture2d<float> weatherTexture;
+		texture2d<float> depthTexture;
+		texture2d<float> LowResCloudTexture;
+		sampler g_LinearClampSampler;
+		sampler g_LinearWrapSampler;
+		sampler g_PointClampSampler;
+		sampler g_LinearBorderSampler;
+		texture2d<float> g_PrevFrameTexture;
+		
+		texture2d<float> g_SrcTexture2D;
+		texture2d<float> g_SkyBackgroudTexture;
+		device float4* TransmittanceColor;
+		
+		texture2d<float> g_GodrayTexture;
+		
+		texture2d<float> g_BlurTexture;
+		
+		texture2d<float> g_PostProcessedTexture;
+		texture2d<float> g_PrevVolumetricCloudTexture;
+		
+		texture2d<float> g_LinearDepthTexture;
+	};
+
+	struct GraphicsArgDataPerFrame
+	{
+		constant Uniforms_VolumetricCloudsCBuffer & VolumetricCloudsCBuffer;
+	};
+	
+	struct ComputeArgData
+	{
+		texture2d<float> SrcTexture;
+		texture2d<float, access::write> SavePrevTexture;
+		
+		texture2d<float, access::read_write> DstTexture;
+		
+		texture2d<float> InputTex;
+		texture2d<float, access::read_write> OutputTex;
+	};
+	
 
     float randomFromScreenUV(float2 uv)
     {
