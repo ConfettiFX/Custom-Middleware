@@ -77,32 +77,10 @@ struct Fragment_Shader
 highFreqNoiseTexture(highFreqNoiseTexture),lowFreqNoiseTexture(lowFreqNoiseTexture),curlNoiseTexture(curlNoiseTexture),weatherTexture(weatherTexture),depthTexture(depthTexture),LowResCloudTexture(LowResCloudTexture),g_PrevFrameTexture(g_PrevFrameTexture),g_LinearClampSampler(g_LinearClampSampler),g_LinearWrapSampler(g_LinearWrapSampler),g_PointClampSampler(g_PointClampSampler),g_LinearBorderSampler(g_LinearBorderSampler),VolumetricCloudsCBuffer(VolumetricCloudsCBuffer),g_PostProcessedTexture(g_PostProcessedTexture),g_PrevVolumetricCloudTexture(g_PrevVolumetricCloudTexture) {}
 };
 
-struct ArgsData
-{
-	texture3d<float> highFreqNoiseTexture;
-	texture3d<float> lowFreqNoiseTexture;
-	texture2d<float> curlNoiseTexture;
-	texture2d<float> weatherTexture;
-	texture2d<float> depthTexture;
-	texture2d<float> LowResCloudTexture;
-	sampler g_LinearClampSampler;
-	sampler g_LinearWrapSampler;
-	sampler g_PointClampSampler;
-    sampler g_LinearBorderSampler;
-	texture2d<float> g_PrevFrameTexture;	
-    texture2d<float> g_PostProcessedTexture;
-    texture2d<float> g_PrevVolumetricCloudTexture;
-};
-
-struct ArgsPerFrame
-{
-    constant volumetricCloud::Uniforms_VolumetricCloudsCBuffer & VolumetricCloudsCBuffer;
-};
-
 fragment float4 stageMain(
     Fragment_Shader::PSIn input [[stage_in]],
-    constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
-    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+						  constant volumetricCloud::GraphicsArgData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+    constant volumetricCloud::GraphicsArgDataPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
 )
 {
     Fragment_Shader::PSIn input0;

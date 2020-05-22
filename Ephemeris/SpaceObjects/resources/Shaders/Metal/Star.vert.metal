@@ -10,6 +10,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
+#include "space_argument_buffers.h"
 
 struct VSInput
 {
@@ -18,15 +19,6 @@ struct VSInput
   float4 ParticlePositions	[[attribute(2)]];
   float4 ParticleColors		[[attribute(3)]];
   float4 ParticleInfo		[[attribute(4)]];
-};
-
-struct Uniforms_StarUniform
-{
-	float4x4 RotMat;
-	float4x4 ViewProjMat;
-	float4 LightDirection;
-	float4 Dx;
-	float4 Dy;
 };
 
 struct PsIn
@@ -53,12 +45,7 @@ PsIn PushVertex(float4x4 rotMat, float4x4 viewProjMat, float3 pos, float3 color,
 	return output;
 }
 
-struct ArgsPerFrame
-{
-	constant Uniforms_StarUniform &StarUniform;
-};
-
-vertex PsIn stageMain(uint VertexID [[vertex_id]], VSInput input [[stage_in]], uint InstanceID [[instance_id]], constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]])
+vertex PsIn stageMain(uint VertexID [[vertex_id]], VSInput input [[stage_in]], uint InstanceID [[instance_id]], constant ArgDataPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]])
 {
 	PsIn Out;
 

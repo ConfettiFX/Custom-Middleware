@@ -11,15 +11,7 @@
 #include <metal_compute>
 using namespace metal;
 
-struct Uniforms_SpaceUniform
-{
-	float4x4 ViewProjMat;
-	float4 LightDirection;
-	float4 ScreenSize;
-	float4 NebulaHighColor;
-	float4 NebulaMidColor;
-	float4 NebulaLowColor;
-};
+#include "space_argument_buffers.h"
 
 struct VSOutput
 {
@@ -29,20 +21,10 @@ struct VSOutput
 	float2 ScreenCoord;
 };
 
-struct ArgsData
-{
-	texture2d<float> depthTexture;
-};
-
-struct ArgsPerFrame
-{
-	constant Uniforms_SpaceUniform & SpaceUniform;
-};
-
 fragment float4 stageMain(
     VSOutput In [[stage_in]],
-	constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
-	constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+	constant ArgData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+	constant ArgDataPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
 )
 {
 	float depth = argBufferStatic.depthTexture.read((uint2)In.Position.xy).x;

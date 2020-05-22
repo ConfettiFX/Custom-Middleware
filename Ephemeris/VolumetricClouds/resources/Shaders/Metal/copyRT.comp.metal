@@ -11,6 +11,8 @@
 #include <metal_compute>
 using namespace metal;
 
+#include "volumetricCloud.h"
+
 struct Compute_Shader
 {
     texture2d<float> SrcTexture;
@@ -27,18 +29,12 @@ struct Compute_Shader
 					{}
 };
 
-struct ArgsData
-{
-	texture2d<float> SrcTexture;
-	texture2d<float, access::write> SavePrevTexture;
-};
-
 //[numthreads(16, 16, 1)]
 kernel void stageMain(
 uint3 GTid [[thread_position_in_threadgroup]],
 uint3 Gid [[threadgroup_position_in_grid]],
 uint3 DTid [[thread_position_in_grid]],
-constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]]
+constant volumetricCloud::ComputeArgData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]]
 )
 {
     uint3 GTid0;

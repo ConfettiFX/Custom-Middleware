@@ -7,18 +7,10 @@
 *
 */
 
-#include "SkyCommon.h"
 #include <metal_stdlib>
-
-constant float AVERAGE_GROUND_REFLECTANCE = 0.1;
-constant float HR = 8.0;
-constant float3 betaR = float3(0.0058000000, 0.0135, 0.033100002);
-constant float HM = 1.20000004;
-constant float3 betaMSca = float3(0.020000000).xxx;
-constant float3 betaMEx = (betaMSca / (const float3)(0.9));
-constant float mieG = 0.76;
-
 using namespace metal;
+
+#include "RenderSky.h"
 
 inline float3x3 matrix_ctor(float4x4 m)
 {
@@ -30,19 +22,8 @@ struct Fragment_Shader
 #define TRANSMITTANCE_NON_LINEAR
 #define INSCATTER_NON_LINEAR
 #define USE_SAMPLELEVEL
-	
-	struct Uniforms_RenderSkyUniformBuffer
-	{
-		float4x4 invView;
-		float4x4 invProj;
-		float4 LightDirection;
-		float4 CameraPosition;
-		float4 QNNear;
-		float4 InScatterParams;
-		float4 LightIntensity;
-	};
-		
-	constant Uniforms_RenderSkyUniformBuffer & RenderSkyUniformBuffer;
+			
+	constant RenderSky::Uniforms_RenderSkyUniformBuffer & RenderSkyUniformBuffer;
 		
 	texture2d<float> SceneColorTexture;
 	texture2d<float> Depth;
@@ -554,7 +535,7 @@ struct Fragment_Shader
     };
 
     Fragment_Shader(
-					constant Uniforms_RenderSkyUniformBuffer & RenderSkyUniformBuffer,
+					constant RenderSky::Uniforms_RenderSkyUniformBuffer & RenderSkyUniformBuffer,
 					texture2d<float> SceneColorTexture,
 					texture2d<float> Depth,
 					texture2d<float> TransmittanceTexture,
@@ -571,24 +552,10 @@ struct Fragment_Shader
 					{}
 };
 
-struct ArgsData
-{
-    texture2d<float> SceneColorTexture;
-    texture2d<float> Depth;
-    texture2d<float> TransmittanceTexture;
-    texture3d<float> InscatterTexture;
-    sampler g_LinearClamp;
-};
-
-struct ArgsPerFrame
-{
-	constant Fragment_Shader::Uniforms_RenderSkyUniformBuffer & RenderSkyUniformBuffer;
-};
-
 fragment float4 stageMain(
     Fragment_Shader::PsIn In [[stage_in]],
-	constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
-    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+  constant RenderSky::ArgData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+  constant RenderSky::ArgDataPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
 )
 {
     Fragment_Shader::PsIn In0;

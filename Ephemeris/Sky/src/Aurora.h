@@ -10,7 +10,13 @@ const uint  CONSTRAINT_ITERATIONS = 15; // how many iterations of constraint sat
 class AuroraParticle
 {
   public:
-    AuroraParticle(vec3 position) : position(position), prevPosition(position), acceleration(vec3(0.0f, 0.0f, 0.0f)), mass(1.0f), IsMovable(true) {}
+    AuroraParticle(vec3 position) :
+		mass(1.0f),
+		position(position),
+		prevPosition(position),
+		acceleration(vec3(0.0f, 0.0f, 0.0f)),
+		IsMovable(true)
+	{}
     AuroraParticle() {}
 
     void addForce(vec3 force)
@@ -41,12 +47,11 @@ class AuroraParticle
     }
     */
 
-    bool IsMovable;
-
     float mass; // the mass of the particle (is always 1 in this example)
     vec3 position; // the current position of the particle in 3D space
     vec3 prevPosition; // the position of the particle in the previous time step, used as part of the verlet numerical integration scheme
     vec3 acceleration; // a vector representing the current acceleration of the particle
+	bool IsMovable;
     //vec4 accumulated_normal; // an accumulated normal (i.e. non normalized), used for OpenGL soft shading
 };
 

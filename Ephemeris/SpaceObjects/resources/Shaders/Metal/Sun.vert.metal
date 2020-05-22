@@ -10,16 +10,10 @@
 #include <metal_stdlib>
 using namespace metal;
 
+#include "space_argument_buffers.h"
+
 struct Vertex_Shader
 {
-    struct Uniforms_cbRootConstant
-    {
-        float4x4 ViewMat;
-        float4x4 ViewProjMat;
-        float4 LightDirection;
-        float4 Dx;
-        float4 Dy;
-    };
     constant Uniforms_cbRootConstant & cbRootConstant;
     struct PsIn
     {
@@ -77,14 +71,9 @@ constant Uniforms_cbRootConstant & SunUniform) :
 cbRootConstant(SunUniform) {}
 };
 
-struct ArgsPerFrame
-{
-	constant Vertex_Shader::Uniforms_cbRootConstant & SunUniform;
-};
-
 vertex Vertex_Shader::PsIn stageMain(
 uint VertexID [[vertex_id]],
-    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+    constant ArgDataPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
 )
 {
     uint VertexID0;

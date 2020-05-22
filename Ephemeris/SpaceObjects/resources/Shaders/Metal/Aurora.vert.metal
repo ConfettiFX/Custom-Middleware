@@ -2,23 +2,11 @@
 #include <metal_stdlib>
 using namespace metal;
 
+#include "space_argument_buffers.h"
+
 struct Vertex_Shader
 {
-    struct AuroraParticle
-    {
-        float4 PrevPosition;
-        float4 Position;
-        float4 Acceleration;
-    };
 	device AuroraParticle* AuroraParticleBuffer;
-    struct Uniforms_AuroraUniformBuffer
-    {
-        uint maxVertex;
-        float heightOffset;
-        float height;
-        float deltaTime;
-        float4x4 ViewProjMat;
-    };
     constant Uniforms_AuroraUniformBuffer & AuroraUniformBuffer;
     struct VSOutput
     {
@@ -43,20 +31,10 @@ AuroraParticleBuffer(AuroraParticleBuffer),
 AuroraUniformBuffer(AuroraUniformBuffer) {}
 };
 
-struct ArgsData
-{
-	device Vertex_Shader::AuroraParticle* AuroraParticleBuffer;
-};
-
-struct ArgsPerFrame
-{
-	constant Vertex_Shader::Uniforms_AuroraUniformBuffer & AuroraUniformBuffer;
-};
-
 vertex Vertex_Shader::VSOutput stageMain(
 uint VertexID [[vertex_id]],
-	 constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
-	 constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+	 constant ArgData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+	 constant ArgDataPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
 )
 {
     uint VertexID0;

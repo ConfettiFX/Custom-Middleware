@@ -15,13 +15,13 @@
 
 // Creates data source from the specified raw data file
 HeightData::HeightData(const char* filePath, float heightScale) :
-	patchSize(128),
-	levels(0),
 	colOffset(1356),
-	rowOffset(924)
+	rowOffset(924),
+	levels(0),
+	patchSize(128)
 {	
 	// open file
-	PathHandle FilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, filePath);
+	PathHandle FilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, filePath);
 	FileStream* modelFile0FH = fsOpenFile(FilePath, FM_READ_BINARY);
 	
 	if (!modelFile0FH)

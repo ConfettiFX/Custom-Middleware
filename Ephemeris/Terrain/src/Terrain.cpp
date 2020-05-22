@@ -87,6 +87,69 @@ struct LightingTerrainUniformBuffer
 	float4	LightColor;
 };
 
+static bool boxIntersects(TerrainFrustum &frustum, TerrainBoundingBox &box)
+{
+	Plane* planes = frustum.CPlanes.planes;
+	Plane *currPlane;
+	float3 *currNormal;
+	float3 maxPoint;
+
+	for (int planeIdx = 0; planeIdx < 6; planeIdx++)
+	{
+		currPlane = planes + planeIdx;
+		currNormal = &currPlane->normal;
+
+		maxPoint.x = (currNormal->x > 0) ? box.max.x : box.min.x;
+		maxPoint.y = (currNormal->y > 0) ? box.max.y : box.min.y;
+		maxPoint.z = (currNormal->z > 0) ? box.max.z : box.min.z;
+
+		float dMax = dot(f3Tov3(maxPoint), f3Tov3(*currNormal)) + currPlane->distance;
+
+		if (dMax < 0)
+			return false;
+	}
+	return true;
+}
+
+static void getFrustumFromMatrix(const mat4 &matrix, TerrainFrustum &frustum)
+{
+	// Left clipping plane 
+	frustum.iPlanes.left.normal.x = matrix[0][3] + matrix[0][0];
+	frustum.iPlanes.left.normal.y = matrix[1][3] + matrix[1][0];
+	frustum.iPlanes.left.normal.z = matrix[2][3] + matrix[2][0];
+	frustum.iPlanes.left.distance = matrix[3][3] + matrix[3][0];
+
+	// Right clipping plane 
+	frustum.iPlanes.right.normal.x = matrix[0][3] - matrix[0][0];
+	frustum.iPlanes.right.normal.y = matrix[1][3] - matrix[1][0];
+	frustum.iPlanes.right.normal.z = matrix[2][3] - matrix[2][0];
+	frustum.iPlanes.right.distance = matrix[3][3] - matrix[3][0];
+
+	// Top clipping plane 
+	frustum.iPlanes.top.normal.x = matrix[0][3] - matrix[0][1];
+	frustum.iPlanes.top.normal.y = matrix[1][3] - matrix[1][1];
+	frustum.iPlanes.top.normal.z = matrix[2][3] - matrix[2][1];
+	frustum.iPlanes.top.distance = matrix[3][3] - matrix[3][1];
+
+	// Bottom clipping plane 
+	frustum.iPlanes.bottom.normal.x = matrix[0][3] + matrix[0][1];
+	frustum.iPlanes.bottom.normal.y = matrix[1][3] + matrix[1][1];
+	frustum.iPlanes.bottom.normal.z = matrix[2][3] + matrix[2][1];
+	frustum.iPlanes.bottom.distance = matrix[3][3] + matrix[3][1];
+
+	// Near clipping plane 
+	frustum.iPlanes.front.normal.x = matrix[0][2];
+	frustum.iPlanes.front.normal.y = matrix[1][2];
+	frustum.iPlanes.front.normal.z = matrix[2][2];
+	frustum.iPlanes.front.distance = matrix[3][2];
+
+	// Far clipping plane 
+	frustum.iPlanes.back.normal.x = matrix[0][3] - matrix[0][2];
+	frustum.iPlanes.back.normal.y = matrix[1][3] - matrix[1][2];
+	frustum.iPlanes.back.normal.z = matrix[2][3] - matrix[2][2];
+	frustum.iPlanes.back.distance = matrix[3][3] - matrix[3][2];
+}
+
 #if defined(VULKAN)
 static void TransitionRenderTargets(RenderTarget *pRT, ResourceState state, Renderer* renderer, Cmd* cmd, Queue* queue, Fence* fence)
 {
@@ -427,9 +490,9 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 
 	TextureLoadDesc TerrainNormalTextureDesc = {};
 #if defined(_DURANGO) || defined(ORBIS)
-	PathHandle TerrainNormalTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/Normalmap");
+	PathHandle TerrainNormalTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "Textures/Normalmap");
 #else
-	PathHandle TerrainNormalTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Terrain/resources/Textures/Normalmap");
+	PathHandle TerrainNormalTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "../../../Ephemeris/Terrain/resources/Textures/Normalmap");
 #endif
 	TerrainNormalTextureDesc.pFilePath = TerrainNormalTextureFilePath;
 	TerrainNormalTextureDesc.ppTexture = &pTerrainNormalTexture;
@@ -440,9 +503,9 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 
 	TextureLoadDesc TerrainMaskTextureDesc = {};
 #if defined(_DURANGO) || defined(ORBIS)
-	PathHandle TerrainMaskTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/Mask");
+	PathHandle TerrainMaskTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "Textures/Mask");
 #else
-	PathHandle TerrainMaskTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Terrain/resources/Textures/Mask");
+	PathHandle TerrainMaskTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "../../../Ephemeris/Terrain/resources/Textures/Mask");
 #endif
 	TerrainMaskTextureDesc.pFilePath = TerrainMaskTextureFilePath;
 	TerrainMaskTextureDesc.ppTexture = &pTerrainMaskTexture;
@@ -457,7 +520,7 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 	{
 		TextureLoadDesc TerrainTiledColorTextureDesc = {};
 
-		PathHandle TerrainTiledColorTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, TextureTileFilePaths[i]);
+		PathHandle TerrainTiledColorTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, TextureTileFilePaths[i]);
 
 		TerrainTiledColorTextureDesc.pFilePath = TerrainTiledColorTextureFilePath;
 		TerrainTiledColorTextureDesc.ppTexture = &pTerrainTiledColorTextures[i];
@@ -465,7 +528,7 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 
 		TextureLoadDesc TerrainTiledNormalTextureDesc = {};
 		
-		PathHandle TerrainTiledNormalTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, TextureNormalTileFilePaths[i]);
+		PathHandle TerrainTiledNormalTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, TextureNormalTileFilePaths[i]);
 
 		TerrainTiledNormalTextureDesc.pFilePath = TerrainTiledNormalTextureFilePath;
 		TerrainTiledNormalTextureDesc.ppTexture = &pTerrainTiledNormalTextures[i];
@@ -474,9 +537,9 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 
 	TextureLoadDesc TerrainHeightMapDesc = {};
 #if defined(_DURANGO) || defined(ORBIS)
-	PathHandle TerrainHeightMapFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/HeightMap_normgen");
+	PathHandle TerrainHeightMapFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "Textures/HeightMap_normgen");
 #else
-	PathHandle TerrainHeightMapFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Terrain/resources/Textures/HeightMap_normgen");
+	PathHandle TerrainHeightMapFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "../../../Ephemeris/Terrain/resources/Textures/HeightMap_normgen");
 #endif
 	TerrainHeightMapDesc.pFilePath = TerrainHeightMapFilePath;
 	TerrainHeightMapDesc.ppTexture = &pTerrainHeightMap;

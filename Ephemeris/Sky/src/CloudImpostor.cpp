@@ -33,7 +33,10 @@ struct ImposterUniformBuffer
 
 
 
-CloudImpostor::CloudImpostor() : m_Valid(false), m_Radius(0), m_SortDepth(0)
+CloudImpostor::CloudImpostor() :
+	m_Radius(0),
+	m_SortDepth(0),
+	m_Valid(false)
 {
 
 	//m_TextureSize = 256;
@@ -318,8 +321,8 @@ void CloudImpostor::setupRenderer( Cmd *cmd, CumulusCloud *pCloud, const vec3 &c
 	//	Just to make sure. distance should always be big enough.
 	if (distance>0.0001)
 	{
-		const float particleSize = pCloud->ParticlesScale();
-    vec3 cloudDirUnit = cloudDir / distance;
+		//const float particleSize = pCloud->ParticlesScale();
+		vec3 cloudDirUnit = cloudDir / distance;
 
 		/////////////////////////////////////////////////
 		//	Update impostor old data here
@@ -349,7 +352,7 @@ void CloudImpostor::setupRenderer( Cmd *cmd, CumulusCloud *pCloud, const vec3 &c
 		//	Igor: just for safety. When we are in the bounding sphere, this won't work well
 		ratio = min(ratio,0.75f);
 		float fov = m_Radius/sqrt(1-ratio*ratio);
-		float w = distance/fov;
+		//float w = distance/fov;
 		//	TODO: Igor: A: play with maths in order to figure out if this clamping might make any issues for the very big clouds
 		//	Igor: fov clamping may enhance impostor resolution.
 // 		const float camFov = 1.5f;
@@ -364,12 +367,12 @@ void CloudImpostor::setupRenderer( Cmd *cmd, CumulusCloud *pCloud, const vec3 &c
 			0.0f, 0.0f, 1.0f, 0.0f);
 */
 
-    mat4 impostorProj = mat4(
-vec4(w, 0.0f, 0.0f, 0.0f),
-vec4(0.0f, w, 0.0f, 0.0f),
-vec4(0.0f, 0.0f, zFar / (zFar - zNear), 1.0f),
-vec4(0.0f, 0.0f, -(zFar * zNear) / (zFar - zNear), 0.0f)
-);
+//    mat4 impostorProj = mat4(
+//vec4(w, 0.0f, 0.0f, 0.0f),
+//vec4(0.0f, w, 0.0f, 0.0f),
+//vec4(0.0f, 0.0f, zFar / (zFar - zNear), 1.0f),
+//vec4(0.0f, 0.0f, -(zFar * zNear) / (zFar - zNear), 0.0f)
+//);
 
 #ifdef	CLAMP_IMPOSTOR_PROJ
 		//bWantProjClamping = true;

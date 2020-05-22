@@ -491,9 +491,9 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 	
   TextureLoadDesc CloudFlatTextureDesc = {};
 #if defined(_DURANGO) || defined(ORBIS)
-	PathHandle CloudFlatTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/flat");
+	PathHandle CloudFlatTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "Textures/flat");
 #else
-	PathHandle CloudFlatTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/flat");
+	PathHandle CloudFlatTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/flat");
 #endif
 	CloudFlatTextureDesc.pFilePath = CloudFlatTextureFilePath;
   CloudFlatTextureDesc.ppTexture = &m_tDistantCloud;
@@ -501,9 +501,9 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 
   TextureLoadDesc CloudCumulusTextureDesc = {};
 #if defined(_DURANGO) || defined(ORBIS)
-	PathHandle CloudCumulusTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/cumulus_particles");
+	PathHandle CloudCumulusTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "Textures/cumulus_particles");
 #else
-	PathHandle CloudCumulusTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/cumulus_particles");
+	PathHandle CloudCumulusTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/cumulus_particles");
 #endif
 	CloudCumulusTextureDesc.pFilePath = CloudCumulusTextureFilePath;
   CloudCumulusTextureDesc.ppTexture = &m_tCumulusCloud;
@@ -913,7 +913,7 @@ void CloudsManager::loadCumulusClouds()
 	transform.rows[2].w += 1000;
 	m_CumulusClouds.push_back(CumulusCloud(transform,650));
 	generateCumulusCloud(m_CumulusClouds.back());
-	/**/
+	*/
 
 	for (int i = 0; i < 4; i++)
 		for (int j = 0; j < 4; j++)
@@ -1115,7 +1115,7 @@ void CloudsManager::prepareImpostors(Cmd *cmd, const vec3 & camPos, const mat4 &
 	  BufferUpdateDesc BufferUniformSettingDesc = { pCumulusUniformBuffer[gFrameIndex] };
 	  beginUpdateResource(&BufferUniformSettingDesc);
       CumulusCloudUniformBuffer& tempBuffer = *(CumulusCloudUniformBuffer*)BufferUniformSettingDesc.pMappedData;
-      tempBuffer.model;
+      //tempBuffer.model;
       memcpy(tempBuffer.OffsetScale, m_CumulusClouds[cumulusID].m_OffsetScales.data(), sizeof(vec4) *  MaxParticles);
       memcpy(tempBuffer.ParticleProps, m_CumulusClouds[cumulusID].m_particleProps.data(), sizeof(ParticleProps) * QMaxParticles);
       tempBuffer.vp = vp;
@@ -1212,7 +1212,7 @@ void CloudsManager::generateCumulusCloudParticles( eastl::vector<vec4> & particl
 		offset.z = i&4?-1.0f:1.0f;
 		cloud.pushParticle(offset, 1, i);
 		}
-		/**/
+		*/
 }
 
 // void CloudsManager::prepareSortData()

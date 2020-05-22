@@ -63,7 +63,7 @@ typedef struct SkySettings
 
 SkySettings	gSkySettings;
 
-static float      SunSize = 20000000.0f;
+//static float      SunSize = 20000000.0f;
 
 static float      SpaceScale = EARTH_RADIUS * 100.0f;
 static float      NebulaScale = 9.453f;
@@ -165,9 +165,9 @@ void Sky::CalculateLookupData()
 
 	TextureLoadDesc SkyTransmittanceTextureDesc = {};
 #if defined(_DURANGO) || defined(ORBIS)
-	PathHandle SkyTransmittanceTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/Transmittance");
+	PathHandle SkyTransmittanceTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "Textures/Transmittance");
 #else
-	PathHandle SkyTransmittanceTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Transmittance");
+	PathHandle SkyTransmittanceTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Transmittance");
 #endif
 	SkyTransmittanceTextureDesc.pFilePath = SkyTransmittanceTextureFilePath;
 	SkyTransmittanceTextureDesc.ppTexture = &pTransmittanceTexture;
@@ -175,9 +175,9 @@ void Sky::CalculateLookupData()
 
 	TextureLoadDesc SkyIrradianceTextureDesc = {};
 #if defined(_DURANGO) || defined(ORBIS)
-	PathHandle SkyIrradianceTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/Irradiance");
+	PathHandle SkyIrradianceTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "Textures/Irradiance");
 #else
-	PathHandle SkyIrradianceTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Irradiance");
+	PathHandle SkyIrradianceTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Irradiance");
 #endif
 	SkyIrradianceTextureDesc.pFilePath = SkyIrradianceTextureFilePath;
 	SkyIrradianceTextureDesc.ppTexture = &pIrradianceTexture;
@@ -185,9 +185,9 @@ void Sky::CalculateLookupData()
 
 	TextureLoadDesc SkyInscatterTextureDesc = {};
 #if defined(_DURANGO) || defined(ORBIS)
-	PathHandle SkyInscatterTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "Textures/Inscatter");
+	PathHandle SkyInscatterTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "Textures/Inscatter");
 #else
-	PathHandle SkyInscatterTextureFilePath = fsCopyPathInResourceDirectory(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Inscatter");
+	PathHandle SkyInscatterTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Inscatter");
 #endif
 	SkyInscatterTextureDesc.pFilePath = SkyInscatterTextureFilePath;
 	SkyInscatterTextureDesc.ppTexture = &pInscatterTexture;
@@ -922,8 +922,6 @@ void Sky::Draw(Cmd* cmd)
 		*(Data*)BufferUniformSettingDesc.pMappedData = data;
 		endUpdateResource(&BufferUniformSettingDesc, NULL);
 
-		DescriptorData SpaceParams[2] = {};
-
 		cmdBindPipeline(cmd, pSpacePipeline);
 		cmdBindDescriptorSet(cmd, 0, pSkyDescriptorSet[0]);
 		cmdBindDescriptorSet(cmd, gFrameIndex, pSkyDescriptorSet[1]);
@@ -1038,7 +1036,7 @@ void Sky::InitializeWithLoad(RenderTarget* InDepthRenderTarget, RenderTarget* In
 	pLinearDepthBuffer = InLinearDepthRenderTarget;
 }
 
-static const float AVERAGE_GROUND_REFLECTANCE = 0.1f;
+//static const float AVERAGE_GROUND_REFLECTANCE = 0.1f;
 
 // Rayleigh
 static const float HR = 8.0f;
@@ -1056,7 +1054,7 @@ static const float mieG = 0.8;
 static const float HM = 1.2f;
 static const vec3 betaMSca = vec3(20e-3f, 20e-3f, 20e-3f);
 static const vec3 betaMEx = betaMSca / 0.9f;
-static const float mieG = 0.76f;
+//static const float mieG = 0.76f;
 
 // nearest intersection of ray r,mu with ground or top atmosphere boundary
 // mu=cos(ray zenith angle at ray origin)

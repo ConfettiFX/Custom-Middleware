@@ -11,6 +11,8 @@
 #include <metal_compute>
 using namespace metal;
 
+#include "volumetricCloud.h"
+
 #define NUM_THREADS_X 16
 #define NUM_THREADS (NUM_THREADS_X * NUM_THREADS_X)
 
@@ -50,19 +52,13 @@ struct Compute_Shader
 					DstTexture(DstTexture) {}
 };
 
-struct ArgsData
-{
-    texture2d<float> SrcTexture;
-    texture2d<float, access::read_write> DstTexture;
-};
-
 //[numthreads(16, 16, 1)]
 kernel void stageMain(
 uint3 GTid [[thread_position_in_threadgroup]],
 uint3 Gid [[threadgroup_position_in_grid]],
 uint3 DTid [[thread_position_in_grid]],
 uint GroupIndex [[thread_index_in_threadgroup]],
-    constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]]
+    constant volumetricCloud::ComputeArgData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]]
 )
 {
 	threadgroup float GroupOutput[NUM_THREADS];

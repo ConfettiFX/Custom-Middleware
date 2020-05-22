@@ -10,14 +10,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-struct Uniforms_StarUniform
-{
-	float4x4 RotMat;
-	float4x4 ViewProjMat;
-	float4 LightDirection;
-	float4 Dx;
-	float4 Dy;
-};
+#include "space_argument_buffers.h"
 
 struct PsIn
 {
@@ -27,21 +20,9 @@ struct PsIn
 	float3 color;
 };
 
-struct ArgsData
-{
-	texture2d<float> depthTexture;
-	texture2d<float> volumetricCloudsTexture;
-    sampler g_LinearBorder;
-};
-
-struct ArgsPerFrame
-{
-	constant Uniforms_StarUniform & StarUniform;
-};
-
 fragment float4 stageMain(PsIn In [[stage_in]],
-	constant ArgsData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
-    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]])
+	constant ArgData& argBufferStatic [[buffer(UPDATE_FREQ_NONE)]],
+    constant ArgDataPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]])
 {
 	float2 screenUV = (In).screenCoord;
     float sceneDepth = argBufferStatic.depthTexture.sample(argBufferStatic.g_LinearBorder, screenUV, level(0)).r;

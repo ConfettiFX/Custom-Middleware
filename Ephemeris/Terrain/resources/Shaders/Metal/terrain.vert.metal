@@ -10,14 +10,10 @@
 #include <metal_stdlib>
 using namespace metal;
 
+#include "terrain_argument_buffers.h"
+
 struct Vertex_Shader
 {
-    struct Uniforms_RenderTerrainUniformBuffer
-    {
-        float4x4 projView;
-        float4 TerrainInfo;
-        float4 CameraInfo;
-    };
     constant Uniforms_RenderTerrainUniformBuffer & RenderTerrainUniformBuffer;
     struct VSInput
     {
@@ -47,14 +43,9 @@ constant Uniforms_RenderTerrainUniformBuffer & RenderTerrainUniformBuffer) :
 RenderTerrainUniformBuffer(RenderTerrainUniformBuffer) {}
 };
 
-struct ArgsPerFrame
-{
-    constant Vertex_Shader::Uniforms_RenderTerrainUniformBuffer & RenderTerrainUniformBuffer;
-};
-
 vertex Vertex_Shader::VSOutput stageMain(
     Vertex_Shader::VSInput input [[stage_in]],
-    constant ArgsPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
+    constant ArgDataPerFrame& argBufferPerFrame [[buffer(UPDATE_FREQ_PER_FRAME)]]
 )
 {
     Vertex_Shader::VSInput input0;

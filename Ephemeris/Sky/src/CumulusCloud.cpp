@@ -44,9 +44,9 @@ CumulusCloud::~CumulusCloud(void)
 
 void CumulusCloud::setParticles( vec4 * particleOffsetScale, ParticleProps * particleProps, uint32 particleCount )
 {
-	assert(particleOffsetScale);
-	assert(particleProps);
-	assert(particleCount<=MaxParticles);
+	ASSERT(particleOffsetScale);
+	ASSERT(particleProps);
+	ASSERT(particleCount <= MaxParticles);
 
 	m_OffsetScales.clear();
 	m_particleProps.clear();
@@ -55,8 +55,10 @@ void CumulusCloud::setParticles( vec4 * particleOffsetScale, ParticleProps * par
 
 	for (uint32 i=0; i<particleCount; ++i)
 	{
+		UNREF_PARAM(MaxTexID);
+
 		m_OffsetScales.push_back(particleOffsetScale[i]);
-		assert(particleProps[i].texID<=MaxTexID);
+		ASSERT(particleProps[i].texID<=MaxTexID);
 		m_particleProps.push_back(particleProps[i]);
 	}
 }
