@@ -3,14 +3,7 @@
 
 [![](Screenshots/main.png)](https://vimeo.com/344675521)
 
-Ephemeris 2 is a middleware solution for implementing a dynamic 24 hour Skydome System. It is running on top of [The Forge](https://github.com/ConfettiFX/The-Forge) and therefore supports the same platforms, which are at the moment 
-* Windows 10
-* macOS
-* Linux
-* XBOX One
-* PS4
-* iOS
-* Android
+Ephemeris 2 is a middleware solution for implementing a dynamic 24 hour Skydome System. It is running on top of [The Forge](https://github.com/ConfettiFX/The-Forge) and therefore supports all the platforms this framework supports.
 
 Check out the demo video by clicking the main image above!
 
@@ -51,6 +44,9 @@ Check out the demo video by clicking the main image above!
 
 # News
 All releases happen in sync with [The Forge](https://github.com/ConfettiFX/The-Forge) and have therefore the same release number.
+
+## Release 1.44 - July 16th, 2020 - Android | Linux
+Maintenance release following the update of The Forge.
 
 ## Release 1.43 - May 22nd, 2020 - MTuner | macOS / iOS run-time
 Maintenance release following the update of The Forge.
