@@ -124,7 +124,7 @@ const float AuroraWidth = 100000.0f;
 const uint32_t AuroraParticleNum = 64;
 
 #if defined(VULKAN)
-static void TransitionRenderTargets(RenderTarget *pRT, ResourceState state, Renderer* renderer, Cmd* cmd, Queue* queue, Fence* fence)
+static void TransitionRenderTargets(RenderTarget *pRT, ResourceState state, Renderer* renderer, CmdPool* cmdPool, Cmd* cmd, Queue* queue, Fence* fence)
 {
 	// Transition render targets to desired state
 	beginCmd(cmd);
@@ -142,6 +142,8 @@ static void TransitionRenderTargets(RenderTarget *pRT, ResourceState state, Rend
 	submitDesc.pSignalFence = fence;
 	queueSubmit(queue, &submitDesc);
 	waitForFences(renderer, 1, &fence);
+
+	resetCmdPool(renderer, cmdPool);
 }
 #endif
 
@@ -209,7 +211,7 @@ void SpaceObjects::GenerateRing(eastl::vector<float> &vertices, eastl::vector<ui
 	}
 }
 
-bool SpaceObjects::Init(Renderer* const renderer)
+bool SpaceObjects::Init(Renderer* const renderer, PipelineCache* pCache)
 {
 	/*
 	Timer t;
@@ -307,6 +309,7 @@ bool SpaceObjects::Init(Renderer* const renderer)
 	}
 
 	pRenderer = renderer;
+	pPipelineCache = pCache;
 	//////////////////////////////////// Samplers ///////////////////////////////////////////////////
 
 	SamplerDesc samplerClampDesc = {
@@ -326,7 +329,7 @@ bool SpaceObjects::Init(Renderer* const renderer)
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#if defined(_DURANGO) || defined(ORBIS)
+#if defined(XBOX) || defined(ORBIS) || defined(PROSPERO)
 	eastl::string shaderPath("");
 #elif defined(DIRECT3D12)
 	eastl::string shaderPath("../../../../../Ephemeris/SpaceObjects/resources/Shaders/D3D12/");
@@ -460,7 +463,7 @@ bool SpaceObjects::Init(Renderer* const renderer)
 	addResource(&TriangularVbDesc, &token, LOAD_PRIORITY_NORMAL);
 
 	TextureLoadDesc SkyMoonTextureDesc = {};
-#if defined(_DURANGO) || defined(ORBIS)
+#if defined(XBOX) || defined(ORBIS) || defined(PROSPERO)
 	PathHandle SkyMoonTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "Textures/Moon");
 #else
 	PathHandle SkyMoonTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Moon");
@@ -709,7 +712,8 @@ bool SpaceObjects::Load(RenderTarget** rts, uint32_t count)
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	PipelineDesc pipelineDescMilkyWay;
+	PipelineDesc pipelineDescMilkyWay = {};
+	pipelineDescMilkyWay.pCache = pPipelineCache;
 	{
 		pipelineDescMilkyWay.mType = PIPELINE_TYPE_GRAPHICS;
 		GraphicsPipelineDesc &pipelineSettings = pipelineDescMilkyWay.mGraphicsDesc;
@@ -733,7 +737,8 @@ bool SpaceObjects::Load(RenderTarget** rts, uint32_t count)
 		addPipeline(pRenderer, &pipelineDescMilkyWay, &pMilkyWayPipeline);
 	}
 
-	PipelineDesc pipelineDescAurora;
+	PipelineDesc pipelineDescAurora = {};
+	pipelineDescAurora.pCache = pPipelineCache;
 	{
 		pipelineDescAurora.mType = PIPELINE_TYPE_GRAPHICS;
 		GraphicsPipelineDesc &pipelineSettings = pipelineDescAurora.mGraphicsDesc;
@@ -749,14 +754,14 @@ bool SpaceObjects::Load(RenderTarget** rts, uint32_t count)
 
 		pipelineSettings.pRootSignature = pSpaceObjectsRootSignature;
 		pipelineSettings.pShaderProgram = pAuroraShader;
-		pipelineSettings.pVertexLayout = &vertexLayout;
 		pipelineSettings.pRasterizerState = &rasterizerStateDesc;
 		pipelineSettings.pBlendState = &blendStateSunDesc;
 
 		addPipeline(pRenderer, &pipelineDescAurora, &pAuroraPipeline);
 	}
 
-	PipelineDesc pipelineDescAuroraCompute;
+	PipelineDesc pipelineDescAuroraCompute = {};
+	pipelineDescAuroraCompute.pCache = pPipelineCache;
 	{
 		pipelineDescAuroraCompute.mType = PIPELINE_TYPE_COMPUTE;
 		ComputePipelineDesc &pipelineSettings = pipelineDescAuroraCompute.mComputeDesc;
@@ -770,7 +775,8 @@ bool SpaceObjects::Load(RenderTarget** rts, uint32_t count)
 	}
 
 
-	PipelineDesc pipelineDesSun;
+	PipelineDesc pipelineDesSun = {};
+	pipelineDesSun.pCache = pPipelineCache;
 	{
 		pipelineDesSun.mType = PIPELINE_TYPE_GRAPHICS;
 		GraphicsPipelineDesc &pipelineSettings = pipelineDesSun.mGraphicsDesc;
@@ -800,41 +806,31 @@ bool SpaceObjects::Load(RenderTarget** rts, uint32_t count)
 	}
 
 	vertexLayout = {};
-	vertexLayout.mAttribCount = 5;
-	vertexLayout.mAttribs[0].mSemantic = SEMANTIC_POSITION;
+	vertexLayout.mAttribCount = 3;
+
+	vertexLayout.mAttribs[0].mSemantic = SEMANTIC_TEXCOORD0;
 	vertexLayout.mAttribs[0].mFormat = TinyImageFormat_R32G32B32A32_SFLOAT;
 	vertexLayout.mAttribs[0].mBinding = 0;
 	vertexLayout.mAttribs[0].mLocation = 0;
 	vertexLayout.mAttribs[0].mOffset = 0;
+	vertexLayout.mAttribs[0].mRate = VERTEX_ATTRIB_RATE_INSTANCE;
 
-	vertexLayout.mAttribs[1].mSemantic = SEMANTIC_TEXCOORD0;
-	vertexLayout.mAttribs[1].mFormat = TinyImageFormat_R32G32_SFLOAT;
+	vertexLayout.mAttribs[1].mSemantic = SEMANTIC_TEXCOORD1;
+	vertexLayout.mAttribs[1].mFormat = TinyImageFormat_R32G32B32A32_SFLOAT;
 	vertexLayout.mAttribs[1].mBinding = 0;
 	vertexLayout.mAttribs[1].mLocation = 1;
 	vertexLayout.mAttribs[1].mOffset = 4 * sizeof(float);
+	vertexLayout.mAttribs[1].mRate = VERTEX_ATTRIB_RATE_INSTANCE;
 
-	vertexLayout.mAttribs[2].mSemantic = SEMANTIC_TEXCOORD1;
+	vertexLayout.mAttribs[2].mSemantic = SEMANTIC_TEXCOORD2;
 	vertexLayout.mAttribs[2].mFormat = TinyImageFormat_R32G32B32A32_SFLOAT;
-	vertexLayout.mAttribs[2].mBinding = 1;
+	vertexLayout.mAttribs[2].mBinding = 0;
 	vertexLayout.mAttribs[2].mLocation = 2;
-	vertexLayout.mAttribs[2].mOffset = 0;
+	vertexLayout.mAttribs[2].mOffset = 8 * sizeof(float);
 	vertexLayout.mAttribs[2].mRate = VERTEX_ATTRIB_RATE_INSTANCE;
 
-	vertexLayout.mAttribs[3].mSemantic = SEMANTIC_TEXCOORD2;
-	vertexLayout.mAttribs[3].mFormat = TinyImageFormat_R32G32B32A32_SFLOAT;
-	vertexLayout.mAttribs[3].mBinding = 1;
-	vertexLayout.mAttribs[3].mLocation = 3;
-	vertexLayout.mAttribs[3].mOffset = 4 * sizeof(float);
-	vertexLayout.mAttribs[3].mRate = VERTEX_ATTRIB_RATE_INSTANCE;
-
-	vertexLayout.mAttribs[4].mSemantic = SEMANTIC_TEXCOORD3;
-	vertexLayout.mAttribs[4].mFormat = TinyImageFormat_R32G32B32A32_SFLOAT;
-	vertexLayout.mAttribs[4].mBinding = 1;
-	vertexLayout.mAttribs[4].mLocation = 4;
-	vertexLayout.mAttribs[4].mOffset = 8 * sizeof(float);
-	vertexLayout.mAttribs[4].mRate = VERTEX_ATTRIB_RATE_INSTANCE;
-
-	PipelineDesc pipelineDescStar;
+	PipelineDesc pipelineDescStar = {};
+	pipelineDescStar.pCache = pPipelineCache;
 	{
 		pipelineDescStar.mType = PIPELINE_TYPE_GRAPHICS;
 		GraphicsPipelineDesc &pipelineSettings = pipelineDescStar.mGraphicsDesc;
@@ -1031,9 +1027,9 @@ void SpaceObjects::Draw(Cmd* cmd)
 		cmdBindDescriptorSet(cmd, gFrameIndex, pSpaceObjectsDescriptorSet[1]);
 
 #if !defined(ORBIS)
-		const uint32_t strides[] = { ParticleVertexStride, ParticleInstanceStride };
-		Buffer* particleVertexBuffers[] = { pParticleVertexBuffer, pParticleInstanceBuffer };
-		cmdBindVertexBuffer(cmd, 2, particleVertexBuffers, strides, NULL);
+		const uint32_t strides[] = { ParticleInstanceStride };
+		Buffer* particleVertexBuffers[] = { pParticleInstanceBuffer };
+		cmdBindVertexBuffer(cmd, 1, particleVertexBuffers, strides, NULL);
 #endif
 #if !defined(METAL)
 		cmdDrawInstanced(cmd, 1, 0, ParticleCount, 0);
@@ -1176,13 +1172,14 @@ void SpaceObjects::Draw(Cmd* cmd)
 }
 
 void SpaceObjects::Initialize(uint InImageCount,
-	ICameraController* InCameraController, Queue*	InGraphicsQueue,
+	ICameraController* InCameraController, Queue*	InGraphicsQueue, CmdPool* InTransCmdPool,
 	Cmd** InTransCmds, Fence* InTransitionCompleteFences, ProfileToken InGraphicsGpuProfiler, UIApp* InGAppUI, Buffer*	InTransmittanceBuffer)
 {
 	gImageCount = InImageCount;
 
 	pCameraController = InCameraController;
 	pGraphicsQueue = InGraphicsQueue;
+	pTransCmdPool = InTransCmdPool;
 	ppTransCmds = InTransCmds;
 	pTransitionCompleteFences = InTransitionCompleteFences;
 	gGpuProfileToken = InGraphicsGpuProfiler;

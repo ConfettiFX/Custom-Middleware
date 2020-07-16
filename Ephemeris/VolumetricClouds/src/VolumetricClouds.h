@@ -249,7 +249,7 @@ struct VolumetricCloudsCB
 class VolumetricClouds : public IMiddleware
 {
 public:
-	virtual bool Init(Renderer* renderer) final;
+	virtual bool Init(Renderer* renderer, PipelineCache* pCache = NULL) final;
 	virtual void Exit() final;
 	virtual bool Load(RenderTarget** rts, uint32_t count = 1) final;
 	virtual void Unload() final;
@@ -261,7 +261,7 @@ public:
 
 
 	void Initialize(uint InImageCount,
-		ICameraController* InCameraController, Queue*	InGraphicsQueue,
+		ICameraController* InCameraController, Queue*	InGraphicsQueue, CmdPool* InTransCmdPool,
 		Cmd** InTransCmds, Fence* InTransitionCompleteFences, Fence** InRenderCompleteFences, ProfileToken InGraphicsGpuProfiler, UIApp* InGAppUI, Buffer*	pTransmittanceBuffer);
 
 
@@ -285,6 +285,7 @@ public:
 
 	// Below are passed from Previous stage via Initialize()
 	Renderer*               pRenderer;
+	PipelineCache*          pPipelineCache;
 	uint                    gImageCount;
 	uint                    mWidth;
 	uint                    mHeight;
@@ -299,6 +300,7 @@ public:
 	UIApp*                  pGAppUI = NULL;
 	Queue*                  pGraphicsQueue = NULL;
 
+	CmdPool*                pTransCmdPool = NULL;
 	Cmd**                   ppTransCmds = NULL;
 	Fence*                  pTransitionCompleteFences = NULL;
 	Fence**	                pRenderCompleteFences = NULL;

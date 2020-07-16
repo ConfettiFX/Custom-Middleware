@@ -58,7 +58,7 @@ CloudImpostor::CloudImpostor() :
   //ImposterRenderTarget.mSrgb = false;
   ImposterRenderTarget.mWidth = m_TextureSize;
   ImposterRenderTarget.mHeight = m_TextureSize;
-  ImposterRenderTarget.pDebugName = L"Imposter RenderTarget";
+  ImposterRenderTarget.pName = "Imposter RenderTarget";
   ImposterRenderTarget.mFlags = TEXTURE_CREATION_FLAG_OWN_MEMORY_BIT;
   addRenderTarget(pRenderer, &ImposterRenderTarget, &m_tImpostor);
 #else	//	USE_CLOUDS_DEPTH_RECONSTRUCTION
@@ -73,7 +73,7 @@ CloudImpostor::CloudImpostor() :
   ImposterRenderTarget.mSrgb = false;
   ImposterRenderTarget.mWidth = m_TextureSize;
   ImposterRenderTarget.mHeight = m_TextureSize;
-  ImposterRenderTarget.pDebugName = L"Imposter RenderTarget";
+  ImposterRenderTarget.pName = "Imposter RenderTarget";
   ImposterRenderTarget.mFlags = TEXTURE_CREATION_FLAG_OWN_MEMORY_BIT;
   addRenderTarget(pRenderer, &ImposterRenderTarget, &m_tImpostor);
 

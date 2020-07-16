@@ -41,17 +41,17 @@ const uint32_t      gImageCount = 3;
 
 static bool         gToggleVSync = false;
 static bool         gTogglePerformance = true;
-static bool					gToggleFXAA = true;
+static bool         gToggleFXAA = true;
 static bool         gShowUI = true;
 
 Renderer*           pRenderer = NULL;
 
 Queue*              pGraphicsQueue = NULL;
-CmdPool*            pGraphicsCmdPool = NULL;
-Cmd**               ppGraphicsCmds = NULL;
+CmdPool*            pGraphicsCmdPools[gImageCount];
+Cmd*                pGraphicsCmds[gImageCount];
 
-CmdPool*            pTransCmdPool = NULL;
-Cmd**               ppTransCmds = NULL;
+CmdPool*            pTransCmdPool;
+Cmd**               ppTransCmds;
 
 SwapChain*          pSwapChain = NULL;
 RenderTarget*       pDepthBuffer = NULL;
@@ -68,8 +68,8 @@ RootSignature*      pLinearDepthCompRootSignature = NULL;
 RenderTarget*       pTerrainResultRT = NULL;
 RenderTarget*       pSkydomeResultRT = NULL;
 
-Shader*							pFXAAShader = NULL;
-Pipeline*						pFXAAPipeline = NULL;
+Shader*             pFXAAShader = NULL;
+Pipeline*           pFXAAPipeline = NULL;
 
 Shader*             pPresentShader = NULL;
 Pipeline*           pPresentPipeline = NULL;
@@ -77,7 +77,6 @@ Pipeline*           pPresentPipeline = NULL;
 DescriptorSet*      pExampleDescriptorSet = NULL;
 RootSignature*      pExampleRootSignature = NULL;
 
-Buffer*             pScreenQuadVertexBuffer = NULL;
 Sampler*            pBilinearClampSampler = NULL;
 
 Fence*              pRenderCompleteFences[gImageCount] = { NULL };
@@ -91,19 +90,19 @@ GuiComponent*       pMainGuiWindow = NULL;
 
 Buffer*             pTransmittanceBuffer = NULL;
 
-static float2				LightDirection = float2(0.0f, 270.0f);
-static float4				LightColorAndIntensity = float4(1.0f, 1.0f, 1.0f, 1.0f);
+static float2       LightDirection = float2(0.0f, 270.0f);
+static float4       LightColorAndIntensity = float4(1.0f, 1.0f, 1.0f, 1.0f);
 
 
 #define NEAR_CAMERA 50.0f
 #define FAR_CAMERA 100000000.0f
 
-static uint				gPrevFrameIndex = 0;
-static bool				bSunMove = true;
-static float			SunMovingSpeed = 5.0f;
+static uint         gPrevFrameIndex = 0;
+static bool         bSunMove = true;
+static float        SunMovingSpeed = 5.0f;
 
-float							mChildIndent = 25.0f;
-float							mHeightOffset = 20.0f;
+float               mChildIndent = 25.0f;
+float               mHeightOffset = 20.0f;
 
 //--------------------------------------------------------------------------------------------
 // MESHES
@@ -150,6 +149,10 @@ SpaceObjects			gSpaceObjects;
 TextDrawDesc gFrameTimeDraw = TextDrawDesc(0, 0xff00ffff, 18);
 TextDrawDesc gDefaultTextDrawDesc = TextDrawDesc(0, 0xffffffff, 16);
 
+ResourceDirEnum gPipelineCacheRD = RD_SHADER_BINARIES;
+const char* pPipelineCacheName = "PipelineCache.cache";
+PipelineCache* pPipelineCache = NULL;
+
 static void ShaderPath(const eastl::string &shaderPath, char* pShaderName, eastl::string &result)
 {
 	result.resize(0);
@@ -189,14 +192,20 @@ public:
 		queueDesc.mType = QUEUE_TYPE_GRAPHICS;
 		queueDesc.mFlag = QUEUE_FLAG_INIT_MICROPROFILE;
 		addQueue(pRenderer, &queueDesc, &pGraphicsQueue);
+		for (uint32_t i = 0; i < gImageCount; ++i)
+		{
+			CmdPoolDesc cmdPoolDesc = {};
+			cmdPoolDesc.pQueue = pGraphicsQueue;
+			addCmdPool(pRenderer, &cmdPoolDesc, &pGraphicsCmdPools[i]);
+			CmdDesc cmdDesc = {};
+			cmdDesc.pPool = pGraphicsCmdPools[i];
+			addCmd(pRenderer, &cmdDesc, &pGraphicsCmds[i]);
+		}
+
 		CmdPoolDesc cmdPoolDesc = {};
 		cmdPoolDesc.pQueue = pGraphicsQueue;
-		addCmdPool(pRenderer, &cmdPoolDesc, &pGraphicsCmdPool);
-		CmdDesc cmdDesc = {};
-		cmdDesc.pPool = pGraphicsCmdPool;
-		addCmd_n(pRenderer, &cmdDesc, gImageCount, &ppGraphicsCmds);
-
 		addCmdPool(pRenderer, &cmdPoolDesc, &pTransCmdPool);
+		CmdDesc cmdDesc = {};
 		cmdDesc.pPool = pTransCmdPool;
 		addCmd_n(pRenderer, &cmdDesc, 1, &ppTransCmds);
 
@@ -211,6 +220,11 @@ public:
 		addSemaphore(pRenderer, &pImageAcquiredSemaphore);
 
 		initResourceLoaderInterface(pRenderer);
+
+		PathHandle cachePath = fsGetPathInResourceDirEnum(gPipelineCacheRD, pPipelineCacheName);
+		PipelineCacheLoadDesc cacheDesc = {};
+		cacheDesc.pPath = cachePath;
+		addPipelineCache(pRenderer, &cacheDesc, &pPipelineCache);
 
 		initProfiler();
 
@@ -299,21 +313,6 @@ public:
 		DescriptorSetDesc setDesc = { pExampleRootSignature, DESCRIPTOR_UPDATE_FREQ_NONE, 2 };
 		addDescriptorSet(pRenderer, &setDesc, &pExampleDescriptorSet);
 
-		float screenQuadPoints[] = {
-				-1.0f,  3.0f, 0.5f, 0.0f, -1.0f,
-				-1.0f, -1.0f, 0.5f, 0.0f, 1.0f,
-				3.0f, -1.0f, 0.5f, 2.0f, 1.0f,
-		};
-
-		uint64_t screenQuadDataSize = 5 * 3 * sizeof(float);
-		BufferLoadDesc screenQuadVbDesc = {};
-		screenQuadVbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_VERTEX_BUFFER;
-		screenQuadVbDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
-		screenQuadVbDesc.mDesc.mSize = screenQuadDataSize;
-		screenQuadVbDesc.pData = screenQuadPoints;
-		screenQuadVbDesc.ppBuffer = &pScreenQuadVertexBuffer;
-		addResource(&screenQuadVbDesc, NULL, LOAD_PRIORITY_NORMAL);
-
 		// Add TransmittanceBuffer buffer
 		BufferLoadDesc TransBufferDesc = {};
 		TransBufferDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_RW_BUFFER | DESCRIPTOR_TYPE_BUFFER;
@@ -347,17 +346,17 @@ public:
 
 		pCameraController->setMotionParameters(cmp);
 
-		gTerrain.Initialize(gImageCount, pCameraController, pGraphicsQueue, ppTransCmds, pTransitionCompleteFences, gGpuProfileToken, &gAppUI);
-		gTerrain.Init(pRenderer);		
+		gTerrain.Initialize(gImageCount, pCameraController, pGraphicsQueue, pTransCmdPool, ppTransCmds, pTransitionCompleteFences, gGpuProfileToken, &gAppUI);
+		gTerrain.Init(pRenderer, pPipelineCache);
 
-		gSky.Initialize(gImageCount, pCameraController, pGraphicsQueue, ppTransCmds, pTransitionCompleteFences, gGpuProfileToken, &gAppUI, pTransmittanceBuffer);
-		gSky.Init(pRenderer);		
+		gSky.Initialize(gImageCount, pCameraController, pGraphicsQueue, pTransCmdPool, ppTransCmds, pTransitionCompleteFences, gGpuProfileToken, &gAppUI, pTransmittanceBuffer);
+		gSky.Init(pRenderer, pPipelineCache);
 
-		gVolumetricClouds.Initialize(gImageCount, pCameraController, pGraphicsQueue, ppTransCmds, pTransitionCompleteFences, pRenderCompleteFences, gGpuProfileToken, &gAppUI, pTransmittanceBuffer);
-		gVolumetricClouds.Init(pRenderer);
+		gVolumetricClouds.Initialize(gImageCount, pCameraController, pGraphicsQueue, pTransCmdPool, ppTransCmds, pTransitionCompleteFences, pRenderCompleteFences, gGpuProfileToken, &gAppUI, pTransmittanceBuffer);
+		gVolumetricClouds.Init(pRenderer, pPipelineCache);
 
-		gSpaceObjects.Initialize(gImageCount, pCameraController, pGraphicsQueue, ppTransCmds, pTransitionCompleteFences, gGpuProfileToken, &gAppUI, pTransmittanceBuffer);
-		gSpaceObjects.Init(pRenderer);
+		gSpaceObjects.Initialize(gImageCount, pCameraController, pGraphicsQueue, pTransCmdPool, ppTransCmds, pTransitionCompleteFences, gGpuProfileToken, &gAppUI, pTransmittanceBuffer);
+		gSpaceObjects.Init(pRenderer, pPipelineCache);
 
 		GuiDesc guiDesc = {};
 		guiDesc.mStartPosition = vec2(960.0f / getDpiScale().getX(), 700.0f / getDpiScale().getY());
@@ -456,7 +455,6 @@ public:
 		exitProfiler();
 
 		removeResource(pTransmittanceBuffer);
-		removeResource(pScreenQuadVertexBuffer);
 
 		removeSampler(pRenderer, pBilinearClampSampler);
 
@@ -483,13 +481,21 @@ public:
 		}
 		removeSemaphore(pRenderer, pImageAcquiredSemaphore);
 
-		removeCmd_n(pRenderer, gImageCount, ppGraphicsCmds);
-		removeCmdPool(pRenderer, pGraphicsCmdPool);
+		for (uint32_t i = 0; i < gImageCount; ++i)
+		{
+			removeCmd(pRenderer, pGraphicsCmds[i]);
+			removeCmdPool(pRenderer, pGraphicsCmdPools[i]);
+		}
 
 		removeCmd_n(pRenderer, 1, ppTransCmds);
 		removeCmdPool(pRenderer, pTransCmdPool);
 
 		removeQueue(pRenderer, pGraphicsQueue);
+
+		PathHandle cachePath = fsGetPathInResourceDirEnum(gPipelineCacheRD, pPipelineCacheName);
+		savePipelineCache(pRenderer, pPipelineCache, cachePath);
+		removePipelineCache(pRenderer, pPipelineCache);
+
 		exitResourceLoaderInterface(pRenderer);
 
 		removeRenderer(pRenderer);
@@ -533,27 +539,11 @@ public:
 		gSpaceObjects.Load(&gSky.pSkyRenderTarget);
 
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-		//layout and pipeline for ScreenQuad
-		VertexLayout vertexLayout = {};
-		vertexLayout.mAttribCount = 2;
-		vertexLayout.mAttribs[0].mSemantic = SEMANTIC_POSITION;
-		vertexLayout.mAttribs[0].mFormat = TinyImageFormat_R32G32B32_SFLOAT;
-		vertexLayout.mAttribs[0].mBinding = 0;
-		vertexLayout.mAttribs[0].mLocation = 0;
-		vertexLayout.mAttribs[0].mOffset = 0;
-
-		vertexLayout.mAttribs[1].mSemantic = SEMANTIC_TEXCOORD0;
-		vertexLayout.mAttribs[1].mFormat = TinyImageFormat_R32G32_SFLOAT;
-		vertexLayout.mAttribs[1].mBinding = 0;
-		vertexLayout.mAttribs[1].mLocation = 1;
-		vertexLayout.mAttribs[1].mOffset = 3 * sizeof(float);
-
-		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		RasterizerStateDesc rasterizerStateDesc = {};
 		rasterizerStateDesc.mCullMode = CULL_MODE_NONE;
 
-		PipelineDesc PresentPipelineDesc;
+		PipelineDesc PresentPipelineDesc = {};
+		PresentPipelineDesc.pCache = pPipelineCache;
 		{
 			PresentPipelineDesc.mType = PIPELINE_TYPE_GRAPHICS;
 			GraphicsPipelineDesc &pipelineSettings = PresentPipelineDesc.mGraphicsDesc;
@@ -567,7 +557,6 @@ public:
 			pipelineSettings.mSampleQuality = pSwapChain->ppRenderTargets[0]->mSampleQuality;
 			pipelineSettings.pRootSignature = pExampleRootSignature;
 			pipelineSettings.pShaderProgram = pPresentShader;
-			pipelineSettings.pVertexLayout = &vertexLayout;
 			pipelineSettings.pRasterizerState = &rasterizerStateDesc;
 
 			addPipeline(pRenderer, &PresentPipelineDesc, &pPresentPipeline);
@@ -575,6 +564,7 @@ public:
 
 		{
 			PipelineDesc desc = {};
+			desc.pCache = pPipelineCache;
 			desc.mType = PIPELINE_TYPE_GRAPHICS;
 			GraphicsPipelineDesc& pipelineSettings = desc.mGraphicsDesc;
 			pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
@@ -585,7 +575,6 @@ public:
 			pipelineSettings.mSampleCount = pSwapChain->ppRenderTargets[0]->mSampleCount;
 			pipelineSettings.mSampleQuality = pSwapChain->ppRenderTargets[0]->mSampleQuality;
 			pipelineSettings.pRootSignature = pExampleRootSignature;
-			pipelineSettings.pVertexLayout = &vertexLayout;
 			pipelineSettings.pRasterizerState = &rasterizerStateDesc;
 			pipelineSettings.pShaderProgram = pFXAAShader;
 			addPipeline(pRenderer, &desc, &pFXAAPipeline);
@@ -593,7 +582,8 @@ public:
 
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-		PipelineDesc LinearDepthResolvePipelineDesc;
+		PipelineDesc LinearDepthResolvePipelineDesc = {};
+		LinearDepthResolvePipelineDesc.pCache = pPipelineCache;
 		{
 			LinearDepthResolvePipelineDesc.mType = PIPELINE_TYPE_GRAPHICS;
 			GraphicsPipelineDesc &pipelineSettings = LinearDepthResolvePipelineDesc.mGraphicsDesc;
@@ -607,7 +597,6 @@ public:
 			pipelineSettings.mSampleQuality = pLinearDepthBuffer->mSampleQuality;
 			pipelineSettings.pRootSignature = pExampleRootSignature;
 			pipelineSettings.pShaderProgram = pLinearDepthResolveShader;
-			pipelineSettings.pVertexLayout = &vertexLayout;
 			pipelineSettings.pRasterizerState = &rasterizerStateDesc;
 
 			addPipeline(pRenderer, &LinearDepthResolvePipelineDesc, &pLinearDepthResolvePipeline);
@@ -615,7 +604,8 @@ public:
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-		PipelineDesc LinearDepthCompPipelineDesc;
+		PipelineDesc LinearDepthCompPipelineDesc = {};
+		LinearDepthCompPipelineDesc.pCache = pPipelineCache;
 		{
 			LinearDepthCompPipelineDesc.mType = PIPELINE_TYPE_COMPUTE;
 			ComputePipelineDesc &comPipelineSettings = LinearDepthCompPipelineDesc.mComputeDesc;
@@ -764,8 +754,10 @@ public:
 		getFenceStatus(pRenderer, pRenderCompleteFence, &fenceStatus);
 		if (fenceStatus == FENCE_STATUS_INCOMPLETE)
 			waitForFences(pRenderer, 1, &pRenderCompleteFence);
-		
-		Cmd* cmd = ppGraphicsCmds[gFrameIndex];
+
+		resetCmdPool(pRenderer, pGraphicsCmdPools[gFrameIndex]);
+
+		Cmd* cmd = pGraphicsCmds[gFrameIndex];
 		beginCmd(cmd);
 
 		cmdBeginGpuFrameProfile(cmd, gGpuProfileToken);
@@ -788,9 +780,6 @@ public:
 		CameraInfo cameraInfo;
 		cameraInfo.nearPlane = NEAR_CAMERA;
 		cameraInfo.farPlane = FAR_CAMERA;
-
-		const uint32_t quadStride = sizeof(float) * 5;
-
 		///////////////////////////////////////////////// Depth Linearization ////////////////////////////////////////////////////
 		{
 			cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Depth Linearization");
@@ -809,7 +798,6 @@ public:
 			cmdBindPipeline(cmd, pLinearDepthResolvePipeline);
 			cmdBindPushConstants(cmd, pExampleRootSignature, "CameraInfoRootConstant", &cameraInfo);
 			cmdBindDescriptorSet(cmd, 0, pExampleDescriptorSet);
-			cmdBindVertexBuffer(cmd, 1, &pScreenQuadVertexBuffer, &quadStride, NULL);
 			cmdDraw(cmd, 3, 0);
 
 			cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
@@ -873,7 +861,6 @@ public:
 			cmdBindDescriptorSet(cmd, 1, pExampleDescriptorSet);
 			cmdBindPushConstants(cmd, pExampleRootSignature, "FXAARootConstant", &gFXAAinfo);
 
-			cmdBindVertexBuffer(cmd, 1, &pScreenQuadVertexBuffer, &quadStride, NULL);
 			cmdDraw(cmd, 3, 0);
 
 			cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
@@ -1029,6 +1016,8 @@ public:
 		submitDesc.mSubmitDone = true;
 		queueSubmit(pGraphicsQueue, &submitDesc);
 		waitForFences(pRenderer, 1, &pTransitionCompleteFences);
+
+		resetCmdPool(pRenderer, pTransCmdPool);
 	}
 
 	bool addDepthBuffer()
@@ -1039,6 +1028,7 @@ public:
 		depthRT.mClearValue.depth = 1.0f;
 		depthRT.mClearValue.stencil = 0;
 		depthRT.mDepth = 1;
+		depthRT.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
 		depthRT.mFormat = TinyImageFormat_D32_SFLOAT;
 		depthRT.mHeight = mSettings.mHeight;
 		depthRT.mSampleCount = SAMPLE_COUNT_1;
@@ -1071,6 +1061,7 @@ public:
 		RenderTargetDesc resultRT = {};
 		resultRT.mArraySize = 1;
 		resultRT.mDepth = 1;
+		resultRT.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
 		resultRT.mFormat = TinyImageFormat_R8G8B8A8_UNORM;
 		resultRT.mSampleCount = SAMPLE_COUNT_1;
 		resultRT.mSampleQuality = 0;

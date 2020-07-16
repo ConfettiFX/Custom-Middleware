@@ -14,7 +14,7 @@
 #include "../../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IMemory.h"
 
-#if defined(_DURANGO) || defined(ORBIS)
+#if defined(XBOX) || defined(ORBIS) || defined(PROSPERO)
 char TextureTileFilePaths[5][255] = {
   "Textures/Tiles/grass_DM",
   "Textures/Tiles/cliff_DM",
@@ -151,7 +151,7 @@ static void getFrustumFromMatrix(const mat4 &matrix, TerrainFrustum &frustum)
 }
 
 #if defined(VULKAN)
-static void TransitionRenderTargets(RenderTarget *pRT, ResourceState state, Renderer* renderer, Cmd* cmd, Queue* queue, Fence* fence)
+static void TransitionRenderTargets(RenderTarget *pRT, ResourceState state, Renderer* renderer, CmdPool* cmdPool, Cmd* cmd, Queue* queue, Fence* fence)
 {
 	// Transition render targets to desired state
 	beginCmd(cmd);
@@ -169,6 +169,8 @@ static void TransitionRenderTargets(RenderTarget *pRT, ResourceState state, Rend
 	submitDesc.pSignalFence = fence;
 	queueSubmit(queue, &submitDesc);
 	waitForFences(renderer, 1, &fence);
+
+	resetCmdPool(renderer, cmdPool);
 }
 #endif
 
@@ -179,9 +181,11 @@ static void ShaderPath(const eastl::string &shaderPath, char* pShaderName, eastl
 	result = shaderPath + shaderName;
 }
 
-bool Terrain::Init(Renderer* renderer)
+bool Terrain::Init(Renderer* renderer, PipelineCache* pCache)
 {
 	pRenderer = renderer;
+	pPipelineCache = pCache;
+
 	g_StandardPosition = vec4(0.0f, 0.0f, 0.0f, 0.0f);
 	//////////////////////////////////// Samplers ///////////////////////////////////////////////////
 	SamplerDesc samplerClampDesc = {
@@ -202,7 +206,7 @@ bool Terrain::Init(Renderer* renderer)
 	};
 	addSampler(pRenderer, &samplerClampDesc, &pLinearBorderSampler);
 
-#if defined(_DURANGO) || defined(ORBIS)
+#if defined(XBOX) || defined(ORBIS) || defined(PROSPERO)
 	eastl::string shaderPath("");
 #elif defined(DIRECT3D12)
 	eastl::string shaderPath("../../../../../Ephemeris/Terrain/resources/Shaders/D3D12/");
@@ -461,7 +465,7 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 
 	eastl::vector<TerrainVertex> vertices;
 	meshSegments.clear();
-#if defined(_DURANGO) || defined(ORBIS)
+#if defined(XBOX) || defined(ORBIS) || defined(PROSPERO)
 	HeightData dataSource("Textures/HeightMap.r32", height);
 #else
 	HeightData dataSource("../../../Ephemeris/Terrain/resources/Textures/HeightMap.r32", height);
@@ -489,7 +493,7 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 	// normalMapTexture = renderer->addTexture(subPathTexture, true);
 
 	TextureLoadDesc TerrainNormalTextureDesc = {};
-#if defined(_DURANGO) || defined(ORBIS)
+#if defined(XBOX) || defined(ORBIS) || defined(PROSPERO)
 	PathHandle TerrainNormalTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "Textures/Normalmap");
 #else
 	PathHandle TerrainNormalTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "../../../Ephemeris/Terrain/resources/Textures/Normalmap");
@@ -502,7 +506,7 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 	// maskTexture = renderer->addTexture(maskTextureFilePath, true);
 
 	TextureLoadDesc TerrainMaskTextureDesc = {};
-#if defined(_DURANGO) || defined(ORBIS)
+#if defined(XBOX) || defined(ORBIS) || defined(PROSPERO)
 	PathHandle TerrainMaskTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "Textures/Mask");
 #else
 	PathHandle TerrainMaskTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "../../../Ephemeris/Terrain/resources/Textures/Mask");
@@ -536,7 +540,7 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 	}
 
 	TextureLoadDesc TerrainHeightMapDesc = {};
-#if defined(_DURANGO) || defined(ORBIS)
+#if defined(XBOX) || defined(ORBIS) || defined(PROSPERO)
 	PathHandle TerrainHeightMapFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "Textures/HeightMap_normgen");
 #else
 	PathHandle TerrainHeightMapFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "../../../Ephemeris/Terrain/resources/Textures/HeightMap_normgen");
@@ -550,17 +554,18 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 	RenderTargetDesc NormalMapFromHeightmapRenderTarget = {};
 	NormalMapFromHeightmapRenderTarget.mArraySize = 1;
 	NormalMapFromHeightmapRenderTarget.mDepth = 1;
+	NormalMapFromHeightmapRenderTarget.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
 	NormalMapFromHeightmapRenderTarget.mFormat = TinyImageFormat_R16G16_SFLOAT;
 	NormalMapFromHeightmapRenderTarget.mSampleCount = SAMPLE_COUNT_1;
 	NormalMapFromHeightmapRenderTarget.mSampleQuality = 0;
 	//NormalMapFromHeightmapRenderTarget.mSrgb = false;
 	NormalMapFromHeightmapRenderTarget.mWidth = pTerrainHeightMap->mWidth;
 	NormalMapFromHeightmapRenderTarget.mHeight = pTerrainHeightMap->mHeight;
-	NormalMapFromHeightmapRenderTarget.pDebugName = L"NormalMapFromHeightmap RenderTarget";
+	NormalMapFromHeightmapRenderTarget.pName = "NormalMapFromHeightmap RenderTarget";
 	addRenderTarget(pRenderer, &NormalMapFromHeightmapRenderTarget, &pNormalMapFromHeightmapRT);
 
 #if defined(VULKAN)
-	TransitionRenderTargets(pNormalMapFromHeightmapRT, ResourceState::RESOURCE_STATE_RENDER_TARGET, pRenderer, ppTransCmds[0], pGraphicsQueue, pTransitionCompleteFences);
+	TransitionRenderTargets(pNormalMapFromHeightmapRT, ResourceState::RESOURCE_STATE_RENDER_TARGET, pRenderer, pTransCmdPool, ppTransCmds[0], pGraphicsQueue, pTransitionCompleteFences);
 #endif
 
 	gTerrainTiledColorTexturesStorage = (Texture*)conf_malloc(sizeof(Texture) * pTerrainTiledColorTextures.size());
@@ -595,10 +600,6 @@ bool Terrain::GenerateNormalMap(Cmd* cmd)
 	cbTempRootConstantStruct.heightScale = HEIGHT_SCALE;
 	cmdBindPushConstants(cmd, pGenTerrainNormalRootSignature, "cbRootConstant", &cbTempRootConstantStruct);
 	cmdBindDescriptorSet(cmd, 0, pGenTerrainNormalDescriptorSet);
-	// Deferred ambient pass
-	const uint32_t stride = sizeof(float) * 5;
-	cmdBindVertexBuffer(cmd, 1, &pGlobalTriangularVertexBuffer, &stride, NULL);
-
 	cmdDraw(cmd, 3, 0);
 
 	return true;
@@ -624,6 +625,7 @@ bool Terrain::Load(int32_t width, int32_t height)
 	RenderTargetDesc SceneRT = {};
 	SceneRT.mArraySize = 1;
 	SceneRT.mDepth = 1;
+	SceneRT.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
 	SceneRT.mFormat = TinyImageFormat_R8G8B8A8_UNORM;
 	SceneRT.mSampleCount = SAMPLE_COUNT_1;
 	SceneRT.mSampleQuality = 0;
@@ -634,12 +636,13 @@ bool Terrain::Load(int32_t width, int32_t height)
 	addRenderTarget(pRenderer, &SceneRT, &pTerrainRT);
 
 #if defined(VULKAN)
-	TransitionRenderTargets(pTerrainRT, ResourceState::RESOURCE_STATE_RENDER_TARGET, pRenderer, ppTransCmds[0], pGraphicsQueue, pTransitionCompleteFences);
+	TransitionRenderTargets(pTerrainRT, ResourceState::RESOURCE_STATE_RENDER_TARGET, pRenderer, pTransCmdPool, ppTransCmds[0], pGraphicsQueue, pTransitionCompleteFences);
 #endif
 
 	RenderTargetDesc BasicColorRT = {};
 	BasicColorRT.mArraySize = 1;
 	BasicColorRT.mDepth = 1;
+	BasicColorRT.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
 	BasicColorRT.mFormat = TinyImageFormat_R8G8B8A8_UNORM;
 	BasicColorRT.mSampleCount = SAMPLE_COUNT_1;
 	BasicColorRT.mSampleQuality = 0;
@@ -650,12 +653,13 @@ bool Terrain::Load(int32_t width, int32_t height)
 	addRenderTarget(pRenderer, &BasicColorRT, &pGBuffer_BasicRT);
 
 #if defined(VULKAN)
-	TransitionRenderTargets(pGBuffer_BasicRT, ResourceState::RESOURCE_STATE_RENDER_TARGET, pRenderer, ppTransCmds[0], pGraphicsQueue, pTransitionCompleteFences);
+	TransitionRenderTargets(pGBuffer_BasicRT, ResourceState::RESOURCE_STATE_RENDER_TARGET, pRenderer, pTransCmdPool, ppTransCmds[0], pGraphicsQueue, pTransitionCompleteFences);
 #endif
 
 	RenderTargetDesc NormalRT = {};
 	NormalRT.mArraySize = 1;
 	NormalRT.mDepth = 1;
+	NormalRT.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
 	NormalRT.mFormat = TinyImageFormat_R16G16B16A16_SFLOAT;
 	NormalRT.mSampleCount = SAMPLE_COUNT_1;
 	NormalRT.mSampleQuality = 0;
@@ -666,7 +670,7 @@ bool Terrain::Load(int32_t width, int32_t height)
 	addRenderTarget(pRenderer, &NormalRT, &pGBuffer_NormalRT);
 
 #if defined(VULKAN)
-	TransitionRenderTargets(pGBuffer_NormalRT, ResourceState::RESOURCE_STATE_RENDER_TARGET, pRenderer, ppTransCmds[0], pGraphicsQueue, pTransitionCompleteFences);
+	TransitionRenderTargets(pGBuffer_NormalRT, ResourceState::RESOURCE_STATE_RENDER_TARGET, pRenderer, pTransCmdPool, ppTransCmds[0], pGraphicsQueue, pTransitionCompleteFences);
 #endif
 
 	//layout and pipeline for ScreenQuad
@@ -698,7 +702,8 @@ bool Terrain::Load(int32_t width, int32_t height)
 	RasterizerStateDesc rasterizerStateBackDesc = {};
 	rasterizerStateBackDesc.mCullMode = CULL_MODE_BACK;
 
-	PipelineDesc pipelineDescTerrain;
+	PipelineDesc pipelineDescTerrain = {};
+	pipelineDescTerrain.pCache = pPipelineCache;
 	{
 		pipelineDescTerrain.mType = PIPELINE_TYPE_GRAPHICS;
 		GraphicsPipelineDesc &pipelineSettings = pipelineDescTerrain.mGraphicsDesc;
@@ -729,7 +734,8 @@ bool Terrain::Load(int32_t width, int32_t height)
 	//sRGBs[1] = pGBuffer_NormalRT->mSrgb;
 
 
-	PipelineDesc pipelineDescRenderTerrain;
+	PipelineDesc pipelineDescRenderTerrain = {};
+	pipelineDescRenderTerrain.pCache = pPipelineCache;
 	{
 		pipelineDescRenderTerrain.mType = PIPELINE_TYPE_GRAPHICS;
 		GraphicsPipelineDesc &pipelineSettings = pipelineDescRenderTerrain.mGraphicsDesc;
@@ -750,7 +756,8 @@ bool Terrain::Load(int32_t width, int32_t height)
 		addPipeline(pRenderer, &pipelineDescRenderTerrain, &pRenderTerrainPipeline);
 	}
 
-	PipelineDesc pipelineDescGenTerrainNormal;
+	PipelineDesc pipelineDescGenTerrainNormal = {};
+	pipelineDescGenTerrainNormal.pCache = pPipelineCache;
 	{
 		pipelineDescGenTerrainNormal.mType = PIPELINE_TYPE_GRAPHICS;
 		GraphicsPipelineDesc &pipelineSettings = pipelineDescGenTerrainNormal.mGraphicsDesc;
@@ -765,12 +772,12 @@ bool Terrain::Load(int32_t width, int32_t height)
 		pipelineSettings.mSampleQuality = pNormalMapFromHeightmapRT->mSampleQuality;
 		pipelineSettings.pRootSignature = pGenTerrainNormalRootSignature;
 		pipelineSettings.pShaderProgram = pGenTerrainNormalShader;
-		pipelineSettings.pVertexLayout = &vertexLayout;
 		pipelineSettings.pRasterizerState = &rasterizerStateDesc;
 		addPipeline(pRenderer, &pipelineDescGenTerrainNormal, &pGenTerrainNormalPipeline);;
 	}
 
-	PipelineDesc pipelineDescLightingTerrain;
+	PipelineDesc pipelineDescLightingTerrain = {};
+	pipelineDescLightingTerrain.pCache = pPipelineCache;
 	{
 		pipelineDescLightingTerrain.mType = PIPELINE_TYPE_GRAPHICS;
 		GraphicsPipelineDesc &pipelineSettings = pipelineDescLightingTerrain.mGraphicsDesc;
@@ -788,7 +795,6 @@ bool Terrain::Load(int32_t width, int32_t height)
 		pipelineSettings.pRootSignature = pTerrainRootSignature;
 		pipelineSettings.pShaderProgram = pLightingTerrainShader;
 
-		pipelineSettings.pVertexLayout = &vertexLayout;
 		pipelineSettings.pRasterizerState = &rasterizerStateDesc;
 		//addPipeline(pRenderer, &pipelineSettings, &pLightingTerrainPipeline);
 		addPipeline(pRenderer, &pipelineDescLightingTerrain, &pLightingTerrainPipeline);
@@ -1050,12 +1056,7 @@ void Terrain::Draw(Cmd* cmd)
 
 		// Deferred ambient pass
 		cmdBindDescriptorSet(cmd, 1, pTerrainDescriptorSet[0]);
-#if defined(METAL) || defined(ORBIS)
 		cmdBindDescriptorSet(cmd, gFrameIndex, pTerrainDescriptorSet[1]);
-#endif
-		const uint32_t stride = sizeof(float) * 5;
-		cmdBindVertexBuffer(cmd, 1, &pGlobalTriangularVertexBuffer, &stride, NULL);
-
 		cmdDraw(cmd, 3, 0);
 
 		cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
@@ -1184,13 +1185,14 @@ void Terrain::InitializeWithLoad(RenderTarget* InDepthRenderTarget)
 }
 
 void Terrain::Initialize(uint InImageCount,
-	ICameraController* InCameraController, Queue*	InGraphicsQueue,
+	ICameraController* InCameraController, Queue*	InGraphicsQueue, CmdPool* InTransCmdPool,
 	Cmd** InTransCmds, Fence* InTransitionCompleteFences, ProfileToken InGraphicsGpuProfiler, UIApp* InGAppUI)
 {
 	gImageCount = InImageCount;
 
 	pCameraController = InCameraController;
 	pGraphicsQueue = InGraphicsQueue;
+	pTransCmdPool = InTransCmdPool;
 	ppTransCmds = InTransCmds;
 	pTransitionCompleteFences = InTransitionCompleteFences;
 	gGpuProfileToken = InGraphicsGpuProfiler;

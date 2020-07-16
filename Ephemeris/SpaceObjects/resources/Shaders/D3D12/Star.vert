@@ -9,11 +9,9 @@
 
 struct VSInput
 {
-  float4 Position : POSITION;
-  float2 Tex      : TEXCOORD;
-  float4 ParticlePositions : TEXCOORD1;
-  float4 ParticleColors : TEXCOORD2;
-  float4 ParticleInfo : TEXCOORD3;
+  float4 ParticlePositions : TEXCOORD0;
+  float4 ParticleColors : TEXCOORD1;
+  float4 ParticleInfo : TEXCOORD2;
 };
 
 struct GsIn {

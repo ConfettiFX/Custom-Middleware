@@ -9,31 +9,17 @@
 
 #version 450 core
 
-layout(location = 0) in vec4 POSITION;
-layout(location = 1) in vec2 TEXCOORD;
-layout(location = 2) in vec4 TEXCOORD1;
-layout(location = 3) in vec4 TEXCOORD2;
-layout(location = 4) in vec4 TEXCOORD3;
+layout(location = 0) in vec4 TEXCOORD0;
+layout(location = 1) in vec4 TEXCOORD1;
+layout(location = 2) in vec4 TEXCOORD2;
 
 layout(location = 0) out vec3 vertOutput_Position;
 layout(location = 1) out vec4 vertOutput_Color;
 layout(location = 2) out vec4 vertOutput_StarInfo;
 
-struct GsIn
-{
-  vec3 Position;
-  vec3 Color;
-  vec3 StarInfo;
-};
-
 void main()
 {
-  GsIn Out;
-  Out.Position = TEXCOORD1.xyz;
-  Out.Color = TEXCOORD2.xyz;
-  Out.StarInfo = TEXCOORD3.xyz;
-
-  vertOutput_Position = TEXCOORD1.xyz;
-  vertOutput_Color    = TEXCOORD2;
-  vertOutput_StarInfo = TEXCOORD3;
+  vertOutput_Position = TEXCOORD0.xyz;
+  vertOutput_Color    = TEXCOORD1;
+  vertOutput_StarInfo = TEXCOORD2;
 }
