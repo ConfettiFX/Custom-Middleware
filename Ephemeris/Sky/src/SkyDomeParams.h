@@ -19,7 +19,7 @@
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IMemory.h"
 */
 
-#if !defined(DURANGO)
+#if !defined(XBOX)
 #define	USE_CLOUDS_DEPTH_RECONSTRUCTION
 #endif
 

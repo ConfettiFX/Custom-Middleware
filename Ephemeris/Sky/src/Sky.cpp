@@ -105,7 +105,7 @@ struct SpaceUniformBuffer
 
 
 #if defined(VULKAN)
-static void TransitionRenderTargets(RenderTarget *pRT, ResourceState state, Renderer* renderer, Cmd* cmd, Queue* queue, Fence* fence)
+static void TransitionRenderTargets(RenderTarget *pRT, ResourceState state, Renderer* renderer, CmdPool* cmdPool, Cmd* cmd, Queue* queue, Fence* fence)
 {
 	// Transition render targets to desired state
 	beginCmd(cmd);
@@ -123,6 +123,8 @@ static void TransitionRenderTargets(RenderTarget *pRT, ResourceState state, Rend
 	submitDesc.pSignalFence = fence;
 	queueSubmit(queue, &submitDesc);
 	waitForFences(renderer, 1, &fence);
+
+	resetCmdPool(renderer, cmdPool);
 }
 #endif
 
@@ -164,7 +166,7 @@ void Sky::CalculateLookupData()
 	SyncToken token = {};
 
 	TextureLoadDesc SkyTransmittanceTextureDesc = {};
-#if defined(_DURANGO) || defined(ORBIS)
+#if defined(XBOX) || defined(ORBIS) || defined(PROSPERO)
 	PathHandle SkyTransmittanceTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "Textures/Transmittance");
 #else
 	PathHandle SkyTransmittanceTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Transmittance");
@@ -174,7 +176,7 @@ void Sky::CalculateLookupData()
 	addResource(&SkyTransmittanceTextureDesc, &token, LOAD_PRIORITY_NORMAL);
 
 	TextureLoadDesc SkyIrradianceTextureDesc = {};
-#if defined(_DURANGO) || defined(ORBIS)
+#if defined(XBOX) || defined(ORBIS) || defined(PROSPERO)
 	PathHandle SkyIrradianceTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "Textures/Irradiance");
 #else
 	PathHandle SkyIrradianceTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Irradiance");
@@ -184,7 +186,7 @@ void Sky::CalculateLookupData()
 	addResource(&SkyIrradianceTextureDesc, &token, LOAD_PRIORITY_NORMAL);
 
 	TextureLoadDesc SkyInscatterTextureDesc = {};
-#if defined(_DURANGO) || defined(ORBIS)
+#if defined(XBOX) || defined(ORBIS) || defined(PROSPERO)
 	PathHandle SkyInscatterTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "Textures/Inscatter");
 #else
 	PathHandle SkyInscatterTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Inscatter");
@@ -347,9 +349,10 @@ void Sky::GenerateIcosahedron(float **ppPoints, eastl::vector<float> &vertices, 
 	(*ppPoints) = (float*)pPoints;
 }
 
-bool Sky::Init(Renderer* const renderer)
+bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
 {
 	pRenderer = renderer;
+	pPipelineCache = pCache;
 	//////////////////////////////////// Samplers ///////////////////////////////////////////////////
 
 	SamplerDesc samplerClampDesc = {
@@ -369,7 +372,7 @@ bool Sky::Init(Renderer* const renderer)
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#if defined(_DURANGO) || defined(ORBIS)
+#if defined(XBOX) || defined(ORBIS) || defined(PROSPERO)
 	eastl::string shaderPath("");
 #elif defined(DIRECT3D12)
 	eastl::string shaderPath("../../../../../Ephemeris/Sky/resources/Shaders/D3D12/");
@@ -606,18 +609,19 @@ bool Sky::Load(RenderTarget** rts, uint32_t count)
 	RenderTargetDesc SkyRenderTarget = {};
 	SkyRenderTarget.mArraySize = 1;
 	SkyRenderTarget.mDepth = 1;
+	SkyRenderTarget.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
 	SkyRenderTarget.mFormat = TinyImageFormat_R10G10B10A2_UNORM;
 	SkyRenderTarget.mSampleCount = SAMPLE_COUNT_1;
 	SkyRenderTarget.mSampleQuality = 0;
 	//SkyRenderTarget.mSrgb = false;
 	SkyRenderTarget.mWidth = pPreStageRenderTarget->mWidth;
 	SkyRenderTarget.mHeight = pPreStageRenderTarget->mHeight;
-	SkyRenderTarget.pDebugName = L"Sky RenderTarget";
+	SkyRenderTarget.pName = "Sky RenderTarget";
 	SkyRenderTarget.mFlags = TEXTURE_CREATION_FLAG_OWN_MEMORY_BIT;
 	addRenderTarget(pRenderer, &SkyRenderTarget, &pSkyRenderTarget);
 
 #if defined(VULKAN)
-	TransitionRenderTargets(pSkyRenderTarget, ResourceState::RESOURCE_STATE_RENDER_TARGET, pRenderer, ppTransCmds[0], pGraphicsQueue, pTransitionCompleteFences);
+	TransitionRenderTargets(pSkyRenderTarget, ResourceState::RESOURCE_STATE_RENDER_TARGET, pRenderer, pTransCmdPool, ppTransCmds[0], pGraphicsQueue, pTransitionCompleteFences);
 #endif
 
 	RasterizerStateDesc rasterizerStateDesc = {};
@@ -636,7 +640,8 @@ bool Sky::Load(RenderTarget** rts, uint32_t count)
 	blendStateSpaceDesc.mMasks[0] = ALL;
 	blendStateSpaceDesc.mRenderTargetMask = BLEND_STATE_TARGET_0;
 
-	PipelineDesc pipelineDescPAS;
+	PipelineDesc pipelineDescPAS = {};
+	pipelineDescPAS.pCache = pPipelineCache;
 	{
 		pipelineDescPAS.mType = PIPELINE_TYPE_GRAPHICS;
 		GraphicsPipelineDesc &pipelineSettings = pipelineDescPAS.mGraphicsDesc;
@@ -675,7 +680,8 @@ bool Sky::Load(RenderTarget** rts, uint32_t count)
 	vertexLayout.mAttribs[2].mLocation = 2;
 	vertexLayout.mAttribs[2].mOffset = 6 * sizeof(float);
 
-	PipelineDesc pipelineDescSpace;
+	PipelineDesc pipelineDescSpace = {};
+	pipelineDescSpace.pCache = pPipelineCache;
 	{
 		pipelineDescSpace.mType = PIPELINE_TYPE_GRAPHICS;
 		GraphicsPipelineDesc &pipelineSettings = pipelineDescSpace.mGraphicsDesc;
@@ -1016,13 +1022,14 @@ void Sky::Draw(Cmd* cmd)
 }
 
 void Sky::Initialize(uint InImageCount,
-	ICameraController* InCameraController, Queue*	InGraphicsQueue,
+	ICameraController* InCameraController, Queue*	InGraphicsQueue, CmdPool* InTransCmdPool,
 	Cmd** InTransCmds, Fence* InTransitionCompleteFences, ProfileToken InGraphicsGpuProfiler, UIApp* InGAppUI, Buffer*	InTransmittanceBuffer)
 {
 	gImageCount = InImageCount;
 
 	pCameraController = InCameraController;
 	pGraphicsQueue = InGraphicsQueue;
+	pTransCmdPool = InTransCmdPool;
 	ppTransCmds = InTransCmds;
 	pTransitionCompleteFences = InTransitionCompleteFences;
 	gGpuProfileToken = InGraphicsGpuProfiler;

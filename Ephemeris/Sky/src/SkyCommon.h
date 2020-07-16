@@ -16,7 +16,7 @@ static const int INSCATTER_INTEGRAL_SAMPLES = 50;
 static const int IRRADIANCE_INTEGRAL_SAMPLES = 32;
 static const int INSCATTER_SPHERICAL_INTEGRAL_SAMPLES = 16;
 
-#if defined(METAL) || defined(__linux__) || defined(ORBIS)
+#if defined(METAL) || defined(__linux__) || defined(ORBIS) || defined(PROSPERO)
 static const float m_PI = 3.141592657f;
 #else
 static const float M_PI = 3.141592657f;

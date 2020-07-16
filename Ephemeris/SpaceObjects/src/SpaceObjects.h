@@ -25,7 +25,7 @@ class SpaceObjects : public IMiddleware
 {
 public:
 
-	virtual bool Init(Renderer* renderer) final;
+	virtual bool Init(Renderer* renderer, PipelineCache* pCache = NULL) final;
 	virtual void Exit() final;
 	virtual bool Load(RenderTarget** rts, uint32_t count = 1) final;
 	virtual void Unload() final;
@@ -33,7 +33,7 @@ public:
 	virtual void Update(float deltaTime) final;
 
 	void Initialize(uint InImageCount,
-		ICameraController* InCameraController, Queue*	InGraphicsQueue,
+		ICameraController* InCameraController, Queue*	InGraphicsQueue, CmdPool* InTransCmdPool,
 		Cmd** InTransCmds, Fence* InTransitionCompleteFences, ProfileToken InGraphicsGpuProfiler, UIApp* InGAppUI, Buffer*	pTransmittanceBuffer);
 
 	void InitializeWithLoad(RenderTarget* InDepthRenderTarget, RenderTarget* InLinearDepthRenderTarget, Texture* SavePrevTexture, Buffer* ParticleVertexBuffer, Buffer* ParticleInstanceBuffer, uint32_t ParticleCountParam, uint32_t ParticleVertexStride, uint32_t ParticleInstanceStride);
@@ -44,6 +44,7 @@ public:
 	uint                  gFrameIndex;
 
 	Renderer*             pRenderer;
+	PipelineCache*        pPipelineCache;
 
 	uint                  gImageCount;
 	uint                  mWidth;
@@ -53,6 +54,7 @@ public:
 	UIApp*                pGAppUI;
 
 	Queue*                pGraphicsQueue = NULL;
+	CmdPool*              pTransCmdPool = NULL;
 	Cmd**                 ppTransCmds = NULL;
 	Fence*                pTransitionCompleteFences = NULL;
 

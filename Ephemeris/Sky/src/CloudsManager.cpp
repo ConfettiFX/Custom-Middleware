@@ -284,7 +284,7 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 
 	bool bShadersInited = false;
 
-#if defined(_DURANGO) || defined(ORBIS)
+#if defined(XBOX) || defined(ORBIS) || defined(PROSPERO)
   eastl::string shaderPath("");
 #elif defined(DIRECT3D12)
   eastl::string shaderPath("../../../../../Ephemeris/Sky/resources/Shaders/D3D12/");
@@ -490,7 +490,7 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 	SyncToken token = {};
 	
   TextureLoadDesc CloudFlatTextureDesc = {};
-#if defined(_DURANGO) || defined(ORBIS)
+#if defined(XBOX) || defined(ORBIS) || defined(PROSPERO)
 	PathHandle CloudFlatTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "Textures/flat");
 #else
 	PathHandle CloudFlatTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/flat");
@@ -500,7 +500,7 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
   addResource(&CloudFlatTextureDesc, &token, LOAD_PRIORITY_NORMAL);
 
   TextureLoadDesc CloudCumulusTextureDesc = {};
-#if defined(_DURANGO) || defined(ORBIS)
+#if defined(XBOX) || defined(ORBIS) || defined(PROSPERO)
 	PathHandle CloudCumulusTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "Textures/cumulus_particles");
 #else
 	PathHandle CloudCumulusTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/cumulus_particles");

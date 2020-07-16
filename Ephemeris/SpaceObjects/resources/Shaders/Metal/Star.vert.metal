@@ -14,11 +14,9 @@ using namespace metal;
 
 struct VSInput
 {
-  float4 Position			[[attribute(0)]];
-  float2 Tex				[[attribute(1)]];
-  float4 ParticlePositions	[[attribute(2)]];
-  float4 ParticleColors		[[attribute(3)]];
-  float4 ParticleInfo		[[attribute(4)]];
+  float4 ParticlePositions	[[attribute(0)]];
+  float4 ParticleColors		[[attribute(1)]];
+  float4 ParticleInfo		[[attribute(2)]];
 };
 
 struct PsIn

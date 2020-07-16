@@ -12,7 +12,7 @@
 #include "LocalTime.h"
 
 #include <time.h>
-#ifndef	ORBIS
+#if !defined(ORBIS) && !defined(PROSPERO)
 #include <sys/timeb.h>
 #endif	//	SN_TARGET_PS3
 #include <math.h>
@@ -56,7 +56,7 @@ LocalTime::LocalTime( bool bNow/*=false*/ ):
 {
 	if (bNow)
 	{
-#ifdef ORBIS
+#if defined(ORBIS) || defined(PROSPERO)
 		time_t currentTime = time(NULL);
 		tm			sysTime;
 		sysTime = *localtime(&currentTime);
@@ -76,7 +76,7 @@ LocalTime::LocalTime( bool bNow/*=false*/ ):
 		m_localSeconds = sysTime.tm_sec;
 
 
-#ifdef ORBIS
+#if defined(ORBIS) || defined(PROSPERO)
 		tm			utcTime;
 		utcTime = *gmtime(&currentTime);
 		time_t offsTime = mktime(&utcTime);
