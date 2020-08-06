@@ -147,14 +147,6 @@ static void TransitionRenderTargets(RenderTarget *pRT, ResourceState state, Rend
 }
 #endif
 
-
-static void ShaderPath(const eastl::string &shaderPath, char* pShaderName, eastl::string &result)
-{
-	result.resize(0);
-	eastl::string shaderName(pShaderName);
-	result = shaderPath + shaderName;
-}
-
 void SpaceObjects::GenerateRing(eastl::vector<float> &vertices, eastl::vector<uint32_t> &indices, uint32_t WidthDividor, uint32_t HeightDividor, float radius, float height)
 {
 
@@ -327,36 +319,16 @@ bool SpaceObjects::Init(Renderer* const renderer, PipelineCache* pCache)
 
 	addSampler(pRenderer, &samplerClampDesc, &pLinearBorderSampler);
 
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-#if defined(XBOX) || defined(ORBIS) || defined(PROSPERO)
-	eastl::string shaderPath("");
-#elif defined(DIRECT3D12)
-	eastl::string shaderPath("../../../../../Ephemeris/SpaceObjects/resources/Shaders/D3D12/");
-#elif defined(VULKAN)
-	eastl::string shaderPath("../../../../../Ephemeris/SpaceObjects/resources/Shaders/Vulkan/");
-#elif defined(METAL)
-	eastl::string shaderPath("../../../../../Ephemeris/SpaceObjects/resources/Shaders/Metal/");
-#endif
-	eastl::string shaderFullPath;
-
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc sunShader = {};
 #if !defined(METAL)
-	eastl::string sunShaderFullPath[3];
-	ShaderPath(shaderPath, (char*)"Sun.vert", sunShaderFullPath[0]);
-	sunShader.mStages[0] = { sunShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-	ShaderPath(shaderPath, (char*)"Sun.geom", sunShaderFullPath[1]);
-	sunShader.mStages[1] = { sunShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
-	ShaderPath(shaderPath, (char*)"Sun.frag", sunShaderFullPath[2]);
-	sunShader.mStages[2] = { sunShaderFullPath[2].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	sunShader.mStages[0] = { "SpaceObjects/Sun.vert", NULL, 0, NULL };
+	sunShader.mStages[1] = { "SpaceObjects/Sun.geom", NULL, 0, NULL };
+	sunShader.mStages[2] = { "SpaceObjects/Sun.frag", NULL, 0, NULL };
 #else
-	eastl::string sunShaderFullPath[2];
-	ShaderPath(shaderPath, (char*)"Sun.vert", sunShaderFullPath[0]);
-	sunShader.mStages[0] = { sunShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-	ShaderPath(shaderPath, (char*)"Sun.frag", sunShaderFullPath[1]);
-	sunShader.mStages[1] = { sunShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	sunShader.mStages[0] = { "SpaceObjects/Sun.vert" , NULL, 0, NULL };
+	sunShader.mStages[1] = { "SpaceObjects/Sun.frag", NULL, 0, NULL };
 #endif
 	addShader(pRenderer, &sunShader, &pSunShader);
 
@@ -364,60 +336,39 @@ bool SpaceObjects::Init(Renderer* const renderer, PipelineCache* pCache)
 
 	ShaderLoadDesc starShader = {};
 #if !defined(METAL)
-	eastl::string starShaderFullPath[3];
-	ShaderPath(shaderPath, (char*)"Star.vert", starShaderFullPath[0]);
-	starShader.mStages[0] = { starShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-	ShaderPath(shaderPath, (char*)"Star.geom", starShaderFullPath[1]);
-	starShader.mStages[1] = { starShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
-	ShaderPath(shaderPath, (char*)"Star.frag", starShaderFullPath[2]);
-	starShader.mStages[2] = { starShaderFullPath[2].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	starShader.mStages[0] = { "SpaceObjects/Star.vert", NULL, 0, NULL };
+	starShader.mStages[1] = { "SpaceObjects/Star.geom", NULL, 0, NULL };
+	starShader.mStages[2] = { "SpaceObjects/Star.frag", NULL, 0, NULL };
 #else
-	eastl::string starShaderFullPath[2];
-	ShaderPath(shaderPath, (char*)"Star.vert", starShaderFullPath[0]);
-	starShader.mStages[0] = { starShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-	ShaderPath(shaderPath, (char*)"Star.frag", starShaderFullPath[1]);
-	starShader.mStages[1] = { starShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	starShader.mStages[0] = { "SpaceObjects/Star.vert", NULL, 0, NULL};
+	starShader.mStages[1] = { "SpaceObjects/Star.frag", NULL, 0, NULL};
 #endif
 	addShader(pRenderer, &starShader, &pStarShader);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc MilkyWayShader = {};
-	eastl::string MilkyWayShaderFullPath[2];
-	ShaderPath(shaderPath, (char*)"MilkyWay.vert", MilkyWayShaderFullPath[0]);
-	MilkyWayShader.mStages[0] = { MilkyWayShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-	ShaderPath(shaderPath, (char*)"MilkyWay.frag", MilkyWayShaderFullPath[1]);
-	MilkyWayShader.mStages[1] = { MilkyWayShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
-
+	MilkyWayShader.mStages[0] = { "SpaceObjects/MilkyWay.vert", NULL, 0, NULL };
+	MilkyWayShader.mStages[1] = { "SpaceObjects/MilkyWay.frag", NULL, 0, NULL };
 	addShader(pRenderer, &MilkyWayShader, &pMilkyWayShader);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc AuroraShader = {};
 #if !defined(METAL)
-	eastl::string AuroraShaderFullPath[3];
-	ShaderPath(shaderPath, (char*)"Aurora.vert", AuroraShaderFullPath[0]);
-	AuroraShader.mStages[0] = { AuroraShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-	ShaderPath(shaderPath, (char*)"Aurora.geom", AuroraShaderFullPath[1]);
-	AuroraShader.mStages[1] = { AuroraShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
-	ShaderPath(shaderPath, (char*)"Aurora.frag", AuroraShaderFullPath[2]);
-	AuroraShader.mStages[2] = { AuroraShaderFullPath[2].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	AuroraShader.mStages[0] = { "SpaceObjects/Aurora.vert", NULL, 0, NULL };
+	AuroraShader.mStages[1] = { "SpaceObjects/Aurora.geom", NULL, 0, NULL };
+	AuroraShader.mStages[2] = { "SpaceObjects/Aurora.frag", NULL, 0, NULL };
 #else
-	eastl::string AuroraShaderFullPath[2];
-	ShaderPath(shaderPath, (char*)"Aurora.vert", AuroraShaderFullPath[0]);
-	AuroraShader.mStages[0] = { AuroraShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-	ShaderPath(shaderPath, (char*)"Aurora.frag", AuroraShaderFullPath[1]);
-	AuroraShader.mStages[1] = { AuroraShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	AuroraShader.mStages[0] = { "SpaceObjects/Aurora.vert", NULL, 0, NULL };
+	AuroraShader.mStages[1] = { "SpaceObjects/Aurora.frag", NULL, 0, NULL };
 #endif
 	addShader(pRenderer, &AuroraShader, &pAuroraShader);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc AuroraComputeShader = {};
-	eastl::string AuroraComputeShaderFullPath[1];
-	ShaderPath(shaderPath, (char*)"Aurora.comp", AuroraComputeShaderFullPath[0]);
-	AuroraComputeShader.mStages[0] = { AuroraComputeShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-
+	AuroraComputeShader.mStages[0] = { "SpaceObjects/Aurora.comp", NULL, 0, NULL };
 	addShader(pRenderer, &AuroraComputeShader, &pAuroraComputeShader);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -460,17 +411,12 @@ bool SpaceObjects::Init(Renderer* const renderer, PipelineCache* pCache)
 	TriangularVbDesc.mDesc.mSize = (uint64_t)(sizeof(float) * 5 * 4);
 	TriangularVbDesc.pData = screenQuadPoints;
 	TriangularVbDesc.ppBuffer = &pGlobalTriangularVertexBuffer;
-	addResource(&TriangularVbDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&TriangularVbDesc, &token);
 
 	TextureLoadDesc SkyMoonTextureDesc = {};
-#if defined(XBOX) || defined(ORBIS) || defined(PROSPERO)
-	PathHandle SkyMoonTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "Textures/Moon");
-#else
-	PathHandle SkyMoonTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Moon");
-#endif
-	SkyMoonTextureDesc.pFilePath = SkyMoonTextureFilePath;
+	SkyMoonTextureDesc.pFileName = "SpaceObjects/Moon";
 	SkyMoonTextureDesc.ppTexture = &pMoonTexture;
-	addResource(&SkyMoonTextureDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&SkyMoonTextureDesc, &token);
 
 #if USING_MILKYWAY
 
@@ -485,7 +431,7 @@ bool SpaceObjects::Init(Renderer* const renderer, PipelineCache* pCache)
 	MilkyWayVbDesc.mDesc.mSize = (uint64_t)MilkyWayVertices.size() / 3 * sizeof(float3) * 3;
 	MilkyWayVbDesc.pData = MilkyWayVertices.data();
 	MilkyWayVbDesc.ppBuffer = &pMilkyWayVertexBuffer;
-	addResource(&MilkyWayVbDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&MilkyWayVbDesc, &token);
 
 	BufferLoadDesc MilkyWayIbDesc = {};
 	MilkyWayIbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_INDEX_BUFFER;
@@ -494,7 +440,7 @@ bool SpaceObjects::Init(Renderer* const renderer, PipelineCache* pCache)
 	MilkyWayIbDesc.mDesc.mIndexType = INDEX_TYPE_UINT32;
 	MilkyWayIbDesc.pData = MilkyWayIndices.data();
 	MilkyWayIbDesc.ppBuffer = &pMilkyWayIndexBuffer;
-	addResource(&MilkyWayIbDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&MilkyWayIbDesc, &token);
 
 	MilkyWayIndexCount = (uint32_t)MilkyWayIndices.size();
 
@@ -509,7 +455,7 @@ bool SpaceObjects::Init(Renderer* const renderer, PipelineCache* pCache)
 	AuroraVbDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
 	AuroraVbDesc.mDesc.mSize = (uint64_t)AuroraParticleNum * sizeof(float3) * 3;
 	AuroraVbDesc.ppBuffer = &pAuroraVertexBuffer;
-	addResource(&AuroraVbDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&AuroraVbDesc, &token);
 
 	BufferLoadDesc AuroraParticleDesc = {};
 	AuroraParticleDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_BUFFER | DESCRIPTOR_TYPE_RW_BUFFER;
@@ -523,7 +469,7 @@ bool SpaceObjects::Init(Renderer* const renderer, PipelineCache* pCache)
 	// for(unsigned int i=0; i<gImageCount; i++)
 	// {
 	AuroraParticleDesc.ppBuffer = &pAuroraParticle;
-	addResource(&AuroraParticleDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&AuroraParticleDesc, &token);
 	// }
 
 	BufferLoadDesc AuroraConstraintDesc = {};
@@ -538,7 +484,7 @@ bool SpaceObjects::Init(Renderer* const renderer, PipelineCache* pCache)
 	// for (unsigned int i = 0; i < gImageCount; i++)
 	// {
 	AuroraConstraintDesc.ppBuffer = &pAuroraConstraint;
-	addResource(&AuroraConstraintDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&AuroraConstraintDesc, &token);
 	// }
 
 
@@ -553,7 +499,7 @@ bool SpaceObjects::Init(Renderer* const renderer, PipelineCache* pCache)
 	// for (unsigned int i = 0; i < gImageCount; i++)
 	// {
 	AuroraUniformDesc.ppBuffer = &pAuroraUniformBuffer;
-	addResource(&AuroraUniformDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&AuroraUniformDesc, &token);
 	// }
 
 	BufferLoadDesc sunUniformDesc = {};
@@ -566,10 +512,10 @@ bool SpaceObjects::Init(Renderer* const renderer, PipelineCache* pCache)
 	for (uint i = 0; i < gImageCount; i++)
 	{
 		sunUniformDesc.ppBuffer = &pSunUniformBuffer[i];
-		addResource(&sunUniformDesc, &token, LOAD_PRIORITY_NORMAL);
+		addResource(&sunUniformDesc, &token);
 
 		sunUniformDesc.ppBuffer = &pStarUniformBuffer[i];
-		addResource(&sunUniformDesc, &token, LOAD_PRIORITY_NORMAL);
+		addResource(&sunUniformDesc, &token);
 	}
 
 	///////////////////////////////////////////////////////////////////

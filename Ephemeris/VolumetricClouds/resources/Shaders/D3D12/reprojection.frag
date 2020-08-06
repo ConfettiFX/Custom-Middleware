@@ -51,5 +51,13 @@ float4 main(in PSIn input) : SV_TARGET
 	float4 prevSample = g_PrevFrameTexture.Sample(g_LinearClampSampler, prevUV.xy);
 
 	float blend = max(ShouldbeUpdated(input.m_Tex0, _Jitter), outOfBound);
-	return lerp(prevSample, currSample, blend);
+
+	float4 result = lerp(prevSample, currSample, blend);
+
+	if(any(isnan(result)))
+	{
+		result = float4(0.0, 0.0, 0.0, 0.0);
+	}
+
+	return result;
 }

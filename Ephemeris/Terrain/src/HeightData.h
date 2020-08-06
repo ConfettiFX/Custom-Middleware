@@ -12,11 +12,10 @@
 #include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/vector.h"
 #include "../../../../The-Forge/Common_3/OS/Math/MathTypes.h"
 
-
 class HeightData
 {
 public:
-    HeightData(const char* filePath, float heightScale);
+    HeightData(const char* fileName, float heightScale);
     virtual ~HeightData(void);
 
     float getInterpolatedHeight(float col, float row, int step = 1) const;

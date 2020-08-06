@@ -128,14 +128,6 @@ static void TransitionRenderTargets(RenderTarget *pRT, ResourceState state, Rend
 }
 #endif
 
-
-static void ShaderPath(const eastl::string &shaderPath, char* pShaderName, eastl::string &result)
-{
-	result.resize(0);
-	eastl::string shaderName(pShaderName);
-	result = shaderPath + shaderName;
-}
-
 mat4 MakeRotationMatrix(float angle, vec3 axis)
 {
 	float s, c;
@@ -166,34 +158,19 @@ void Sky::CalculateLookupData()
 	SyncToken token = {};
 
 	TextureLoadDesc SkyTransmittanceTextureDesc = {};
-#if defined(XBOX) || defined(ORBIS) || defined(PROSPERO)
-	PathHandle SkyTransmittanceTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "Textures/Transmittance");
-#else
-	PathHandle SkyTransmittanceTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Transmittance");
-#endif
-	SkyTransmittanceTextureDesc.pFilePath = SkyTransmittanceTextureFilePath;
+	SkyTransmittanceTextureDesc.pFileName = "Sky/Transmittance";
 	SkyTransmittanceTextureDesc.ppTexture = &pTransmittanceTexture;
-	addResource(&SkyTransmittanceTextureDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&SkyTransmittanceTextureDesc, &token);
 
 	TextureLoadDesc SkyIrradianceTextureDesc = {};
-#if defined(XBOX) || defined(ORBIS) || defined(PROSPERO)
-	PathHandle SkyIrradianceTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "Textures/Irradiance");
-#else
-	PathHandle SkyIrradianceTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Irradiance");
-#endif
-	SkyIrradianceTextureDesc.pFilePath = SkyIrradianceTextureFilePath;
+	SkyIrradianceTextureDesc.pFileName = "Sky/Irradiance";
 	SkyIrradianceTextureDesc.ppTexture = &pIrradianceTexture;
-	addResource(&SkyIrradianceTextureDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&SkyIrradianceTextureDesc, &token);
 
 	TextureLoadDesc SkyInscatterTextureDesc = {};
-#if defined(XBOX) || defined(ORBIS) || defined(PROSPERO)
-	PathHandle SkyInscatterTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "Textures/Inscatter");
-#else
-	PathHandle SkyInscatterTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/Inscatter");
-#endif
-	SkyInscatterTextureDesc.pFilePath = SkyInscatterTextureFilePath;
+	SkyInscatterTextureDesc.pFileName = "Sky/Inscatter";
 	SkyInscatterTextureDesc.ppTexture = &pInscatterTexture;
-	addResource(&SkyInscatterTextureDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&SkyInscatterTextureDesc, &token);
 
 	waitForToken(&token);
 }
@@ -262,7 +239,7 @@ void Sky::GenerateIcosahedron(float **ppPoints, eastl::vector<float> &vertices, 
 
 	int numVertex = (int)vertices.size() / 3;
 
-	float3* pPoints = (float3*)conf_malloc(numVertex * (sizeof(float3) * 3));
+	float3* pPoints = (float3*)tf_malloc(numVertex * (sizeof(float3) * 3));
 
 	uint32_t vertexCounter = 0;
 
@@ -372,33 +349,16 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#if defined(XBOX) || defined(ORBIS) || defined(PROSPERO)
-	eastl::string shaderPath("");
-#elif defined(DIRECT3D12)
-	eastl::string shaderPath("../../../../../Ephemeris/Sky/resources/Shaders/D3D12/");
-#elif defined(VULKAN)
-	eastl::string shaderPath("../../../../../Ephemeris/Sky/resources/Shaders/Vulkan/");
-#elif defined(METAL)
-	eastl::string shaderPath("../../../../../Ephemeris/Sky/resources/Shaders/Metal/");
-#endif	
-
 	ShaderLoadDesc skyShader = {};
-	eastl::string skyShaderFullPath[2];
-	ShaderPath(shaderPath, (char*)"RenderSky.vert", skyShaderFullPath[0]);
-	skyShader.mStages[0] = { skyShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-	ShaderPath(shaderPath, (char*)"RenderSky.frag", skyShaderFullPath[1]);
-	skyShader.mStages[1] = { skyShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
-
+	skyShader.mStages[0] = { "Sky/RenderSky.vert", NULL, 0, NULL };
+	skyShader.mStages[1] = { "Sky/RenderSky.frag", NULL, 0, NULL };
 	addShader(pRenderer, &skyShader, &pPAS_Shader);
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc spaceShader = {};
-	eastl::string spaceShaderFullPath[2];
-	ShaderPath(shaderPath, (char*)"Space.vert", spaceShaderFullPath[0]);
-	spaceShader.mStages[0] = { spaceShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-	ShaderPath(shaderPath, (char*)"Space.frag", spaceShaderFullPath[1]);
-	spaceShader.mStages[1] = { spaceShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
+	spaceShader.mStages[0] = { "Sky/Space.vert", NULL, 0,  NULL };
+	spaceShader.mStages[1] = { "Sky/Space.frag", NULL, 0,  NULL };
 
 	addShader(pRenderer, &spaceShader, &pSpaceShader);
 
@@ -445,7 +405,7 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
 	};
 
 	particleBufferDesc.pData = screenQuadPointsForStar;
-	addResource(&particleBufferDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&particleBufferDesc, &token);
 
 	particleBufferDesc = {};
 	particleBufferDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_VERTEX_BUFFER | DESCRIPTOR_TYPE_BUFFER;
@@ -455,7 +415,7 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
 	particleBufferDesc.mDesc.mElementCount = particleBufferDesc.mDesc.mSize / particleBufferDesc.mDesc.mStructStride;
 	particleBufferDesc.pData = gParticleSystem.particleDataSet.ParticleDataArray.data();
 	particleBufferDesc.ppBuffer = &gParticleSystem.pParticleInstanceBuffer;
-	addResource(&particleBufferDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&particleBufferDesc, &token);
 
 	BufferLoadDesc sphereVbDesc = {};
 	sphereVbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_VERTEX_BUFFER;
@@ -463,7 +423,7 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
 	sphereVbDesc.mDesc.mSize = (uint64_t)IcosahedronVertices.size() / 3 * sizeof(float3) * 3;
 	sphereVbDesc.pData = pSpherePoints;
 	sphereVbDesc.ppBuffer = &pSphereVertexBuffer;
-	addResource(&sphereVbDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&sphereVbDesc, &token);
 
 	BufferLoadDesc sphereIbDesc = {};
 	sphereIbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_INDEX_BUFFER;
@@ -471,7 +431,7 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
 	sphereIbDesc.mDesc.mSize = (uint64_t)IcosahedronIndices.size() * sizeof(uint32_t);
 	sphereIbDesc.pData = IcosahedronIndices.data();
 	sphereIbDesc.ppBuffer = &pSphereIndexBuffer;
-	addResource(&sphereIbDesc, &token, LOAD_PRIORITY_NORMAL);
+	addResource(&sphereIbDesc, &token);
 
 	BufferLoadDesc renderSkybDesc = {};
 	renderSkybDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -483,7 +443,7 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
 	for (uint i = 0; i < gImageCount; i++)
 	{
 		renderSkybDesc.ppBuffer = &pRenderSkyUniformBuffer[i];
-		addResource(&renderSkybDesc, &token, LOAD_PRIORITY_NORMAL);
+		addResource(&renderSkybDesc, &token);
 	}
 
 	BufferLoadDesc spaceUniformDesc = {};
@@ -496,7 +456,7 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
 	for (uint i = 0; i < gImageCount; i++)
 	{
 		spaceUniformDesc.ppBuffer = &pSpaceUniformBuffer[i];
-		addResource(&spaceUniformDesc, &token, LOAD_PRIORITY_NORMAL);
+		addResource(&spaceUniformDesc, &token);
 	}
 
 	///////////////////////////////////////////////////////////////////
@@ -539,7 +499,7 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
 	waitForToken(&token);
 
 	// Need to free memory;
-	conf_free(pSpherePoints);
+	tf_free(pSpherePoints);
 
 	return true;
 }

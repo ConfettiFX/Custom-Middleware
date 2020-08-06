@@ -14,30 +14,29 @@
 #include "../../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
 
 // Creates data source from the specified raw data file
-HeightData::HeightData(const char* filePath, float heightScale) :
+HeightData::HeightData(const char* fileName, float heightScale) :
 	colOffset(1356),
 	rowOffset(924),
 	levels(0),
 	patchSize(128)
 {	
 	// open file
-	PathHandle FilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, filePath);
-	FileStream* modelFile0FH = fsOpenFile(FilePath, FM_READ_BINARY);
+	FileStream modelFile0FH = {};
 	
-	if (!modelFile0FH)
+	if (!fsOpenStreamFromPath(RD_TEXTURES, fileName, FM_READ_BINARY, &modelFile0FH))
 	{
 		char output[256];
-		sprintf(output, "\"%s\": Image file not found.", filePath);
+		sprintf(output, "\"%s\": Image file not found.", fileName);
 		return;
 	}
 	
 	// load file into memory
-	uint length = (uint)fsGetStreamFileSize(modelFile0FH);
+	uint length = (uint)fsGetStreamFileSize(&modelFile0FH);
 	if (length == 0)
 	{
 		char output[256];
-		sprintf(output, "\"%s\": Image file is empty.", filePath);
-		fsCloseStream(modelFile0FH);
+		sprintf(output, "\"%s\": Image file is empty.", fileName);
+		fsCloseStream(&modelFile0FH);
 		return;
 	}
 
@@ -45,8 +44,8 @@ HeightData::HeightData(const char* filePath, float heightScale) :
 	eastl::vector<char> heightMap;
 	heightMap.resize(length);
 	
-	fsReadFromStream(modelFile0FH, heightMap.data(), fsGetStreamFileSize(modelFile0FH));
-	fsCloseStream(modelFile0FH);
+	fsReadFromStream(&modelFile0FH, heightMap.data(), fsGetStreamFileSize(&modelFile0FH));
+	fsCloseStream(&modelFile0FH);
 
 	uint32 width = (uint32)sqrtf((float)length / 4.0f);
 	uint32 height = width;	

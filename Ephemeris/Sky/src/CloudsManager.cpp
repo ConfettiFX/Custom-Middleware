@@ -29,6 +29,10 @@
 //#include <string.h>
 //#include <stdio.h>
 
+extern ResourceDirectory RD_MIDDLEWARE_SKY;
+extern ResourceDirectory RD_MIDDLEWARE_SKY_BINARY;
+extern ResourceDirectory RD_MIDDLEWARE_SKY_TEXTURES;
+
 struct CloudDescriptor
 {
 	union
@@ -111,13 +115,6 @@ float RandomValueNormalized()
 float RandomValue( float2 a_Range )
 {
 	return a_Range.x + ( RandomValue() * ( a_Range.y - a_Range.x ) );
-}
-
-static void ShaderPath(const eastl::string &shaderPath, char* pShaderName, eastl::string &result)
-{
-  result.resize(0);
-  eastl::string shaderName(pShaderName);
-  result = shaderPath + shaderName;
 }
 
 Shader* pClDistanceCloudShader;
@@ -277,22 +274,13 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 	//ShaderIncludes += szExtra;
 	//cnf_free(szExtra);
   
-  //conf_free(szExtra);
+  //tf_free(szExtra);
 #endif
 
 	//szExtra = (char*)ShaderIncludes.c_str();
 
 	bool bShadersInited = false;
 
-#if defined(XBOX) || defined(ORBIS) || defined(PROSPERO)
-  eastl::string shaderPath("");
-#elif defined(DIRECT3D12)
-  eastl::string shaderPath("../../../../../Ephemeris/Sky/resources/Shaders/D3D12/");
-#elif defined(VULKAN)
-  eastl::string shaderPath("../../../../../Ephemeris/Sky/resources/Shaders/Vulkan/");
-#elif defined(METAL)
-  eastl::string shaderPath("../../../../../Ephemeris/Sky/resources/Shaders/Metal/");
-#endif
   //layout and pipeline for ScreenQuad
   VertexLayout vertexLayout = {};
   vertexLayout.mAttribCount = 1;
@@ -311,12 +299,8 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 
 
     ShaderLoadDesc skyShader = {};
-	eastl::string skyShaderFullPath[2];
-    ShaderPath(shaderPath, (char*)"clDistanceCloud.vert", skyShaderFullPath[0]);
-    skyShader.mStages[0] = { skyShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-    ShaderPath(shaderPath, (char*)"clDistanceCloud.frag", skyShaderFullPath[1]);
-    skyShader.mStages[1] = { skyShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
-
+    skyShader.mStages[0] = { "clDistanceCloud.vert", NULL, 0 };
+    skyShader.mStages[1] = { "clDistanceCloud.frag", NULL, 0 };
     addShader(pRenderer, &skyShader, &pClDistanceCloudShader);
 
     RootSignatureDesc rootDesc = {};
@@ -360,14 +344,9 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     ShaderLoadDesc spaceShader = {};
-	eastl::string spaceShaderFullPath[3];
-    ShaderPath(shaderPath, (char*)"clCumulusCloud.vert", spaceShaderFullPath[0]);
-    spaceShader.mStages[0] = { spaceShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-    ShaderPath(shaderPath, (char*)"clCumulusCloud.geom", spaceShaderFullPath[1]);
-    spaceShader.mStages[1] = { spaceShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
-    ShaderPath(shaderPath, (char*)"clCumulusCloud.frag", spaceShaderFullPath[2]);
-    spaceShader.mStages[2] = { spaceShaderFullPath[2].c_str(), NULL, 0, RD_SHADER_SOURCES };
-
+    spaceShader.mStages[0] = { "clCumulusCloud.vert", NULL, 0 };
+    spaceShader.mStages[1] = { "clCumulusCloud.geom", NULL, 0 };
+    spaceShader.mStages[2] = { "clCumulusCloud.frag", NULL, 0 };
     addShader(pRenderer, &spaceShader, &pClCumulusCloudShader);
 
     rootDesc.mShaderCount = 1;
@@ -412,10 +391,10 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 #ifdef	USE_MULTIPLICATIVE_DENSITY_ACCUMULTAION
 			{
 				const char* strInverseAlpha = "#define INVERSE_ALPHA\n";
-				char* szTempExtra = (char*)conf_alloc(strlen(strInverseAlpha)+strlen(szFixedExtra)+1);
+				char* szTempExtra = (char*)tf_alloc(strlen(strInverseAlpha)+strlen(szFixedExtra)+1);
 				strcpy(szTempExtra, szFixedExtra);
 				strcat(szTempExtra, strInverseAlpha);
-				conf_free(szFixedExtra);
+				tf_free(szFixedExtra);
 				szFixedExtra = szTempExtra;
 			}
 #endif	//	USE_MULTIPLICATIVE_DENSITY_ACCUMULTAION
@@ -423,10 +402,10 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 #ifdef	CLAMP_IMPOSTOR_PROJ
 			{
 				const char* strClampImpostorProj = "#define CLAMP_IMPOSTOR_PROJ\n";
-				char* szTempExtra = (char*)conf_alloc(strlen(strClampImpostorProj)+strlen(szFixedExtra)+1);
+				char* szTempExtra = (char*)tf_alloc(strlen(strClampImpostorProj)+strlen(szFixedExtra)+1);
 				strcpy(szTempExtra, szFixedExtra);
 				strcat(szTempExtra, strClampImpostorProj);
-				conf_free(szFixedExtra);
+				tf_free(szFixedExtra);
 				szFixedExtra = szTempExtra;
 			}
 #endif	//	CLAMP_IMPOSTOR_PROJ
@@ -434,13 +413,9 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 			//if ((m_shImpostorCloud = pRenderer->addShader("clImpostorCloud.shd", szFixedExtra)) == SHADER_NONE) break;
 			//cnf_free(szFixedExtra);
 
-    ShaderLoadDesc impostorShader = {};
-	eastl::string impostorShaderFullPath[3];
-    ShaderPath(shaderPath, (char*)"clImpostorCloud.vert", impostorShaderFullPath[0]);
-    impostorShader.mStages[0] = { impostorShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-    ShaderPath(shaderPath, (char*)"clImpostorCloud.frag", impostorShaderFullPath[1]);
-    impostorShader.mStages[1] = { impostorShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
-
+	  ShaderLoadDesc impostorShader = {};
+	  impostorShader.mStages[0] = { "clImpostorCloud.vert", NULL, 0 };
+	  impostorShader.mStages[1] = { "clImpostorCloud.frag", NULL, 0 };
       addShader(pRenderer, &impostorShader, &pImposterCloudShader);
 
       rootDesc.mShaderCount = 1;
@@ -490,24 +465,14 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 	SyncToken token = {};
 	
   TextureLoadDesc CloudFlatTextureDesc = {};
-#if defined(XBOX) || defined(ORBIS) || defined(PROSPERO)
-	PathHandle CloudFlatTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "Textures/flat");
-#else
-	PathHandle CloudFlatTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/flat");
-#endif
-	CloudFlatTextureDesc.pFilePath = CloudFlatTextureFilePath;
+  CloudFlatTextureDesc.pFileName = "flat";
   CloudFlatTextureDesc.ppTexture = &m_tDistantCloud;
-  addResource(&CloudFlatTextureDesc, &token, LOAD_PRIORITY_NORMAL);
+  addResource(&CloudFlatTextureDesc, &token);
 
   TextureLoadDesc CloudCumulusTextureDesc = {};
-#if defined(XBOX) || defined(ORBIS) || defined(PROSPERO)
-	PathHandle CloudCumulusTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "Textures/cumulus_particles");
-#else
-	PathHandle CloudCumulusTextureFilePath = fsGetPathInResourceDirEnum(RD_OTHER_FILES, "../../../Ephemeris/Sky/resources/Textures/cumulus_particles");
-#endif
-	CloudCumulusTextureDesc.pFilePath = CloudCumulusTextureFilePath;
+  CloudCumulusTextureDesc.pFileName = "cumulus_particles";
   CloudCumulusTextureDesc.ppTexture = &m_tCumulusCloud;
-  addResource(&CloudCumulusTextureDesc, &token, LOAD_PRIORITY_NORMAL);
+  addResource(&CloudCumulusTextureDesc, &token);
 
 
   BufferLoadDesc CumulusUniformDesc = {};
@@ -520,7 +485,7 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
   for (uint i = 0; i < gImageCount; i++)
   {
     CumulusUniformDesc.ppBuffer = &pCumulusUniformBuffer[i];
-    addResource(&CumulusUniformDesc, &token, LOAD_PRIORITY_NORMAL);
+    addResource(&CumulusUniformDesc, &token);
   }
 
   BufferLoadDesc DistantUniformDesc = {};
@@ -533,7 +498,7 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
   for (uint i = 0; i < gImageCount; i++)
   {
     DistantUniformDesc.ppBuffer = &pDistantUniformBuffer[i];
-    addResource(&DistantUniformDesc, &token, LOAD_PRIORITY_NORMAL);
+    addResource(&DistantUniformDesc, &token);
   }
 
   BufferLoadDesc imposterUniformDesc = {};
@@ -546,7 +511,7 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
   for (uint i = 0; i < gImageCount; i++)
   {
     imposterUniformDesc.ppBuffer = &pImposterUniformBuffer[i];
-    addResource(&imposterUniformDesc, &token, LOAD_PRIORITY_NORMAL);
+    addResource(&imposterUniformDesc, &token);
   }
 
   waitForToken(&token);

@@ -149,16 +149,8 @@ SpaceObjects			gSpaceObjects;
 TextDrawDesc gFrameTimeDraw = TextDrawDesc(0, 0xff00ffff, 18);
 TextDrawDesc gDefaultTextDrawDesc = TextDrawDesc(0, 0xffffffff, 16);
 
-ResourceDirEnum gPipelineCacheRD = RD_SHADER_BINARIES;
 const char* pPipelineCacheName = "PipelineCache.cache";
 PipelineCache* pPipelineCache = NULL;
-
-static void ShaderPath(const eastl::string &shaderPath, char* pShaderName, eastl::string &result)
-{
-	result.resize(0);
-	eastl::string shaderName(pShaderName);
-	result = shaderPath + shaderName;
-}
 
 class RenderEphemeris : public IApp
 {
@@ -167,19 +159,14 @@ public:
 	bool Init()
 	{
 		// FILE PATHS
-		PathHandle programDirectory = fsGetApplicationDirectory();
-		if (!fsPlatformUsesBundledResources())
-		{
-			PathHandle resourceDirRoot = fsAppendPathComponent(programDirectory, "../../../../../../Custom-Middleware/Ephemeris/src/EphemerisExample");
-			fsSetResourceDirRootPath(resourceDirRoot);
+		fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_SHADER_SOURCES, "Shaders");
+		fsSetPathForResourceDir(pSystemFileIO, RM_DEBUG,   RD_SHADER_BINARIES, "CompiledShaders");
+		fsSetPathForResourceDir(pSystemFileIO, RM_DEBUG,   RD_PIPELINE_CACHE, "PipelineCaches");
+		fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_GPU_CONFIG, "GPUCfg");
+		fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_TEXTURES, "Textures");
+		fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_MESHES, "Meshes");
+		fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_FONTS, "Fonts");
 
-			fsSetRelativePathForResourceDirEnum(RD_TEXTURES, "../../Resources/");
-			fsSetRelativePathForResourceDirEnum(RD_MESHES, "../../Resources/");
-			fsSetRelativePathForResourceDirEnum(RD_BUILTIN_FONTS, "../../Resources/Fonts");
-			fsSetRelativePathForResourceDirEnum(RD_ANIMATIONS, "");
-			fsSetRelativePathForResourceDirEnum(RD_MIDDLEWARE_TEXT, "../../../../The-Forge/Middleware_3/Text/");
-			fsSetRelativePathForResourceDirEnum(RD_MIDDLEWARE_UI, "../../../../The-Forge/Middleware_3/UI/");
-		}
 
 		// window and renderer setup
 		RendererDesc settings = { 0 };
@@ -221,9 +208,8 @@ public:
 
 		initResourceLoaderInterface(pRenderer);
 
-		PathHandle cachePath = fsGetPathInResourceDirEnum(gPipelineCacheRD, pPipelineCacheName);
 		PipelineCacheLoadDesc cacheDesc = {};
-		cacheDesc.pPath = cachePath;
+		cacheDesc.pFileName = pPipelineCacheName;
 		addPipelineCache(pRenderer, &cacheDesc, &pPipelineCache);
 
 		initProfiler();
@@ -231,7 +217,7 @@ public:
         gGpuProfileToken = addGpuProfiler(pRenderer, pGraphicsQueue, "GpuProfiler");
 
 #if defined(__ANDROID__) || defined(TARGET_IOS)
-		if (!gVirtualJoystick.Init(pRenderer, "circlepad.png", FSR_Textures))
+		if (!gVirtualJoystick.Init(pRenderer, "circlepad.png"))
 		{
 			LOGERRORF("Could not initialize Virtual Joystick.");
 			return false;
@@ -257,39 +243,27 @@ public:
 
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		ShaderLoadDesc basicShader = {};
-		eastl::string basicShaderFullPath[2];
-		ShaderPath(shaderPath, (char*)"Triangular.vert", basicShaderFullPath[0]);
-		basicShader.mStages[0] = { basicShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-		ShaderPath(shaderPath, (char*)"present.frag", basicShaderFullPath[1]);
-		basicShader.mStages[1] = { basicShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
+		basicShader.mStages[0] = { "Triangular.vert", NULL, 0 };
+		basicShader.mStages[1] = { "present.frag", NULL, 0 };
 		addShader(pRenderer, &basicShader, &pPresentShader);		
 
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		ShaderLoadDesc FXAAShader = {};
-		eastl::string fxaaShaderFullPath[2];
-		ShaderPath(shaderPath, (char*)"Triangular.vert", fxaaShaderFullPath[0]);
-		FXAAShader.mStages[0] = { fxaaShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-		ShaderPath(shaderPath, (char*)"FXAA.frag", fxaaShaderFullPath[1]);
-		FXAAShader.mStages[1] = { fxaaShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
-
+		FXAAShader.mStages[0] = { "Triangular.vert", NULL, 0 };
+		FXAAShader.mStages[1] = { "FXAA.frag", NULL, 0 };
 		addShader(pRenderer, &FXAAShader, &pFXAAShader);
 
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		ShaderLoadDesc depthLinearizationResolveShader = {};
-		eastl::string depthLinearizationResolveShaderFullPath[2];
-		ShaderPath(shaderPath, (char*)"Triangular.vert", depthLinearizationResolveShaderFullPath[0]);
-		depthLinearizationResolveShader.mStages[0] = { depthLinearizationResolveShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
-		ShaderPath(shaderPath, (char*)"depthLinearization.frag", depthLinearizationResolveShaderFullPath[1]);
-		depthLinearizationResolveShader.mStages[1] = { depthLinearizationResolveShaderFullPath[1].c_str(), NULL, 0, RD_SHADER_SOURCES };
+		depthLinearizationResolveShader.mStages[0] = { "Triangular.vert", NULL, 0 };
+		depthLinearizationResolveShader.mStages[1] = { "depthLinearization.frag", NULL, 0 };
 		addShader(pRenderer, &depthLinearizationResolveShader, &pLinearDepthResolveShader);	
 
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		ShaderLoadDesc depthLinearizationShader = {};
-		eastl::string depthLinearizationShaderFullPath[1];
-		ShaderPath(shaderPath, (char*)"depthLinearization.comp", depthLinearizationShaderFullPath[0]);
-		depthLinearizationShader.mStages[0] = { depthLinearizationShaderFullPath[0].c_str(), NULL, 0, RD_SHADER_SOURCES };
+		depthLinearizationShader.mStages[0] = { "depthLinearization.comp", NULL, 0 };
 		addShader(pRenderer, &depthLinearizationShader, &pLinearDepthCompShader);
 
 		rootDesc = {};
@@ -328,12 +302,12 @@ public:
 
 		//TransBufferDesc.pData = gInitializeVal.data();
 		TransBufferDesc.ppBuffer = &pTransmittanceBuffer;
-		addResource(&TransBufferDesc, NULL, LOAD_PRIORITY_NORMAL);
+		addResource(&TransBufferDesc, NULL);
 
 		if (!gAppUI.Init(pRenderer))
 			return false;
 
-		gAppUI.LoadFont("TitilliumText/TitilliumText-Bold.otf", RD_BUILTIN_FONTS);
+		gAppUI.LoadFont("TitilliumText/TitilliumText-Bold.otf");
 
 		CameraMotionParameters cmp{ 32000.0f, 120000.0f, 40000.0f };
 
@@ -492,8 +466,9 @@ public:
 
 		removeQueue(pRenderer, pGraphicsQueue);
 
-		PathHandle cachePath = fsGetPathInResourceDirEnum(gPipelineCacheRD, pPipelineCacheName);
-		savePipelineCache(pRenderer, pPipelineCache, cachePath);
+		PipelineCacheSaveDesc saveDesc;
+		saveDesc.pFileName = pPipelineCacheName;
+		savePipelineCache(pRenderer, pPipelineCache, &saveDesc);
 		removePipelineCache(pRenderer, pPipelineCache);
 
 		exitResourceLoaderInterface(pRenderer);
