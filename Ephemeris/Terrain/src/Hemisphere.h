@@ -236,11 +236,10 @@ private:
 		BufferLoadDesc zoneIbDesc = {};
 		zoneIbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_INDEX_BUFFER;
 		zoneIbDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
-		zoneIbDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
 		zoneIbDesc.mDesc.mSize = (uint64_t)(mesh.indexCount * sizeof(uint32));
 		zoneIbDesc.pData = indices.data();
 		zoneIbDesc.ppBuffer = &mesh.indexBuffer;
-		addResource(&zoneIbDesc, &token, LOAD_PRIORITY_HIGH);
+		addResource(&zoneIbDesc, &token);
 		waitForToken(&token);
 
 		auto &bounds = mesh.boundingBox;

@@ -10,36 +10,22 @@
 #include <metal_stdlib>
 using namespace metal;
 
-struct Vertex_Shader
-{
-    struct VSInput
-    {
-        uint VertexID [[vertex_id]];
-    };
-    struct VSOutput
-    {
-        float4 Position [[position]];
-        float2 TexCoord;
-    };
-    VSOutput main(uint VertexID)
-    {
-        VSOutput Out;
-        float4 position;
-        ((position).x = (float)((((VertexID == (uint)(2)))?(3.0):((-1.0)))));
-        ((position).y = (float)((((VertexID == (uint)(0)))?((-3.0)):(1.0))));
-        ((position).zw = (float2)(1.0));
-        ((Out).Position = position);
-        ((Out).TexCoord = (((position).xy * float2(0.5, (-0.5))) + (float2)(0.5)));
-        return Out;
-    };
-
-    Vertex_Shader(
-) {}
+struct PsIn {
+	float4 Position [[position]];
+	float2 TexCoord;
 };
 
-
-vertex Vertex_Shader::VSOutput stageMain(uint VertexID [[vertex_id]])
-{
-    Vertex_Shader main;
-    return main.main(VertexID);
+vertex PsIn stageMain(uint VertexID [[vertex_id]]) {
+	PsIn Out;
+	
+	// Produce a fullscreen triangle
+	float4 position;
+	position.x = (VertexID == 2) ? 3.0 : -1.0;
+	position.y = (VertexID == 0) ? -3.0 : 1.0;
+	position.zw = 1.0;
+	
+	Out.Position = position;
+	Out.TexCoord = position.xy * float2(0.5, -0.5) + 0.5;
+	
+	return Out;
 }

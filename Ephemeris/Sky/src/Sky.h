@@ -40,8 +40,6 @@ typedef struct ParticleSystem
 	ParticleDataSet particleDataSet;
 } ParticleSystem;
 
-
-
 class Sky : public IMiddleware
 {
 public:

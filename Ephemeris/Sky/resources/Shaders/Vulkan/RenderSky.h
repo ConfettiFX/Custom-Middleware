@@ -7,7 +7,7 @@
 *
 */
 
-#include "../../../src/SkyCommon.h"
+#include "SkyCommon.h"
 
 // ----------------------------------------------------------------------------
 // PHYSICAL MODEL PARAMETERS
