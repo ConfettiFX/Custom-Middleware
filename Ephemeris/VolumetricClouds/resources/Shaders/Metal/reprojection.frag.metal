@@ -8,6 +8,7 @@
 */
 
 #include <metal_stdlib>
+#include <metal_relational>
 
 using namespace metal;
 
@@ -76,7 +77,10 @@ struct Fragment_Shader
 		float blend = max(ShouldbeUpdated((input).TexCoord, _Jitter), outOfBound);
 		
 		float4 result = mix(prevSample, currSample, blend);
-		//result.a = currSample.a;
+		
+		if (any(isnan(result)))
+			result = float4(0.0f, 0.0f, 0.0f, 0.0f);
+		
 		return result;
     };
 

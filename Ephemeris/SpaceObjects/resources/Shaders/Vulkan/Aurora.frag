@@ -9,9 +9,10 @@
 
 #version 450 core
 
+layout(location = 0) in vec4 fragInput_position;
 layout(location = 1) in vec2 fragInput_TexCoord0;
 layout(location = 2) in vec3 fragInput_TexCoord1;
-layout(location = 0) out vec4 rast_FragData0; 
+layout(location = 0) out vec4 rast_FragData0;
 
 struct PsIn
 {

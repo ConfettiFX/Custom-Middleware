@@ -103,31 +103,6 @@ struct SpaceUniformBuffer
 	float4 NebulaLowColor;
 };
 
-
-#if defined(VULKAN)
-static void TransitionRenderTargets(RenderTarget *pRT, ResourceState state, Renderer* renderer, CmdPool* cmdPool, Cmd* cmd, Queue* queue, Fence* fence)
-{
-	// Transition render targets to desired state
-	beginCmd(cmd);
-
-	RenderTargetBarrier barrier[] = {
-		   { pRT, state }
-	};
-
-	cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barrier);
-	endCmd(cmd);
-
-	QueueSubmitDesc submitDesc = {};
-	submitDesc.mCmdCount = 1;
-	submitDesc.ppCmds = &cmd;
-	submitDesc.pSignalFence = fence;
-	queueSubmit(queue, &submitDesc);
-	waitForFences(renderer, 1, &fence);
-
-	resetCmdPool(renderer, cmdPool);
-}
-#endif
-
 mat4 MakeRotationMatrix(float angle, vec3 axis)
 {
 	float s, c;
@@ -437,7 +412,7 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
 	renderSkybDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	renderSkybDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
 	renderSkybDesc.mDesc.mSize = sizeof(RenderSkyUniformBuffer);
-	renderSkybDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT | BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
+	renderSkybDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
 	renderSkybDesc.pData = NULL;
 
 	for (uint i = 0; i < gImageCount; i++)
@@ -450,7 +425,7 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
 	spaceUniformDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	spaceUniformDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
 	spaceUniformDesc.mDesc.mSize = sizeof(SpaceUniformBuffer);
-	spaceUniformDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT | BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
+	spaceUniformDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
 	spaceUniformDesc.pData = NULL;
 
 	for (uint i = 0; i < gImageCount; i++)
@@ -571,18 +546,14 @@ bool Sky::Load(RenderTarget** rts, uint32_t count)
 	SkyRenderTarget.mDepth = 1;
 	SkyRenderTarget.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
 	SkyRenderTarget.mFormat = TinyImageFormat_R10G10B10A2_UNORM;
+	SkyRenderTarget.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
 	SkyRenderTarget.mSampleCount = SAMPLE_COUNT_1;
 	SkyRenderTarget.mSampleQuality = 0;
 	//SkyRenderTarget.mSrgb = false;
 	SkyRenderTarget.mWidth = pPreStageRenderTarget->mWidth;
 	SkyRenderTarget.mHeight = pPreStageRenderTarget->mHeight;
 	SkyRenderTarget.pName = "Sky RenderTarget";
-	SkyRenderTarget.mFlags = TEXTURE_CREATION_FLAG_OWN_MEMORY_BIT;
 	addRenderTarget(pRenderer, &SkyRenderTarget, &pSkyRenderTarget);
-
-#if defined(VULKAN)
-	TransitionRenderTargets(pSkyRenderTarget, ResourceState::RESOURCE_STATE_RENDER_TARGET, pRenderer, pTransCmdPool, ppTransCmds[0], pGraphicsQueue, pTransitionCompleteFences);
-#endif
 
 	RasterizerStateDesc rasterizerStateDesc = {};
 	rasterizerStateDesc.mCullMode = CULL_MODE_NONE;
@@ -758,17 +729,9 @@ void Sky::Draw(Cmd* cmd)
 
 		RenderTargetBarrier rtBarriersSky[] =
 		{
-			{ pSkyRenderTarget, RESOURCE_STATE_RENDER_TARGET },
-			{ pPreStageRenderTarget, RESOURCE_STATE_SHADER_RESOURCE },
+			{ pSkyRenderTarget, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_RENDER_TARGET },
 		};
-		TextureBarrier barriersSky[] =
-		{
-			{ pTransmittanceTexture, RESOURCE_STATE_SHADER_RESOURCE },
-			{ pIrradianceTexture, RESOURCE_STATE_SHADER_RESOURCE },
-			{ pInscatterTexture, RESOURCE_STATE_SHADER_RESOURCE }
-		};
-
-		cmdResourceBarrier(cmd, 0, NULL, 3, barriersSky, 2, rtBarriersSky);
+		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, rtBarriersSky);
 
 		LoadActionsDesc loadActions = {};
 		loadActions.mLoadActionsColor[0] = LOAD_ACTION_CLEAR;
@@ -833,13 +796,6 @@ void Sky::Draw(Cmd* cmd)
 		cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw Night Sky");
 
 		cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw Space");
-
-		RenderTargetBarrier barriersSky[] =
-		{
-			{ pSkyRenderTarget, RESOURCE_STATE_RENDER_TARGET }
-		};
-
-		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriersSky);
 
 		cmdBindRenderTargets(cmd, 1, &pSkyRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
 		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pSkyRenderTarget->mWidth, (float)pSkyRenderTarget->mHeight, 0.0f, 1.0f);

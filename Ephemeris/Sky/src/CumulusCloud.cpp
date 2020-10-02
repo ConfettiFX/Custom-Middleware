@@ -42,7 +42,7 @@ CumulusCloud::~CumulusCloud(void)
 // }
 
 
-void CumulusCloud::setParticles( vec4 * particleOffsetScale, ParticleProps * particleProps, uint32 particleCount )
+void CumulusCloud::setParticles( vec4 * particleOffsetScale, ParticleProps * particleProps, uint32_t particleCount )
 {
 	ASSERT(particleOffsetScale);
 	ASSERT(particleProps);
@@ -53,7 +53,7 @@ void CumulusCloud::setParticles( vec4 * particleOffsetScale, ParticleProps * par
 	m_OffsetScales.reserve(particleCount);
 	m_particleProps.reserve(particleCount);
 
-	for (uint32 i=0; i<particleCount; ++i)
+	for (uint32_t i=0; i<particleCount; ++i)
 	{
 		UNREF_PARAM(MaxTexID);
 
