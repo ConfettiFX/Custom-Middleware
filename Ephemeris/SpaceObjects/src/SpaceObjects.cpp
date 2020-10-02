@@ -123,30 +123,6 @@ const float AuroraWidth = 100000.0f;
 //const float AuroraHeight = 4000.0f;
 const uint32_t AuroraParticleNum = 64;
 
-#if defined(VULKAN)
-static void TransitionRenderTargets(RenderTarget *pRT, ResourceState state, Renderer* renderer, CmdPool* cmdPool, Cmd* cmd, Queue* queue, Fence* fence)
-{
-	// Transition render targets to desired state
-	beginCmd(cmd);
-
-	RenderTargetBarrier barrier[] = {
-		   { pRT, state }
-	};
-
-	cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barrier);
-	endCmd(cmd);
-
-	QueueSubmitDesc submitDesc = {};
-	submitDesc.mCmdCount = 1;
-	submitDesc.ppCmds = &cmd;
-	submitDesc.pSignalFence = fence;
-	queueSubmit(queue, &submitDesc);
-	waitForFences(renderer, 1, &fence);
-
-	resetCmdPool(renderer, cmdPool);
-}
-#endif
-
 void SpaceObjects::GenerateRing(eastl::vector<float> &vertices, eastl::vector<uint32_t> &indices, uint32_t WidthDividor, uint32_t HeightDividor, float radius, float height)
 {
 
@@ -463,7 +439,7 @@ bool SpaceObjects::Init(Renderer* const renderer, PipelineCache* pCache)
 	AuroraParticleDesc.mDesc.mElementCount = (uint64_t)AuroraParticleNum;
 	AuroraParticleDesc.mDesc.mStructStride = sizeof(AuroraParticle);
 	AuroraParticleDesc.mDesc.mSize = AuroraParticleDesc.mDesc.mElementCount * AuroraParticleDesc.mDesc.mStructStride;
-	AuroraParticleDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT | BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
+	AuroraParticleDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
 	AuroraParticleDesc.pData = initialAuroraData.data();
 
 	// for(unsigned int i=0; i<gImageCount; i++)
@@ -478,7 +454,7 @@ bool SpaceObjects::Init(Renderer* const renderer, PipelineCache* pCache)
 	AuroraConstraintDesc.mDesc.mElementCount = (uint64_t)AuroraParticleNum - 1;
 	AuroraConstraintDesc.mDesc.mStructStride = sizeof(AuroraConstraint);
 	AuroraConstraintDesc.mDesc.mSize = AuroraConstraintDesc.mDesc.mElementCount * AuroraConstraintDesc.mDesc.mStructStride;
-	AuroraConstraintDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT | BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
+	AuroraConstraintDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
 	AuroraConstraintDesc.pData = initialAuroraConstraintData.data();
 
 	// for (unsigned int i = 0; i < gImageCount; i++)
@@ -494,7 +470,7 @@ bool SpaceObjects::Init(Renderer* const renderer, PipelineCache* pCache)
 	AuroraUniformDesc.mDesc.mElementCount = 1;
 	AuroraUniformDesc.mDesc.mStructStride = sizeof(AuroraUniformStruct);
 	AuroraUniformDesc.mDesc.mSize = AuroraUniformDesc.mDesc.mElementCount * AuroraUniformDesc.mDesc.mStructStride;
-	AuroraUniformDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT | BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
+	AuroraUniformDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
 
 	// for (unsigned int i = 0; i < gImageCount; i++)
 	// {
@@ -506,7 +482,7 @@ bool SpaceObjects::Init(Renderer* const renderer, PipelineCache* pCache)
 	sunUniformDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	sunUniformDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
 	sunUniformDesc.mDesc.mSize = sizeof(SunUniformBuffer);
-	sunUniformDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT | BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
+	sunUniformDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
 	sunUniformDesc.pData = NULL;
 
 	for (uint i = 0; i < gImageCount; i++)
@@ -895,7 +871,7 @@ void SpaceObjects::Draw(Cmd* cmd)
 
 			TextureBarrier barriersSky[] =
 			{
-			  { pPreStageRenderTarget->pTexture, RESOURCE_STATE_RENDER_TARGET }
+			  { pPreStageRenderTarget->pTexture, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_RENDER_TARGET }
 			};
 
 			cmdResourceBarrier(cmd, 0, NULL, 1, barriersSky, false);
@@ -933,7 +909,7 @@ void SpaceObjects::Draw(Cmd* cmd)
 
 		RenderTargetBarrier barriersSky2[] =
 		{
-			{ pPreStageRenderTarget, RESOURCE_STATE_RENDER_TARGET }
+			{ pPreStageRenderTarget, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_RENDER_TARGET }
 		};
 
 		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriersSky2);
@@ -990,13 +966,6 @@ void SpaceObjects::Draw(Cmd* cmd)
 	{
 		cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw Sun and Moon");
 
-		RenderTargetBarrier barriersSky[] =
-		{
-			{ pPreStageRenderTarget, RESOURCE_STATE_RENDER_TARGET }
-		};
-
-		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriersSky);
-
 		cmdBindRenderTargets(cmd, 1, &pPreStageRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
 		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pPreStageRenderTarget->mWidth, (float)pPreStageRenderTarget->mHeight, 0.0f, 1.0f);
 		cmdSetScissor(cmd, 0, 0, pPreStageRenderTarget->mWidth, pPreStageRenderTarget->mHeight);
@@ -1035,7 +1004,7 @@ void SpaceObjects::Draw(Cmd* cmd)
 		cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
 
 		RenderTargetBarrier barriersSkyEnd[] = {
-					{ pPreStageRenderTarget, RESOURCE_STATE_SHADER_RESOURCE }
+			{ pPreStageRenderTarget, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_SHADER_RESOURCE }
 		};
 
 		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriersSkyEnd);

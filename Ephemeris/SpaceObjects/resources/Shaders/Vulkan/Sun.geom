@@ -70,4 +70,5 @@ void main()
     VertexID = gl_PrimitiveIDIn;
     PsIn Stream;
     HLSLmain(In, VertexID);
+	gl_PointSize = 1.0f;
 }

@@ -11,6 +11,7 @@
 
 #include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/vector.h"
 #include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
+#include "../../../../The-Forge/Common_3/Renderer/IResourceLoader.h"
 
 /*
 #include "../../../../The-Forge/Common_3/Renderer/ResourceLoader.h"

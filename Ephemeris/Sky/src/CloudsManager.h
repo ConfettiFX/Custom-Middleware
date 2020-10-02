@@ -29,7 +29,7 @@ public:
   virtual ~ICloudsManager(void) { ; }
 
   virtual CloudHandle createDistantCloud(const mat4 & transform, Texture* texID) = 0;
-  virtual CloudHandle createCumulusCloud(const mat4 & transform, Texture* texID, float particleScale, vec4 * particleOffsetScale, ParticleProps * particleProps, uint32 particleCount, bool centerParticles = true) = 0;
+  virtual CloudHandle createCumulusCloud(const mat4 & transform, Texture* texID, float particleScale, vec4 * particleOffsetScale, ParticleProps * particleProps, uint32_t particleCount, bool centerParticles = true) = 0;
   virtual	void		removeCloud(CloudHandle handle) = 0;
 
   virtual void		setCloudTramsform(CloudHandle handle, const mat4 & transform) = 0;
@@ -78,14 +78,14 @@ public:
 
 	//	Igor: ICloudManager implementation
 	virtual CloudHandle	createDistantCloud(const mat4 & transform, Texture* texID );
-	virtual CloudHandle createCumulusCloud(const mat4 & transform, Texture* texID, float particleScale, vec4 * particleOffsetScale, ParticleProps * particleProps, uint32 particleCount, bool centerParticles=true);
+	virtual CloudHandle createCumulusCloud(const mat4 & transform, Texture* texID, float particleScale, vec4 * particleOffsetScale, ParticleProps * particleProps, uint32_t particleCount, bool centerParticles=true);
 	virtual	void		removeCloud(CloudHandle handle);
 	virtual void		setCloudTramsform(CloudHandle handle, const mat4 & transform);
 private:
 	void	clipCumulusClouds(const vec3 & camPos);
 	void	loadDistantClouds();
 	void	loadCumulusClouds();
-	void	generateCumulusCloudParticles( eastl::vector<vec4> & particlePosScale, eastl::vector<uint32> & particleTeIDs);
+	void	generateCumulusCloudParticles( eastl::vector<vec4> & particlePosScale, eastl::vector<uint32_t> & particleTeIDs);
 	void	generateCumulusCloudParticles( eastl::vector<vec4> & particlePosScale, eastl::vector<ParticleProps> & particleProps);
 	//void	prepareSortData();
 

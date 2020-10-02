@@ -134,30 +134,6 @@ static void getFrustumFromMatrix(const mat4 &matrix, TerrainFrustum &frustum)
 	frustum.iPlanes.back.distance = matrix[3][3] - matrix[3][2];
 }
 
-#if defined(VULKAN)
-static void TransitionRenderTargets(RenderTarget *pRT, ResourceState state, Renderer* renderer, CmdPool* cmdPool, Cmd* cmd, Queue* queue, Fence* fence)
-{
-	// Transition render targets to desired state
-	beginCmd(cmd);
-
-	RenderTargetBarrier barrier[] = {
-		   { pRT, state }
-	};
-
-	cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barrier);
-	endCmd(cmd);
-
-	QueueSubmitDesc submitDesc = {};
-	submitDesc.mCmdCount = 1;
-	submitDesc.ppCmds = &cmd;
-	submitDesc.pSignalFence = fence;
-	queueSubmit(queue, &submitDesc);
-	waitForFences(renderer, 1, &fence);
-
-	resetCmdPool(renderer, cmdPool);
-}
-#endif
-
 bool Terrain::Init(Renderer* renderer, PipelineCache* pCache)
 {
 	pRenderer = renderer;
@@ -261,9 +237,7 @@ bool Terrain::Init(Renderer* renderer, PipelineCache* pCache)
 	BufferLoadDesc zoneIbDesc = {};
 	zoneIbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_INDEX_BUFFER;
 	zoneIbDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
-	zoneIbDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_OWN_MEMORY_BIT | BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
 	zoneIbDesc.mDesc.mSize = (uint64_t)(indexBuffer.size() * sizeof(float));
-	zoneIbDesc.mDesc.mIndexType = INDEX_TYPE_UINT32;
 	zoneIbDesc.pData = indexBuffer.data();
 	zoneIbDesc.ppBuffer = &pGlobalZoneIndexBuffer;
 	addResource(&zoneIbDesc, &token);
@@ -279,7 +253,7 @@ bool Terrain::Init(Renderer* renderer, PipelineCache* pCache)
 	TriangularVbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_VERTEX_BUFFER;
 	TriangularVbDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
 	TriangularVbDesc.mDesc.mSize = (uint64_t)(sizeof(float) * 5 * 3);
-	TriangularVbDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_OWN_MEMORY_BIT | BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
+	TriangularVbDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
 	TriangularVbDesc.pData = screenQuadPoints;
 	TriangularVbDesc.ppBuffer = &pGlobalTriangularVertexBuffer;
 	addResource(&TriangularVbDesc, &token);
@@ -288,7 +262,7 @@ bool Terrain::Init(Renderer* renderer, PipelineCache* pCache)
 	LightingTerrainUnifromBufferDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	LightingTerrainUnifromBufferDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
 	LightingTerrainUnifromBufferDesc.mDesc.mSize = sizeof(LightingTerrainUniformBuffer);
-	LightingTerrainUnifromBufferDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT | BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
+	LightingTerrainUnifromBufferDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
 	LightingTerrainUnifromBufferDesc.pData = NULL;
 
 	for (uint i = 0; i < gImageCount; i++)
@@ -301,7 +275,7 @@ bool Terrain::Init(Renderer* renderer, PipelineCache* pCache)
 	RenderTerrainUnifromBufferDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	RenderTerrainUnifromBufferDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
 	RenderTerrainUnifromBufferDesc.mDesc.mSize = sizeof(RenderTerrainUniformBuffer);
-	RenderTerrainUnifromBufferDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT | BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
+	RenderTerrainUnifromBufferDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
 	RenderTerrainUnifromBufferDesc.pData = NULL;
 
 	for (uint i = 0; i < gImageCount; i++)
@@ -314,7 +288,7 @@ bool Terrain::Init(Renderer* renderer, PipelineCache* pCache)
 	VolumetricCloudsShadowUnifromBufferDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	VolumetricCloudsShadowUnifromBufferDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
 	VolumetricCloudsShadowUnifromBufferDesc.mDesc.mSize = sizeof(VolumetricCloudsShadowCB);
-	VolumetricCloudsShadowUnifromBufferDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT | BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
+	VolumetricCloudsShadowUnifromBufferDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
 	VolumetricCloudsShadowUnifromBufferDesc.pData = NULL;
 	VolumetricCloudsShadowUnifromBufferDesc.ppBuffer = &pVolumetricCloudsShadowBuffer;
 	addResource(&VolumetricCloudsShadowUnifromBufferDesc, &token);
@@ -428,7 +402,7 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 
 	SyncToken token = {};
 
-	//vertexBufferPositions = renderer->addVertexBuffer((uint32)vertices.size() * sizeof(Vertex), STATIC, &vertices.front());
+	//vertexBufferPositions = renderer->addVertexBuffer((uint32_t)vertices.size() * sizeof(Vertex), STATIC, &vertices.front());
 	TerrainPathVertexCount = (uint32_t)vertices.size();
 	BufferLoadDesc zoneVbDesc = {};
 	zoneVbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_VERTEX_BUFFER;
@@ -484,6 +458,7 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 	NormalMapFromHeightmapRenderTarget.mDepth = 1;
 	NormalMapFromHeightmapRenderTarget.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
 	NormalMapFromHeightmapRenderTarget.mFormat = TinyImageFormat_R16G16_SFLOAT;
+	NormalMapFromHeightmapRenderTarget.mStartState = RESOURCE_STATE_RENDER_TARGET;
 	NormalMapFromHeightmapRenderTarget.mSampleCount = SAMPLE_COUNT_1;
 	NormalMapFromHeightmapRenderTarget.mSampleQuality = 0;
 	//NormalMapFromHeightmapRenderTarget.mSrgb = false;
@@ -491,10 +466,6 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 	NormalMapFromHeightmapRenderTarget.mHeight = pTerrainHeightMap->mHeight;
 	NormalMapFromHeightmapRenderTarget.pName = "NormalMapFromHeightmap RenderTarget";
 	addRenderTarget(pRenderer, &NormalMapFromHeightmapRenderTarget, &pNormalMapFromHeightmapRT);
-
-#if defined(VULKAN)
-	TransitionRenderTargets(pNormalMapFromHeightmapRT, ResourceState::RESOURCE_STATE_RENDER_TARGET, pRenderer, pTransCmdPool, ppTransCmds[0], pGraphicsQueue, pTransitionCompleteFences);
-#endif
 
 	gTerrainTiledColorTexturesStorage = (Texture*)tf_malloc(sizeof(Texture) * pTerrainTiledColorTextures.size());
 	gTerrainTiledNormalTexturesStorage = (Texture*)tf_malloc(sizeof(Texture) * pTerrainTiledNormalTextures.size());
@@ -530,6 +501,8 @@ bool Terrain::GenerateNormalMap(Cmd* cmd)
 	cmdBindDescriptorSet(cmd, 0, pGenTerrainNormalDescriptorSet);
 	cmdDraw(cmd, 3, 0);
 
+	cmdBindRenderTargets(cmd, 0, NULL, NULL, NULL, NULL, NULL, -1, -1);
+
 	return true;
 }
 
@@ -555,6 +528,7 @@ bool Terrain::Load(int32_t width, int32_t height)
 	SceneRT.mDepth = 1;
 	SceneRT.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
 	SceneRT.mFormat = TinyImageFormat_R8G8B8A8_UNORM;
+	SceneRT.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
 	SceneRT.mSampleCount = SAMPLE_COUNT_1;
 	SceneRT.mSampleQuality = 0;
 
@@ -563,43 +537,31 @@ bool Terrain::Load(int32_t width, int32_t height)
 
 	addRenderTarget(pRenderer, &SceneRT, &pTerrainRT);
 
-#if defined(VULKAN)
-	TransitionRenderTargets(pTerrainRT, ResourceState::RESOURCE_STATE_RENDER_TARGET, pRenderer, pTransCmdPool, ppTransCmds[0], pGraphicsQueue, pTransitionCompleteFences);
-#endif
-
 	RenderTargetDesc BasicColorRT = {};
 	BasicColorRT.mArraySize = 1;
 	BasicColorRT.mDepth = 1;
 	BasicColorRT.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
 	BasicColorRT.mFormat = TinyImageFormat_R8G8B8A8_UNORM;
+	BasicColorRT.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
 	BasicColorRT.mSampleCount = SAMPLE_COUNT_1;
 	BasicColorRT.mSampleQuality = 0;
-	BasicColorRT.mFlags = TEXTURE_CREATION_FLAG_OWN_MEMORY_BIT;
 	BasicColorRT.mWidth = mWidth;
 	BasicColorRT.mHeight = mHeight;
 
 	addRenderTarget(pRenderer, &BasicColorRT, &pGBuffer_BasicRT);
-
-#if defined(VULKAN)
-	TransitionRenderTargets(pGBuffer_BasicRT, ResourceState::RESOURCE_STATE_RENDER_TARGET, pRenderer, pTransCmdPool, ppTransCmds[0], pGraphicsQueue, pTransitionCompleteFences);
-#endif
 
 	RenderTargetDesc NormalRT = {};
 	NormalRT.mArraySize = 1;
 	NormalRT.mDepth = 1;
 	NormalRT.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
 	NormalRT.mFormat = TinyImageFormat_R16G16B16A16_SFLOAT;
+	NormalRT.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
 	NormalRT.mSampleCount = SAMPLE_COUNT_1;
 	NormalRT.mSampleQuality = 0;
-	NormalRT.mFlags = TEXTURE_CREATION_FLAG_OWN_MEMORY_BIT;
 	NormalRT.mWidth = mWidth;
 	NormalRT.mHeight = mHeight;
 
 	addRenderTarget(pRenderer, &NormalRT, &pGBuffer_NormalRT);
-
-#if defined(VULKAN)
-	TransitionRenderTargets(pGBuffer_NormalRT, ResourceState::RESOURCE_STATE_RENDER_TARGET, pRenderer, pTransCmdPool, ppTransCmds[0], pGraphicsQueue, pTransitionCompleteFences);
-#endif
 
 	//layout and pipeline for ScreenQuad
 	VertexLayout vertexLayout = {};
@@ -782,9 +744,7 @@ void Terrain::Unload()
 	removePipeline(pRenderer, pRenderTerrainPipeline);
 	removePipeline(pRenderer, pLightingTerrainPipeline);
 
-
 	removeRenderTarget(pRenderer, pTerrainRT);
-
 	removeRenderTarget(pRenderer, pGBuffer_BasicRT);
 	removeRenderTarget(pRenderer, pGBuffer_NormalRT);
 }
@@ -805,14 +765,11 @@ void Terrain::Draw(Cmd* cmd)
 		RenderTarget* pRenderTarget = pTerrainRT;
 
 #if USE_PROCEDUAL_TERRAIN
-
-		TextureBarrier barriers20[] = {
-			{ pTerrainRT->pTexture, RESOURCE_STATE_RENDER_TARGET },
-			{ pDepthBuffer->pTexture, RESOURCE_STATE_DEPTH_WRITE }
+		RenderTargetBarrier barriers20[] = {
+			{ pTerrainRT, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_RENDER_TARGET },
+			{ pDepthBuffer, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_DEPTH_WRITE }
 		};
-
-		cmdResourceBarrier(cmd, 0, NULL, 2, barriers20);
-
+		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 2, barriers20);
 
 		LoadActionsDesc loadActions = {};
 		loadActions.mLoadActionsColor[0] = LOAD_ACTION_CLEAR;
@@ -829,7 +786,7 @@ void Terrain::Draw(Cmd* cmd)
 
 		cmdBindPipeline(cmd, pTerrainPipeline);
 
-		struct
+		struct UniformData
 		{
 			mat4	viewProjMat;
 		}cbRootConstantStruct;
@@ -842,8 +799,10 @@ void Terrain::Draw(Cmd* cmd)
 
 		cbRootConstantStruct.viewProjMat = projMat * pCameraController->getViewMatrix();
 
-		BufferUpdateDesc updateDesc = { pRenderTerrainUniformBuffer[gFrameIndex], &cbRootConstantStruct, 0, 0, sizeof(cbRootConstantStruct) };
-		updateResource(&updateDesc);
+		BufferUpdateDesc updateDesc = { pRenderTerrainUniformBuffer[gFrameIndex] };
+		beginUpdateResource(&updateDesc);
+		*(UniformData*)updateDesc.pMappedData = cbRootConstantStruct;
+		endUpdateResource(&updateDesc, NULL);
 
 		cmdBindDescriptorSet(cmd, gFrameIndex, pTerrainDescriptorSet[1]);
 
@@ -853,12 +812,15 @@ void Terrain::Draw(Cmd* cmd)
 
 			if (zone->visible)
 			{
-				cmdBindVertexBuffer(cmd, 1, &zone->pZoneVertexBuffer, NULL);
-				cmdBindIndexBuffer(cmd, zone->pZoneIndexBuffer, NULL);
+				const uint32_t stride = sizeof(float) * 5;
+				cmdBindVertexBuffer(cmd, 1, &zone->pZoneVertexBuffer, &stride, NULL);
+				cmdBindIndexBuffer(cmd, zone->pZoneIndexBuffer, INDEX_TYPE_UINT32, 0);
 				cmdDrawIndexed(cmd, (uint32_t)indexBuffer.size(), 0, 0);
 			}
 		}
 
+		barriers20[0] = { pDepthBuffer, RESOURCE_STATE_DEPTH_WRITE, RESOURCE_STATE_SHADER_RESOURCE };
+		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriers20);
 #else
 
 		/*
@@ -891,19 +853,16 @@ void Terrain::Draw(Cmd* cmd)
 		getFrustumFromMatrix(TerrainProjectionMatrix * pCameraController->getViewMatrix(), terrainFrustum);
 
 		RenderTargetBarrier barriersTerrainLighting[] = {
-			{ pGBuffer_BasicRT, RESOURCE_STATE_RENDER_TARGET },
-			{ pGBuffer_NormalRT, RESOURCE_STATE_RENDER_TARGET },
-			{ pDepthBuffer, RESOURCE_STATE_DEPTH_WRITE }
+			{ pGBuffer_BasicRT, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_RENDER_TARGET },
+			{ pGBuffer_NormalRT, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_RENDER_TARGET },
+			{ pDepthBuffer, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_DEPTH_WRITE }
 		};
 
 		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 3, barriersTerrainLighting);
 
-		eastl::vector<RenderTarget*> RTs;
+		RenderTarget* RTs[2] = { pGBuffer_BasicRT, pGBuffer_NormalRT };
 
-		RTs.push_back(pGBuffer_BasicRT);
-		RTs.push_back(pGBuffer_NormalRT);
-
-		cmdBindRenderTargets(cmd, (uint32_t)RTs.size(), RTs.data(), pDepthBuffer, &loadActions, NULL, NULL, -1, -1);
+		cmdBindRenderTargets(cmd, sizeof(RTs) / sizeof(RTs[0]), RTs, pDepthBuffer, &loadActions, NULL, NULL, -1, -1);
 		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pGBuffer_BasicRT->mWidth, (float)pGBuffer_BasicRT->mHeight, 0.0f, 1.0f);
 		cmdSetScissor(cmd, 0, 0, pGBuffer_BasicRT->mWidth, pGBuffer_BasicRT->mHeight);
 
@@ -944,10 +903,10 @@ void Terrain::Draw(Cmd* cmd)
 		cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Apply Lighting");
 
 		RenderTargetBarrier barriersLighting[] = {
-			{ pTerrainRT, RESOURCE_STATE_RENDER_TARGET },
-			{ pGBuffer_BasicRT, RESOURCE_STATE_SHADER_RESOURCE },
-			{ pGBuffer_NormalRT, RESOURCE_STATE_SHADER_RESOURCE },
-			{ pDepthBuffer, RESOURCE_STATE_SHADER_RESOURCE },
+			{ pTerrainRT, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_RENDER_TARGET },
+			{ pGBuffer_BasicRT, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_SHADER_RESOURCE },
+			{ pGBuffer_NormalRT, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_SHADER_RESOURCE },
+			{ pDepthBuffer, RESOURCE_STATE_DEPTH_WRITE, RESOURCE_STATE_SHADER_RESOURCE },
 		};
 
 		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 4, barriersLighting);
@@ -987,13 +946,13 @@ void Terrain::Draw(Cmd* cmd)
 		cmdBindDescriptorSet(cmd, gFrameIndex, pTerrainDescriptorSet[1]);
 		cmdDraw(cmd, 3, 0);
 
-		cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
 		cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
 
 #endif
+		cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
 
 		RenderTargetBarrier barriers21[] = {
-			{ pRenderTarget, RESOURCE_STATE_SHADER_RESOURCE }
+			{ pRenderTarget, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_SHADER_RESOURCE }
 		};
 
 		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriers21);
@@ -1089,10 +1048,9 @@ void Terrain::Update(float deltaTime)
 				zoneVbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_VERTEX_BUFFER;
 				zoneVbDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
 				zoneVbDesc.mDesc.mSize = zoneDataSize;
-				zoneVbDesc.mDesc.mVertexStride = sizeof(float) * 5;
 				zoneVbDesc.pData = newZone->PosAndUVs.data();
 				zoneVbDesc.ppBuffer = &newZone->pZoneVertexBuffer;
-				addResource(&zoneVbDesc);
+				addResource(&zoneVbDesc, NULL);
 
 				newZone->pZoneIndexBuffer = pGlobalZoneIndexBuffer;
 

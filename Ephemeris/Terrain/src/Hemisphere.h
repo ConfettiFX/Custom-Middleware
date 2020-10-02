@@ -30,7 +30,7 @@ struct TerrainVertex
 struct MeshSegment
 {
 	Buffer* indexBuffer;
-	uint32 indexCount;
+	uint32_t indexCount;
 	TerrainBoundingBox boundingBox;
 	MeshSegment() : indexCount(0) {}
 };
@@ -77,9 +77,9 @@ public:
 			// Configure vertices
 
 			// Fill TerrainVertex buffer
-			for (int32 row = 0; row < gridDimension; ++row)
+			for (int32_t row = 0; row < gridDimension; ++row)
 			{
-				for (int32 col = 0; col < gridDimension; ++col)
+				for (int32_t col = 0; col < gridDimension; ++col)
 				{
 					vertices[currGridStart + col + row*gridDimension] = createTerrainVertex(col, row, gridScale);
 				}
@@ -88,10 +88,10 @@ public:
 			// Aligns vertices on the outer boundary
 			if (currRing < a_ringCount - 1)
 			{
-				for (int32 i = 1; i < gridDimension - 1; i += 2)
+				for (int32_t i = 1; i < gridDimension - 1; i += 2)
 				{
 					// Top & bottom boundaries
-					for (int32 row = 0; row < gridDimension; row += gridDimension - 1)
+					for (int32_t row = 0; row < gridDimension; row += gridDimension - 1)
 					{
 						float3& v0 = vertices[currGridStart + i - 1 + row*gridDimension].wsPos;
 						float3& v1 = vertices[currGridStart + i + row*gridDimension].wsPos;
@@ -100,7 +100,7 @@ public:
 					}
 
 					// Left & right boundaries
-					for (int32 col = 0; col < gridDimension; col += gridDimension - 1)
+					for (int32_t col = 0; col < gridDimension; col += gridDimension - 1)
 					{
 						float3& v0 = vertices[currGridStart + col + (i - 1) * gridDimension].wsPos;
 						float3& v1 = vertices[currGridStart + col + i * gridDimension].wsPos;
@@ -150,8 +150,8 @@ public:
 
 private:
 	TriangulationOrder triangulationOrder = ORDER_UNDEFINED;
-	uint32 gridPitch = 0;
-	uint32 gridStart = 0;
+	uint32_t gridPitch = 0;
+	uint32_t gridStart = 0;
 	Renderer* renderer = nullptr;
 	HeightData* heightmap = nullptr;
 	float sampleScale, samplingStep, planetRadius;
@@ -159,7 +159,7 @@ private:
 
 	void buildTriangleStrip(int startIndex, int colStart,
 		int rowStart, int colCount, int rowCount, TriangulationOrder triangleType,
-		uint32 pitch, eastl::vector<uint32>& indices)
+		uint32_t pitch, eastl::vector<uint32_t>& indices)
 	{
 		//ASSERT(triangleType == ORDER_00_TO_11 || triangleType == ORDER_01_TO_10);
 		int iFirstTerrainVertex = startIndex + colStart + (rowStart + (triangleType == ORDER_00_TO_11 ? 1 : 0)) * pitch;
@@ -225,18 +225,18 @@ private:
 	{
 		MeshSegment mesh;
 
-    eastl::vector<uint32> indices;
+    eastl::vector<uint32_t> indices;
 		triangulationOrder = ORDER_UNDEFINED;
 		buildTriangleStrip(gridStart, colStart, rowStart, colCount, rowCount, quadTriangType, gridPitch, indices);
 
-		mesh.indexCount = (uint32)indices.size();
+		mesh.indexCount = (uint32_t)indices.size();
 		
 		SyncToken token = {};
-		//mesh.indexBuffer = renderer->addIndexBuffer(mesh.indexCount, sizeof(uint32), STATIC, &indices.front());
+		//mesh.indexBuffer = renderer->addIndexBuffer(mesh.indexCount, sizeof(uint32_t), STATIC, &indices.front());
 		BufferLoadDesc zoneIbDesc = {};
 		zoneIbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_INDEX_BUFFER;
 		zoneIbDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
-		zoneIbDesc.mDesc.mSize = (uint64_t)(mesh.indexCount * sizeof(uint32));
+		zoneIbDesc.mDesc.mSize = (uint64_t)(mesh.indexCount * sizeof(uint32_t));
 		zoneIbDesc.pData = indices.data();
 		zoneIbDesc.ppBuffer = &mesh.indexBuffer;
 		addResource(&zoneIbDesc, &token);
@@ -278,7 +278,7 @@ private:
 		posWs = v3ToF3(f3Tov3(posWs) + f3Tov3(sphereNormal) * displacement * sampleScale);
 	}
 
-	TerrainVertex createTerrainVertex(uint32 col, uint32 row, float gridScale)
+	TerrainVertex createTerrainVertex(uint32_t col, uint32_t row, float gridScale)
 	{
 		TerrainVertex currVert;
 		auto &pos = currVert.wsPos;

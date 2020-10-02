@@ -62,6 +62,6 @@ void main()
 	PushVertex(In[0].Position.xyz + vec3(0.0, heightOffset + height, 0.0)     , In[0].Color, vec2(0.0, 0.0));
 	PushVertex(In[0].NextPosition.xyz + vec3(0.0, heightOffset, 0.0)          , In[0].Color, vec2(1.0, 1.0));
 	PushVertex(In[0].NextPosition.xyz + vec3(0.0, heightOffset + height, 0.0) , In[0].Color, vec2(1.0, 0.0));
-
 	EndPrimitive();
+	gl_PointSize = 1.0f;
 }

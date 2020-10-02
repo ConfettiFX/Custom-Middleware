@@ -47,8 +47,8 @@ HeightData::HeightData(const char* fileName, float heightScale) :
 	fsReadFromStream(&modelFile0FH, heightMap.data(), fsGetStreamFileSize(&modelFile0FH));
 	fsCloseStream(&modelFile0FH);
 
-	uint32 width = (uint32)sqrtf((float)length / 4.0f);
-	uint32 height = width;	
+	uint32_t width = (uint32_t)sqrtf((float)length / 4.0f);
+	uint32_t height = width;	
 
 	// Calculate minimal number of columns and rows
 	// in the form 2^n+1 that encompass the data
@@ -71,20 +71,20 @@ HeightData::HeightData(const char* fileName, float heightScale) :
 	// Load the data
 	data.resize(colCount * rowCount);
 	
-	for (uint32 row = 0; row < height; ++row)
+	for (uint32_t row = 0; row < height; ++row)
 	{
 		memcpy((&data.front()) + colCount * row, heightMap.data() + row * width * 4, width * 4);
 	}
 
 	// Duplicate the last row and column
-	for (uint32 r = 0; r < height; r++)
-		for (uint32 c = width; c < colCount; c++)
+	for (uint32_t r = 0; r < height; r++)
+		for (uint32_t c = width; c < colCount; c++)
 			data[c + r * colCount] = data[(width - 1) + r * colCount];
-	for (uint32 c = 0; c < colCount; c++)
-		for (uint32 r = height; r < rowCount; r++)
+	for (uint32_t c = 0; c < colCount; c++)
+		for (uint32_t r = height; r < rowCount; r++)
 			data[c + r * colCount] = data[c + (height - 1) * colCount];
 
-	for (uint32 i = 0; i < data.size(); ++i)
+	for (uint32_t i = 0; i < data.size(); ++i)
 	{
 		data[i] *= heightScale;
 	}

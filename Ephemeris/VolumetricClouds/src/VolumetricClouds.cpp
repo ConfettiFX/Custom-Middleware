@@ -439,30 +439,6 @@ static char* _itoa(int n, char *s)
 	return s;
 }
 
-#if defined(VULKAN)
-static void TransitionRenderTargets(RenderTarget *pRT, ResourceState state, Renderer* renderer, CmdPool* cmdPool, Cmd* cmd, Queue* queue, Fence* fence)
-{
-	// Transition render targets to desired state
-	beginCmd(cmd);
-
-	RenderTargetBarrier barrier[] = {
-		   { pRT, state }
-	};
-
-	cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barrier);
-	endCmd(cmd);
-
-	QueueSubmitDesc submitDesc = {};
-	submitDesc.mCmdCount = 1;
-	submitDesc.ppCmds = &cmd;
-	submitDesc.pSignalFence = fence;
-	queueSubmit(queue, &submitDesc);
-	waitForFences(renderer, 1, &fence);
-
-	resetCmdPool(renderer, cmdPool);
-}
-#endif
-
 bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 {
 	pRenderer = renderer;
@@ -1286,17 +1262,9 @@ bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 	beginCmd(cmd);
 	cmdBeginDebugMarker(cmd, 1.0f, 1.0f, 1.0f, "Preprocessing");
 
-	TextureBarrier barriersForNoiseStart[] = {
-		{ pHighFrequency3DTextureOrigin, RESOURCE_STATE_UNORDERED_ACCESS },
-		{ pLowFrequency3DTextureOrigin, RESOURCE_STATE_UNORDERED_ACCESS },
-	};
-
-	cmdResourceBarrier(cmd, 0, NULL, 2, barriersForNoiseStart, 0, NULL);
-
 	cmdBindPipeline(cmd, pGenHighTopFreq3DtexPipeline);
 
 #if !defined(METAL)
-
 	DescriptorData params[2] = {};
 	params[0].pName = "SrcTexture";
 	params[0].mCount = (uint32_t)gHighFrequencyOriginTexturePacked.size();
@@ -1307,9 +1275,7 @@ bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 	cmdBindDescriptorSet(cmd, 0, pGenFreq3DTexDescriptorSet);
 	uint32_t* pThreadGroupSize = pGenHighTopFreq3DtexShader->pReflection->mStageReflections[0].mNumThreadsPerGroup;
 	cmdDispatch(cmd, gHighFreq3DTextureSize / pThreadGroupSize[0], gHighFreq3DTextureSize / pThreadGroupSize[1], gHighFreq3DTextureSize / pThreadGroupSize[2]);
-
 #else
-
 	uint32_t freqSetIndex = 0;
 	struct
 	{
@@ -1333,15 +1299,11 @@ bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 
 		cmdDispatch(cmd, gHighFreq3DTextureSize / pThreadGroupSize[0], gHighFreq3DTextureSize / pThreadGroupSize[1], 1);
 	}
-
-
-
 #endif
 
 	cmdBindPipeline(cmd, pGenLowTopFreq3DtexPipeline);
 
 #if !defined(METAL)
-
 	DescriptorData lowParams[2] = {};
 	lowParams[0].pName = "SrcTexture";
 	lowParams[0].mCount = (uint32_t)gLowFrequencyOriginTexturePacked.size();
@@ -1352,10 +1314,8 @@ bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 	cmdBindDescriptorSet(cmd, 1, pGenFreq3DTexDescriptorSet);
 	pThreadGroupSize = pGenLowTopFreq3DtexShader->pReflection->mStageReflections[0].mNumThreadsPerGroup;
 	cmdDispatch(cmd, gLowFreq3DTextureSize / pThreadGroupSize[0], gLowFreq3DTextureSize / pThreadGroupSize[1], gLowFreq3DTextureSize / pThreadGroupSize[2]);
-
 #else
-
-	for (uint i = 0; i < gLowFreq3DTextureSize; i++, ++freqSetIndex)
+	for (uint32_t i = 0; i < gLowFreq3DTextureSize; i++, ++freqSetIndex)
 	{
 		SliceNumInfo.SliceNum = i;
 		cmdBindPushConstants(cmd, pGenFreq3DTexRootSignature, "sliceRootConstant", &SliceNumInfo);
@@ -1373,12 +1333,10 @@ bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 #endif
 
 	TextureBarrier barriersForNoise[] = {
-	  { pHighFrequency3DTextureOrigin, RESOURCE_STATE_SHADER_RESOURCE },
-	  { pLowFrequency3DTextureOrigin, RESOURCE_STATE_SHADER_RESOURCE },
+	  { pHighFrequency3DTextureOrigin, RESOURCE_STATE_UNORDERED_ACCESS, RESOURCE_STATE_SHADER_RESOURCE },
+	  { pLowFrequency3DTextureOrigin, RESOURCE_STATE_UNORDERED_ACCESS, RESOURCE_STATE_SHADER_RESOURCE },
 	};
-
 	cmdResourceBarrier(cmd, 0, NULL, 2, barriersForNoise, 0, NULL);
-
 
 	cmdBindPipeline(cmd, pGenMipmapPipeline);
 
@@ -1386,13 +1344,6 @@ bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 	{
 		uint mip;
 	} data = { 0 };
-
-	TextureBarrier barriersForNoise2Start[] = {
-	  { pHighFrequency3DTexture, RESOURCE_STATE_UNORDERED_ACCESS },
-	  { pLowFrequency3DTexture, RESOURCE_STATE_UNORDERED_ACCESS },
-	};
-
-	cmdResourceBarrier(cmd, 0, NULL, 2, barriersForNoise2Start, 0, NULL);
 
 	uint32_t setIndex = 0;
 
@@ -1410,7 +1361,7 @@ bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 		updateDescriptorSet(pRenderer, setIndex, pGenMipmapDescriptorSet, 2, mipParams);
 		cmdBindDescriptorSet(cmd, setIndex, pGenMipmapDescriptorSet);
 
-		uint mipMapSize = gHighFreq3DTextureSize / (uint32)pow(2, (i));
+		uint mipMapSize = gHighFreq3DTextureSize / (uint32_t)pow(2, (i));
 
 		cmdDispatch(cmd, mipMapSize, mipMapSize, mipMapSize);
 	}
@@ -1429,17 +1380,16 @@ bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 		updateDescriptorSet(pRenderer, setIndex, pGenMipmapDescriptorSet, 2, mipParams);
 		cmdBindDescriptorSet(cmd, setIndex, pGenMipmapDescriptorSet);
 
-		uint mipMapSize = gLowFreq3DTextureSize / (uint32)pow(2, (i));
+		uint mipMapSize = gLowFreq3DTextureSize / (uint32_t)pow(2, (i));
 
 		cmdDispatch(cmd, mipMapSize, mipMapSize, mipMapSize);
 	}
 
 
 	TextureBarrier barriersForNoise2[] = {
-	  { pHighFrequency3DTexture, RESOURCE_STATE_SHADER_RESOURCE },
-	  { pLowFrequency3DTexture, RESOURCE_STATE_SHADER_RESOURCE },
+	  { pHighFrequency3DTexture, RESOURCE_STATE_UNORDERED_ACCESS, RESOURCE_STATE_SHADER_RESOURCE },
+	  { pLowFrequency3DTexture, RESOURCE_STATE_UNORDERED_ACCESS, RESOURCE_STATE_SHADER_RESOURCE },
 	};
-
 	cmdResourceBarrier(cmd, 0, NULL, 2, barriersForNoise2, 0, NULL);
 	cmdEndDebugMarker(cmd);
 	endCmd(cmd);
@@ -1863,7 +1813,7 @@ bool VolumetricClouds::Load(RenderTarget** rts, uint32_t count)
 		//pipelineSettings.pRootSignature = pPostProcessRootSignature;
 		pipelineSettings.pRootSignature = pVolumetricCloudsRootSignatureGraphics;
 		pipelineSettings.pShaderProgram = pPostProcessShader;
-		pipelineSettings.pVertexLayout = &vertexLayout;
+		pipelineSettings.pVertexLayout = &vertexLayoutForVC;
 		pipelineSettings.pRasterizerState = &rasterizerStateDesc;
 
 		addPipeline(pRenderer, &pipelineDescPostProcess, &pPostProcessPipeline);
@@ -1944,7 +1894,7 @@ bool VolumetricClouds::Load(RenderTarget** rts, uint32_t count)
 		//pipelineSettings.pRootSignature = pCompositeRootSignature;
 		pipelineSettings.pRootSignature = pVolumetricCloudsRootSignatureGraphics;
 		pipelineSettings.pShaderProgram = pCompositeShader;
-		pipelineSettings.pVertexLayout = &vertexLayout;
+		pipelineSettings.pVertexLayout = &vertexLayoutForVC;
 		pipelineSettings.pRasterizerState = &rasterizerStateDesc;
 
 		pipelineSettings.pBlendState = &blendStateSkyBoxDesc;
@@ -1971,7 +1921,7 @@ bool VolumetricClouds::Load(RenderTarget** rts, uint32_t count)
 		//pipelineSettings.pRootSignature = pCompositeOverlayRootSignature;
 		pipelineSettings.pRootSignature = pVolumetricCloudsRootSignatureGraphics;
 		pipelineSettings.pShaderProgram = pCompositeOverlayShader;
-		pipelineSettings.pVertexLayout = &vertexLayout;
+		pipelineSettings.pVertexLayout = &vertexLayoutForVC;
 		pipelineSettings.pRasterizerState = &rasterizerStateDesc;
 
 		pipelineSettings.pBlendState = &blendStateSkyBoxDesc;
@@ -2257,16 +2207,14 @@ void VolumetricClouds::Draw(Cmd* cmd)
 	{
 		cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Volumetric Clouds");
 
-
-		RenderTargetBarrier rtBarriers000[] = {
-			{ pLinearDepthTexture, RESOURCE_STATE_SHADER_RESOURCE },
-		};
 		TextureBarrier barriers000[] = {
-			{ pHiZDepthBuffer, RESOURCE_STATE_UNORDERED_ACCESS },
-			{ pHiZDepthBufferX, RESOURCE_STATE_UNORDERED_ACCESS }
+#if USE_LOD_DEPTH
+			{ pHiZDepthBufferX, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_UNORDERED_ACCESS }
+#else
+			{ pHiZDepthBuffer, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_UNORDERED_ACCESS },
+#endif
 		};
-
-		cmdResourceBarrier(cmd, 0, NULL, 2, barriers000, 1, rtBarriers000);
+		cmdResourceBarrier(cmd, 0, NULL, 1, barriers000, 0, NULL);
 
 		const uint32_t* pThreadGroupSize = NULL;
 
@@ -2390,19 +2338,23 @@ void VolumetricClouds::Draw(Cmd* cmd)
 #endif
 
 
+
+#if USE_VC_FRAGMENTSHADER
 			RenderTarget* pRenderTarget = plowResCloudRT;
-
 			RenderTargetBarrier rtBarriers0[] = {
-				{ pRenderTarget, RESOURCE_STATE_RENDER_TARGET },
+				{ pRenderTarget, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_RENDER_TARGET },
 			};
+#endif
 			TextureBarrier barriers0[] = {
-				{ HiZedDepthTexture, RESOURCE_STATE_SHADER_RESOURCE },
-				{ pLowFrequency3DTexture, RESOURCE_STATE_SHADER_RESOURCE },
-				{ pHighFrequency3DTexture, RESOURCE_STATE_SHADER_RESOURCE },
-				{ plowResCloudTexture, RESOURCE_STATE_UNORDERED_ACCESS },
+				{ HiZedDepthTexture, RESOURCE_STATE_UNORDERED_ACCESS, RESOURCE_STATE_SHADER_RESOURCE },
+				{ plowResCloudTexture, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_UNORDERED_ACCESS },
 			};
+#if USE_VC_FRAGMENTSHADER
+			cmdResourceBarrier(cmd, 0, NULL, 2, barriers0, 1, rtBarriers0);
+#else
+			cmdResourceBarrier(cmd, 0, NULL, 2, barriers0, 0, NULL);
+#endif
 
-			cmdResourceBarrier(cmd, 0, NULL, 4, barriers0, 1, rtBarriers0);
 #if USE_VC_FRAGMENTSHADER
 			// simply record the screen cleaning command
 			LoadActionsDesc loadActions = {};
@@ -2500,26 +2452,23 @@ void VolumetricClouds::Draw(Cmd* cmd)
 			/////////////////////////////////////////////////////////////////////////////
 
 
-			TextureBarrier barriersForReprojection[] = {
-				{ phighResCloudTexture, RESOURCE_STATE_UNORDERED_ACCESS},
 #if !USE_VC_FRAGMENTSHADER
-				{ plowResCloudTexture, RESOURCE_STATE_SHADER_RESOURCE },
-#endif
-				//{ pSaveCurrentRT->pTexture, RESOURCE_STATE_SHADER_RESOURCE },
-				{ pSavePrevTexture, RESOURCE_STATE_SHADER_RESOURCE },
+			TextureBarrier barriersForReprojection[] = {
+				{ plowResCloudTexture, RESOURCE_STATE_UNORDERED_ACCESS, RESOURCE_STATE_SHADER_RESOURCE },
 			};
+#endif
 
 			RenderTargetBarrier rtBarriersForReprojection[] = {
-				{ phighResCloudRT, RESOURCE_STATE_RENDER_TARGET },
+				{ phighResCloudRT, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_RENDER_TARGET },
 #if USE_VC_FRAGMENTSHADER
-				{ plowResCloudRT, RESOURCE_STATE_SHADER_RESOURCE },
+				{ plowResCloudRT, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_SHADER_RESOURCE },
 #endif
 			};
 
 #if USE_VC_FRAGMENTSHADER
-			cmdResourceBarrier(cmd, 0, NULL, 2, barriersForReprojection, 2, rtBarriersForReprojection);
+			cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 2, rtBarriersForReprojection);
 #else
-			cmdResourceBarrier(cmd, 0, NULL, 3, barriersForReprojection, 1, rtBarriersForReprojection);
+			cmdResourceBarrier(cmd, 0, NULL, 1, barriersForReprojection, 1, rtBarriersForReprojection);
 #endif
 
 
@@ -2591,10 +2540,10 @@ void VolumetricClouds::Draw(Cmd* cmd)
 			cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Save Current RenderTarget");
 
 			TextureBarrier barriersForSaveRT[] = {
-				{ pSavePrevTexture, RESOURCE_STATE_UNORDERED_ACCESS },
+				{ pSavePrevTexture, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_UNORDERED_ACCESS },
 			};
 			RenderTargetBarrier rtBarriersForSaveRT[] = {
-				{ phighResCloudRT, RESOURCE_STATE_SHADER_RESOURCE },
+				{ phighResCloudRT, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_SHADER_RESOURCE },
 			};
 
 			cmdResourceBarrier(cmd, 0, NULL, 1, barriersForSaveRT, 1, rtBarriersForSaveRT);
@@ -2607,7 +2556,7 @@ void VolumetricClouds::Draw(Cmd* cmd)
 			cmdDispatch(cmd, (uint32_t)ceil(phighResCloudRT->mWidth / pThreadGroupSize[0]), (uint32_t)ceil(phighResCloudRT->mHeight / pThreadGroupSize[1]), 1);
 			
 			TextureBarrier barriersForSaveRTEnd[] = {
-			{ pSavePrevTexture, RESOURCE_STATE_SHADER_RESOURCE },
+			{ pSavePrevTexture, RESOURCE_STATE_UNORDERED_ACCESS, RESOURCE_STATE_SHADER_RESOURCE },
 			};
 
 			cmdResourceBarrier(cmd, 0, NULL, 1, barriersForSaveRTEnd, 0, NULL);
@@ -2615,15 +2564,14 @@ void VolumetricClouds::Draw(Cmd* cmd)
 		}
 
 #if !defined(METAL)
-		TextureBarrier barriersForHBlur[] = {
-			{ pHBlurTex, RESOURCE_STATE_UNORDERED_ACCESS },
-			{ pVBlurTex, RESOURCE_STATE_SHADER_RESOURCE }
-		};
-		cmdResourceBarrier(cmd, 0, NULL, 2, barriersForHBlur, 0, NULL);
-
 		if (gAppSettings.m_EnableBlur)
 		{
 			cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Denoise - Blur");
+
+			TextureBarrier barriersForHBlur[] = {
+				{ pHBlurTex, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_UNORDERED_ACCESS },
+			};
+			cmdResourceBarrier(cmd, 0, NULL, 1, barriersForHBlur, 0, NULL);
 
 			struct Data
 			{
@@ -2639,8 +2587,8 @@ void VolumetricClouds::Draw(Cmd* cmd)
 			cmdDispatch(cmd, 1, blurTextureDesc.mHeight, 1);
 
 			TextureBarrier barriersForVBlur[] = {
-				{ pHBlurTex, RESOURCE_STATE_SHADER_RESOURCE },
-				{ pVBlurTex, RESOURCE_STATE_UNORDERED_ACCESS }
+				{ pHBlurTex, RESOURCE_STATE_UNORDERED_ACCESS, RESOURCE_STATE_SHADER_RESOURCE },
+				{ pVBlurTex, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_UNORDERED_ACCESS }
 			};
 
 			cmdResourceBarrier(cmd, 0, NULL, 2, barriersForVBlur, 0, NULL);
@@ -2650,7 +2598,7 @@ void VolumetricClouds::Draw(Cmd* cmd)
 			cmdDispatch(cmd, blurTextureDesc.mWidth, 1, 1);
 
 			TextureBarrier barriersForEndBlur[] = {
-							{ pVBlurTex, RESOURCE_STATE_SHADER_RESOURCE }
+				{ pVBlurTex, RESOURCE_STATE_UNORDERED_ACCESS, RESOURCE_STATE_SHADER_RESOURCE }
 			};
 
 			cmdResourceBarrier(cmd, 0, NULL, 1, barriersForEndBlur, 0, NULL);
@@ -2670,12 +2618,11 @@ void VolumetricClouds::Draw(Cmd* cmd)
 		RenderTarget* pRenderTarget = pPostProcessRT;
 
 		RenderTargetBarrier barriersForPostProcess[] = {
-			{ pRenderTarget, RESOURCE_STATE_RENDER_TARGET },
-			{ phighResCloudRT, RESOURCE_STATE_SHADER_RESOURCE },
-			{ pSceneColorTexture, RESOURCE_STATE_SHADER_RESOURCE }
+			{ pRenderTarget, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_RENDER_TARGET },
+			{ pSceneColorTexture, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_SHADER_RESOURCE }
 		};
 
-		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 3, barriersForPostProcess);
+		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 2, barriersForPostProcess);
 
 		LoadActionsDesc loadActions = {};
 		loadActions.mLoadActionsColor[0] = LOAD_ACTION_CLEAR;
@@ -2726,15 +2673,14 @@ void VolumetricClouds::Draw(Cmd* cmd)
 #endif
 
 	// Render Godray
+	RenderTargetBarrier barriersForGodray[] = {
+		{ pGodrayRT, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_RENDER_TARGET }
+	};
+	cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriersForGodray);
+
 	if (gAppSettings.m_EnabledGodray)
 	{
 		cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Render Godray");
-
-		RenderTargetBarrier barriersForGodray[] = {
-			{ pGodrayRT, RESOURCE_STATE_RENDER_TARGET }
-		};
-
-		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriersForGodray);
 
 		cmdBindRenderTargets(cmd, 1, &pGodrayRT, NULL, NULL, NULL, NULL, -1, -1);
 		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pGodrayRT->mWidth, (float)pGodrayRT->mHeight, 0.0f, 1.0f);
@@ -2747,15 +2693,13 @@ void VolumetricClouds::Draw(Cmd* cmd)
 
 		cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
 
-
-		RenderTargetBarrier barriersForGodrayEnd[] = {
-		{ pGodrayRT, RESOURCE_STATE_SHADER_RESOURCE }
-		};
-
-		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriersForGodrayEnd);
-
 		cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
 	}
+
+	RenderTargetBarrier barriersForGodrayEnd[] = {
+		{ pGodrayRT, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_SHADER_RESOURCE }
+	};
+	cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriersForGodrayEnd);
 	// Render Godray
 
 
@@ -2815,13 +2759,11 @@ void VolumetricClouds::Draw(Cmd* cmd)
 		RenderTarget* pRenderTarget = *pFinalRT;
 
 		RenderTargetBarrier barriersComposition[] = {
-			{ pRenderTarget, RESOURCE_STATE_RENDER_TARGET }
-			,{ pPostProcessRT, RESOURCE_STATE_SHADER_RESOURCE }
-			,{ pGodrayRT, RESOURCE_STATE_SHADER_RESOURCE }
-			,{ pCastShadowRT, RESOURCE_STATE_SHADER_RESOURCE}
+			{ pRenderTarget, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_RENDER_TARGET }
+			,{ pPostProcessRT, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_SHADER_RESOURCE }
 		};
 
-		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 4, barriersComposition);
+		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 2, barriersComposition);
 
 		cmdBindRenderTargets(cmd, 1, &pRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
 		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 0.0f, 1.0f);
@@ -2837,7 +2779,7 @@ void VolumetricClouds::Draw(Cmd* cmd)
 
 
 		RenderTargetBarrier barriersCompositionEnd[] = {
-			{ pRenderTarget, RESOURCE_STATE_SHADER_RESOURCE }
+			{ pRenderTarget, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_SHADER_RESOURCE }
 		};
 
 		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriersCompositionEnd);
@@ -2855,11 +2797,9 @@ void VolumetricClouds::Draw(Cmd* cmd)
 		RenderTarget* pRenderTarget = *pFinalRT;
 
 		RenderTargetBarrier barriersAddGodray[] = {
-			{ pRenderTarget, RESOURCE_STATE_RENDER_TARGET }
-			,{ pGodrayRT, RESOURCE_STATE_SHADER_RESOURCE }
+			{ pRenderTarget, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_RENDER_TARGET }
 		};
-
-		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 2, barriersAddGodray);
+		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriersAddGodray);
 
 		cmdBindRenderTargets(cmd, 1, &pRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
 		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 0.0f, 1.0f);
@@ -2874,7 +2814,7 @@ void VolumetricClouds::Draw(Cmd* cmd)
 		cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
 
 		RenderTargetBarrier barriersAddGodrayEnd[] = {
-			{ pRenderTarget, RESOURCE_STATE_SHADER_RESOURCE }
+			{ pRenderTarget, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_SHADER_RESOURCE }
 		};
 
 		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriersAddGodrayEnd);
@@ -3199,10 +3139,9 @@ bool VolumetricClouds::AddHiZDepthBuffer()
 	HiZDepthDesc.mSampleCount = SAMPLE_COUNT_1;
 	//HiZDepthDesc.mSrgb = false;
 
-	HiZDepthDesc.mStartState = RESOURCE_STATE_UNORDERED_ACCESS;
+	HiZDepthDesc.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
 	HiZDepthDesc.mDescriptors = DESCRIPTOR_TYPE_RW_TEXTURE | DESCRIPTOR_TYPE_TEXTURE;
 	HiZDepthDesc.pName = "HiZDepthBuffer A";
-	HiZDepthDesc.mFlags = TEXTURE_CREATION_FLAG_OWN_MEMORY_BIT;
 	TextureLoadDesc HiZDepthTextureDesc = {};
 	HiZDepthTextureDesc.ppTexture = &pHiZDepthBuffer;
 	HiZDepthTextureDesc.pDesc = &HiZDepthDesc;
@@ -3234,36 +3173,28 @@ bool VolumetricClouds::AddVolumetricCloudsRenderTargets()
 	HighResCloudRT.mDepth = 1;
 	HighResCloudRT.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
 	HighResCloudRT.mFormat = TinyImageFormat_R16G16B16A16_SFLOAT;
+	HighResCloudRT.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
 	HighResCloudRT.mSampleCount = SAMPLE_COUNT_1;
 	HighResCloudRT.mSampleQuality = 0;
 
 	HighResCloudRT.mWidth = (mWidth / gDownsampledCloudSize) & (~31);   //make sure the width and height could be divided by 4, otherwise the low-res buffer can't be aligned with full-res buffer
 	HighResCloudRT.mHeight = (mHeight / gDownsampledCloudSize) & (~31);
 	HighResCloudRT.pName = "HighResCloudRT";
-	//HighResCloudRT.mFlags = TEXTURE_CREATION_FLAG_OWN_MEMORY_BIT;
 	addRenderTarget(pRenderer, &HighResCloudRT, &phighResCloudRT);
-
-#if defined(VULKAN)
-	TransitionRenderTargets(phighResCloudRT, ResourceState::RESOURCE_STATE_RENDER_TARGET, pRenderer, pTransCmdPool, ppTransCmds[0], pGraphicsQueue, pTransitionCompleteFences);
-#endif
 
 	RenderTargetDesc PostProcessRT = {};
 	PostProcessRT.mArraySize = 1;
 	PostProcessRT.mDepth = 1;
 	PostProcessRT.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
 	PostProcessRT.mFormat = TinyImageFormat_R10G10B10A2_UNORM;
+	PostProcessRT.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
 	PostProcessRT.mSampleCount = SAMPLE_COUNT_1;
 	PostProcessRT.mSampleQuality = 0;
 
 	PostProcessRT.mWidth = (mWidth) & (~63);
 	PostProcessRT.mHeight = (mHeight) & (~63);
 	PostProcessRT.pName = "PostProcessRT";
-	PostProcessRT.mFlags = TEXTURE_CREATION_FLAG_OWN_MEMORY_BIT;
 	addRenderTarget(pRenderer, &PostProcessRT, &pPostProcessRT);
-
-#if defined(VULKAN)
-	TransitionRenderTargets(pPostProcessRT, ResourceState::RESOURCE_STATE_RENDER_TARGET, pRenderer, pTransCmdPool, ppTransCmds[0], pGraphicsQueue, pTransitionCompleteFences);
-#endif
 
 	pRenderTargetsPostProcess[0] = pPostProcessRT;
 
@@ -3272,40 +3203,33 @@ bool VolumetricClouds::AddVolumetricCloudsRenderTargets()
 	CurrentCloudRT.mDepth = 1;
 	CurrentCloudRT.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
 	CurrentCloudRT.mFormat = HighResCloudRT.mFormat;
+	CurrentCloudRT.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
 	CurrentCloudRT.mSampleCount = SAMPLE_COUNT_1;
 	CurrentCloudRT.mSampleQuality = 0;
 	CurrentCloudRT.pName = "CurrentCloudRT";
 	CurrentCloudRT.mWidth = HighResCloudRT.mWidth / glowResBufferSize;
 	CurrentCloudRT.mHeight = HighResCloudRT.mHeight / glowResBufferSize;
-	CurrentCloudRT.mFlags = TEXTURE_CREATION_FLAG_OWN_MEMORY_BIT;
 	addRenderTarget(pRenderer, &CurrentCloudRT, &plowResCloudRT);
-
-#if defined(VULKAN)
-	TransitionRenderTargets(plowResCloudRT, ResourceState::RESOURCE_STATE_RENDER_TARGET, pRenderer, pTransCmdPool, ppTransCmds[0], pGraphicsQueue, pTransitionCompleteFences);
-#endif
 
 	RenderTargetDesc GodrayRT = {};
 	GodrayRT.mArraySize = 1;
 	GodrayRT.mDepth = 1;
 	GodrayRT.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
 	GodrayRT.mFormat = TinyImageFormat_R10G10B10A2_UNORM;
+	GodrayRT.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
 	GodrayRT.mSampleCount = SAMPLE_COUNT_1;
 	GodrayRT.mSampleQuality = 0;
-	GodrayRT.mFlags = TEXTURE_CREATION_FLAG_OWN_MEMORY_BIT;
 	GodrayRT.mWidth = mWidth / godRayBufferSize;
 	GodrayRT.mHeight = mHeight / godRayBufferSize;
 
 	addRenderTarget(pRenderer, &GodrayRT, &pGodrayRT);
-
-#if defined(VULKAN)
-	TransitionRenderTargets(pGodrayRT, ResourceState::RESOURCE_STATE_RENDER_TARGET, pRenderer, pTransCmdPool, ppTransCmds[0], pGraphicsQueue, pTransitionCompleteFences);
-#endif
 
 	RenderTargetDesc CastShadowRT = {};
 	CastShadowRT.mArraySize = 1;
 	CastShadowRT.mDepth = 1;
 	CastShadowRT.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
 	CastShadowRT.mFormat = TinyImageFormat_R8_UNORM;
+	CastShadowRT.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
 	CastShadowRT.mSampleCount = SAMPLE_COUNT_1;
 	CastShadowRT.mSampleQuality = 0;
 	CastShadowRT.mClearValue.r = 1.0f;
@@ -3314,10 +3238,6 @@ bool VolumetricClouds::AddVolumetricCloudsRenderTargets()
 	CastShadowRT.mHeight = mHeight / gDownsampledCloudSize;
 
 	addRenderTarget(pRenderer, &CastShadowRT, &pCastShadowRT);
-
-#if defined(VULKAN)
-	TransitionRenderTargets(pCastShadowRT, ResourceState::RESOURCE_STATE_RENDER_TARGET, pRenderer, pTransCmdPool, ppTransCmds[0], pGraphicsQueue, pTransitionCompleteFences);
-#endif
 
 	SyncToken token = {};
 
@@ -3352,10 +3272,9 @@ bool VolumetricClouds::AddVolumetricCloudsRenderTargets()
 	lowResTextureDesc.mSampleCount = SAMPLE_COUNT_1;
 	//lowResTextureDesc.mSrgb = false;
 
-	lowResTextureDesc.mStartState = RESOURCE_STATE_UNORDERED_ACCESS;
+	lowResTextureDesc.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
 	lowResTextureDesc.mDescriptors = DESCRIPTOR_TYPE_RW_TEXTURE | DESCRIPTOR_TYPE_TEXTURE;
 	lowResTextureDesc.pName = "low Res Texture";
-	lowResTextureDesc.mFlags = TEXTURE_CREATION_FLAG_OWN_MEMORY_BIT;
 	TextureLoadDesc lowResLoadDesc = {};
 	lowResLoadDesc.ppTexture = &plowResCloudTexture;
 	lowResLoadDesc.pDesc = &lowResTextureDesc;
@@ -3376,7 +3295,6 @@ bool VolumetricClouds::AddVolumetricCloudsRenderTargets()
 	highResTextureDesc.mStartState = RESOURCE_STATE_UNORDERED_ACCESS;
 	highResTextureDesc.mDescriptors = DESCRIPTOR_TYPE_RW_TEXTURE | DESCRIPTOR_TYPE_TEXTURE;
 	highResTextureDesc.pName = "high Res Texture";
-	highResTextureDesc.mFlags = TEXTURE_CREATION_FLAG_OWN_MEMORY_BIT;
 
 	TextureLoadDesc highResLoadDesc = {};
 	highResLoadDesc.ppTexture = &phighResCloudTexture;
@@ -3396,7 +3314,7 @@ bool VolumetricClouds::AddVolumetricCloudsRenderTargets()
 	blurTextureDesc.mSampleCount = SAMPLE_COUNT_1;
 	//blurTextureDesc.mSrgb = false;
 
-	blurTextureDesc.mStartState = RESOURCE_STATE_UNORDERED_ACCESS;
+	blurTextureDesc.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
 	blurTextureDesc.mDescriptors = DESCRIPTOR_TYPE_RW_TEXTURE | DESCRIPTOR_TYPE_TEXTURE;
 	blurTextureDesc.pName = "H Blur Texture";
 
@@ -3427,7 +3345,7 @@ void VolumetricClouds::AddUniformBuffers()
 	ubSettingDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	ubSettingDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
 	ubSettingDesc.mDesc.mSize = sizeof(volumetricCloudsCB);
-	ubSettingDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT | BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
+	ubSettingDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
 	ubSettingDesc.pData = NULL;
 
 	for (uint i = 0; i < gImageCount; i++)

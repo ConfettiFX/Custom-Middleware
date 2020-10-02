@@ -28,7 +28,7 @@ class CumulusCloud
     Texture* GetTexture() const { return m_Texture;}
 
 		//void	pushParticle(const vec3 &offset, float scale, int texID);
-		void	setParticles(vec4 * particleOffsetScale, ParticleProps * particleProps, uint32 particleCount);
+		void	setParticles(vec4 * particleOffsetScale, ParticleProps * particleProps, uint32_t particleCount);
 		void	centerParticles();
 
 		void	setupConstants( const vec3 &camPos, const char* pszPositionScalesName, const char* pszTexIDsName );

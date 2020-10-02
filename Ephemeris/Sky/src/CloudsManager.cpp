@@ -39,8 +39,8 @@ struct CloudDescriptor
 	{
 		struct  
 		{
-			uint32	bCumulusCloud	: 1;
-			uint32	uiCloudID		: 16;
+			uint32_t	bCumulusCloud	: 1;
+			uint32_t	uiCloudID		: 16;
 		};
 		CloudHandle handle;
 	};
@@ -479,7 +479,7 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
   CumulusUniformDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
   CumulusUniformDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
   CumulusUniformDesc.mDesc.mSize = sizeof(CumulusCloudUniformBuffer);
-  CumulusUniformDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT | BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
+  CumulusUniformDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
   CumulusUniformDesc.pData = NULL;
 
   for (uint i = 0; i < gImageCount; i++)
@@ -492,7 +492,7 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
   DistantUniformDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
   DistantUniformDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
   DistantUniformDesc.mDesc.mSize = sizeof(DistantCloudUniformBuffer);
-  DistantUniformDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT | BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
+  DistantUniformDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
   DistantUniformDesc.pData = NULL;
 
   for (uint i = 0; i < gImageCount; i++)
@@ -505,7 +505,7 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
   imposterUniformDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
   imposterUniformDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
   imposterUniformDesc.mDesc.mSize = sizeof(ImposterUniformBuffer);
-  imposterUniformDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT | BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
+  imposterUniformDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
   imposterUniformDesc.pData = NULL;
 
   for (uint i = 0; i < gImageCount; i++)
@@ -1040,7 +1040,7 @@ void CloudsManager::prepareImpostors(Cmd *cmd, const vec3 & camPos, const mat4 &
 	{
 		if (m_SortedClouds[i].type == CloudSortData::CT_Cumulus)
 		{
-			uint32 cumulusID = (uint32_t)m_SortedClouds[i].index;
+			uint32_t cumulusID = (uint32_t)m_SortedClouds[i].index;
 
       mat4 v;
       mat4 vp;
@@ -1568,7 +1568,7 @@ CloudHandle CloudsManager::createDistantCloud( const mat4 & transform, Texture* 
 	if (texID == NULL)
 		texID = m_tDistantCloud;
 
-	uint32 cloudIndex = m_DistantCloudsHandles.GetFreeIndex();
+	uint32_t cloudIndex = m_DistantCloudsHandles.GetFreeIndex();
 
 	CloudDescriptor cloud;
 	cloud.handle = 0;
@@ -1595,14 +1595,14 @@ CloudHandle CloudsManager::createDistantCloud( const mat4 & transform, Texture* 
 }
 
 CloudHandle CloudsManager::createCumulusCloud( const mat4 & transform, Texture* texID, float particleScale,
- vec4 * particleOffsetScale, ParticleProps * particleProps, uint32 particleCount, bool centerParticles/*=true*/ )
+ vec4 * particleOffsetScale, ParticleProps * particleProps, uint32_t particleCount, bool centerParticles/*=true*/ )
 {
 	//assert(sizeof(CloudHandle)==sizeof(CloudDescriptor));
 
 	if (texID == NULL)
 		texID = m_tCumulusCloud;
 
-	uint32 cloudIndex = m_CumulusCloudsHandles.GetFreeIndex();
+	uint32_t cloudIndex = m_CumulusCloudsHandles.GetFreeIndex();
 
 	CloudDescriptor cloud;
 	cloud.handle = 0;

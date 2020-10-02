@@ -124,11 +124,11 @@ void loadCumulusClouds(ICloudsManager &CloudsManager, const CumulusCloudParams& 
 	if ( ! particlePosScale.empty() )
 	{
 		CloudsManager.createCumulusCloud(transform, NULL, ParticleScale, 
-			&particlePosScale[ 0 ], &particleProps[ 0 ], (uint32)particlePosScale.size(), true );
+			&particlePosScale[ 0 ], &particleProps[ 0 ], (uint32_t)particlePosScale.size(), true );
 	}
 }
 
-void generateClouds( ICloudsManager &CloudsManager, const CumulusCloudParams& cClParams, const DistantCloudParams& dClParams, uint32 seed)
+void generateClouds( ICloudsManager &CloudsManager, const CumulusCloudParams& cClParams, const DistantCloudParams& dClParams, uint32_t seed)
 {
 	srand(seed);
 

@@ -293,12 +293,8 @@ public:
 		TransBufferDesc.mDesc.mElementCount = 3;
 		TransBufferDesc.mDesc.mStructStride = sizeof(float4);
 		TransBufferDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
-
-#ifdef METAL
-		TransBufferDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT | BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
-#endif
-
 		TransBufferDesc.mDesc.mSize = TransBufferDesc.mDesc.mStructStride * TransBufferDesc.mDesc.mElementCount;
+		TransBufferDesc.mDesc.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
 
 		//TransBufferDesc.pData = gInitializeVal.data();
 		TransBufferDesc.ppBuffer = &pTransmittanceBuffer;
@@ -631,7 +627,6 @@ public:
 		removePipeline(pRenderer, pFXAAPipeline);
 		removeRenderTarget(pRenderer, pDepthBuffer);
 		removeRenderTarget(pRenderer, pLinearDepthBuffer);
-
 		removeRenderTarget(pRenderer, pSkydomeResultRT);
 
 		removeSwapChain(pRenderer, pSwapChain);
@@ -760,11 +755,10 @@ public:
 			cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Depth Linearization");
 
 			RenderTargetBarrier barriersLinearDepth[] = {
-			{ pDepthBuffer, RESOURCE_STATE_SHADER_RESOURCE },
-			{ pLinearDepthBuffer, RESOURCE_STATE_RENDER_TARGET }
+				{ pLinearDepthBuffer, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_RENDER_TARGET }
 			};
 
-			cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 2, barriersLinearDepth);
+			cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriersLinearDepth);
 
 			cmdBindRenderTargets(cmd, 1, &pLinearDepthBuffer, NULL, NULL, NULL, NULL, -1, -1);
 			cmdSetViewport(cmd, 0.0f, 0.0f, (float)pLinearDepthBuffer->mWidth, (float)pLinearDepthBuffer->mHeight, 0.0f, 1.0f);
@@ -778,7 +772,7 @@ public:
 			cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
 
 			RenderTargetBarrier barriersLinearDepthEnd[] = {
-			{ pLinearDepthBuffer, RESOURCE_STATE_SHADER_RESOURCE }
+				{ pLinearDepthBuffer, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_SHADER_RESOURCE }
 			};
 
 			cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriersLinearDepthEnd);
@@ -813,11 +807,10 @@ public:
 
 			RenderTargetBarrier barriers[] =
 			{
-				{ pRenderTarget, RESOURCE_STATE_RENDER_TARGET },
-				{ pSkydomeResultRT, RESOURCE_STATE_SHADER_RESOURCE }
+				{ pRenderTarget, RESOURCE_STATE_PRESENT, RESOURCE_STATE_RENDER_TARGET },
 			};
 
-			cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 2, barriers);
+			cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriers);
 
 			LoadActionsDesc loadActions = {};
 			loadActions.mLoadActionsColor[0] = LOAD_ACTION_CLEAR;
@@ -903,7 +896,7 @@ public:
 
 			cmdBindRenderTargets(cmd, 0, NULL, NULL, NULL, NULL, NULL, -1, -1);
 
-			RenderTargetBarrier barriers[] = { { pRenderTarget, RESOURCE_STATE_PRESENT } };
+			RenderTargetBarrier barriers[] = { { pRenderTarget, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PRESENT } };
 			cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriers);
 
 			cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
@@ -973,28 +966,6 @@ public:
 		return pSwapChain != NULL;
 	}
 
-	void TransitionRenderTargets(RenderTarget *pRT, ResourceState state)
-	{
-		// Transition render targets to desired state
-		beginCmd(ppTransCmds[0]);
-
-		RenderTargetBarrier barrier[] = {
-			   { pRT, state }
-		};
-
-		cmdResourceBarrier(ppTransCmds[0], 0, NULL, 0, NULL, 1, barrier);
-		endCmd(ppTransCmds[0]);
-		QueueSubmitDesc submitDesc = {};
-		submitDesc.mCmdCount = 1;
-		submitDesc.ppCmds = &ppTransCmds[0];
-		submitDesc.pSignalFence = pTransitionCompleteFences;
-		submitDesc.mSubmitDone = true;
-		queueSubmit(pGraphicsQueue, &submitDesc);
-		waitForFences(pRenderer, 1, &pTransitionCompleteFences);
-
-		resetCmdPool(pRenderer, pTransCmdPool);
-	}
-
 	bool addDepthBuffer()
 	{
 		// Add depth buffer
@@ -1005,28 +976,19 @@ public:
 		depthRT.mDepth = 1;
 		depthRT.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
 		depthRT.mFormat = TinyImageFormat_D32_SFLOAT;
+		depthRT.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
 		depthRT.mHeight = mSettings.mHeight;
 		depthRT.mSampleCount = SAMPLE_COUNT_1;
 		depthRT.mSampleQuality = 0;
 		depthRT.mWidth = mSettings.mWidth;
-#if defined(METAL)
-		depthRT.mFlags = TEXTURE_CREATION_FLAG_OWN_MEMORY_BIT;
-#endif
 		addRenderTarget(pRenderer, &depthRT, &pDepthBuffer);
-
-#if defined(VULKAN)
-		TransitionRenderTargets(pDepthBuffer, ResourceState::RESOURCE_STATE_DEPTH_WRITE);
-#endif
 
 		// Add linear depth Texture
 		depthRT.mFormat = TinyImageFormat_R16_SFLOAT;
+		depthRT.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
 		depthRT.mWidth = mSettings.mWidth & (~63);
 		depthRT.mHeight = mSettings.mHeight & (~63);
 		addRenderTarget(pRenderer, &depthRT, &pLinearDepthBuffer);
-
-#if defined(VULKAN)
-		TransitionRenderTargets(pLinearDepthBuffer, ResourceState::RESOURCE_STATE_UNORDERED_ACCESS);
-#endif
 
 		return pDepthBuffer != NULL && pLinearDepthBuffer != NULL;
 	}
@@ -1038,6 +1000,7 @@ public:
 		resultRT.mDepth = 1;
 		resultRT.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
 		resultRT.mFormat = TinyImageFormat_R8G8B8A8_UNORM;
+		resultRT.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
 		resultRT.mSampleCount = SAMPLE_COUNT_1;
 		resultRT.mSampleQuality = 0;
 
@@ -1045,10 +1008,6 @@ public:
 		resultRT.mHeight = mSettings.mHeight;
 
 		addRenderTarget(pRenderer, &resultRT, &pSkydomeResultRT);
-
-#if defined(VULKAN)
-		TransitionRenderTargets(pSkydomeResultRT, ResourceState::RESOURCE_STATE_RENDER_TARGET);
-#endif
 
 		return pSkydomeResultRT != NULL;
 	}

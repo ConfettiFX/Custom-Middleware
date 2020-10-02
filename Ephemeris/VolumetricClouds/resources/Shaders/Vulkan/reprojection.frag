@@ -45,7 +45,15 @@ vec4 HLSLmain(in PSIn input0)
     (outOfBound = step(float (0.0), max(max((-(prevUV).x), (-(prevUV).y)), (max((prevUV).x, (prevUV).y) - float (1.0)))));
     vec4 prevSample = texture(sampler2D( g_PrevFrameTexture, g_LinearClampSampler), vec2((prevUV).xy));
     float blend = max(ShouldbeUpdated((input0).m_Tex0, _Jitter), outOfBound);
-    return vec4 (mix(vec4 (prevSample), vec4 (currSample), vec4 (blend)));
+
+	vec4 result = (mix(vec4 (prevSample), vec4 (currSample), vec4 (blend)));
+
+	if(any(isnan(result)))
+	{
+		result = vec4(0.0, 0.0, 0.0, 0.0);
+	}
+
+    return result ;
 }
 void main()
 {

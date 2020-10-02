@@ -53,13 +53,13 @@ CloudImpostor::CloudImpostor() :
   ImposterRenderTarget.mArraySize = 1;
   ImposterRenderTarget.mDepth = 1;
   ImposterRenderTarget.mFormat = TinyImageFormat_R16G16B16A16_SFLOAT;
+  ImposterRenderTarget.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
   ImposterRenderTarget.mSampleCount = SAMPLE_COUNT_1;
   ImposterRenderTarget.mSampleQuality = 0;
   //ImposterRenderTarget.mSrgb = false;
   ImposterRenderTarget.mWidth = m_TextureSize;
   ImposterRenderTarget.mHeight = m_TextureSize;
   ImposterRenderTarget.pName = "Imposter RenderTarget";
-  ImposterRenderTarget.mFlags = TEXTURE_CREATION_FLAG_OWN_MEMORY_BIT;
   addRenderTarget(pRenderer, &ImposterRenderTarget, &m_tImpostor);
 #else	//	USE_CLOUDS_DEPTH_RECONSTRUCTION
 	//	TODO: Igor: check if can use simpler format
@@ -67,14 +67,13 @@ CloudImpostor::CloudImpostor() :
   RenderTargetDesc ImposterRenderTarget = {};
   ImposterRenderTarget.mArraySize = 1;
   ImposterRenderTarget.mDepth = 1;
-  ImposterRenderTarget.mFormat = ImageFormat::RGBA8;
+  ImposterRenderTarget.mFormat = TinyImageFormat_R8G8B8A8_UNORM;
+  ImposterRenderTarget.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
   ImposterRenderTarget.mSampleCount = SAMPLE_COUNT_1;
   ImposterRenderTarget.mSampleQuality = 0;
-  ImposterRenderTarget.mSrgb = false;
   ImposterRenderTarget.mWidth = m_TextureSize;
   ImposterRenderTarget.mHeight = m_TextureSize;
   ImposterRenderTarget.pName = "Imposter RenderTarget";
-  ImposterRenderTarget.mFlags = TEXTURE_CREATION_FLAG_OWN_MEMORY_BIT;
   addRenderTarget(pRenderer, &ImposterRenderTarget, &m_tImpostor);
 
 	//m_tImpostor = pRenderer->addRenderTarget(m_TextureSize, m_TextureSize, FORMAT_RGBA8);
@@ -85,7 +84,7 @@ CloudImpostor::CloudImpostor() :
   imposterUniformDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
   imposterUniformDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
   imposterUniformDesc.mDesc.mSize = sizeof(ImposterUniformBuffer);
-  imposterUniformDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT | BUFFER_CREATION_FLAG_OWN_MEMORY_BIT;
+  imposterUniformDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
   imposterUniformDesc.pData = NULL;
 
   for (uint i = 0; i < gImageCount; i++)
