@@ -45,6 +45,9 @@ Check out the demo video by clicking the main image above!
 # News
 All releases happen in sync with [The Forge](https://github.com/ConfettiFX/The-Forge) and have therefore the same release number.
 
+## Release 1.46 - October 1st, 2020 - Supergiant's Hades | Windows Management | AMD FX Stochastic SS Reflection
+Maintenance release following the update of The Forge.
+
 ## Release 1.45 - August 6th, 2020 - TressFX | File System Rewrite
 Maintenance release following the update of The Forge.
 
