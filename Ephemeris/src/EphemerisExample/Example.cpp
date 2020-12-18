@@ -208,11 +208,17 @@ public:
 
 		initResourceLoaderInterface(pRenderer);
 
+		if (!gAppUI.Init(pRenderer))
+			return false;
+
+		gAppUI.LoadFont("TitilliumText/TitilliumText-Bold.otf");
+
 		PipelineCacheLoadDesc cacheDesc = {};
 		cacheDesc.pFileName = pPipelineCacheName;
 		addPipelineCache(pRenderer, &cacheDesc, &pPipelineCache);
 
 		initProfiler();
+		initProfilerUI(&gAppUI, mSettings.mWidth, mSettings.mHeight);
 
         gGpuProfileToken = addGpuProfiler(pRenderer, pGraphicsQueue, "GpuProfiler");
 
@@ -299,11 +305,6 @@ public:
 		//TransBufferDesc.pData = gInitializeVal.data();
 		TransBufferDesc.ppBuffer = &pTransmittanceBuffer;
 		addResource(&TransBufferDesc, NULL);
-
-		if (!gAppUI.Init(pRenderer))
-			return false;
-
-		gAppUI.LoadFont("TitilliumText/TitilliumText-Bold.otf");
 
 		CameraMotionParameters cmp{ 32000.0f, 120000.0f, 40000.0f };
 
@@ -420,9 +421,11 @@ public:
 		gVolumetricClouds.Exit();
 		gSky.Exit();
 		gTerrain.Exit();
-		gAppUI.Exit();
 
+		exitProfilerUI();
 		exitProfiler();
+
+		gAppUI.Exit();
 
 		removeResource(pTransmittanceBuffer);
 
@@ -491,8 +494,6 @@ public:
 		if (!gVirtualJoystick.Load(pSwapChain->ppRenderTargets[0], pDepthBuffer->mFormat))
 			return false;
 #endif
-
-		loadProfilerUI(&gAppUI, mSettings.mWidth, mSettings.mHeight);
 
 		gTerrain.pWeatherMap = gVolumetricClouds.GetWeatherMap();
 		gTerrain.InitializeWithLoad(pDepthBuffer);
@@ -610,7 +611,6 @@ public:
 	{
 		waitQueueIdle(pGraphicsQueue);
 
-		unloadProfilerUI();
 		gAppUI.Unload();
 
 #if defined(TARGET_IOS) || defined(__ANDROID__)
