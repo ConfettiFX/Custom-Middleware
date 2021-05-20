@@ -1,0 +1,65 @@
+/*
+* Copyright (c) 2018-2019 Confetti Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You may not use the material for commercial purposes.
+*/
+
+#include "SpaceObjectsCommon.h"
+
+STRUCT(PsIn)
+{
+	DATA(float4, Position,    SV_Position);
+	DATA(float3, TexCoord,    TEXCOORD0);
+	DATA(float2, ScreenCoord, TEXCOORD1);
+};
+
+RES(Tex2D(float4), moonAtlas, UPDATE_FREQ_NONE, t2, binding = 4);
+
+float4 PS_MAIN(PsIn In)
+{	
+	INIT_MAIN;
+
+	float4 Out;
+
+	float2 screenUV = In.ScreenCoord;
+
+	float sceneDepth = SampleLvlTex2D(Get(depthTexture), Get(g_LinearClamp), screenUV, 0).r;
+	
+	if(sceneDepth < 1.0f)
+		discard;
+
+	float density = SampleLvlTex2D(Get(volumetricCloudsTexture), Get(g_LinearClamp), screenUV, 0).a;
+
+	float ISun = 1.0f;
+
+	// if sun
+	if(In.TexCoord.z >= 0.0f)
+	{
+		float2 uv = In.TexCoord.xy * 2.0f - f2(0.5f);
+		float param = 2.0f * sqrt((uv.x - 0.5f) * (uv.x - 0.5f) + (uv.y - 0.5f) * (uv.y - 0.5f));
+		float blendFactor = smoothstep(1.0f, 0.8f, param);
+
+		Out = float4(float3(1.0f, 0.95294f, 0.91765f) * ISun, blendFactor);
+	}
+	// if moon 
+	else
+	{
+		float3 normal;
+		normal.xy = (In.TexCoord.xy - 0.5f) * 2.0f;
+		normal.z = 1.0f - sqrt(saturate(normal.x * normal.x + normal.y * normal.y));	
+
+		Out = SampleTex2D(Get(moonAtlas), Get(g_LinearBorder), In.TexCoord.xy * 2.0f - f2(0.5f));
+	}
+
+	float2 glow = saturate(abs(In.TexCoord.xy * 1.5f - f2(0.75f)));
+   
+	float gl = saturate(1.0f - sqrt(dot(glow, glow)));
+	gl = pow(gl, 2.1f) * 1.5f;
+
+	Out = lerp(float4(gl, gl, gl, Out.a), Out, Out.a);
+	Out.a = saturate(gl + Out.a) * (1.0f - density);
+
+	RETURN(Out);
+}

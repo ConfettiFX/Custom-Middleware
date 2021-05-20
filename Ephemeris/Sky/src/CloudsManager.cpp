@@ -136,9 +136,20 @@ RootSignature*pImposterCloudRootSignature;
 
 CloudsManager::CloudsManager(void) :
 	//m_pRenderer(0), m_pDevice(0),
+	gFrameIndex(0),
+	pRenderer(NULL),
+	gImageCount(0),
+	mWidth(0), mHeight(0),
+	pSkyRenderTarget(NULL),
 	linearClamp(NULL), trilinearClamp(NULL),
 	m_shDistantCloud(NULL),
+#ifdef USE_CLOUDS_DEPTH_RECONSTRUCTION
+	m_shImpostorCloud(NULL),
+#endif
 	m_shCumulusCloud(NULL),
+	pDistantCloudPipeline(NULL),
+	pCumulusCloudPipeline(NULL),
+	pImposterCloudPipeline(NULL),
 	m_tDistantCloud(NULL),
 	m_tCumulusCloud(NULL)
 {
@@ -278,8 +289,6 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 #endif
 
 	//szExtra = (char*)ShaderIncludes.c_str();
-
-	bool bShadersInited = false;
 
   //layout and pipeline for ScreenQuad
   VertexLayout vertexLayout = {};
@@ -454,13 +463,11 @@ bool CloudsManager::load( int width, int height, const char* pszShaderDefines )
 
 		}
 
-		bShadersInited = true;
 	} while (false);
 
 #ifndef	USE_NATIVE_INCLUDES
 	//cnf_free(szExtra);
 #endif
-	if (!bShadersInited) return false;
 
 	SyncToken token = {};
 	
@@ -589,7 +596,7 @@ void CloudsManager::loadDistantClouds()
 	return;
 
 	// Add some more clouds at random
-	for (int i = 0; i < 15; i++)
+	for (int i = 0; i < 15; i++) //-V779
 	{
 		float Orientation = RandomValue() * PI * 2.0f;
 		float CloudSize = RandomValue() * 2000.0f + 2000.0f;
@@ -653,7 +660,7 @@ void CloudsManager::drawFrame(Cmd *cmd, const mat4 &vp, const mat4 &view, const 
             cloudOpacity = 1 - ( distanceToCloud - m_Params.fCumulusFadeStart ) / ( m_Params.fCumulusExistanceR - m_Params.fCumulusFadeStart );
         }
 
-				cloudOpacity = 1.0f;
+				cloudOpacity = 1.0f; //-V519
 
 				renderCumulusCloud(cmd, Transmittance, Irradiance, Inscatter, shaftsMask, 
 					exposure, camPosLocalKM, offsetScale, sunDir, inscatterParams,
@@ -918,7 +925,7 @@ void CloudsManager::loadCumulusClouds()
 	return;
 
 	// Add some more clouds at random
-	for (int i = 0; i < 15; i++)
+	for (int i = 0; i < 15; i++) //-V779
 	//for (int i = 0; i < 1; i++)
 	{
 		float CloudSize = RandomValue() * 1500.0f + 500.0f;
@@ -1572,7 +1579,7 @@ CloudHandle CloudsManager::createDistantCloud( const mat4 & transform, Texture* 
 
 	CloudDescriptor cloud;
 	cloud.handle = 0;
-	cloud.bCumulusCloud = false;
+	cloud.bCumulusCloud = false; //-V601
 	cloud.uiCloudID = cloudIndex;
 
 	//	Check if there's enough bits for the index
@@ -1606,7 +1613,7 @@ CloudHandle CloudsManager::createCumulusCloud( const mat4 & transform, Texture* 
 
 	CloudDescriptor cloud;
 	cloud.handle = 0;
-	cloud.bCumulusCloud = true;
+	cloud.bCumulusCloud = true; //-V601
 	cloud.uiCloudID = cloudIndex;
 
 	//	Check if there's enough bits for the index

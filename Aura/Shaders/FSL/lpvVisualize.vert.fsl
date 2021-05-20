@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2018-2021 Confetti Interactive Inc.
+ *
+ * This is a part of Aura.
+ * 
+ * This file(code) is licensed under a 
+ * Creative Commons Attribution-NonCommercial 4.0 International License 
+ *
+ *   (https://creativecommons.org/licenses/by-nc/4.0/legalcode) 
+ *
+ * Based on a work at https://github.com/ConfettiFX/The-Forge.
+ * You may not use the material for commercial purposes.
+*/
+
+#include "lightPropagation.h"
+#include "lpvVisualizeCommon.h"
+#include "lpvSHMaths.h"
+
+STRUCT(VsOut)
+{
+	DATA(float4, position,            SV_Position);
+    DATA(float2, texCoord,            TEXCOORD0);
+    DATA(float3, cameraSpacePosition, TEXCOORD1);
+	DATA(float3, gridPosition,        TEXCOORD2);
+};
+
+STATIC const int quadVertexCount = 6;
+STATIC const float2 quadVertices[quadVertexCount] = { 
+    float2(-1.0f, -1.0f), float2(1.0f, -1.0f), float2( 1.0f, 1.0f),
+    float2(-1.0f, -1.0f), float2(1.0f,  1.0f), float2(-1.0f, 1.0f) 
+};
+
+VsOut VS_MAIN(SV_VertexID(uint) VertexID)
+{
+	INIT_MAIN;
+
+	VsOut Out;
+
+    const uint width = GridRes;
+    const uint depth = GridRes;
+
+    float2 vertexPosition = quadVertices[VertexID % quadVertexCount];
+   
+    uint GridId = VertexID / quadVertexCount;
+    const float4 offset = float4(0.5f, 0.5f, 0.5f, 0.0f);
+    float4 vertexPositionGridSpace   = (float4(GridId % width, GridId / (width * depth), (GridId / width) % depth, 1.0f) + offset) / float4(GridRes, GridRes, GridRes, 1.0f);
+    float4 vertexPositionCameraSpace = mul(Get(GridToCamera), vertexPositionGridSpace);
+
+    f4x4 projection_ = Get(projection);
+
+    float4 probeCenterProjectionSpace = mul(projection_, vertexPositionCameraSpace);
+
+    float sX = length(float3(projection_[0][0], projection_[1][0], projection_[2][0]));
+    float sY = length(float3(projection_[0][1], projection_[1][1], projection_[2][1]));
+
+    float2 vertexScale = float2(sX, sY) * Get(probeRadius);
+
+    Out.position = float4(vertexPosition.xy * vertexScale + probeCenterProjectionSpace.xy, probeCenterProjectionSpace.z, probeCenterProjectionSpace.w);
+    Out.texCoord = vertexPosition;
+    Out.cameraSpacePosition = vertexPositionCameraSpace.xyz;
+    Out.gridPosition = vertexPositionGridSpace.xyz;
+
+	RETURN(Out);
+}
+
+

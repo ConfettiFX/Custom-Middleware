@@ -1,0 +1,76 @@
+/*
+* Copyright (c) 2018-2019 Confetti Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You may not use the material for commercial purposes.
+*/
+
+#include "VolumetricCloudsCommon.h"
+
+STRUCT(PsIn)
+{
+	DATA(float4, Position, SV_Position);
+	DATA(float2, TexCoord, TEXCOORD0);
+};
+
+float4 PS_MAIN(PsIn In)
+{
+	INIT_MAIN;
+
+	float3 sunWorldPos = Get(lightDirection).xyz * 63600000.0f;
+	float4 sunPos      = mul(Get(m_DataPerEye)[0].m_WorldToProjMat, float4(sunWorldPos, 1.0f));
+	sunPos.xy /= sunPos.w;
+
+	// Screen space to NDC
+	float2 ScreenNDC = float2(In.TexCoord.x * 2.0f - 1.0f, (1.0f - In.TexCoord.y) * 2.0f - 1.0f);
+	float3 projectedPosition = float3(ScreenNDC.xy, 0.0f);
+
+	float4 worldPos = mul(Get(m_DataPerEye)[0].m_ProjToWorldMat, float4(projectedPosition, 1.0f));
+	worldPos /= worldPos.w;
+	
+	float4 CameraPosition = Get(m_DataPerEye)[0].cameraPosition;
+	float3 viewDir  = normalize(worldPos.xyz - CameraPosition.xyz);
+	float  cosTheta = saturate(dot(viewDir, Get(lightDirection).xyz));
+
+	if (cosTheta <= 0.0f || sunPos.z < 0.0f)
+		 RETURN(f4(0.0f));
+
+	float cosTheta2  = cosTheta   * cosTheta;
+	float cosTheta4  = cosTheta2  * cosTheta2;
+	float cosTheta16 = cosTheta4  * cosTheta4;
+	float cosTheta32 = cosTheta16 * cosTheta2;
+
+	float2 deltaTexCoord = float2(ScreenNDC - sunPos.xy);
+
+	if (length(deltaTexCoord) > 1.0f)
+		deltaTexCoord = normalize(deltaTexCoord);
+
+	deltaTexCoord.y = -deltaTexCoord.y;
+
+	float2 texCoord = In.TexCoord;
+	float2 delta    = f2(1.0f);
+	deltaTexCoord  *= delta / (800.0f * Get(GodrayDensity));
+
+	float illuminationDecay = 1.0f;
+	float finalIntensity    = 0.0f;
+
+	// If you want to use GodNumSamples, remove [unroll] and change the maximum iteration number(80) to g_VolumetricClouds.g_VolumetricClouds
+	UNROLL
+	for (uint i = 0; i < 80; ++i)
+	{
+		texCoord -= deltaTexCoord;
+			   
+		float localDensity = 1.0f - SampleTex2D(Get(g_PrevFrameTexture), Get(g_LinearBorderSampler), texCoord).a;
+		localDensity      *= illuminationDecay * Get(GodrayWeight);
+
+		finalIntensity    += localDensity;
+		illuminationDecay *= Get(GodrayDecay);
+	}
+
+	finalIntensity *= Get(GodrayExposure);
+	finalIntensity += min(Get(m_DataPerLayer)[0].CloudCoverage * 5.0f, 0.0f);
+	finalIntensity  = saturate(finalIntensity);	
+
+	RETURN(float4(Get(lightColorAndIntensity).rgb * Get(lightColorAndIntensity).a * finalIntensity * cosTheta32, 0.0f));
+}

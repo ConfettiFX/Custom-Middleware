@@ -1,0 +1,52 @@
+/*
+* Copyright (c) 2018-2019 Confetti Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You may not use the material for commercial purposes.
+*/
+
+PUSH_CONSTANT(cbRootConstant, b0)
+{
+	DATA(float, heightScale, None);
+};
+
+RES(Tex2D(float4), Heightmap,      UPDATE_FREQ_NONE, t0, binding = 0);
+RES(SamplerState,  g_LinearMirror, UPDATE_FREQ_NONE, s0, binding = 1);
+
+STRUCT(PsIn)
+{
+	DATA(float4, Position,  SV_Position);
+	DATA(float2, ScreenPos, TEXCOORD0);
+};
+
+float3 ComputeNormal(float2 f2ElevMapUV, float fSampleSpacingInterval, float fMIPLevel)
+{
+	float Height00 = SampleLvlOffsetTex2D(Get(Heightmap), Get(g_LinearMirror), f2ElevMapUV, fMIPLevel, int2(-1, -1)).r; 
+	float Height10 = SampleLvlOffsetTex2D(Get(Heightmap), Get(g_LinearMirror), f2ElevMapUV, fMIPLevel, int2( 0, -1)).r; 
+	float Height20 = SampleLvlOffsetTex2D(Get(Heightmap), Get(g_LinearMirror), f2ElevMapUV, fMIPLevel, int2( 1, -1)).r; 
+	float Height01 = SampleLvlOffsetTex2D(Get(Heightmap), Get(g_LinearMirror), f2ElevMapUV, fMIPLevel, int2(-1,  0)).r;
+	float Height21 = SampleLvlOffsetTex2D(Get(Heightmap), Get(g_LinearMirror), f2ElevMapUV, fMIPLevel, int2( 1,  0)).r;
+	float Height02 = SampleLvlOffsetTex2D(Get(Heightmap), Get(g_LinearMirror), f2ElevMapUV, fMIPLevel, int2(-1,  1)).r;
+	float Height12 = SampleLvlOffsetTex2D(Get(Heightmap), Get(g_LinearMirror), f2ElevMapUV, fMIPLevel, int2( 0,  1)).r;
+	float Height22 = SampleLvlOffsetTex2D(Get(Heightmap), Get(g_LinearMirror), f2ElevMapUV, fMIPLevel, int2( 1,  1)).r;
+
+	float3 Grad;
+    Grad.x = (Height00 + Height01 + Height02) - (Height20 + Height21 + Height22);
+    Grad.y = (Height00 + Height10 + Height20) - (Height02 + Height12 + Height22);
+    Grad.z = fSampleSpacingInterval * 6.0f * rcp(Get(heightScale));
+	Grad.xy *= 65536.0f * 0.015f * float2(1.0f, -1.0f);
+
+    return normalize(Grad);
+}
+
+float2 PS_MAIN(PsIn In)
+{
+	INIT_MAIN;
+
+	float2 f2UV = float2(0.5f, 0.5f) + float2(0.5f, -0.5f) * In.ScreenPos.xy;
+	float3 Normal = ComputeNormal(f2UV, 0.015f * exp2(9.0f), 9.0f);
+
+	// Only xy components are stored. z component is calculated in the shader
+	RETURN(Normal.xy);
+}

@@ -32,7 +32,7 @@ struct MeshSegment
 	Buffer* indexBuffer;
 	uint32_t indexCount;
 	TerrainBoundingBox boundingBox;
-	MeshSegment() : indexCount(0) {}
+	MeshSegment() : indexBuffer(NULL), indexCount(0) {}
 };
 
 enum TriangulationOrder
@@ -154,8 +154,8 @@ private:
 	uint32_t gridStart = 0;
 	Renderer* renderer = nullptr;
 	HeightData* heightmap = nullptr;
-	float sampleScale, samplingStep, planetRadius;
-	int gridDimension;
+	float sampleScale = 0.0f, samplingStep = 0.0f, planetRadius = 0.0f;
+	int gridDimension = 0;
 
 	void buildTriangleStrip(int startIndex, int colStart,
 		int rowStart, int colCount, int rowCount, TriangulationOrder triangleType,

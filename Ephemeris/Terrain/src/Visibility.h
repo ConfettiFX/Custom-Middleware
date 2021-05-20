@@ -13,8 +13,6 @@
 
 struct TerrainBoundingBox { float3 min, max; };
 
-struct Plane {	float3 normal; float distance; };
-
 struct IndivisualPlane
 {
 	Plane left;

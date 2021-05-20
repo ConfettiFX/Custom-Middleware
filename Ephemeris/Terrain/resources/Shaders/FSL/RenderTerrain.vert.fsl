@@ -1,0 +1,41 @@
+/*
+* Copyright (c) 2018-2019 Confetti Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You may not use the material for commercial purposes.
+*/
+
+#include "TerrainCommon.h"
+
+STRUCT(VsIn)
+{
+	DATA(float3, Position, POSITION);
+	DATA(float2, Texcoord, TEXCOORD0);
+};
+
+STRUCT(VsOut)
+{
+	DATA(float4, Position,   SV_Position);
+	DATA(float3, PositionWS, POSITION_WS);
+	DATA(float2, Texcoord,   TEXCOORD0);
+	DATA(float3, Normal,     NORMAL);
+	DATA(float3, Tangent,    TANGENT);
+	DATA(float3, Bitangent,  BITANGENT);
+};
+
+VsOut VS_MAIN(VsIn In)
+{
+	INIT_MAIN;
+
+	VsOut Out;
+
+	Out.Position   = mul(Get(projView), float4(In.Position, 1.0f));
+	Out.PositionWS = In.Position;
+	Out.Texcoord   = In.Texcoord;
+	Out.Normal     = normalize(In.Position - float3(0.0f, -Get(TerrainInfo).x, 0.0f));
+	Out.Tangent    = normalize(cross(Out.Normal, float3(0.0f, 0.0f, 1.0f)));
+	Out.Bitangent  = normalize(cross(Out.Tangent, Out.Normal));
+
+	RETURN(Out);
+}

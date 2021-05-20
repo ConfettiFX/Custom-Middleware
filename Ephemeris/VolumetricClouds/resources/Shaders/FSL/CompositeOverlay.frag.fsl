@@ -1,0 +1,25 @@
+/*
+* Copyright (c) 2018-2019 Confetti Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You may not use the material for commercial purposes.
+*/
+
+#include "VolumetricCloudsCommon.h"
+
+STRUCT(PsIn)
+{
+	DATA(float4, Position, SV_Position);
+	DATA(float2, TexCoord, TEXCOORD0);
+	DATA(float2, VSray,    TEXCOORD1);
+};
+
+float4 PS_MAIN(PsIn In)
+{
+	INIT_MAIN;
+
+	float4 volumetricCloudsResult = SampleTex2D(Get(g_PostProcessedTexture), Get(g_LinearClampSampler), In.TexCoord);
+	
+	RETURN(float4(volumetricCloudsResult.rgb, 1.0f));
+}

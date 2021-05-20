@@ -1,0 +1,77 @@
+/*
+* Copyright (c) 2018-2019 Confetti Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You may not use the material for commercial purposes.
+*/
+
+#include "RenderSky.h"
+
+STRUCT(PsIn)
+{
+	DATA(float4, Position,    SV_Position);
+	DATA(float3, TexCoord,    TEXCOORD0);
+	DATA(float2, ScreenCoord, TEXCOORD1);
+};
+
+float DepthLinearization(float depth)
+{
+	return (2.0f * Get(QNNear).z) / (Get(QNNear).w + Get(QNNear).z - depth * (Get(QNNear).w - Get(QNNear).z));
+}
+
+float4 PS_MAIN(PsIn In)
+{
+	INIT_MAIN;
+
+	float4 Out;
+
+	int2 LoadCoord = int2(In.Position.xy);
+	float4 OriginalImage = LoadTex2D(Get(SceneColorTexture), NO_SAMPLER, LoadCoord, 0);
+	float3 ReduceOriginalImage = OriginalImage.rgb * 0.3f;
+
+	float3 _groundColor   = f3(0.0f);
+	float3 _spaceColor    = f3(0.0f);
+	float3 inscatterColor = f3(0.0f);
+	
+	if(Get(lightDirection).y < -0.3f)
+	{
+		_groundColor = ReduceOriginalImage.xyz * ISun / M_PI;
+		Out = float4(HDR_NORM(_groundColor) + HDR(_spaceColor + inscatterColor) + OriginalImage.rgb, 0.0f);
+
+		RETURN(Out); 
+	}
+	
+	float depth = LoadTex2D(Get(Depth), NO_SAMPLER, LoadCoord, 0).x;
+
+	float fixedDepth = (-Get(QNNear).y * Get(QNNear).x) / (depth - Get(QNNear).x);
+	//float fixedDepth = depth / Get(QNNear).w;
+
+	float3 ray = In.TexCoord;
+    float3 x = Get(CameraPosition).xyz;
+    float3 v = normalize(ray);
+
+    float r = length(x);
+    float mu = dot(x, v) / r;
+	float VoRay = dot(v, ray);
+    float t = (depth < 1.0f) ? VoRay * fixedDepth : 0.0f;
+
+    float3 attenuation;
+	inscatterColor = inscatter(x, t, v, Get(lightDirection).xyz, r, mu, attenuation); //S[L]-T(x,xs)S[l]|xs
+	
+	if (t <= 0.0f) 
+	{
+		float3 _transmittance = r <= Rt ? transmittance(r, mu) : f3(1.0f); // T(x,xo)
+		_spaceColor = ReduceOriginalImage.xyz * _transmittance;
+	}
+	else
+	{
+		_groundColor = ReduceOriginalImage.xyz * ISun / M_PI;
+	}
+	
+	inscatterColor *= Get(InScatterParams).x + Get(InScatterParams).y;
+
+	Out = float4(HDR_NORM(_groundColor) + HDR(_spaceColor + inscatterColor) + OriginalImage.rgb, 0.0f);
+
+	RETURN(Out); 
+}

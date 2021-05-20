@@ -43,6 +43,7 @@ static bool         gToggleVSync = false;
 static bool         gTogglePerformance = true;
 static bool         gToggleFXAA = true;
 static bool         gShowUI = true;
+static uint32_t		gSelectedApiIndex = 0;
 
 Renderer*           pRenderer = NULL;
 
@@ -61,18 +62,15 @@ RenderTarget*       pLinearDepthBuffer = NULL;
 Shader*             pLinearDepthResolveShader = NULL;
 Pipeline*           pLinearDepthResolvePipeline = NULL;
 
-Shader*             pLinearDepthCompShader = NULL;
-Pipeline*           pLinearDepthCompPipeline = NULL;
-RootSignature*      pLinearDepthCompRootSignature = NULL;
+//Shader*             pLinearDepthCompShader = NULL;
+//Pipeline*           pLinearDepthCompPipeline = NULL;
+//RootSignature*      pLinearDepthCompRootSignature = NULL;
 
 RenderTarget*       pTerrainResultRT = NULL;
 RenderTarget*       pSkydomeResultRT = NULL;
 
 Shader*             pFXAAShader = NULL;
 Pipeline*           pFXAAPipeline = NULL;
-
-Shader*             pPresentShader = NULL;
-Pipeline*           pPresentPipeline = NULL;
 
 DescriptorSet*      pExampleDescriptorSet = NULL;
 RootSignature*      pExampleRootSignature = NULL;
@@ -131,7 +129,7 @@ struct FXAAINFO
 FXAAINFO gFXAAinfo;
 
 #if defined(TARGET_IOS) || defined(__ANDROID__)
-VirtualJoystickUI   gVirtualJoystick;
+VirtualJoystickUI*   pVirtualJoystick = NULL;
 #endif
 
 uint32_t			gFrameIndex = 0;
@@ -139,7 +137,7 @@ uint32_t			gFrameIndex = 0;
 ICameraController*  pCameraController = NULL;
 
 /// UI
-UIApp				gAppUI;
+UIApp*				pAppUI = NULL;
 
 VolumetricClouds	gVolumetricClouds;
 Terrain						gTerrain;
@@ -166,10 +164,21 @@ public:
 		fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_TEXTURES, "Textures");
 		fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_MESHES, "Meshes");
 		fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_FONTS, "Fonts");
+		fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_SCRIPTS, "Scripts");
 
+		CameraMotionParameters cmp{ 32000.0f, 120000.0f, 40000.0f };
+
+		float h = 6000.0f;
+
+		vec3 camPos{ 0.0f, h, -10.0f };
+		vec3 lookAt{ 0.0f, h, 1.0f };
+
+		pCameraController = initFpsCameraController(camPos, lookAt);
+		pCameraController->setMotionParameters(cmp);
 
 		// window and renderer setup
 		RendererDesc settings = { 0 };
+		settings.mApi = (RendererApi)gSelectedApiIndex;
 		initRenderer(GetName(), &settings, &pRenderer);
 		//check for init success
 		if (!pRenderer)
@@ -208,22 +217,25 @@ public:
 
 		initResourceLoaderInterface(pRenderer);
 
-		if (!gAppUI.Init(pRenderer))
+		UIAppDesc appUIDesc = {};
+		initAppUI(pRenderer, &appUIDesc, &pAppUI);
+		if (!pAppUI)
 			return false;
 
-		gAppUI.LoadFont("TitilliumText/TitilliumText-Bold.otf");
+		initAppUIFont(pAppUI, "TitilliumText/TitilliumText-Bold.otf");
 
 		PipelineCacheLoadDesc cacheDesc = {};
 		cacheDesc.pFileName = pPipelineCacheName;
-		addPipelineCache(pRenderer, &cacheDesc, &pPipelineCache);
+		loadPipelineCache(pRenderer, &cacheDesc, &pPipelineCache);
 
 		initProfiler();
-		initProfilerUI(&gAppUI, mSettings.mWidth, mSettings.mHeight);
+		initProfilerUI(pAppUI, mSettings.mWidth, mSettings.mHeight);
 
-        gGpuProfileToken = addGpuProfiler(pRenderer, pGraphicsQueue, "GpuProfiler");
+		gGpuProfileToken = addGpuProfiler(pRenderer, pGraphicsQueue, "GpuProfiler");
 
 #if defined(__ANDROID__) || defined(TARGET_IOS)
-		if (!gVirtualJoystick.Init(pRenderer, "circlepad.png"))
+		pVirtualJoystick = addVirtualJoystickUI(pRenderer, "circlepad.png");
+		if (!pVirtualJoystick)
 		{
 			LOGERRORF("Could not initialize Virtual Joystick.");
 			return false;
@@ -245,13 +257,7 @@ public:
 		eastl::string shaderPath("");
 		//eastl::string shaderFullPath;
 
-		RootSignatureDesc rootDesc = {};
-
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		ShaderLoadDesc basicShader = {};
-		basicShader.mStages[0] = { "Triangular.vert", NULL, 0 };
-		basicShader.mStages[1] = { "present.frag", NULL, 0 };
-		addShader(pRenderer, &basicShader, &pPresentShader);		
+		RootSignatureDesc rootDesc;
 
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -264,11 +270,11 @@ public:
 
 		ShaderLoadDesc depthLinearizationResolveShader = {};
 		depthLinearizationResolveShader.mStages[0] = { "Triangular.vert", NULL, 0 };
-		depthLinearizationResolveShader.mStages[1] = { "depthLinearization.frag", NULL, 0 };
-		addShader(pRenderer, &depthLinearizationResolveShader, &pLinearDepthResolveShader);	
+		depthLinearizationResolveShader.mStages[1] = { "DepthLinearization.frag", NULL, 0 };
+		addShader(pRenderer, &depthLinearizationResolveShader, &pLinearDepthResolveShader);
 
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		ShaderLoadDesc depthLinearizationShader = {};
+		/*ShaderLoadDesc depthLinearizationShader = {};
 		depthLinearizationShader.mStages[0] = { "depthLinearization.comp", NULL, 0 };
 		addShader(pRenderer, &depthLinearizationShader, &pLinearDepthCompShader);
 
@@ -277,13 +283,13 @@ public:
 		rootDesc.mShaderCount = 1;
 		rootDesc.ppShaders = &pLinearDepthCompShader;
 
-		addRootSignature(pRenderer, &rootDesc, &pLinearDepthCompRootSignature);
+		addRootSignature(pRenderer, &rootDesc, &pLinearDepthCompRootSignature);*/
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////
 		const char* pStaticSamplerNames[] = { "g_LinearClamp" };
 		Sampler* pStaticSamplers[] = { pBilinearClampSampler };
-		Shader*           shaders[] = { pPresentShader, pFXAAShader, pLinearDepthResolveShader };
+		Shader*           shaders[] = { pFXAAShader, pLinearDepthResolveShader };
 		rootDesc = {};
-		rootDesc.mShaderCount = 3;
+		rootDesc.mShaderCount = 2;
 		rootDesc.ppStaticSamplerNames = pStaticSamplerNames;
 		rootDesc.ppStaticSamplers = pStaticSamplers;
 		rootDesc.ppShaders = shaders;
@@ -306,68 +312,96 @@ public:
 		TransBufferDesc.ppBuffer = &pTransmittanceBuffer;
 		addResource(&TransBufferDesc, NULL);
 
-		CameraMotionParameters cmp{ 32000.0f, 120000.0f, 40000.0f };
-
-		float h = 6000.0f;
-
-		vec3 camPos{ 0.0f, h, -10.0f };
-		vec3 lookAt{ 0.0f, h, 1.0f };
-
-		pCameraController = createFpsCameraController(camPos, lookAt);
-
-		pCameraController->setMotionParameters(cmp);
-
-		gTerrain.Initialize(gImageCount, pCameraController, pGraphicsQueue, pTransCmdPool, ppTransCmds, pTransitionCompleteFences, gGpuProfileToken, &gAppUI);
+		gTerrain.Initialize(gImageCount, pCameraController, pGraphicsQueue, pTransCmdPool, ppTransCmds, pTransitionCompleteFences, gGpuProfileToken, pAppUI);
 		gTerrain.Init(pRenderer, pPipelineCache);
 
-		gSky.Initialize(gImageCount, pCameraController, pGraphicsQueue, pTransCmdPool, ppTransCmds, pTransitionCompleteFences, gGpuProfileToken, &gAppUI, pTransmittanceBuffer);
+		gSky.Initialize(gImageCount, pCameraController, pGraphicsQueue, pTransCmdPool, ppTransCmds, pTransitionCompleteFences, gGpuProfileToken, pAppUI, pTransmittanceBuffer);
 		gSky.Init(pRenderer, pPipelineCache);
 
-		gVolumetricClouds.Initialize(gImageCount, pCameraController, pGraphicsQueue, pTransCmdPool, ppTransCmds, pTransitionCompleteFences, pRenderCompleteFences, gGpuProfileToken, &gAppUI, pTransmittanceBuffer);
+		gVolumetricClouds.Initialize(gImageCount, pCameraController, pGraphicsQueue, pTransCmdPool, ppTransCmds, pTransitionCompleteFences, pRenderCompleteFences, gGpuProfileToken, pAppUI, pTransmittanceBuffer);
 		gVolumetricClouds.Init(pRenderer, pPipelineCache);
 
-		gSpaceObjects.Initialize(gImageCount, pCameraController, pGraphicsQueue, pTransCmdPool, ppTransCmds, pTransitionCompleteFences, gGpuProfileToken, &gAppUI, pTransmittanceBuffer);
+		gSpaceObjects.Initialize(gImageCount, pCameraController, pGraphicsQueue, pTransCmdPool, ppTransCmds, pTransitionCompleteFences, gGpuProfileToken, pAppUI, pTransmittanceBuffer);
 		gSpaceObjects.Init(pRenderer, pPipelineCache);
 
 		GuiDesc guiDesc = {};
 		guiDesc.mStartPosition = vec2(960.0f / getDpiScale().getX(), 700.0f / getDpiScale().getY());
 		guiDesc.mStartSize = vec2(300.0f / getDpiScale().getX(), 250.0f / getDpiScale().getY());
 		guiDesc.mDefaultTextDrawDesc = gDefaultTextDrawDesc;
-		pMainGuiWindow = gAppUI.AddGuiComponent("Global Settings", &guiDesc);
+		pMainGuiWindow = addAppUIGuiComponent(pAppUI, "Global Settings", &guiDesc);
 
-		pMainGuiWindow->AddWidget(CheckboxWidget("Enable FXAA", &gToggleFXAA));
+#if defined(USE_MULTIPLE_RENDER_APIS)
+		static const char* pApiNames[] =
+		{
+		#if defined(DIRECT3D12)
+			"D3D12",
+		#endif
+		#if defined(VULKAN)
+			"Vulkan",
+		#endif
+		};
+		// Select Api 
+		DropdownWidget selectApiWidget;
+		selectApiWidget.pData = &gSelectedApiIndex;
+		for (uint32_t i = 0; i < 2; ++i)
+		{
+			selectApiWidget.mNames.push_back((char*)pApiNames[i]);
+			selectApiWidget.mValues.push_back(i);
+		}
+		IWidget* pSelectApiWidget = addGuiWidget(pMainGuiWindow, "Select API", &selectApiWidget, WIDGET_TYPE_DROPDOWN);
+		pSelectApiWidget->pOnEdited = onAPISwitch;
+		addWidgetLua(pSelectApiWidget);
+		const char* apiTestScript = "Test_API_Switching.lua";
+		addAppUITestScripts(pAppUI, &apiTestScript, 1);
+#endif
 
-		pMainGuiWindow->AddWidget(SeparatorWidget());
+		CheckboxWidget checkbox;
+		checkbox.pData = &gToggleFXAA;
+		addWidgetLua(addGuiWidget(pMainGuiWindow, "Enable FXAA", &checkbox, WIDGET_TYPE_CHECKBOX));
 
-		
+		SeparatorWidget separator;
+		addWidgetLua(addGuiWidget(pMainGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
 
-		SliderFloatWidget LD("Light Azimuth", &LightDirection.x, float(-180.0f), float(180.0f), float(0.001f));
-		pMainGuiWindow->AddWidget(LD);
+		SliderFloatWidget sliderFloat;
+		sliderFloat.pData = &LightDirection.x;
+		sliderFloat.mMin = -180.0f;
+		sliderFloat.mMax = 180.0f;
+		sliderFloat.mStep = 0.001f;
+		addWidgetLua(addGuiWidget(pMainGuiWindow, "Light Azimuth", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT));
 
-		SliderFloatWidget LE("Light Elevation", &LightDirection.y, float(0.0f), float(360.0f), float(0.001f));
-		pMainGuiWindow->AddWidget(LE);
+		sliderFloat.pData = &LightDirection.y;
+		sliderFloat.mMin = 0.0f;
+		sliderFloat.mMax = 360.0f;
+		sliderFloat.mStep = 0.001f;
+		addWidgetLua(addGuiWidget(pMainGuiWindow, "Light Elevation", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT));
 
-		pMainGuiWindow->AddWidget(SeparatorWidget());
+		addWidgetLua(addGuiWidget(pMainGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
 
-		SliderFloat4Widget LI("Light Color & Intensity", &LightColorAndIntensity, float4(0.0f), float4(10.0f), float4(0.01f));
-		pMainGuiWindow->AddWidget(LI);
+		SliderFloat4Widget sliderFloat4;
+		sliderFloat4.pData = &LightColorAndIntensity;
+		sliderFloat4.mMin = float4(0.0f);
+		sliderFloat4.mMax = float4(10.0f);
+		sliderFloat4.mStep = float4(0.01f);
+		addWidgetLua(addGuiWidget(pMainGuiWindow, "Light Color & Intensity", &sliderFloat4, WIDGET_TYPE_SLIDER_FLOAT4));
 
-		pMainGuiWindow->AddWidget(SeparatorWidget());
+		addWidgetLua(addGuiWidget(pMainGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
 
-		CheckboxWidget SM("Automatic Sun Moving", &bSunMove);
-		pMainGuiWindow->AddWidget(SM);
+		checkbox.pData = &bSunMove;
+		addWidgetLua(addGuiWidget(pMainGuiWindow, "Automatic Sun Moving", &checkbox, WIDGET_TYPE_CHECKBOX));
 
-		SliderFloatWidget SS("Sun Moving Speed", &SunMovingSpeed, float(-100.0f), float(100.0f), float(0.01f));
-		pMainGuiWindow->AddWidget(SS);
-
+		sliderFloat.pData = &SunMovingSpeed;
+		sliderFloat.mMin = -100.0f;
+		sliderFloat.mMax = 100.0f;
+		sliderFloat.mStep = 0.01f;
+		addWidgetLua(addGuiWidget(pMainGuiWindow, "Sun Moving Speed", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT));
 
 		if (!initInputSystem(pWindow))
-			return false;
-
+		  return false;
+		
 		// Microprofiler Actions
 		// #TODO: Remove this once the profiler UI is ported to use our UI system
 		InputActionDesc actionDesc;
-
+		
 		// App Actions
 		actionDesc = { InputBindings::BUTTON_FULLSCREEN, [](InputActionContext* ctx) { toggleFullscreen(((IApp*)ctx->pUserData)->pWindow); return true; }, this };
 		addInputAction(&actionDesc);
@@ -375,20 +409,20 @@ public:
 		addInputAction(&actionDesc);
 		actionDesc =
 		{
-			InputBindings::BUTTON_ANY, [](InputActionContext* ctx)
-			{
-				bool capture = gAppUI.OnButton(ctx->mBinding, ctx->mBool, ctx->pPosition);
-				setEnableCaptureInput(capture && INPUT_ACTION_PHASE_CANCELED != ctx->mPhase);
-				return true;
-			}, this
+		  InputBindings::BUTTON_ANY, [](InputActionContext* ctx)
+		  {
+		    bool capture = appUIOnButton(pAppUI, ctx->mBinding, ctx->mBool, ctx->pPosition);
+		    setEnableCaptureInput(capture && INPUT_ACTION_PHASE_CANCELED != ctx->mPhase);
+		    return true;
+		  }, this
 		};
 		addInputAction(&actionDesc);
 		typedef bool(*CameraInputHandler)(InputActionContext* ctx, uint32_t index);
 		static CameraInputHandler onCameraInput = [](InputActionContext* ctx, uint32_t index)
 		{
-			if (!gAppUI.IsFocused() && *ctx->pCaptured)
-				index ? pCameraController->onRotate(ctx->mFloat2) : pCameraController->onMove(ctx->mFloat2);
-			return true;
+		  if (!appUIIsFocused(pAppUI) && *ctx->pCaptured)
+		    index ? pCameraController->onRotate(ctx->mFloat2) : pCameraController->onMove(ctx->mFloat2);
+		  return true;
 		};
 		actionDesc = { InputBindings::FLOAT_RIGHTSTICK, [](InputActionContext* ctx) { return onCameraInput(ctx, 1); }, NULL, 20.0f, 200.0f, 1.0f };
 		addInputAction(&actionDesc);
@@ -396,25 +430,29 @@ public:
 		addInputAction(&actionDesc);
 		actionDesc = { InputBindings::BUTTON_NORTH, [](InputActionContext* ctx) { pCameraController->resetView(); return true; } };
 		addInputAction(&actionDesc);
-
+		
 		actionDesc = { InputBindings::BUTTON_L3, [](InputActionContext* ctx) { gShowUI = !gShowUI; return true; } };
 		addInputAction(&actionDesc);
 		actionDesc = { InputBindings::BUTTON_R3, [](InputActionContext* ctx) { gTogglePerformance = !gTogglePerformance; return true; } };
 		addInputAction(&actionDesc);
+
+		gFrameIndex = 0;
 
 		return true;
 	}
 
 	void Exit()
 	{
-		waitQueueIdle(pGraphicsQueue);
-		destroyCameraController(pCameraController);
-
+		exitCameraController(pCameraController);
 		exitInputSystem();
+
+		gFrameIndex = 0;
+		gPrevFrameIndex = 0;
+
 		removeDescriptorSet(pRenderer, pExampleDescriptorSet);
 
 #if defined(TARGET_IOS) || defined(__ANDROID__)
-		gVirtualJoystick.Exit();
+		removeVirtualJoystickUI(pVirtualJoystick);
 #endif
 
 		gSpaceObjects.Exit();
@@ -425,24 +463,17 @@ public:
 		exitProfilerUI();
 		exitProfiler();
 
-		gAppUI.Exit();
+		exitAppUI(pAppUI);
 
 		removeResource(pTransmittanceBuffer);
 
 		removeSampler(pRenderer, pBilinearClampSampler);
 
-		removeShader(pRenderer, pPresentShader);
-		//removeRootSignature(pRenderer, pPresentRootSignature);
-		//removeDescriptorBinder(pRenderer, pPresentDescriptorBinder);
 		removeShader(pRenderer, pFXAAShader);
-		removeShader(pRenderer, pLinearDepthCompShader);
-		removeRootSignature(pRenderer, pLinearDepthCompRootSignature);
-		//removeDescriptorBinder(pRenderer, pLinearDepthCompDescriptorBinder);
-
+		//removeShader(pRenderer, pLinearDepthCompShader);
 		removeShader(pRenderer, pLinearDepthResolveShader);
-		//removeRootSignature(pRenderer, pLinearDepthResolveRootSignature);
-		//removeDescriptorBinder(pRenderer, pLinearDepthResolveDescriptorBinder);
 
+		//removeRootSignature(pRenderer, pLinearDepthCompRootSignature);
 		removeRootSignature(pRenderer, pExampleRootSignature);
 
 		removeFence(pRenderer, pTransitionCompleteFences);
@@ -472,7 +503,7 @@ public:
 
 		exitResourceLoaderInterface(pRenderer);
 
-		removeRenderer(pRenderer);
+		exitRenderer(pRenderer);
 	}
 
 	bool Load()
@@ -483,15 +514,14 @@ public:
 		if (!addSceneRenderTarget())
 			return false;
 
-
 		if (!addDepthBuffer())
 			return false;
 
-		if (!gAppUI.Load(pSwapChain->ppRenderTargets))
+		if (!addAppGUIDriver(pAppUI, pSwapChain->ppRenderTargets))
 			return false;
 
 #if defined(TARGET_IOS) || defined(__ANDROID__)
-		if (!gVirtualJoystick.Load(pSwapChain->ppRenderTargets[0], pDepthBuffer->mFormat))
+		if (!loadVirtualJoystickUI(pVirtualJoystick, pSwapChain->ppRenderTargets[0], pDepthBuffer->mFormat))
 			return false;
 #endif
 
@@ -513,26 +543,6 @@ public:
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		RasterizerStateDesc rasterizerStateDesc = {};
 		rasterizerStateDesc.mCullMode = CULL_MODE_NONE;
-
-		PipelineDesc PresentPipelineDesc = {};
-		PresentPipelineDesc.pCache = pPipelineCache;
-		{
-			PresentPipelineDesc.mType = PIPELINE_TYPE_GRAPHICS;
-			GraphicsPipelineDesc &pipelineSettings = PresentPipelineDesc.mGraphicsDesc;
-
-			pipelineSettings = { 0 };
-			pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
-			pipelineSettings.mRenderTargetCount = 1;
-			pipelineSettings.pDepthState = NULL;
-			pipelineSettings.pColorFormats = &pSwapChain->ppRenderTargets[0]->mFormat;
-			pipelineSettings.mSampleCount = pSwapChain->ppRenderTargets[0]->mSampleCount;
-			pipelineSettings.mSampleQuality = pSwapChain->ppRenderTargets[0]->mSampleQuality;
-			pipelineSettings.pRootSignature = pExampleRootSignature;
-			pipelineSettings.pShaderProgram = pPresentShader;
-			pipelineSettings.pRasterizerState = &rasterizerStateDesc;
-
-			addPipeline(pRenderer, &PresentPipelineDesc, &pPresentPipeline);
-		}
 
 		{
 			PipelineDesc desc = {};
@@ -576,7 +586,7 @@ public:
 
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-		PipelineDesc LinearDepthCompPipelineDesc = {};
+		/*PipelineDesc LinearDepthCompPipelineDesc = {};
 		LinearDepthCompPipelineDesc.pCache = pPipelineCache;
 		{
 			LinearDepthCompPipelineDesc.mType = PIPELINE_TYPE_COMPUTE;
@@ -586,7 +596,9 @@ public:
 			comPipelineSettings.pShaderProgram = pLinearDepthCompShader;
 			comPipelineSettings.pRootSignature = pLinearDepthCompRootSignature;
 			addPipeline(pRenderer, &LinearDepthCompPipelineDesc, &pLinearDepthCompPipeline);
-		}
+		}*/
+
+		waitForAllResourceLoads();
 
 		DescriptorData LinearDepthpparams[1] = {};
 		LinearDepthpparams[0].pName = "SrcTexture";
@@ -611,10 +623,10 @@ public:
 	{
 		waitQueueIdle(pGraphicsQueue);
 
-		gAppUI.Unload();
+		removeAppGUIDriver(pAppUI);
 
 #if defined(TARGET_IOS) || defined(__ANDROID__)
-		gVirtualJoystick.Unload();
+		unloadVirtualJoystickUI(pVirtualJoystick);
 #endif
 		gTerrain.Unload();
 		gSky.Unload();
@@ -622,8 +634,7 @@ public:
 		gSpaceObjects.Unload();
 
 		removePipeline(pRenderer, pLinearDepthResolvePipeline);
-		removePipeline(pRenderer, pLinearDepthCompPipeline);
-		removePipeline(pRenderer, pPresentPipeline);
+		//removePipeline(pRenderer, pLinearDepthCompPipeline);
 		removePipeline(pRenderer, pFXAAPipeline);
 		removeRenderTarget(pRenderer, pDepthBuffer);
 		removeRenderTarget(pRenderer, pLinearDepthBuffer);
@@ -705,7 +716,7 @@ public:
 		/************************************************************************/
 		// UI
 		/************************************************************************/
-		gAppUI.Update(deltaTime);
+		updateAppUI(pAppUI, deltaTime);
 
 	}
 
@@ -765,7 +776,7 @@ public:
 			cmdSetScissor(cmd, 0, 0, pLinearDepthBuffer->mWidth, pLinearDepthBuffer->mHeight);
 
 			cmdBindPipeline(cmd, pLinearDepthResolvePipeline);
-			cmdBindPushConstants(cmd, pExampleRootSignature, "CameraInfoRootConstant", &cameraInfo);
+			cmdBindPushConstants(cmd, pExampleRootSignature, "ExampleRootConstant", &cameraInfo);
 			cmdBindDescriptorSet(cmd, 0, pExampleDescriptorSet);
 			cmdDraw(cmd, 3, 0);
 
@@ -827,7 +838,7 @@ public:
 			cmdBindPipeline(cmd, pFXAAPipeline);
 
 			cmdBindDescriptorSet(cmd, 1, pExampleDescriptorSet);
-			cmdBindPushConstants(cmd, pExampleRootSignature, "FXAARootConstant", &gFXAAinfo);
+			cmdBindPushConstants(cmd, pExampleRootSignature, "ExampleRootConstant", &gFXAAinfo);
 
 			cmdDraw(cmd, 3, 0);
 
@@ -835,34 +846,7 @@ public:
 
 			cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
 		}
-/*
-		///////////////////////////////////////////////// Present Pipeline ////////////////////////////////////////////////////
-		{
-			cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "PresentPipeline", true);
 
-			pRenderTarget = pSwapChain->ppRenderTargets[gFrameIndex];
-
-			TextureBarrier barriers88[] = {
-					{ pRenderTarget->pTexture, RESOURCE_STATE_RENDER_TARGET },
-					{ pSkydomeResultRT->pTexture, RESOURCE_STATE_SHADER_RESOURCE }
-			};
-
-			cmdResourceBarrier(cmd, 0, NULL, 2, barriers88);
-
-			cmdBindRenderTargets(cmd, 1, &pRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
-			cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 0.0f, 1.0f);
-			cmdSetScissor(cmd, 0, 0, pRenderTarget->mWidth, pRenderTarget->mHeight);
-
-			cmdBindPipeline(cmd, pPresentPipeline);
-			cmdBindDescriptorSet(cmd, 1, pExampleDescriptorSet);
-			cmdBindVertexBuffer(cmd, 1, &pScreenQuadVertexBuffer, NULL);
-			cmdDraw(cmd, 3, 0);
-			cmdBindRenderTargets(cmd, 0, NULL, NULL, NULL, NULL, NULL, -1, -1);
-
-
-			cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
-		}
-*/
 		if (gShowUI)
 		{
 			cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw UI");
@@ -877,7 +861,7 @@ public:
 			gTimer.GetUSec(true);
 
 #if defined(TARGET_IOS) || defined(__ANDROID__)
-			gVirtualJoystick.Draw(cmd, pCameraController, { 1.0f, 1.0f, 1.0f, 1.0f });
+			drawVirtualJoystickUI(pVirtualJoystick, cmd, pCameraController, { 1.0f, 1.0f, 1.0f, 1.0f });
 #endif
 
 			if (gTogglePerformance)
@@ -888,11 +872,11 @@ public:
 				cmdDrawProfilerUI();
 			}
 			
-			gAppUI.Gui(pMainGuiWindow);
-			gAppUI.Gui(gSky.pGuiWindow);
-			gAppUI.Gui(gVolumetricClouds.pGuiWindow);
+			appUIGui(pAppUI, pMainGuiWindow);
+			appUIGui(pAppUI, gSky.pGuiWindow);
+			appUIGui(pAppUI, gVolumetricClouds.pGuiWindow);
 
-			gAppUI.Draw(cmd);
+			drawAppUI(pAppUI, cmd);
 
 			cmdBindRenderTargets(cmd, 0, NULL, NULL, NULL, NULL, NULL, -1, -1);
 
@@ -921,6 +905,7 @@ public:
 		presentDesc.pSwapChain = pSwapChain;
 		presentDesc.mSubmitDone = true;
 		queuePresent(pGraphicsQueue, &presentDesc);
+		
 		flipProfiler();
 
 		//for next frame

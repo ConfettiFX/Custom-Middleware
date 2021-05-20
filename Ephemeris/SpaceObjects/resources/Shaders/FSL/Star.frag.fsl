@@ -1,0 +1,56 @@
+/*
+* Copyright (c) 2018-2019 Confetti Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You may not use the material for commercial purposes.
+*/
+
+#include "SpaceObjectsCommon.h"
+
+STRUCT(PsIn)
+{
+	DATA(float4, Position,    SV_Position);
+	DATA(float3, TexCoord,	  TEXCOORD0);
+	DATA(float2, ScreenCoord, TEXCOORD1);
+	DATA(float3, Color,       COLOR);
+};
+
+CBUFFER(StarUniform, UPDATE_FREQ_PER_FRAME, b0, binding = 0)
+{
+	DATA(f4x4,   RotMat,         None);
+	DATA(f4x4,   ViewProjMat,    None);
+	DATA(float4, LightDirection, None);
+	DATA(float4, Dx,             None);
+	DATA(float4, Dy,             None);
+};
+
+float4 PS_MAIN(PsIn In)
+{	
+	INIT_MAIN;
+
+	float2 screenUV = In.ScreenCoord;
+
+	float sceneDepth = SampleLvlTex2D(Get(depthTexture), Get(g_LinearClamp), screenUV, 0).r;
+
+	if(sceneDepth < 1.0f)
+		discard;
+
+	float density = SampleLvlTex2D(Get(volumetricCloudsTexture), Get(g_LinearClamp), screenUV, 0).a;
+
+	float x  = 1.0f - abs(In.TexCoord.x);
+	float x2 = x * x;
+	float x4 = x2 * x2;
+	float x8 = x4 * x2;
+	float y  = 1.0f - abs(In.TexCoord.y);
+	float y2 = y * y;
+	float y4 = y2 * y2;
+	float y8 = y4 * y2;
+
+	float Mask  = max(x8 * y8, 0.0f);
+	float alpha = saturate(saturate(-Get(LightDirection).y + 0.2f) * 2.0f);
+
+	float4 Out = float4(In.Color, Mask * alpha * (1.0f - density));
+
+	RETURN(Out); 
+}

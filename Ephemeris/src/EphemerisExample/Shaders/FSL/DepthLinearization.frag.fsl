@@ -1,0 +1,30 @@
+/*
+* Copyright (c) 2018-2019 Confetti Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You may not use the material for commercial purposes.
+*/
+
+#define DEPTH_LINEARIZATION_PROGRAM
+#include "ExampleCommon.h"
+
+STRUCT(PsIn)
+{
+	DATA(float4, Position, SV_Position);
+	DATA(float2, TexCoord, TEXCOORD0);
+};
+
+float DepthLinearization(float depth)
+{
+    return (2.0f * Get(nearPlane)) / (Get(farPlane) + Get(nearPlane) - depth * (Get(farPlane) - Get(nearPlane)));
+}
+
+float PS_MAIN(PsIn In)
+{
+	INIT_MAIN;
+
+	float Out = DepthLinearization(SampleTex2D(Get(SrcTexture), Get(g_LinearClamp), In.TexCoord).r);
+
+	RETURN(Out);
+}

@@ -1,0 +1,38 @@
+/*
+* Copyright (c) 2018-2019 Confetti Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You may not use the material for commercial purposes.
+*/
+
+#include "RenderSky.h"
+
+STRUCT(VsIn)
+{
+    DATA(float3, Position, POSITION);
+    DATA(float3, Normal,   NORMAL);
+    DATA(float3, StarInfo, TEXCOORD0);
+};
+
+STRUCT(VsOut)
+{
+	DATA(float4, Position,    SV_Position);
+	DATA(float4, Normal,      NORMAL);
+	DATA(float4, Info,        COLOR);
+	DATA(float2, ScreenCoord, TEXCOORD0);
+};
+
+VsOut VS_MAIN(VsIn In)
+{
+	INIT_MAIN;
+
+	VsOut Out;
+
+	Out.Position = mul(Get(ViewProjMat), float4(In.Position, 1.0f));	
+	Out.Normal = float4(In.Normal, 0.0f);
+	Out.ScreenCoord = Out.Position.xy * float2(0.5f, -0.5f) + 0.5f;  
+	Out.Info = float4(In.StarInfo.x, In.StarInfo.y, In.StarInfo.z, 1.0f);
+
+	RETURN(Out);
+}

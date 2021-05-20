@@ -17,7 +17,13 @@ class AuroraParticle
 		acceleration(vec3(0.0f, 0.0f, 0.0f)),
 		IsMovable(true)
 	{}
-    AuroraParticle() {}
+	AuroraParticle() :
+		mass(1.0f),
+		position(vec3(0.0f, 0.0f, 0.0f)),
+		prevPosition(vec3(0.0f, 0.0f, 0.0f)),
+		acceleration(vec3(0.0f, 0.0f, 0.0f)),
+		IsMovable(true)
+	{}
 
     void addForce(vec3 force)
     {
@@ -88,7 +94,7 @@ public:
 class Aurora
 {
 public:    
-    Aurora() {}
+    Aurora() : numOfWidth(0), numOfHeight(0) {}
     ~Aurora() {}
 
     void Init(float width, float height, uint32_t num_particles_width, uint32_t num_particles_height)

@@ -91,17 +91,17 @@ public:
 	bool GenerateNormalMap(Cmd* cmd);
 
 	// Below are passed from Previous stage via Initialize()
-	Renderer*                 pRenderer;
-	PipelineCache*            pPipelineCache;
+	Renderer*                 pRenderer = NULL;
+	PipelineCache*            pPipelineCache = NULL;
 
-	uint                      gImageCount;
-	uint                      mWidth;
-	uint                      mHeight;
+	uint                      gImageCount = 0;
+	uint                      mWidth = 0;
+	uint                      mHeight = 0;
 
-	uint                      gFrameIndex;
+	uint                      gFrameIndex = 0;
 
-	GuiComponent*             pGuiWindow = nullptr;
-	UIApp*                    pGAppUI;
+	GuiComponent*             pGuiWindow = NULL;
+	UIApp*                    pGAppUI = NULL;
 
 	Queue*                    pGraphicsQueue = NULL;
 	CmdPool*                  pTransCmdPool = NULL;
@@ -109,7 +109,7 @@ public:
 	Fence*                    pTransitionCompleteFences = NULL;
 
 	RenderTarget*             pDepthBuffer = NULL;
-	RenderTarget**            pFinalRT;
+	RenderTarget**            pFinalRT = NULL;
 
 	ICameraController*        pCameraController = NULL;
 
@@ -117,25 +117,25 @@ public:
 
 	Perlin                    noiseGenerator;
 
-    ProfileToken               gGpuProfileToken;
+	ProfileToken               gGpuProfileToken = {};
 
 	eastl::unordered_map < uint32_t, Zone* > gZoneMap;
 	eastl::vector <uint32_t>  indexBuffer;
 
-	Buffer*                   pGlobalZoneIndexBuffer;
-	Buffer*                   pGlobalVertexBuffer;
+	Buffer*                   pGlobalZoneIndexBuffer = NULL;
+	Buffer*                   pGlobalVertexBuffer = NULL;
 
 	eastl::vector<MeshSegment> meshSegments;
-	Buffer*                   pGlobalTriangularVertexBuffer;
+	Buffer*                   pGlobalTriangularVertexBuffer = NULL;
 
-	Buffer*                   pLightingTerrainUniformBuffer[3];
-	Buffer*                   pRenderTerrainUniformBuffer[3];
+	Buffer*                   pLightingTerrainUniformBuffer[3] = {};
+	Buffer*                   pRenderTerrainUniformBuffer[3] = {};
 
-	Texture*                  pTerrainHeightMap;
-	RenderTarget*             pNormalMapFromHeightmapRT;
+	Texture*                  pTerrainHeightMap = NULL;
+	RenderTarget*             pNormalMapFromHeightmapRT = NULL;
 
-	Texture*                  pTerrainNormalTexture;
-	Texture*                  pTerrainMaskTexture;
+	Texture*                  pTerrainNormalTexture = NULL;
+	Texture*                  pTerrainMaskTexture = NULL;
 
 	eastl::vector<Texture*>   pTerrainTiledColorTextures;
 	eastl::vector<Texture*>   pTerrainTiledNormalTextures;
@@ -151,22 +151,22 @@ public:
 	TerrainFrustum            terrainFrustum;
 	mat4                      TerrainProjectionMatrix;
 
-	Sampler*                  pLinearMirrorSampler;
-	Sampler*                  pLinearWrapSampler;
-	Sampler*                  pLinearBorderSampler;
+	Sampler*                  pLinearMirrorSampler = NULL;
+	Sampler*                  pLinearWrapSampler = NULL;
+	Sampler*                  pLinearBorderSampler = NULL;
 
 	RenderTarget*             pGBuffer_BasicRT = NULL;
 	RenderTarget*             pGBuffer_NormalRT = NULL;
 
-	uint32_t                  TerrainPathVertexCount;
+	uint32_t                  TerrainPathVertexCount = 0;
 
 	float3                    LightDirection;
 	float4                    LightColorAndIntensity;
 	float3                    SunColor;
 
-	bool                      IsEnabledShadow;
+	bool                      IsEnabledShadow = false;
 	VolumetricCloudsShadowCB  volumetricCloudsShadowCB;
-	Texture*                  pWeatherMap;
+	Texture*                  pWeatherMap = NULL;
 
-	Buffer*                   pVolumetricCloudsShadowBuffer;
+	Buffer*                   pVolumetricCloudsShadowBuffer = NULL;
 };

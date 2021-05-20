@@ -1,0 +1,43 @@
+/*
+* Copyright (c) 2018-2019 Confetti Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You may not use the material for commercial purposes.
+*/
+
+#include "VolumetricCloudsCommon.h"
+
+NUM_THREADS(8, 8, 1)
+void CS_MAIN(SV_DispatchThreadID(uint3) DTid)
+{
+	INIT_MAIN;
+
+	if (DTid.x >= uint(Get(TimeAndScreenSize).z * 0.25f) || DTid.y >= uint(Get(TimeAndScreenSize).w * 0.25f))
+		RETURN();
+
+	float2 db_uvs   = float2((DTid.x * 4.0f + Get(m_JitterX) + 0.5f) / Get(TimeAndScreenSize).z, (DTid.y * 4.0f + Get(m_JitterY) + 0.5f) / Get(TimeAndScreenSize).w);
+	float2 ScreenUV = db_uvs;
+
+	float3 ScreenNDC;
+	ScreenNDC.x = ScreenUV.x * 2.0f - 1.0f;
+	ScreenNDC.y = (1.0 - ScreenUV.y) * 2.0f - 1.0f; 
+
+	float3 projectedPosition = float3(ScreenNDC.xy, 0.0f);
+	float4 worldPos = mul(Get(m_DataPerEye)[0].m_ProjToWorldMat, float4(projectedPosition, 1.0f));
+	float4 CameraPosition = Get(m_DataPerEye)[0].cameraPosition;
+	worldPos /= worldPos.w;
+
+	float3 viewDir = normalize(worldPos.xyz - CameraPosition.xyz);
+
+	float intensity;
+	float atmosphereBlendFactor;
+	float depth;
+
+	float randomSeed = lerp(frac(randomFromScreenUV(db_uvs * Get(TimeAndScreenSize).zw)), Get(Random00), Get(m_UseRandomSeed));
+	float density    = GetDensity_Double_Layers_WithComparingDepth(CameraPosition.xyz, worldPos.xyz, viewDir, randomSeed, intensity, atmosphereBlendFactor, depth, db_uvs);
+
+	Write2D(Get(volumetricCloudsDstTexture), DTid.xy, float4(intensity, atmosphereBlendFactor, depth, density));
+
+	RETURN();
+}

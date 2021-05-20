@@ -32,8 +32,8 @@ using IndexedMesh = eastl::pair<eastl::vector<TriangleVertex>, eastl::vector<Tri
 class Icosahedron
 {
 public:    
-    Icosahedron():radius(1.0f), subdivision(5) {}
-    Icosahedron(uint32_t div) :radius(1.0f), subdivision(div) {};
+    Icosahedron():radius(1.0f), subdivision(5), IndexCount(0) {}
+    Icosahedron(uint32_t div) :radius(1.0f), subdivision(div), IndexCount(0) {};
 		~Icosahedron()
 		{
 		}

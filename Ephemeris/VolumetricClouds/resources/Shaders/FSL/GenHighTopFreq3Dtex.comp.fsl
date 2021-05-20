@@ -1,0 +1,24 @@
+/*
+* Copyright (c) 2018-2019 Confetti Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You may not use the material for commercial purposes.
+*/
+
+RES(Tex2D(float4),   SrcTexture[32], UPDATE_FREQ_NONE, t0, binding = 0);
+RES(RWTex3D(float4), DstTexture,     UPDATE_FREQ_NONE, u0, binding = 1);
+
+NUM_THREADS(32, 32, 1)
+void CS_MAIN(SV_GroupThreadID(uint3) GTid, SV_GroupID(uint3) Gid)
+{
+	INIT_MAIN;
+
+	uint3 uvw  = uint3(GTid.x, GTid.y, Gid.z);
+	
+	float4 res = LoadTex2D(Get(SrcTexture)[Gid.z], NO_SAMPLER, uvw.xy, 0);
+
+	Write3D(Get(DstTexture), uvw, res);
+
+	RETURN();
+}

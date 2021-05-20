@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2018-2021 Confetti Interactive Inc.
+ *
+ * This is a part of Aura.
+ * 
+ * This file(code) is licensed under a 
+ * Creative Commons Attribution-NonCommercial 4.0 International License 
+ *
+ *   (https://creativecommons.org/licenses/by-nc/4.0/legalcode) 
+ *
+ * Based on a work at https://github.com/ConfettiFX/The-Forge.
+ * You may not use the material for commercial purposes.
+*/
+
+RES(Tex3D(float4),   workCoeffs0, UPDATE_FREQ_NONE, t0, binding = 0);
+RES(Tex3D(float4),   workCoeffs1, UPDATE_FREQ_NONE, t1, binding = 1);
+RES(Tex3D(float4),   workCoeffs2, UPDATE_FREQ_NONE, t2, binding = 2);
+RES(RWTex3D(float4), RWGrid0,     UPDATE_FREQ_NONE, u0, binding = 3);
+RES(RWTex3D(float4), RWGrid1,     UPDATE_FREQ_NONE, u1, binding = 4);
+RES(RWTex3D(float4), RWGrid2,     UPDATE_FREQ_NONE, u2, binding = 5);
+
+#include "lpvCSLightPropagateFunctions.h"
+
+NUM_THREADS(THREAD_GROUP_X_DIM, THREAD_GROUP_Y_DIM, THREAD_GROUP_Z_DIM)
+void CS_MAIN(SV_DispatchThreadID(uint3) dispatchThreadId) // dispatchThreadId effectively the screen space coordinate of this compute thread
+{
+	INIT_MAIN;
+
+	Write3D(Get(RWGrid0), dispatchThreadId, LoadRWTex3D(Get(RWGrid0), dispatchThreadId) + LoadTex3D(Get(workCoeffs0), NO_SAMPLER, dispatchThreadId, 0));
+	Write3D(Get(RWGrid1), dispatchThreadId, LoadRWTex3D(Get(RWGrid1), dispatchThreadId) + LoadTex3D(Get(workCoeffs1), NO_SAMPLER, dispatchThreadId, 0));
+	Write3D(Get(RWGrid2), dispatchThreadId, LoadRWTex3D(Get(RWGrid2), dispatchThreadId) + LoadTex3D(Get(workCoeffs2), NO_SAMPLER, dispatchThreadId, 0));
+
+	RETURN();
+}

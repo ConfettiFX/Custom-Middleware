@@ -28,25 +28,26 @@
 //Precomputed Atmospheric Sacttering
 Shader*           pSunShader = NULL;
 Pipeline*         pSunPipeline = NULL;
+DescriptorSet*    pSunDescriptorSet[2] = { NULL };
+RootSignature*    pSunRootSignature = NULL;
 
 Shader*           pStarShader = NULL;
 Pipeline*         pStarPipeline = NULL;
+DescriptorSet*    pStarDescriptorSet[2] = { NULL };
+RootSignature*    pStarRootSignature = NULL;
 
-Shader*           pMoonShader = NULL;
-Pipeline*         pMoonPipeline = NULL;
+//Shader*           pMilkyWayShader = NULL;
+//Pipeline*         pMilkyWayPipeline = NULL;
+//
+//Shader*           pAuroraShader = NULL;
+//Pipeline*         pAuroraPipeline = NULL;
+//
+//Shader*           pAuroraComputeShader = NULL;
+//Pipeline*         pAuroraComputePipeline = NULL;
 
-Shader*           pMilkyWayShader = NULL;
-Pipeline*         pMilkyWayPipeline = NULL;
-
-Shader*           pAuroraShader = NULL;
-Pipeline*         pAuroraPipeline = NULL;
-
-Shader*           pAuroraComputeShader = NULL;
-Pipeline*         pAuroraComputePipeline = NULL;
-
-DescriptorSet*    pSpaceObjectsDescriptorSet[2] = { NULL };
-RootSignature*    pSpaceObjectsRootSignature = NULL;
-RootSignature*    pSpaceObjectsRootSignatureCompute = NULL;
+//DescriptorSet*    pSpaceObjectsDescriptorSet[2] = { NULL };
+//RootSignature*    pSpaceObjectsRootSignature = NULL;
+//RootSignature*    pSpaceObjectsRootSignatureCompute = NULL;
 
 #if USING_MILKYWAY
 Buffer*           pMilkyWayVertexBuffer = NULL;
@@ -114,10 +115,10 @@ struct AuroraUniformStruct
 
 AuroraUniformStruct gAuroraUniformStruct;
 
-Buffer*               pAuroraVertexBuffer;
-Buffer*               pAuroraParticle;
-Buffer*               pAuroraConstraint;
-Buffer*               pAuroraUniformBuffer;
+//Buffer*               pAuroraVertexBuffer;
+//Buffer*               pAuroraParticle;
+//Buffer*               pAuroraConstraint;
+//Buffer*               pAuroraUniformBuffer;
 
 const float AuroraWidth = 100000.0f;
 //const float AuroraHeight = 4000.0f;
@@ -298,39 +299,27 @@ bool SpaceObjects::Init(Renderer* const renderer, PipelineCache* pCache)
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc sunShader = {};
-#if !defined(METAL)
-	sunShader.mStages[0] = { "SpaceObjects/Sun.vert", NULL, 0, NULL };
-	sunShader.mStages[1] = { "SpaceObjects/Sun.geom", NULL, 0, NULL };
-	sunShader.mStages[2] = { "SpaceObjects/Sun.frag", NULL, 0, NULL };
-#else
-	sunShader.mStages[0] = { "SpaceObjects/Sun.vert" , NULL, 0, NULL };
-	sunShader.mStages[1] = { "SpaceObjects/Sun.frag", NULL, 0, NULL };
-#endif
+	sunShader.mStages[0] = { "Sun.vert" , NULL, 0, NULL };
+	sunShader.mStages[1] = { "Sun.frag", NULL, 0, NULL };
 	addShader(pRenderer, &sunShader, &pSunShader);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc starShader = {};
-#if !defined(METAL)
-	starShader.mStages[0] = { "SpaceObjects/Star.vert", NULL, 0, NULL };
-	starShader.mStages[1] = { "SpaceObjects/Star.geom", NULL, 0, NULL };
-	starShader.mStages[2] = { "SpaceObjects/Star.frag", NULL, 0, NULL };
-#else
-	starShader.mStages[0] = { "SpaceObjects/Star.vert", NULL, 0, NULL};
-	starShader.mStages[1] = { "SpaceObjects/Star.frag", NULL, 0, NULL};
-#endif
+	starShader.mStages[0] = { "Star.vert", NULL, 0, NULL };
+	starShader.mStages[1] = { "Star.frag", NULL, 0, NULL };
 	addShader(pRenderer, &starShader, &pStarShader);
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	ShaderLoadDesc MilkyWayShader = {};
+	/*ShaderLoadDesc MilkyWayShader = {};
 	MilkyWayShader.mStages[0] = { "SpaceObjects/MilkyWay.vert", NULL, 0, NULL };
 	MilkyWayShader.mStages[1] = { "SpaceObjects/MilkyWay.frag", NULL, 0, NULL };
-	addShader(pRenderer, &MilkyWayShader, &pMilkyWayShader);
+	addShader(pRenderer, &MilkyWayShader, &pMilkyWayShader);*/
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	ShaderLoadDesc AuroraShader = {};
+	/*ShaderLoadDesc AuroraShader = {};
 #if !defined(METAL)
 	AuroraShader.mStages[0] = { "SpaceObjects/Aurora.vert", NULL, 0, NULL };
 	AuroraShader.mStages[1] = { "SpaceObjects/Aurora.geom", NULL, 0, NULL };
@@ -339,38 +328,50 @@ bool SpaceObjects::Init(Renderer* const renderer, PipelineCache* pCache)
 	AuroraShader.mStages[0] = { "SpaceObjects/Aurora.vert", NULL, 0, NULL };
 	AuroraShader.mStages[1] = { "SpaceObjects/Aurora.frag", NULL, 0, NULL };
 #endif
-	addShader(pRenderer, &AuroraShader, &pAuroraShader);
+	addShader(pRenderer, &AuroraShader, &pAuroraShader);*/
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	ShaderLoadDesc AuroraComputeShader = {};
+	/*ShaderLoadDesc AuroraComputeShader = {};
 	AuroraComputeShader.mStages[0] = { "SpaceObjects/Aurora.comp", NULL, 0, NULL };
-	addShader(pRenderer, &AuroraComputeShader, &pAuroraComputeShader);
+	addShader(pRenderer, &AuroraComputeShader, &pAuroraComputeShader);*/
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
 	const char* pSkySamplerNames[] = { "g_LinearClamp", "g_LinearBorder" };
 	Sampler* pSkySamplers[] = { pLinearClampSampler, pLinearBorderSampler };
-	Shader*           shaders[] = { pSunShader, pStarShader, pMilkyWayShader, pAuroraShader };
-	RootSignatureDesc rootDesc = {};
-	rootDesc.mShaderCount = 4;
-	rootDesc.ppShaders = shaders;
-	rootDesc.mStaticSamplerCount = 2;
-	rootDesc.ppStaticSamplerNames = pSkySamplerNames;
-	rootDesc.ppStaticSamplers = pSkySamplers;
 
-	addRootSignature(pRenderer, &rootDesc, &pSpaceObjectsRootSignature);
+	RootSignatureDesc sunRootDesc = {};
+	sunRootDesc.mShaderCount = 1;
+	sunRootDesc.ppShaders = &pSunShader;
+	sunRootDesc.mStaticSamplerCount = 2;
+	sunRootDesc.ppStaticSamplerNames = pSkySamplerNames;
+	sunRootDesc.ppStaticSamplers = pSkySamplers;
+	addRootSignature(pRenderer, &sunRootDesc, &pSunRootSignature);
 
-	Shader*           shaderComputes[] = { pAuroraComputeShader };
+	RootSignatureDesc starRootDesc = {};
+	starRootDesc.mShaderCount = 1;
+	starRootDesc.ppShaders = &pStarShader;
+	starRootDesc.mStaticSamplerCount = 2;
+	starRootDesc.ppStaticSamplerNames = pSkySamplerNames;
+	starRootDesc.ppStaticSamplers = pSkySamplers;
+	addRootSignature(pRenderer, &starRootDesc, &pStarRootSignature);
+
+	/*Shader*           shaderComputes[] = { pAuroraComputeShader };
 	rootDesc = {};
 	rootDesc.mShaderCount = 1;
 	rootDesc.ppShaders = shaderComputes;
 
-	addRootSignature(pRenderer, &rootDesc, &pSpaceObjectsRootSignatureCompute);
+	addRootSignature(pRenderer, &rootDesc, &pSpaceObjectsRootSignatureCompute);*/
 
-	DescriptorSetDesc setDesc = { pSpaceObjectsRootSignature, DESCRIPTOR_UPDATE_FREQ_NONE, 1 };
-	addDescriptorSet(pRenderer, &setDesc, &pSpaceObjectsDescriptorSet[0]);
-	setDesc = { pSpaceObjectsRootSignature, DESCRIPTOR_UPDATE_FREQ_PER_FRAME, gImageCount };
-	addDescriptorSet(pRenderer, &setDesc, &pSpaceObjectsDescriptorSet[1]);
+	DescriptorSetDesc setDesc = { pSunRootSignature, DESCRIPTOR_UPDATE_FREQ_NONE, 1 };
+	addDescriptorSet(pRenderer, &setDesc, &pSunDescriptorSet[0]);
+	setDesc = { pSunRootSignature, DESCRIPTOR_UPDATE_FREQ_PER_FRAME, gImageCount };
+	addDescriptorSet(pRenderer, &setDesc, &pSunDescriptorSet[1]);
+
+	setDesc = { pStarRootSignature, DESCRIPTOR_UPDATE_FREQ_NONE, 1 };
+	addDescriptorSet(pRenderer, &setDesc, &pStarDescriptorSet[0]);
+	setDesc = { pStarRootSignature, DESCRIPTOR_UPDATE_FREQ_PER_FRAME, gImageCount };
+	addDescriptorSet(pRenderer, &setDesc, &pStarDescriptorSet[1]);
 
 	SyncToken token = {};
 
@@ -426,12 +427,12 @@ bool SpaceObjects::Init(Renderer* const renderer, PipelineCache* pCache)
 	eastl::vector<float> IcosahedronVertices;
 	eastl::vector<uint32_t> IcosahedronIndices;
 
-	BufferLoadDesc AuroraVbDesc = {};
+	/*BufferLoadDesc AuroraVbDesc = {};
 	AuroraVbDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_VERTEX_BUFFER;
 	AuroraVbDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
 	AuroraVbDesc.mDesc.mSize = (uint64_t)AuroraParticleNum * sizeof(float3) * 3;
 	AuroraVbDesc.ppBuffer = &pAuroraVertexBuffer;
-	addResource(&AuroraVbDesc, &token);
+	addResource(&AuroraVbDesc, &token);*/
 
 	BufferLoadDesc AuroraParticleDesc = {};
 	AuroraParticleDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_BUFFER | DESCRIPTOR_TYPE_RW_BUFFER;
@@ -444,38 +445,38 @@ bool SpaceObjects::Init(Renderer* const renderer, PipelineCache* pCache)
 
 	// for(unsigned int i=0; i<gImageCount; i++)
 	// {
-	AuroraParticleDesc.ppBuffer = &pAuroraParticle;
-	addResource(&AuroraParticleDesc, &token);
+	/*AuroraParticleDesc.ppBuffer = &pAuroraParticle;
+	addResource(&AuroraParticleDesc, &token);*/
 	// }
 
-	BufferLoadDesc AuroraConstraintDesc = {};
+	/*BufferLoadDesc AuroraConstraintDesc = {};
 	AuroraConstraintDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_BUFFER | DESCRIPTOR_TYPE_RW_BUFFER;
 	AuroraConstraintDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_GPU_ONLY;
 	AuroraConstraintDesc.mDesc.mElementCount = (uint64_t)AuroraParticleNum - 1;
 	AuroraConstraintDesc.mDesc.mStructStride = sizeof(AuroraConstraint);
 	AuroraConstraintDesc.mDesc.mSize = AuroraConstraintDesc.mDesc.mElementCount * AuroraConstraintDesc.mDesc.mStructStride;
 	AuroraConstraintDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
-	AuroraConstraintDesc.pData = initialAuroraConstraintData.data();
+	AuroraConstraintDesc.pData = initialAuroraConstraintData.data();*/
 
 	// for (unsigned int i = 0; i < gImageCount; i++)
 	// {
-	AuroraConstraintDesc.ppBuffer = &pAuroraConstraint;
-	addResource(&AuroraConstraintDesc, &token);
+	/*AuroraConstraintDesc.ppBuffer = &pAuroraConstraint;
+	addResource(&AuroraConstraintDesc, &token);*/
 	// }
 
 
-	BufferLoadDesc AuroraUniformDesc = {};
+	/*BufferLoadDesc AuroraUniformDesc = {};
 	AuroraUniformDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	AuroraUniformDesc.mDesc.mMemoryUsage = RESOURCE_MEMORY_USAGE_CPU_TO_GPU;
 	AuroraUniformDesc.mDesc.mElementCount = 1;
 	AuroraUniformDesc.mDesc.mStructStride = sizeof(AuroraUniformStruct);
 	AuroraUniformDesc.mDesc.mSize = AuroraUniformDesc.mDesc.mElementCount * AuroraUniformDesc.mDesc.mStructStride;
-	AuroraUniformDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;
+	AuroraUniformDesc.mDesc.mFlags = BUFFER_CREATION_FLAG_PERSISTENT_MAP_BIT;*/
 
 	// for (unsigned int i = 0; i < gImageCount; i++)
 	// {
-	AuroraUniformDesc.ppBuffer = &pAuroraUniformBuffer;
-	addResource(&AuroraUniformDesc, &token);
+	/*AuroraUniformDesc.ppBuffer = &pAuroraUniformBuffer;
+	addResource(&AuroraUniformDesc, &token);*/
 	// }
 
 	BufferLoadDesc sunUniformDesc = {};
@@ -501,7 +502,7 @@ bool SpaceObjects::Init(Renderer* const renderer, PipelineCache* pCache)
 	GuiDesc guiDesc = {};
 	guiDesc.mStartPosition = vec2(1280.0f / getDpiScale().getX(), 700.0f / getDpiScale().getY());
 	guiDesc.mStartSize = vec2(300.0f / getDpiScale().getX(), 250.0f / getDpiScale().getY());
-	pGuiWindow = pGAppUI->AddGuiComponent("Space Objects", &guiDesc);
+	pGuiWindow = addAppUIGuiComponent(pGAppUI, "Space Objects", &guiDesc);
 	
 	waitForToken(&token);
 
@@ -510,21 +511,25 @@ bool SpaceObjects::Init(Renderer* const renderer, PipelineCache* pCache)
 
 void SpaceObjects::Exit()
 {
-	removeShader(pRenderer, pMilkyWayShader);
+	removeDescriptorSet(pRenderer, pSunDescriptorSet[0]);
+	removeDescriptorSet(pRenderer, pSunDescriptorSet[1]);
+	removeDescriptorSet(pRenderer, pStarDescriptorSet[0]);
+	removeDescriptorSet(pRenderer, pStarDescriptorSet[1]);
+	
+	/*removeShader(pRenderer, pMilkyWayShader);
 	removeShader(pRenderer, pAuroraShader);
-	removeShader(pRenderer, pAuroraComputeShader);
+	removeShader(pRenderer, pAuroraComputeShader);*/
 	removeShader(pRenderer, pSunShader);
 	removeShader(pRenderer, pStarShader);
 
-	removeRootSignature(pRenderer, pSpaceObjectsRootSignature);
-	removeRootSignature(pRenderer, pSpaceObjectsRootSignatureCompute);
-	removeDescriptorSet(pRenderer, pSpaceObjectsDescriptorSet[0]);
-	removeDescriptorSet(pRenderer, pSpaceObjectsDescriptorSet[1]);
+	removeRootSignature(pRenderer, pSunRootSignature);
+	removeRootSignature(pRenderer, pStarRootSignature);
+	//removeRootSignature(pRenderer, pSpaceObjectsRootSignatureCompute);
 
 	removeSampler(pRenderer, pLinearClampSampler);
 	removeSampler(pRenderer, pLinearBorderSampler);
 
-	removeResource(pAuroraVertexBuffer);
+	//removeResource(pAuroraVertexBuffer);
 
 	/*
   for (uint i = 0; i < gImageCount; i++)
@@ -535,9 +540,9 @@ void SpaceObjects::Exit()
   }
   */
 
-	removeResource(pAuroraParticle);
+	/*removeResource(pAuroraParticle);
 	removeResource(pAuroraConstraint);
-	removeResource(pAuroraUniformBuffer);
+	removeResource(pAuroraUniformBuffer);*/
 
 #if USING_MILKYWAY
 	removeResource(pMilkyWayVertexBuffer);
@@ -634,67 +639,67 @@ bool SpaceObjects::Load(RenderTarget** rts, uint32_t count)
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	PipelineDesc pipelineDescMilkyWay = {};
-	pipelineDescMilkyWay.pCache = pPipelineCache;
-	{
-		pipelineDescMilkyWay.mType = PIPELINE_TYPE_GRAPHICS;
-		GraphicsPipelineDesc &pipelineSettings = pipelineDescMilkyWay.mGraphicsDesc;
+	//PipelineDesc pipelineDescMilkyWay = {};
+	//pipelineDescMilkyWay.pCache = pPipelineCache;
+	//{
+	//	pipelineDescMilkyWay.mType = PIPELINE_TYPE_GRAPHICS;
+	//	GraphicsPipelineDesc &pipelineSettings = pipelineDescMilkyWay.mGraphicsDesc;
 
-		pipelineSettings = { 0 };
+	//	pipelineSettings = { 0 };
 
-		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
-		pipelineSettings.mRenderTargetCount = 1;
+	//	pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
+	//	pipelineSettings.mRenderTargetCount = 1;
 
-		pipelineSettings.pColorFormats = &pPreStageRenderTarget->mFormat;
-		pipelineSettings.mSampleCount = pPreStageRenderTarget->mSampleCount;
-		pipelineSettings.mSampleQuality = pPreStageRenderTarget->mSampleQuality;
+	//	pipelineSettings.pColorFormats = &pPreStageRenderTarget->mFormat;
+	//	pipelineSettings.mSampleCount = pPreStageRenderTarget->mSampleCount;
+	//	pipelineSettings.mSampleQuality = pPreStageRenderTarget->mSampleQuality;
 
-		pipelineSettings.pRootSignature = pSpaceObjectsRootSignature;
-		pipelineSettings.pShaderProgram = pMilkyWayShader;
-		pipelineSettings.pVertexLayout = &vertexLayout;
-		pipelineSettings.pRasterizerState = &rasterizerStateDesc;
-		//pipelineSettings.pBlendState = pBlendStateSpace;
-		pipelineSettings.pBlendState = &blendStateSunDesc;
+	//	pipelineSettings.pRootSignature = pSpaceObjectsRootSignature;
+	//	pipelineSettings.pShaderProgram = pMilkyWayShader;
+	//	pipelineSettings.pVertexLayout = &vertexLayout;
+	//	pipelineSettings.pRasterizerState = &rasterizerStateDesc;
+	//	//pipelineSettings.pBlendState = pBlendStateSpace;
+	//	pipelineSettings.pBlendState = &blendStateSunDesc;
 
-		addPipeline(pRenderer, &pipelineDescMilkyWay, &pMilkyWayPipeline);
-	}
+	//	addPipeline(pRenderer, &pipelineDescMilkyWay, &pMilkyWayPipeline);
+	//}
 
-	PipelineDesc pipelineDescAurora = {};
-	pipelineDescAurora.pCache = pPipelineCache;
-	{
-		pipelineDescAurora.mType = PIPELINE_TYPE_GRAPHICS;
-		GraphicsPipelineDesc &pipelineSettings = pipelineDescAurora.mGraphicsDesc;
+	//PipelineDesc pipelineDescAurora = {};
+	//pipelineDescAurora.pCache = pPipelineCache;
+	//{
+	//	pipelineDescAurora.mType = PIPELINE_TYPE_GRAPHICS;
+	//	GraphicsPipelineDesc &pipelineSettings = pipelineDescAurora.mGraphicsDesc;
 
-		pipelineSettings = { 0 };
+	//	pipelineSettings = { 0 };
 
-		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_POINT_LIST;
-		pipelineSettings.mRenderTargetCount = 1;
+	//	pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_POINT_LIST;
+	//	pipelineSettings.mRenderTargetCount = 1;
 
-		pipelineSettings.pColorFormats = &pPreStageRenderTarget->mFormat;
-		pipelineSettings.mSampleCount = pPreStageRenderTarget->mSampleCount;
-		pipelineSettings.mSampleQuality = pPreStageRenderTarget->mSampleQuality;
+	//	pipelineSettings.pColorFormats = &pPreStageRenderTarget->mFormat;
+	//	pipelineSettings.mSampleCount = pPreStageRenderTarget->mSampleCount;
+	//	pipelineSettings.mSampleQuality = pPreStageRenderTarget->mSampleQuality;
 
-		pipelineSettings.pRootSignature = pSpaceObjectsRootSignature;
-		pipelineSettings.pShaderProgram = pAuroraShader;
-		pipelineSettings.pRasterizerState = &rasterizerStateDesc;
-		pipelineSettings.pBlendState = &blendStateSunDesc;
+	//	pipelineSettings.pRootSignature = pSpaceObjectsRootSignature;
+	//	pipelineSettings.pShaderProgram = pAuroraShader;
+	//	pipelineSettings.pRasterizerState = &rasterizerStateDesc;
+	//	pipelineSettings.pBlendState = &blendStateSunDesc;
 
-		addPipeline(pRenderer, &pipelineDescAurora, &pAuroraPipeline);
-	}
+	//	addPipeline(pRenderer, &pipelineDescAurora, &pAuroraPipeline);
+	//}
 
-	PipelineDesc pipelineDescAuroraCompute = {};
-	pipelineDescAuroraCompute.pCache = pPipelineCache;
-	{
-		pipelineDescAuroraCompute.mType = PIPELINE_TYPE_COMPUTE;
-		ComputePipelineDesc &pipelineSettings = pipelineDescAuroraCompute.mComputeDesc;
+	//PipelineDesc pipelineDescAuroraCompute = {};
+	//pipelineDescAuroraCompute.pCache = pPipelineCache;
+	//{
+	//	pipelineDescAuroraCompute.mType = PIPELINE_TYPE_COMPUTE;
+	//	ComputePipelineDesc &pipelineSettings = pipelineDescAuroraCompute.mComputeDesc;
 
-		pipelineSettings = { 0 };
+	//	pipelineSettings = { 0 };
 
-		pipelineSettings.pRootSignature = pSpaceObjectsRootSignatureCompute;
-		pipelineSettings.pShaderProgram = pAuroraComputeShader;
+	//	pipelineSettings.pRootSignature = pSpaceObjectsRootSignatureCompute;
+	//	pipelineSettings.pShaderProgram = pAuroraComputeShader;
 
-		addPipeline(pRenderer, &pipelineDescAuroraCompute, &pAuroraComputePipeline);
-	}
+	//	addPipeline(pRenderer, &pipelineDescAuroraCompute, &pAuroraComputePipeline);
+	//}
 
 
 	PipelineDesc pipelineDesSun = {};
@@ -704,23 +709,13 @@ bool SpaceObjects::Load(RenderTarget** rts, uint32_t count)
 		GraphicsPipelineDesc &pipelineSettings = pipelineDesSun.mGraphicsDesc;
 
 		pipelineSettings = { 0 };
-
-#if !defined(METAL)
-		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_POINT_LIST;
-#else
 		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_STRIP;
-#endif
 		pipelineSettings.mRenderTargetCount = 1;
-
 		pipelineSettings.pColorFormats = &pPreStageRenderTarget->mFormat;
 		pipelineSettings.mSampleCount = pPreStageRenderTarget->mSampleCount;
 		pipelineSettings.mSampleQuality = pPreStageRenderTarget->mSampleQuality;
-
-		pipelineSettings.pRootSignature = pSpaceObjectsRootSignature;
+		pipelineSettings.pRootSignature = pSunRootSignature;
 		pipelineSettings.pShaderProgram = pSunShader;
-#if defined(METAL)
-		pipelineSettings.pVertexLayout = &vertexLayout;
-#endif
 		pipelineSettings.pRasterizerState = &rasterizerStateDesc;
 		pipelineSettings.pBlendState = &blendStateSunDesc;
 
@@ -758,19 +753,13 @@ bool SpaceObjects::Load(RenderTarget** rts, uint32_t count)
 		GraphicsPipelineDesc &pipelineSettings = pipelineDescStar.mGraphicsDesc;
 
 		pipelineSettings = { 0 };
-
-#if !defined(METAL)
-		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_POINT_LIST;
-#else
 		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_STRIP;
-#endif
 		pipelineSettings.mRenderTargetCount = 1;
-
 		pipelineSettings.pColorFormats = &pPreStageRenderTarget->mFormat;
 		pipelineSettings.mSampleCount = pPreStageRenderTarget->mSampleCount;
 		pipelineSettings.mSampleQuality = pPreStageRenderTarget->mSampleQuality;
 
-		pipelineSettings.pRootSignature = pSpaceObjectsRootSignature;
+		pipelineSettings.pRootSignature = pStarRootSignature;
 		pipelineSettings.pShaderProgram = pStarShader;
 		pipelineSettings.pVertexLayout = &vertexLayout;
 		pipelineSettings.pRasterizerState = &rasterizerStateDesc;
@@ -785,25 +774,30 @@ bool SpaceObjects::Load(RenderTarget** rts, uint32_t count)
 		DescriptorData ScParams[8] = {};	
 		ScParams[0].pName = "depthTexture";
 		ScParams[0].ppTextures = &pDepthBuffer->pTexture;
-		ScParams[1].pName = "moonAtlas";
-		ScParams[1].ppTextures = &pMoonTexture;
-		ScParams[2].pName = "volumetricCloudsTexture";
-		ScParams[2].ppTextures = &pSavePrevTexture;
+		ScParams[1].pName = "volumetricCloudsTexture";
+		ScParams[1].ppTextures = &pSavePrevTexture;
 #if defined(ORBIS)
-		ScParams[3].pName = "starInstanceBuffer";
-		ScParams[3].ppBuffers = &pParticleInstanceBuffer;
-		updateDescriptorSet(pRenderer, 0, pSpaceObjectsDescriptorSet[0], 4, ScParams);
+		ScParams[2].pName = "starInstanceBuffer";
+		ScParams[2].ppBuffers = &pParticleInstanceBuffer;
+		updateDescriptorSet(pRenderer, 0, pStarDescriptorSet[0], 3, ScParams);
 #else
-		updateDescriptorSet(pRenderer, 0, pSpaceObjectsDescriptorSet[0], 3, ScParams);
+		updateDescriptorSet(pRenderer, 0, pStarDescriptorSet[0], 2, ScParams);
 #endif
+		ScParams[2] = {};
+		ScParams[2].pName = "moonAtlas";
+		ScParams[2].ppTextures = &pMoonTexture;
+		updateDescriptorSet(pRenderer, 0, pSunDescriptorSet[0], 3, ScParams);
 
+		ScParams[0] = {};
 		for (uint32_t i = 0; i < gImageCount; ++i)
 		{
 			ScParams[0].pName = "StarUniform";
 			ScParams[0].ppBuffers = &pStarUniformBuffer[i];
-			ScParams[1].pName = "SunUniform";
-			ScParams[1].ppBuffers = &pSunUniformBuffer[i];
-			updateDescriptorSet(pRenderer, i, pSpaceObjectsDescriptorSet[1], 2, ScParams);
+			updateDescriptorSet(pRenderer, i, pStarDescriptorSet[1], 1, ScParams);
+
+			ScParams[0].pName = "SunUniform";
+			ScParams[0].ppBuffers = &pSunUniformBuffer[i];
+			updateDescriptorSet(pRenderer, i, pSunDescriptorSet[1], 1, ScParams);
 		}
 	}
 
@@ -812,9 +806,9 @@ bool SpaceObjects::Load(RenderTarget** rts, uint32_t count)
 
 void SpaceObjects::Unload()
 {	
-	removePipeline(pRenderer, pMilkyWayPipeline);
+	/*removePipeline(pRenderer, pMilkyWayPipeline);
 	removePipeline(pRenderer, pAuroraPipeline);
-	removePipeline(pRenderer, pAuroraComputePipeline);
+	removePipeline(pRenderer, pAuroraComputePipeline);*/
 	removePipeline(pRenderer, pSunPipeline);
 	removePipeline(pRenderer, pStarPipeline);
 }
@@ -931,13 +925,8 @@ void SpaceObjects::Draw(Cmd* cmd)
 		starData.ViewProjMat = SpaceProjectionMatrix * pCameraController->getViewMatrix();
 		starData.LightDirection = float4(LightDirection, g_ElapsedTime * 2.0f);
 
-#if !defined(METAL)
 		starData.Dx = v4ToF4(pCameraController->getViewMatrix().getRow(0));
 		starData.Dy = v4ToF4(pCameraController->getViewMatrix().getRow(1));
-#else
-		starData.Dx = v4ToF4(pCameraController->getViewMatrix().getRow(0) * 100000.0f);
-		starData.Dy = v4ToF4(pCameraController->getViewMatrix().getRow(1) * 100000.0f);
-#endif
 
 		BufferUpdateDesc BufferUniformSettingDesc2 = { pStarUniformBuffer[gFrameIndex] };
 		beginUpdateResource(&BufferUniformSettingDesc2);
@@ -945,20 +934,16 @@ void SpaceObjects::Draw(Cmd* cmd)
 		endUpdateResource(&BufferUniformSettingDesc2, NULL);
 
 		cmdBindPipeline(cmd, pStarPipeline);
-		cmdBindDescriptorSet(cmd, 0, pSpaceObjectsDescriptorSet[0]);
-		cmdBindDescriptorSet(cmd, gFrameIndex, pSpaceObjectsDescriptorSet[1]);
+		cmdBindDescriptorSet(cmd, 0, pStarDescriptorSet[0]);
+		cmdBindDescriptorSet(cmd, gFrameIndex, pStarDescriptorSet[1]);
 
 #if !defined(ORBIS)
 		const uint32_t strides[] = { ParticleInstanceStride };
 		Buffer* particleVertexBuffers[] = { pParticleInstanceBuffer };
 		cmdBindVertexBuffer(cmd, 1, particleVertexBuffers, strides, NULL);
 #endif
-#if !defined(METAL)
-		cmdDrawInstanced(cmd, 1, 0, ParticleCount, 0);
-#else
-		cmdDrawInstanced(cmd, 4, 0, ParticleCount, 0);
-#endif
 
+		cmdDrawInstanced(cmd, 4, 0, ParticleCount, 0);
 
 		cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
 	}
@@ -991,16 +976,11 @@ void SpaceObjects::Draw(Cmd* cmd)
 		endUpdateResource(&BufferUniformSettingDesc, NULL);
 
 		cmdBindPipeline(cmd, pSunPipeline);
-		cmdBindDescriptorSet(cmd, 0, pSpaceObjectsDescriptorSet[0]);
-		cmdBindDescriptorSet(cmd, gFrameIndex, pSpaceObjectsDescriptorSet[1]);
+		cmdBindDescriptorSet(cmd, 0, pSunDescriptorSet[0]);
+		cmdBindDescriptorSet(cmd, gFrameIndex, pSunDescriptorSet[1]);
 
-#if !defined(METAL)
-		cmdDraw(cmd, 1, 0);
-#else
-		const uint32_t triangleStride = sizeof(float) * 5;
-		cmdBindVertexBuffer(cmd, 1, &pGlobalTriangularVertexBuffer, &triangleStride, NULL);
 		cmdDraw(cmd, 4, 0);
-#endif
+
 		cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
 
 		RenderTargetBarrier barriersSkyEnd[] = {

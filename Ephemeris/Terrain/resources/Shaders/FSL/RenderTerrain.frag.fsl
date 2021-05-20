@@ -1,0 +1,128 @@
+/*
+* Copyright (c) 2018-2019 Confetti Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You may not use the material for commercial purposes.
+*/
+
+#include "TerrainCommon.h"
+
+STRUCT(PsIn)
+{
+	DATA(float4, Position,   SV_Position);
+	DATA(float3, PositionWS, POSITION_WS);
+	DATA(float2, Texcoord,   TEXCOORD0);
+	DATA(float3, Normal,     NORMAL);
+	DATA(float3, Tangent,    TANGENT);
+	DATA(float3, Bitangent,  BITANGENT);
+};
+
+STRUCT(PsOut)
+{
+	DATA(float4, Albedo, SV_Target0);
+	DATA(float4, Normal, SV_Target1);
+};
+
+float3 ReconstructNormal(float4 sampleNormal, float intensity)
+{
+	float3 tangentNormal;
+
+	tangentNormal.xy = (sampleNormal.rg * 2.0f - 1.0f) * intensity;
+	tangentNormal.z  = sqrt(1.0f - saturate(dot(tangentNormal.xy, tangentNormal.xy)));
+
+	return tangentNormal;
+}
+
+float MipLevel(float2 uv)
+{
+	float TextureSize = 2048.0f;
+
+	float2 dx = ddx(uv * TextureSize);
+	float2 dy = ddy(uv * TextureSize);
+	float  d  = max(dot(dx, dx), dot(dy, dy));
+
+	uint MipCount = uint(log2(TextureSize)) + 1;
+  
+	// Clamp the value to the max mip level counts
+	float rangeClamp = pow(2.0f, float(MipCount - 1));
+	d = clamp(sqrt(d), 1.0f, rangeClamp);
+      
+	return 0.75f * log2(d);
+}
+
+PsOut PS_MAIN(PsIn In)
+{
+	INIT_MAIN;
+
+	PsOut Out;
+
+	float dist = distance(Get(CameraInfo).xyz, In.PositionWS);
+	dist /= Get(CameraInfo).w; 
+
+	float4 maskVal = SampleLvlTex2D(Get(MaskMap), Get(g_LinearMirror), In.Texcoord, 0);
+	//maskVal /= max(dot(maskVal, f4(1.0f1)), 1.0f);
+
+	float4 tileScale = float4(100.0f, 120.0f, 80.0f, 80.0f);
+
+	float3 result = f3(0.0f);
+	float3 surfaceNrm = f3(0.0f);
+
+	UNROLL
+	for (uint i = 0; i < 4; ++i)
+	{
+		//const float fThresholdWeight = 3.0f / 256.f;
+		float2 uv = In.Texcoord * tileScale[i];
+		float lod = MipLevel(uv);
+
+		result += SampleLvlTex2D(Get(tileTextures)[i], Get(g_LinearWrap), uv, lod).xyz * maskVal[i];
+		surfaceNrm += ReconstructNormal(SampleLvlTex2D(Get(tileTexturesNrm)[i], Get(g_LinearWrap), uv, lod), 1.0f) * maskVal[i];
+	}
+
+	float baseWeight = saturate(1.0f - dot(maskVal, f4(1.0f)));
+	float baseTileScale = 70.0f;
+
+	float2 uv = In.Texcoord * baseTileScale;
+	float lod = MipLevel(uv);
+
+	result += SampleLvlTex2D(Get(tileTextures)[4], Get(g_LinearWrap), uv, lod).xyz * baseWeight;
+	surfaceNrm += ReconstructNormal(SampleLvlTex2D(Get(tileTexturesNrm)[4], Get(g_LinearWrap), uv, lod), 1.0f) * baseWeight;
+
+	float3 EarthNormal    = normalize(In.Normal);
+	float3 EarthTangent   = normalize(In.Tangent);
+	float3 EarthBitangent = normalize(In.Bitangent);
+  
+	float3 f3TerrainNormal;
+	float3 f3TerrainTangent;
+	float3 f3TerrainBitangent;
+
+	if (Get(TerrainInfo).y > 0.5f)
+	{   
+		f3TerrainNormal.xzy = SampleLvlTex2D(Get(NormalMap), Get(g_LinearMirror), In.Texcoord.xy, 0).xyz * 2.0f - 1.0f;
+		
+		// Since UVs are mirrored, we have to adjust normal coords accordingly:
+    	float2 f2XZSign = float2(sign(0.5f - frac(In.Texcoord.xy / 2.0f)));
+		f3TerrainNormal.xz *= f2XZSign * 0.1f;
+		f3TerrainNormal.y  /= Get(TerrainInfo).z;
+	}
+	else
+	{
+		f3TerrainNormal.xz = SampleLvlTex2D(Get(NormalMap), Get(g_LinearMirror), In.Texcoord.xy, 0).xy;
+
+		// Since UVs are mirrored, we have to adjust normal coords accordingly:
+    	float2 f2XZSign = float2(sign(0.5f - frac(In.Texcoord.xy / 2.0f)));
+		f3TerrainNormal.xz *= f2XZSign;
+		f3TerrainNormal.y   = sqrt(saturate(1.0f - dot(f3TerrainNormal.xz, f3TerrainNormal.xz))) / Get(TerrainInfo).z;
+	}
+
+	f3TerrainNormal    = normalize(mul(f3TerrainNormal, f3x3(EarthTangent, EarthNormal, -EarthBitangent)));
+	f3TerrainTangent   = normalize(cross(f3TerrainNormal, float3(0.0f, 0.0f, 1.0f)));
+	f3TerrainBitangent = normalize(cross(f3TerrainTangent, f3TerrainNormal));
+
+	f3TerrainNormal = normalize(mul(surfaceNrm.xzy, f3x3(f3TerrainTangent, f3TerrainNormal, -f3TerrainBitangent)));
+  
+	Out.Albedo = float4(result, 1.0f);
+	Out.Normal = float4(f3TerrainNormal, 1.0f);
+  
+	RETURN(Out);
+}

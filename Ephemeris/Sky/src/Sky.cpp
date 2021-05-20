@@ -325,15 +325,15 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc skyShader = {};
-	skyShader.mStages[0] = { "Sky/RenderSky.vert", NULL, 0, NULL };
-	skyShader.mStages[1] = { "Sky/RenderSky.frag", NULL, 0, NULL };
+	skyShader.mStages[0] = { "RenderSky.vert", NULL, 0, NULL };
+	skyShader.mStages[1] = { "RenderSky.frag", NULL, 0, NULL };
 	addShader(pRenderer, &skyShader, &pPAS_Shader);
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc spaceShader = {};
-	spaceShader.mStages[0] = { "Sky/Space.vert", NULL, 0,  NULL };
-	spaceShader.mStages[1] = { "Sky/Space.frag", NULL, 0,  NULL };
+	spaceShader.mStages[0] = { "Space.vert", NULL, 0,  NULL };
+	spaceShader.mStages[1] = { "Space.frag", NULL, 0,  NULL };
 
 	addShader(pRenderer, &spaceShader, &pSpaceShader);
 
@@ -441,7 +441,7 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
 	GuiDesc guiDesc = {};
 	guiDesc.mStartPosition = vec2(1280.0f / getDpiScale().getX(), 700.0f / getDpiScale().getY());
 	guiDesc.mStartSize = vec2(300.0f / getDpiScale().getX(), 250.0f / getDpiScale().getY());
-	pGuiWindow = pGAppUI->AddGuiComponent("Sky", &guiDesc);
+	pGuiWindow = addAppUIGuiComponent(pGAppUI, "Sky", &guiDesc);
 
 	gSkySettings.SkyInfo.x = 0.12f;
 	gSkySettings.SkyInfo.y = 3.0f;
@@ -453,23 +453,54 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
 	gSkySettings.OriginLocation.z = 788.0f;
 	gSkySettings.OriginLocation.w = 1.0f;
 
-	CollapsingHeaderWidget CollapsingPAS("Precomputed Atmosphere Scattering");
+	CollapsingHeaderWidget CollapsingPAS;
 
-	CollapsingPAS.AddSubWidget(SliderFloatWidget("Exposure", &gSkySettings.SkyInfo.x, float(0.0f), float(1.0f), float(0.001f)));
-	CollapsingPAS.AddSubWidget(SliderFloatWidget("InscatterIntensity", &gSkySettings.SkyInfo.y, float(0.0f), float(3.0f), float(0.001f)));
-	CollapsingPAS.AddSubWidget(SliderFloatWidget("InscatterContrast", &gSkySettings.SkyInfo.z, float(0.0f), float(2.0f), float(0.001f)));
-	CollapsingPAS.AddSubWidget(SliderFloatWidget("UnitsToM", &gSkySettings.SkyInfo.w, float(0.0f), float(2.0f), float(0.001f)));
+	SliderFloatWidget sliderFloat;
+	sliderFloat.pData = &gSkySettings.SkyInfo.x;
+	sliderFloat.mMin = 0.0f;
+	sliderFloat.mMax = 1.0f;
+	sliderFloat.mStep = 0.001f;
+	addCollapsingHeaderSubWidget(&CollapsingPAS, "Exposure", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
-	pGuiWindow->AddWidget(CollapsingPAS);
+	sliderFloat.pData = &gSkySettings.SkyInfo.y;
+	sliderFloat.mMin = 0.0f;
+	sliderFloat.mMax = 3.0f;
+	sliderFloat.mStep = 0.001f;
+	addCollapsingHeaderSubWidget(&CollapsingPAS, "InscatterIntensity", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
-	CollapsingHeaderWidget CollapsingNebula("Nebula");
+	sliderFloat.pData = &gSkySettings.SkyInfo.z;
+	sliderFloat.mMin = 0.0f;
+	sliderFloat.mMax = 2.0f;
+	sliderFloat.mStep = 0.001f;
+	addCollapsingHeaderSubWidget(&CollapsingPAS, "InscatterContrast", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	
+	sliderFloat.pData = &gSkySettings.SkyInfo.w;
+	sliderFloat.mMin = 0.0f;
+	sliderFloat.mMax = 2.0f;
+	sliderFloat.mStep = 0.001f;
+	addCollapsingHeaderSubWidget(&CollapsingPAS, "UnitsToM", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
-	CollapsingNebula.AddSubWidget(SliderFloatWidget("Nebula Scale", &NebulaScale, float(0.0f), float(20.0f), float(0.01f)));
-	CollapsingNebula.AddSubWidget(ColorPickerWidget("Nebula High Color", &NebulaHighColor));
-	CollapsingNebula.AddSubWidget(ColorPickerWidget("Nebula Mid Color", &NebulaMidColor));
-	CollapsingNebula.AddSubWidget(ColorPickerWidget("Nebula Low Color", &NebulaLowColor));
+	addWidgetLua(addGuiWidget(pGuiWindow, "Precomputed Atmosphere Scattering", &CollapsingPAS, WIDGET_TYPE_COLLAPSING_HEADER));
 
-	pGuiWindow->AddWidget(CollapsingNebula);
+	CollapsingHeaderWidget CollapsingNebula;
+
+	sliderFloat.pData = &NebulaScale;
+	sliderFloat.mMin = 0.0f;
+	sliderFloat.mMax = 20.0f;
+	sliderFloat.mStep = 0.01f;
+	addCollapsingHeaderSubWidget(&CollapsingNebula, "Nebula Scale", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+
+	ColorPickerWidget colorPicker;
+	colorPicker.pData = &NebulaHighColor;
+	addCollapsingHeaderSubWidget(&CollapsingNebula, "Nebula High Color", &colorPicker, WIDGET_TYPE_COLOR_PICKER);
+
+	colorPicker.pData = &NebulaMidColor;
+	addCollapsingHeaderSubWidget(&CollapsingNebula, "Nebula Mid Color", &colorPicker, WIDGET_TYPE_COLOR_PICKER);
+
+	colorPicker.pData = &NebulaLowColor;
+	addCollapsingHeaderSubWidget(&CollapsingNebula, "Nebula Low Color", &colorPicker, WIDGET_TYPE_COLOR_PICKER);
+
+	addWidgetLua(addGuiWidget(pGuiWindow, "Nebula", &CollapsingNebula, WIDGET_TYPE_COLLAPSING_HEADER));
 
 	waitForToken(&token);
 
@@ -481,12 +512,13 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
 
 void Sky::Exit()
 {
+	removeDescriptorSet(pRenderer, pSkyDescriptorSet[0]);
+	removeDescriptorSet(pRenderer, pSkyDescriptorSet[1]);
+	
 	removeShader(pRenderer, pPAS_Shader);
 	removeShader(pRenderer, pSpaceShader);
 
 	removeRootSignature(pRenderer, pSkyRootSignature);
-	removeDescriptorSet(pRenderer, pSkyDescriptorSet[0]);
-	removeDescriptorSet(pRenderer, pSkyDescriptorSet[1]);
 
 	removeSampler(pRenderer, pLinearClampSampler);
 	removeSampler(pRenderer, pLinearBorderSampler);
@@ -962,7 +994,7 @@ void Sky::InitializeWithLoad(RenderTarget* InDepthRenderTarget, RenderTarget* In
 //static const float AVERAGE_GROUND_REFLECTANCE = 0.1f;
 
 // Rayleigh
-static const float HR = 8.0f;
+static const float HR = 8.0f; //-V707
 static const vec3 betaR = vec3(5.8e-3f, 1.35e-2f, 3.31e-2f);
 /*
 // Mie
@@ -974,7 +1006,7 @@ static const float mieG = 0.8;
 */
 
 // CLEAR SKY
-static const float HM = 1.2f;
+static const float HM = 1.2f; //-V707
 static const vec3 betaMSca = vec3(20e-3f, 20e-3f, 20e-3f);
 static const vec3 betaMEx = betaMSca / 0.9f;
 //static const float mieG = 0.76f;

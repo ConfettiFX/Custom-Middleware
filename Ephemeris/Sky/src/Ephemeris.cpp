@@ -47,40 +47,36 @@ namespace confetti
 void Ephemeris::Update( const Location& location, const LocalTime& localTime )
 {	
 #if !defined(METAL) && !defined(__linux__)
-	bool bNeedUpdate = true;
-	if (bNeedUpdate)
-	{
-		m_TimeAtomic = localTime.getJ200Centuries(true);
-		m_TimeGMT = localTime.getJ200Centuries(false);
+	m_TimeAtomic = localTime.getJ200Centuries(true);
+	m_TimeGMT = localTime.getJ200Centuries(false);
 
-		m_GSTM = 4.894961 + 230121.675315 * m_TimeGMT;
-		m_LSTM = m_GSTM + location.getLongitude();
+	m_GSTM = 4.894961 + 230121.675315 * m_TimeGMT;
+	m_LSTM = m_GSTM + location.getLongitude();
 
-		mat4 Rx, Ry, Rz;
-		Ry = rotateY((float)(-0.00972 * m_TimeAtomic));
-		Rz = rotateZ((float)(0.01118 * m_TimeAtomic));
-		m_Precession = Rz * Ry * Rz;
+	mat4 Rx, Ry, Rz;
+	Ry = rotateY((float)(-0.00972 * m_TimeAtomic));
+	Rz = rotateZ((float)(0.01118 * m_TimeAtomic));
+	m_Precession = Rz * Ry * Rz;
 
-		double e = 0.409093 - 0.000227 * m_TimeAtomic;
+	double e = 0.409093 - 0.000227 * m_TimeAtomic;
 
-		Ry = rotateY(((float)location.getLatitude() - PI / 2.0f));
-		//	TODO: B: check: Igor: changed this to make sun rotate correct side
-		//Rz = rotateZ(LSTM);
-		Rz = rotateZ((float)-m_LSTM);
-		Rx = rotateX((float)e);
-		m_EquatorialToHorizon = Ry * Rz * m_Precession;
-		m_EclipticToHorizon = Ry * Rz * m_Precession * Rx;
+	Ry = rotateY(((float)location.getLatitude() - PI / 2.0f));
+	//	TODO: B: check: Igor: changed this to make sun rotate correct side
+	//Rz = rotateZ(LSTM);
+	Rz = rotateZ((float)-m_LSTM);
+	Rx = rotateX((float)e);
+	m_EquatorialToHorizon = Ry * Rz * m_Precession;
+	m_EclipticToHorizon = Ry * Rz * m_Precession * Rx;
 
-		toEngine(m_EquatorialToHorizon);
-		toEngine(m_EclipticToHorizon);
+	toEngine(m_EquatorialToHorizon);
+	toEngine(m_EclipticToHorizon);
 
-		//m_HorizonToEquatorial = !m_EquatorialToHorizon;
+	//m_HorizonToEquatorial = !m_EquatorialToHorizon;
 
-		m_HorizonToEquatorial = inverse(m_EquatorialToHorizon);
+	m_HorizonToEquatorial = inverse(m_EquatorialToHorizon);
 
-		UpdateSunPosition();
-		UpdateMoonPosition();
-	}
+	UpdateSunPosition();
+	UpdateMoonPosition();
 #endif
 }
 
