@@ -43,7 +43,7 @@ Aura - PS4
 
 Aura - XBOX One original
 
-![Aura on Ubuntu Vulkan](Screenshots/XBoxOne.png)
+![Aura on Ubuntu Vulkan](Screenshots/XboxOne.png)
 
 
 # News
