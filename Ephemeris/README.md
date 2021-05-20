@@ -52,13 +52,6 @@ Check out the demo video by clicking the main image above!
 # News
 All the releases happen in sync with [The Forge](https://github.com/ConfettiFX/The-Forge) and have therefore the same release number.
 
-## Release 1.32 - August 8th - 
-
-- Added Procedural Night Sky and Star-field
-  - Now, the user can costomize the night sky's nebula colors 
-- Added Glow effects on Sun and Moon
-- Fix a issue that Godrays can be drawn on unexpected area
-
  
 ## Installation
 
