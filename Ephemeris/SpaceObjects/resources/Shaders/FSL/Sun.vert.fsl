@@ -1,0 +1,71 @@
+/*
+* Copyright (c) 2018-2019 Confetti Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You may not use the material for commercial purposes.
+*/
+
+#include "SpaceObjectsCommon.h"
+
+STRUCT(VsOut)
+{
+	DATA(float4, Position,    SV_Position);
+	DATA(float3, TexCoord,    TEXCOORD0);
+	DATA(float2, ScreenCoord, TEXCOORD1);
+};
+
+CBUFFER(SunUniform, UPDATE_FREQ_PER_FRAME, b0, binding = 0)
+{
+	DATA(f4x4,   ViewMat,        None);
+	DATA(f4x4,   ViewProjMat,    None);
+	DATA(float4, LightDirection, None);
+	DATA(float4, Dx,             None);
+	DATA(float4, Dy,             None);
+};
+
+VsOut PushVertex(f4x4 viewProjMat, float3 pos, float3 dx, float3 dy, float2 vOffset)
+{
+	VsOut Out;
+
+	Out.Position = mul(viewProjMat, float4(pos + dx * vOffset.x + dy * vOffset.y, 1.0f));
+	Out.TexCoord.z = Out.Position.z;
+
+	Out.Position.z = Out.Position.w;
+	Out.Position  /= Out.Position.w;
+		
+	Out.ScreenCoord = float2((Out.Position.x + 1.0f) * 0.5f, (1.0f - Out.Position.y) * 0.5f);
+			
+	vOffset += float2(1.0f, -1.0f);
+	vOffset *= float2(0.5f, -0.5f);
+
+	Out.TexCoord.xy = vOffset;
+
+	return Out;
+}
+
+VsOut VS_MAIN(SV_VertexID(uint) VertexID)
+{
+	INIT_MAIN;
+
+	VsOut Out;
+
+	if (VertexID == 0)
+	{
+		Out = PushVertex(Get(ViewProjMat), Get(LightDirection).xyz, Get(Dx).xyz, Get(Dy).xyz, float2(-1.0f, -1.0f));
+	}
+	else if (VertexID == 1)
+	{
+		Out = PushVertex(Get(ViewProjMat), Get(LightDirection).xyz, Get(Dx).xyz, Get(Dy).xyz, float2(1.0, -1.0));
+	}
+	else if (VertexID == 2)
+	{
+		Out = PushVertex(Get(ViewProjMat), Get(LightDirection).xyz, Get(Dx).xyz, Get(Dy).xyz, float2(-1.0, 1.0));
+	}
+	else
+	{
+		Out = PushVertex(Get(ViewProjMat), Get(LightDirection).xyz, Get(Dx).xyz, Get(Dy).xyz, float2(1.0, 1.0));
+	}
+
+	RETURN(Out);
+}

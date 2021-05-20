@@ -16,12 +16,6 @@
 #include "../../../../The-Forge/Middleware_3/UI/AppUI.h"
 #include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
 
-#if defined(METAL)
-#define				USE_VC_FRAGMENTSHADER 1
-#else
-#define				USE_VC_FRAGMENTSHADER 0
-#endif
-
 struct DataPerEye
 {
 	mat4			m_WorldToProjMat;			// Matrix for converting World to Projected Space for the first eye
@@ -174,6 +168,10 @@ struct VolumetricCloudsCB
 		lightDirection					= vec4(0.0f, 0.0f, 0.0f, 0.0f);
 		lightColorAndIntensity	= vec4(0.0f, 0.0f, 0.0f, 0.0f);
 
+		EarthRadius = 0.0f;
+
+		m_MaxSampleDistance = 0.0f;
+
 		for (int i = 0; i < 2; i++)
 		{
 			m_DataPerEye[i].cameraPosition			= vec4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -227,6 +225,8 @@ struct VolumetricCloudsCB
 
 		EnabledDepthCulling = 0;
 		EnabledLodDepthCulling = 0;
+		DepthMapWidth = 0;
+		DepthMapHeight = 0;
 
 		// VolumetricClouds' Light shaft
 		GodNumSamples = 0;
@@ -284,13 +284,13 @@ public:
 	Texture* GetWeatherMap();
 
 	// Below are passed from Previous stage via Initialize()
-	Renderer*               pRenderer;
-	PipelineCache*          pPipelineCache;
-	uint                    gImageCount;
-	uint                    mWidth;
-	uint                    mHeight;
+	Renderer*               pRenderer = NULL;
+	PipelineCache*          pPipelineCache = NULL;
+	uint                    gImageCount = 0;
+	uint                    mWidth = 0;
+	uint                    mHeight = 0;
 
-	uint                    gFrameIndex;
+	uint                    gFrameIndex = 0;
 
 	RenderTarget*           pLinearDepthTexture = NULL;
 	RenderTarget*           pSceneColorTexture = NULL;
@@ -305,16 +305,16 @@ public:
 	Fence*                  pTransitionCompleteFences = NULL;
 	Fence**	                pRenderCompleteFences = NULL;
 
-    ProfileToken            gGpuProfileToken;
+	ProfileToken            gGpuProfileToken = {};
 
 	GuiComponent*           pGuiWindow = NULL;
 	RenderTarget*           pCastShadowRT = NULL;
-	RenderTarget**          pFinalRT;
+	RenderTarget**          pFinalRT = NULL;
 
 	float3                  LightDirection;
 	float4                  LightColorAndIntensity;
 
-	Buffer*                 pTransmittanceBuffer;
+	Buffer*                 pTransmittanceBuffer = NULL;
 
 	VolumetricCloudsCB      volumetricCloudsCB;
 	vec4                    g_StandardPosition;
@@ -324,5 +324,8 @@ public:
 
 	Texture*                pSavePrevTexture = NULL;
 	
-	uint32_t                gDownsampledCloudSize;
+	uint32_t                gDownsampledCloudSize = 0;
+	
+private:
+	void GenerateCloudTextures();
 };

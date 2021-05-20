@@ -41,35 +41,35 @@ public:
 
 	void GenerateRing(eastl::vector<float> &vertices, eastl::vector<uint32_t> &indices, uint32_t WidthDividor, uint32_t HeightDividor, float radius = 1.0f, float height = 1.0f);
 
-	uint                  gFrameIndex;
+	uint                  gFrameIndex = 0;
 
-	Renderer*             pRenderer;
-	PipelineCache*        pPipelineCache;
+	Renderer*             pRenderer = NULL;
+	PipelineCache*        pPipelineCache = NULL;
 
-	uint                  gImageCount;
-	uint                  mWidth;
-	uint                  mHeight;
+	uint                  gImageCount = 0;
+	uint                  mWidth = 0;
+	uint                  mHeight = 0;
 
 	GuiComponent*         pGuiWindow = nullptr;
-	UIApp*                pGAppUI;
+	UIApp*                pGAppUI = NULL;
 
 	Queue*                pGraphicsQueue = NULL;
 	CmdPool*              pTransCmdPool = NULL;
 	Cmd**                 ppTransCmds = NULL;
 	Fence*                pTransitionCompleteFences = NULL;
 
-    ProfileToken          gGpuProfileToken;
+	ProfileToken          gGpuProfileToken = {};
 
-	Texture*              pMoonTexture;
+	Texture*              pMoonTexture = NULL;
 
-	Texture*							pSavePrevTexture;
+	Texture*              pSavePrevTexture = NULL;
 
-	Buffer*               pGlobalTriangularVertexBuffer;
+	Buffer*               pGlobalTriangularVertexBuffer = NULL;
 
-	Sampler*              pLinearClampSampler;
-	Sampler*              pLinearBorderSampler;
+	Sampler*              pLinearClampSampler = NULL;
+	Sampler*              pLinearBorderSampler = NULL;
 
-	RenderTarget*         pPreStageRenderTarget;
+	RenderTarget*         pPreStageRenderTarget = NULL;
 	//RenderTarget*         pSkyRenderTarget;
 	RenderTarget*         pDepthBuffer = NULL;
 	RenderTarget*         pLinearDepthBuffer = NULL;
@@ -78,14 +78,14 @@ public:
 
 	Buffer*								pParticleVertexBuffer = NULL;
 	Buffer*								pParticleInstanceBuffer = NULL;
-	uint32_t							ParticleCount;
-	uint32_t							ParticleVertexStride;
-	uint32_t							ParticleInstanceStride;
+	uint32_t							ParticleCount = 0;
+	uint32_t							ParticleVertexStride = 0;
+	uint32_t							ParticleInstanceStride = 0;
 
 	mat4                  SpaceProjectionMatrix;
 
-	float                 Azimuth;
-	float                 Elevation;
+	float                 Azimuth = 0.0f;
+	float                 Elevation = 0.0f;
 	float3                LightDirection;
 	float4                LightColorAndIntensity;
 };

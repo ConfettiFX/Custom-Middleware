@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2018-2021 Confetti Interactive Inc.
+ *
+ * This is a part of Aura.
+ * 
+ * This file(code) is licensed under a 
+ * Creative Commons Attribution-NonCommercial 4.0 International License 
+ *
+ *   (https://creativecommons.org/licenses/by-nc/4.0/legalcode) 
+ *
+ * Based on a work at https://github.com/ConfettiFX/The-Forge.
+ * You may not use the material for commercial purposes.
+*/
+
+#include "lpvCommon.h"
+
+STRUCT(PsIn)
+{
+	DATA(float4, position,  SV_Position);
+	DATA(uint,   rtIndex,   SV_RenderTargetArrayIndex);
+	DATA(float,  pointSize, SV_PointSize);
+	DATA(float4, coeffs,    TEXCOORD0);
+	DATA(float3, albedo,    TEXCOORD1);
+	DATA(float2, tex,       TEXCOORD2);
+};
+
+STRUCT(PsOut)
+{
+	DATA(float4, r, SV_Target0);
+	DATA(float4, g, SV_Target1);
+	DATA(float4, b, SV_Target2);
+};
+
+PsOut PS_MAIN(PsIn In)
+{
+	INIT_MAIN;
+
+	PsOut Out;
+
+	// Disable if use Crytek's constants.
+	// Constant term scaler
+	// Is used to hide black spots under virtual light sources
+	// float constScaler = 1.0f;
+	float constScaler = 3.5f;
+	In.coeffs.x *= constScaler;
+
+	Out.r = In.coeffs * In.albedo.r * 10;
+	Out.g = In.coeffs * In.albedo.g * 10;
+	Out.b = In.coeffs * In.albedo.b * 10;
+
+	// res = SHScale(In.coeffs, In.albedo*10);
+
+	// float4 baseval = tBase.SampleLevel(pointBorder, In.tex, 0);
+	// baseval.xyz = baseval.xyz/baseval.w;
+	// baseval.w = 1;
+	// res.d = baseval;
+	// res.d.xyzw = float4(1, 1, 1, 1);
+
+	RETURN(Out);
+}

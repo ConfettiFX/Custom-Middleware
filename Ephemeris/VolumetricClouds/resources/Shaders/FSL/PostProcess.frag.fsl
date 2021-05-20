@@ -1,0 +1,45 @@
+/*
+* Copyright (c) 2018-2019 Confetti Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You may not use the material for commercial purposes.
+*/
+
+#include "VolumetricCloudsCommon.h"
+
+STRUCT(PsIn)
+{
+	DATA(float4, Position, SV_Position);
+	DATA(float2, TexCoord, TEXCOORD0);
+	DATA(float2, VSray,    TEXCOORD1);
+};
+
+STRUCT(PsOut)
+{
+	DATA(float4, VolumetricClouds, SV_Target0);
+	DATA(float4, ResultColor,      SV_Target1);
+};
+
+float4 PS_MAIN(PsIn In)
+{
+	INIT_MAIN;
+
+	float4 volumetricCloudsResult = SampleTex2D(Get(g_SrcTexture2D), Get(g_LinearClampSampler), In.TexCoord);
+
+	float intensity = volumetricCloudsResult.r;
+	float density   = volumetricCloudsResult.a;
+	float atmosphereBlendFactor = min(volumetricCloudsResult.g, 1.0f);
+
+	float3 BackgroudColor = SampleTex2D(Get(g_SkyBackgroudTexture), Get(g_LinearClampSampler), In.TexCoord).rgb;
+
+	float3 TransmittanceRGB = Get(TransmittanceColor)[0].rgb;
+
+	float4 PostProcessedResult;
+	PostProcessedResult.a   = density;
+	PostProcessedResult.rgb = (intensity / max(density, 0.000001f)) * lerp(TransmittanceRGB , lerp(Get(lightColorAndIntensity).rgb, TransmittanceRGB, pow(saturate(1.0f - Get(lightDirection).y), 0.5f)), Get(Test00)) * Get(lightColorAndIntensity).a * Get(CloudBrightness);
+	PostProcessedResult.rgb = lerp(BackgroudColor, PostProcessedResult.rgb, PostProcessedResult.a * Get(BackgroundBlendFactor));
+	PostProcessedResult.rgb = lerp(PostProcessedResult.rgb, BackgroudColor, pow(atmosphereBlendFactor, 1.4f));
+
+	RETURN(float4(PostProcessedResult.rgb, 1.0f));
+}

@@ -34,9 +34,15 @@ struct ImposterUniformBuffer
 
 
 CloudImpostor::CloudImpostor() :
+	gFrameIndex(0),
+	pRenderer(NULL),
+	gImageCount(0),
+	mWidth(0),
+	mHeight(0),
 	m_Radius(0),
 	m_SortDepth(0),
-	m_Valid(false)
+	m_Valid(false),
+	m_OldDistance(0)
 {
 
 	//m_TextureSize = 256;
@@ -60,7 +66,7 @@ CloudImpostor::CloudImpostor() :
   ImposterRenderTarget.mWidth = m_TextureSize;
   ImposterRenderTarget.mHeight = m_TextureSize;
   ImposterRenderTarget.pName = "Imposter RenderTarget";
-  addRenderTarget(pRenderer, &ImposterRenderTarget, &m_tImpostor);
+  addRenderTarget(pRenderer, &ImposterRenderTarget, &m_tImpostor); //-V614
 #else	//	USE_CLOUDS_DEPTH_RECONSTRUCTION
 	//	TODO: Igor: check if can use simpler format
 
@@ -259,25 +265,26 @@ void CloudImpostor::setupRenderer( Cmd *cmd, CumulusCloud *pCloud, const vec3 &c
 				//	Looks bad for large particles: when our rotate camera and then move it, cloud
 				//	changes significantly
 				//	probably changing only a fraction number of clouds per frame could be better
-				while(updateMode==IUM_PositionBased)
+				if (updateMode==IUM_PositionBased)
 				{
 					const float distanceRatioEPS = 0.1f;
 					//	This should be pixel-angle size dependent
 					//	Currently it's for 0.06 degree
 					const float viewAngleCosEps = 0.00000045f;
-					if (abs(m_OldDistance-distance)/m_OldDistance>distanceRatioEPS) break;
+					if (abs(m_OldDistance - distance) / m_OldDistance <= distanceRatioEPS)
+					{
+						vec3 nearDir = normalize(m_OldNearPos - camPos);
+						vec3 farDir = normalize(m_OldFarPos - camPos);
 
-					vec3 nearDir = normalize(m_OldNearPos - camPos);
-          vec3 farDir = normalize(m_OldFarPos - camPos);
+						if (abs(dot(nearDir, farDir) - 1) <= viewAngleCosEps)
+						{
+							//	TODO: C: implement angular update heuristics for the moving cloud!
+							//	Probably, don't store old near/far pos, recalculate them each time for the nex cloud position/orientation
 
-					if (abs(dot(nearDir, farDir)-1)>viewAngleCosEps) break;
-
-					//	TODO: C: implement angular update heuristics for the moving cloud!
-					//	Probably, don't store old near/far pos, recalculate them each time for the nex cloud position/orientation
-
-					//	Don't update the impostor
-					needUpdate = false;
-					return;
+							//	Don't update the impostor
+							needUpdate = false;
+						}
+					}
 				}
 			}
 		}
@@ -463,7 +470,10 @@ void CloudImpostor::InitFromCloud( CumulusCloud *pCloud )
 }
 
 #ifdef	STABLISE_PARTICLE_ROTATION
-CloudImpostor::ParticleStabilizeData::ParticleStabilizeData() : m_Valid(false)
+CloudImpostor::ParticleStabilizeData::ParticleStabilizeData() :
+	m_Valid(false),
+	m_OldMasterParticleRotation(0.0f),
+	m_MasterParticleRotation(0.0f)
 {
 
 }

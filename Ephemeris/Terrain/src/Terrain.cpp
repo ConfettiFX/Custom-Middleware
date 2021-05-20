@@ -75,19 +75,19 @@ static bool boxIntersects(TerrainFrustum &frustum, TerrainBoundingBox &box)
 {
 	Plane* planes = frustum.CPlanes.planes;
 	Plane *currPlane;
-	float3 *currNormal;
-	float3 maxPoint;
+	Vector3 *currNormal;
+	Vector3 maxPoint;
 
 	for (int planeIdx = 0; planeIdx < 6; planeIdx++)
 	{
 		currPlane = planes + planeIdx;
 		currNormal = &currPlane->normal;
 
-		maxPoint.x = (currNormal->x > 0) ? box.max.x : box.min.x;
-		maxPoint.y = (currNormal->y > 0) ? box.max.y : box.min.y;
-		maxPoint.z = (currNormal->z > 0) ? box.max.z : box.min.z;
+		maxPoint.setX((currNormal->getX() > 0) ? box.max.x : box.min.x);
+		maxPoint.setY((currNormal->getY() > 0) ? box.max.y : box.min.y);
+		maxPoint.setZ((currNormal->getZ() > 0) ? box.max.z : box.min.z);
 
-		float dMax = dot(f3Tov3(maxPoint), f3Tov3(*currNormal)) + currPlane->distance;
+		float dMax = dot(maxPoint, *currNormal) + currPlane->distance;
 
 		if (dMax < 0)
 			return false;
@@ -98,39 +98,39 @@ static bool boxIntersects(TerrainFrustum &frustum, TerrainBoundingBox &box)
 static void getFrustumFromMatrix(const mat4 &matrix, TerrainFrustum &frustum)
 {
 	// Left clipping plane 
-	frustum.iPlanes.left.normal.x = matrix[0][3] + matrix[0][0];
-	frustum.iPlanes.left.normal.y = matrix[1][3] + matrix[1][0];
-	frustum.iPlanes.left.normal.z = matrix[2][3] + matrix[2][0];
+	frustum.iPlanes.left.normal.setX(matrix[0][3] + matrix[0][0]);
+	frustum.iPlanes.left.normal.setY(matrix[1][3] + matrix[1][0]);
+	frustum.iPlanes.left.normal.setZ(matrix[2][3] + matrix[2][0]);
 	frustum.iPlanes.left.distance = matrix[3][3] + matrix[3][0];
 
 	// Right clipping plane 
-	frustum.iPlanes.right.normal.x = matrix[0][3] - matrix[0][0];
-	frustum.iPlanes.right.normal.y = matrix[1][3] - matrix[1][0];
-	frustum.iPlanes.right.normal.z = matrix[2][3] - matrix[2][0];
+	frustum.iPlanes.right.normal.setX(matrix[0][3] - matrix[0][0]);
+	frustum.iPlanes.right.normal.setY(matrix[1][3] - matrix[1][0]);
+	frustum.iPlanes.right.normal.setZ(matrix[2][3] - matrix[2][0]);
 	frustum.iPlanes.right.distance = matrix[3][3] - matrix[3][0];
 
 	// Top clipping plane 
-	frustum.iPlanes.top.normal.x = matrix[0][3] - matrix[0][1];
-	frustum.iPlanes.top.normal.y = matrix[1][3] - matrix[1][1];
-	frustum.iPlanes.top.normal.z = matrix[2][3] - matrix[2][1];
+	frustum.iPlanes.top.normal.setX(matrix[0][3] - matrix[0][1]);
+	frustum.iPlanes.top.normal.setY(matrix[1][3] - matrix[1][1]);
+	frustum.iPlanes.top.normal.setZ(matrix[2][3] - matrix[2][1]);
 	frustum.iPlanes.top.distance = matrix[3][3] - matrix[3][1];
 
 	// Bottom clipping plane 
-	frustum.iPlanes.bottom.normal.x = matrix[0][3] + matrix[0][1];
-	frustum.iPlanes.bottom.normal.y = matrix[1][3] + matrix[1][1];
-	frustum.iPlanes.bottom.normal.z = matrix[2][3] + matrix[2][1];
+	frustum.iPlanes.bottom.normal.setX(matrix[0][3] + matrix[0][1]);
+	frustum.iPlanes.bottom.normal.setY(matrix[1][3] + matrix[1][1]);
+	frustum.iPlanes.bottom.normal.setZ(matrix[2][3] + matrix[2][1]);
 	frustum.iPlanes.bottom.distance = matrix[3][3] + matrix[3][1];
 
 	// Near clipping plane 
-	frustum.iPlanes.front.normal.x = matrix[0][2];
-	frustum.iPlanes.front.normal.y = matrix[1][2];
-	frustum.iPlanes.front.normal.z = matrix[2][2];
+	frustum.iPlanes.front.normal.setX(matrix[0][2]);
+	frustum.iPlanes.front.normal.setY(matrix[1][2]);
+	frustum.iPlanes.front.normal.setZ(matrix[2][2]);
 	frustum.iPlanes.front.distance = matrix[3][2];
 
 	// Far clipping plane 
-	frustum.iPlanes.back.normal.x = matrix[0][3] - matrix[0][2];
-	frustum.iPlanes.back.normal.y = matrix[1][3] - matrix[1][2];
-	frustum.iPlanes.back.normal.z = matrix[2][3] - matrix[2][2];
+	frustum.iPlanes.back.normal.setX(matrix[0][3] - matrix[0][2]);
+	frustum.iPlanes.back.normal.setY(matrix[1][3] - matrix[1][2]);
+	frustum.iPlanes.back.normal.setZ(matrix[2][3] - matrix[2][2]);
 	frustum.iPlanes.back.distance = matrix[3][3] - matrix[3][2];
 }
 
@@ -165,8 +165,8 @@ bool Terrain::Init(Renderer* renderer, PipelineCache* pCache)
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc terrainNormalShader = {};
-	terrainNormalShader.mStages[0] = { "Terrain/GenNormalMap.vert", NULL, 0, NULL };
-	terrainNormalShader.mStages[1] = { "Terrain/GenNormalMap.frag", NULL, 0, NULL };
+	terrainNormalShader.mStages[0] = { "GenNormalMap.vert", NULL, 0, NULL };
+	terrainNormalShader.mStages[1] = { "GenNormalMap.frag", NULL, 0, NULL };
 	addShader(pRenderer, &terrainNormalShader, &pGenTerrainNormalShader);
 
 	RootSignatureDesc rootDesc = {};
@@ -180,22 +180,22 @@ bool Terrain::Init(Renderer* renderer, PipelineCache* pCache)
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc terrainShader = {};
-	terrainShader.mStages[0] = { "Terrain/terrain.vert", NULL, 0, NULL};
-	terrainShader.mStages[1] = { "Terrain/terrain.frag", NULL, 0, NULL};
+	terrainShader.mStages[0] = { "Terrain.vert", NULL, 0, NULL};
+	terrainShader.mStages[1] = { "Terrain.frag", NULL, 0, NULL};
 	addShader(pRenderer, &terrainShader, &pTerrainShader);
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc terrainRenderShader = {};
-	terrainRenderShader.mStages[0] = { "Terrain/RenderTerrain.vert", NULL, 0, NULL };
-	terrainRenderShader.mStages[1] = { "Terrain/RenderTerrain.frag", NULL, 0, NULL };
+	terrainRenderShader.mStages[0] = { "RenderTerrain.vert", NULL, 0, NULL };
+	terrainRenderShader.mStages[1] = { "RenderTerrain.frag", NULL, 0, NULL };
 	addShader(pRenderer, &terrainRenderShader, &pRenderTerrainShader);
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	ShaderLoadDesc terrainlightingShader = {};
-	terrainlightingShader.mStages[0] = { "Terrain/LightingTerrain.vert", NULL, 0, NULL };
-	terrainlightingShader.mStages[1] = { "Terrain/LightingTerrain.frag", NULL, 0, NULL };
+	terrainlightingShader.mStages[0] = { "LightingTerrain.vert", NULL, 0, NULL };
+	terrainlightingShader.mStages[1] = { "LightingTerrain.frag", NULL, 0, NULL };
 	addShader(pRenderer, &terrainlightingShader, &pLightingTerrainShader);
 
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -312,18 +312,19 @@ bool Terrain::Init(Renderer* renderer, PipelineCache* pCache)
 
 void Terrain::Exit()
 {
+	removeDescriptorSet(pRenderer, pTerrainDescriptorSet[0]);
+	removeDescriptorSet(pRenderer, pTerrainDescriptorSet[1]);
+	removeDescriptorSet(pRenderer, pGenTerrainNormalDescriptorSet);
+	
 	removeSampler(pRenderer, pLinearMirrorSampler);
 	removeSampler(pRenderer, pLinearWrapSampler);
 	removeSampler(pRenderer, pLinearBorderSampler);
 
-	removeShader(pRenderer, pTerrainShader);
 	removeRootSignature(pRenderer, pTerrainRootSignature);
-	removeDescriptorSet(pRenderer, pTerrainDescriptorSet[0]);
-	removeDescriptorSet(pRenderer, pTerrainDescriptorSet[1]);
-	removeDescriptorSet(pRenderer, pGenTerrainNormalDescriptorSet);
+	removeRootSignature(pRenderer, pGenTerrainNormalRootSignature);
 
 	removeShader(pRenderer, pGenTerrainNormalShader);
-	removeRootSignature(pRenderer, pGenTerrainNormalRootSignature);
+	removeShader(pRenderer, pTerrainShader);
 	removeShader(pRenderer, pRenderTerrainShader);
 	removeShader(pRenderer, pLightingTerrainShader);
 

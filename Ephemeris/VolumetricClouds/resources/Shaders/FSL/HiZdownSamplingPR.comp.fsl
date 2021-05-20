@@ -1,0 +1,50 @@
+/*
+* Copyright (c) 2018-2019 Confetti Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You may not use the material for commercial purposes.
+*/
+
+#include "VolumetricCloudsCommon.h"
+
+#define NUM_THREADS_X 16
+
+GroupShared(float, GroupOutput[NUM_THREADS_X * NUM_THREADS_X]);
+
+float CombineGroup(float a, float b)
+{ 
+	return max(a, b);
+}
+
+NUM_THREADS(NUM_THREADS_X, NUM_THREADS_X, 1)
+void CS_MAIN(SV_GroupThreadID(uint3) GTid, SV_GroupID(uint3) Gid, SV_DispatchThreadID(uint3) DTid, SV_GroupIndex(uint) GroupIndex)
+{
+	INIT_MAIN;
+
+	GroupOutput[GTid.y * NUM_THREADS_X + GTid.x] = LoadTex2D(Get(SrcTexture), NO_SAMPLER, DTid.xy * 2, 0).r;
+
+	GroupMemoryBarrier();
+
+	// parallel reduction
+	// using Chan's method of calculating mean and variance in parallel
+	// https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
+
+	UNROLL
+	for (uint i = NUM_THREADS_X * NUM_THREADS_X >> 1; i > 0; i = i >> 1)
+	{
+		if (GroupIndex < i)
+		{
+			GroupOutput[GroupIndex] = CombineGroup(GroupOutput[GroupIndex], GroupOutput[GroupIndex + i]);
+		}
+
+		GroupMemoryBarrier();
+	}
+
+	if (GroupIndex == 0)
+	{
+		Write2D(Get(DstTexture), Gid.xy, GroupOutput[0]);
+	}
+
+	RETURN();
+}

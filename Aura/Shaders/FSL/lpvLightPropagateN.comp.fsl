@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2018-2021 Confetti Interactive Inc.
+ *
+ * This is a part of Aura.
+ * 
+ * This file(code) is licensed under a 
+ * Creative Commons Attribution-NonCommercial 4.0 International License 
+ *
+ *   (https://creativecommons.org/licenses/by-nc/4.0/legalcode) 
+ *
+ * Based on a work at https://github.com/ConfettiFX/The-Forge.
+ * You may not use the material for commercial purposes.
+*/
+
+RES(RWTex3D(float4), workCoeffs0, UPDATE_FREQ_NONE, u0, binding = 0);
+RES(RWTex3D(float4), workCoeffs1, UPDATE_FREQ_NONE, u1, binding = 1);
+RES(RWTex3D(float4), workCoeffs2, UPDATE_FREQ_NONE, u2, binding = 2);
+RES(SamplerState,    pointBorder, UPDATE_FREQ_NONE, s0, binding = 3);
+RES(RWTex3D(float4), RWGrid0,     UPDATE_FREQ_NONE, u3, binding = 4);
+RES(RWTex3D(float4), RWGrid1,     UPDATE_FREQ_NONE, u4, binding = 5);
+RES(RWTex3D(float4), RWGrid2,     UPDATE_FREQ_NONE, u5, binding = 6);
+
+#include "lpvCSLightPropagateFunctions.h"
+
+NUM_THREADS(THREAD_GROUP_X_DIM, THREAD_GROUP_Y_DIM, THREAD_GROUP_Z_DIM)
+void CS_MAIN(SV_GroupThreadID(uint3) groupThreadId, SV_DispatchThreadID(uint3) dispatchThreadId) // dispatchThreadId effectively the screen space coordinate of this compute thread
+{
+	INIT_MAIN;
+
+	FillLocalGrid(groupThreadId, dispatchThreadId, Get(pointBorder));
+
+	SHSpectralCoeffs coeffs = IVPropagate(groupThreadId + u3(1));
+
+	Write3D(Get(workCoeffs0), dispatchThreadId, coeffs.c[0]);
+	Write3D(Get(workCoeffs1), dispatchThreadId, coeffs.c[1]);
+	Write3D(Get(workCoeffs2), dispatchThreadId, coeffs.c[2]);
+
+	Write3D(Get(RWGrid0), dispatchThreadId, LoadRWTex3D(Get(RWGrid0), dispatchThreadId) + coeffs.c[0]);
+	Write3D(Get(RWGrid1), dispatchThreadId, LoadRWTex3D(Get(RWGrid1), dispatchThreadId) + coeffs.c[1]);
+	Write3D(Get(RWGrid2), dispatchThreadId, LoadRWTex3D(Get(RWGrid2), dispatchThreadId) + coeffs.c[2]);
+
+	RETURN();
+}

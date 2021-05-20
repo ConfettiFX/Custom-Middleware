@@ -22,7 +22,7 @@ float Perlin::noise2D(const int32_t x, const int32_t z) {
 
   int32_t n = x + z * primez;
   n = (n << prime0) ^ n;
-  return (1.f - ((n * (n * n * prime1 + prime2) + prime3) & 0x7fffffff) / prime4);
+  return (1.f - (float)((n * (n * n * prime1 + prime2) + prime3) & 0x7fffffff) / prime4);
 }
 
 float Perlin::noise3D(const int32_t x, const int32_t y, const int32_t z) {
@@ -38,7 +38,7 @@ float Perlin::noise3D(const int32_t x, const int32_t y, const int32_t z) {
 
   int32_t n = x + y * (int32_t)primey + z * (int32_t)primez;
   n = (n << prime0) ^ n;
-  return (1.f - ((n * (n * n * prime1 + prime2) + prime3) & 0x7fffffff) / prime4);
+  return (1.f - (float)((n * (n * n * prime1 + prime2) + prime3) & 0x7fffffff) / prime4);
 }
 
 float Perlin::linearInterpolate(const float a, const float b, const float u) {

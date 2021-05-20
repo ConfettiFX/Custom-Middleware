@@ -1,0 +1,45 @@
+/*
+ * Copyright (c) 2018-2021 Confetti Interactive Inc.
+ *
+ * This is a part of Aura.
+ * 
+ * This file(code) is licensed under a 
+ * Creative Commons Attribution-NonCommercial 4.0 International License 
+ *
+ *   (https://creativecommons.org/licenses/by-nc/4.0/legalcode) 
+ *
+ * Based on a work at https://github.com/ConfettiFX/The-Forge.
+ * You may not use the material for commercial purposes.
+*/
+
+#include "lightPropagation.h"
+
+STRUCT(VsOut)
+{
+	DATA(float4, position, SV_Position);
+	DATA(uint,   rtIndex,  SV_RenderTargetArrayIndex);
+	DATA(float3, texCoord, TEXCOORD0);
+};
+
+STATIC const float4 positions[3] = {
+	float4( 3.0f, -1.0f, 0.0f, 1.0f),
+	float4(-1.0f, -1.0f, 0.0f, 1.0f),
+	float4(-1.0f,  3.0f, 0.0f, 1.0f)
+};
+
+VsOut VS_MAIN(SV_InstanceID(uint) PrimitiveID, SV_VertexID(uint) VertexID)
+{
+	INIT_MAIN;
+
+	VsOut Out;
+
+	float pSize  = 1.0f / GridRes; // pixel size
+	float hpSize = 0.5f * pSize;   // float pixel size
+
+	Out.position    = positions[VertexID];
+	Out.rtIndex     = PrimitiveID;
+	Out.texCoord.xy = Out.position.xy * float2(0.5f, -0.5f) + 0.5f;
+	Out.texCoord.z  = hpSize + pSize * PrimitiveID;
+	
+	RETURN(Out);	
+}

@@ -46,9 +46,9 @@ const int INSCATTER_SPHERICAL_INTEGRAL_SAMPLES = 16;
 
 const float M_PI = 3.141592657f;
 
-const float Rg = 6360.0f;
-const float Rt = 6420.0f;
-const float RL = 6421.0f;
+const float Rg = 6360.0f; //-V707
+const float Rt = 6420.0f; //-V707
+const float RL = 6421.0f; //-V707
 
 const int TRANSMITTANCE_W = 256;
 const int TRANSMITTANCE_H = 64;

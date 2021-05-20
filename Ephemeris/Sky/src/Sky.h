@@ -65,50 +65,50 @@ public:
 	Buffer*								GetParticleInstanceBuffer();
 	uint32_t							GetParticleCount();
 
-	uint                  gFrameIndex;
+	uint                  gFrameIndex = 0;
 
-	Renderer*             pRenderer;
-	PipelineCache*        pPipelineCache;
+	Renderer*             pRenderer = NULL;
+	PipelineCache*        pPipelineCache = NULL;
 
-	uint                  gImageCount;
-	uint                  mWidth;
-	uint                  mHeight;
+	uint                  gImageCount = 0;
+	uint                  mWidth = 0;
+	uint                  mHeight = 0;
 
-	GuiComponent*         pGuiWindow = nullptr;
-	UIApp*                pGAppUI;
+	GuiComponent*         pGuiWindow = NULL;
+	UIApp*                pGAppUI = NULL;
 
 	Queue*                pGraphicsQueue = NULL;
 	CmdPool*              pTransCmdPool = NULL;
 	Cmd**                 ppTransCmds = NULL;
 	Fence*                pTransitionCompleteFences = NULL;
 
-	Texture*              pTransmittanceTexture;
-	Texture*              pIrradianceTexture;		//unsigned int irradianceTexture;//unit 2, E table
-	Texture*              pInscatterTexture;		//unsigned int inscatterTexture;//unit 3, S table
+	Texture*              pTransmittanceTexture = NULL;
+	Texture*              pIrradianceTexture = NULL;  //unsigned int irradianceTexture;//unit 2, E table
+	Texture*              pInscatterTexture = NULL;   //unsigned int inscatterTexture;//unit 3, S table
 
-	Sampler*              pLinearClampSampler;
-	Sampler*              pLinearBorderSampler;
+	Sampler*              pLinearClampSampler = NULL;
+	Sampler*              pLinearBorderSampler = NULL;
 
-	RenderTarget*         pPreStageRenderTarget;
-	RenderTarget*         pSkyRenderTarget;
+	RenderTarget*         pPreStageRenderTarget = NULL;
+	RenderTarget*         pSkyRenderTarget = NULL;
 	RenderTarget*         pDepthBuffer = NULL;
 	RenderTarget*         pLinearDepthBuffer = NULL;
 
 	ICameraController*    pCameraController = NULL;
 
-	float                 Azimuth;
-	float                 Elevation;
+	float                 Azimuth = 0.0f;
+	float                 Elevation = 0.0f;
 	float3                LightDirection;
 	float4                LightColorAndIntensity;
 
 	mat4                  SkyProjectionMatrix;
 	mat4                  SpaceProjectionMatrix;
 
-	Buffer*               pTransmittanceBuffer;
+	Buffer*               pTransmittanceBuffer = NULL;
 
 	Perlin                noiseGenerator;
 
-    ProfileToken          gGpuProfileToken;
+	ProfileToken          gGpuProfileToken = {};
 
-	ParticleSystem				gParticleSystem;
+	ParticleSystem        gParticleSystem = {};
 };

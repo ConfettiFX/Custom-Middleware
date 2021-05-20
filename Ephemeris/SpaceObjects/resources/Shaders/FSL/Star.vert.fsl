@@ -1,0 +1,109 @@
+/*
+* Copyright (c) 2018-2019 Confetti Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You may not use the material for commercial purposes.
+*/
+
+#include "SpaceObjectsCommon.h"
+
+STRUCT(VsIn)
+{
+	DATA(float4, ParticlePosition, TEXCOORD0);
+	DATA(float4, ParticleColor,    TEXCOORD1);
+	DATA(float4, ParticleInfo,     TEXCOORD2);
+};
+
+STRUCT(VsOut)
+{
+	DATA(float4, Position,    SV_Position);
+	DATA(float3, TexCoord,    TEXCOORD0);
+	DATA(float2, ScreenCoord, TEXCOORD1);
+	DATA(float3, Color,       COLOR);
+};
+
+CBUFFER(StarUniform, UPDATE_FREQ_PER_FRAME, b0, binding = 0)
+{
+	DATA(f4x4,   RotMat,         None);
+	DATA(f4x4,   ViewProjMat,    None);
+	DATA(float4, LightDirection, None);
+	DATA(float4, Dx,             None);
+	DATA(float4, Dy,             None);
+};
+
+// ORBIS
+STRUCT(StarInstance)
+{
+	DATA(float4, ParticlePosition, None);
+	DATA(float4, ParticleColor,    None);
+	DATA(float4, ParticleInfo,     None);
+};
+RES(Buffer(StarInstance), starInstanceBuffer, UPDATE_FREQ_NONE, t2, binding = 4);
+
+VsOut PushVertex(float3 pos, float3 color, float3 dx, float3 dy, float2 vOffset)
+{
+	VsOut Out;
+
+	Out.Position = mul(Get(RotMat), float4(pos, 1.0f));
+	Out.Position = mul(Get(ViewProjMat), float4(Out.Position.xyz + dx * vOffset.x + dy * vOffset.y, 1.0f));
+
+	Out.TexCoord.z = Out.Position.z;
+	Out.Position  /= Out.Position.w;
+
+	Out.ScreenCoord = float2((Out.Position.x + 1.0f) * 0.5f, (1.0f - Out.Position.y) * 0.5f);
+			
+	Out.TexCoord.xy = vOffset;
+	Out.Color = color;
+
+	return Out;
+}
+
+VsOut VS_MAIN(VsIn In, SV_VertexID(uint) VertexID, SV_InstanceID(uint) InstanceID)
+{
+	INIT_MAIN;
+
+	VsOut Out;
+
+#if defined(ORBIS)
+	float3 ParticlePosition = Get(starInstanceBuffer)[InstanceID].ParticlePosition.xyz;
+	float4 ParticleColor    = Get(starInstanceBuffer)[InstanceID].ParticleColor;
+	float4 ParticleInfo     = Get(starInstanceBuffer)[InstanceID].ParticleInfo;
+#else
+	float3 ParticlePosition = In.ParticlePosition.xyz;
+	float4 ParticleColor    = In.ParticleColor;
+	float4 ParticleInfo     = In.ParticleInfo;
+#endif
+
+	float4 starInfo = ParticleInfo;
+	float  particleSize = starInfo.y;
+	float3 Width  = Get(Dx).xyz * particleSize;
+	float3 Height = Get(Dy).xyz * particleSize;
+
+	float3 color = ParticleColor.rgb * ParticleColor.a;
+	float time   = Get(LightDirection).a;
+	float timeSeed  = starInfo.z;
+	float timeScale = starInfo.a;	
+
+	float blink = (sin(timeSeed + time * timeScale) + 1.0f) * 0.5f;
+	color *= blink;
+		
+	if (VertexID == 0)
+	{
+		Out = PushVertex(ParticlePosition, color, Width, Height, float2(-1.0f, -1.0f));
+	}
+	else if (VertexID == 1)
+	{
+		Out = PushVertex(ParticlePosition, color, Width, Height, float2(1.0, -1.0));
+	}
+	else if (VertexID == 2)
+	{
+		Out = PushVertex(ParticlePosition, color, Width, Height, float2(-1.0, 1.0));
+	}
+	else
+	{
+		Out = PushVertex(ParticlePosition, color, Width, Height, float2(1.0, 1.0));
+	}
+
+	RETURN(Out);
+}

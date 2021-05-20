@@ -1,0 +1,47 @@
+/*
+* Copyright (c) 2018-2019 Confetti Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You may not use the material for commercial purposes.
+*/
+
+#include "VolumetricCloudsCommon.h"
+
+#define MAX_HEIGHT 1024
+
+GroupShared(float2, SharedData[MAX_HEIGHT]);
+
+NUM_THREADS(1, MAX_HEIGHT, 1)
+void CS_MAIN(SV_GroupID(uint3) GroupId, SV_GroupThreadID(uint3) GroupThreadId)
+{
+	INIT_MAIN;
+
+	uint localIndex = GroupThreadId.y;
+
+	float weight[3]  = { 0.68269f,  0.157305f, 0.00135f };
+//	float weight[5]  = { 0.382928f, 0.241732f, 0.060598f, 0.005977f, 0.000229f };
+//	float weight[10] = { 0.158542f, 0.146508f, 0.115615f, 0.07791f,  0.044833f,
+//	                     0.02203f,  0.009244f, 0.003312f, 0.001013f, 0.000265f };
+
+	uint2 coord = uint2(GroupId.x, localIndex);
+
+	float4 CurrentPixelValue = LoadTex2D(Get(InputTex), NO_SAMPLER, coord, 0);
+
+	SharedData[localIndex] = CurrentPixelValue.rr;
+
+	GroupMemoryBarrier();
+	  
+	float2 resultColor = SharedData[localIndex] * weight[0];
+
+	UNROLL
+	for (uint i = 1; i < 3; ++i)
+	{		
+		resultColor += SharedData[localIndex + i] * weight[i]; 
+		resultColor += SharedData[localIndex - i] * weight[i];
+	}
+
+	Write2D(Get(OutputTex), coord, float4(resultColor.r, CurrentPixelValue.gb, resultColor.g));
+
+	RETURN();
+}

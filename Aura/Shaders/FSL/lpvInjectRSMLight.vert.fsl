@@ -1,0 +1,112 @@
+/*
+ * Copyright (c) 2018-2021 Confetti Interactive Inc.
+ *
+ * This is a part of Aura.
+ * 
+ * This file(code) is licensed under a 
+ * Creative Commons Attribution-NonCommercial 4.0 International License 
+ *
+ *   (https://creativecommons.org/licenses/by-nc/4.0/legalcode) 
+ *
+ * Based on a work at https://github.com/ConfettiFX/The-Forge.
+ * You may not use the material for commercial purposes.
+*/
+
+#include "lpvCommon.h"
+
+STRUCT(VsOut)
+{
+	DATA(float4, position,  SV_Position);
+	DATA(uint,   rtIndex,   SV_RenderTargetArrayIndex);
+	DATA(float,  pointSize, SV_PointSize);
+	DATA(float4, coeffs,    TEXCOORD0);
+	DATA(float3, albedo,    TEXCOORD1);
+	DATA(float2, tex,       TEXCOORD2);
+};
+
+RES(Tex2D(float4), tBase,       UPDATE_FREQ_NONE, t0, binding = 0);
+RES(Tex2D(float4), tDepth,      UPDATE_FREQ_NONE, t1, binding = 1);
+RES(Tex2D(float4), tNormal,     UPDATE_FREQ_NONE, t2, binding = 2);
+RES(SamplerState,  pointBorder, UPDATE_FREQ_NONE, s0, binding = 3);
+
+CBUFFER(uniforms, UPDATE_FREQ_NONE, b0, binding = 4)
+{
+	DATA(LightInjectionData, uniformsData, None);
+};
+
+#include "lpvSHMaths.h"
+
+VsOut VS_MAIN(SV_VertexID(uint) VertexID)
+{
+	INIT_MAIN;
+
+	VsOut Out;
+
+	uint i = VertexID % Get(uniformsData).RSMRes.x;
+	uint j = VertexID / Get(uniformsData).RSMRes.x;
+
+	// Igor: if RSMRes is constant can be as is
+	// If it can be variable, can precalculate it.
+	// Doesn't change performance. Left for the code to be more readable. 
+	float2 pSize  = f2(1.0f) / float2(Get(uniformsData).RSMRes); // pixel size
+	float2 hpSize = 0.5f * pSize;                                // half pixel size
+
+	float2 texCoord = hpSize + pSize * float2(i, j);
+	Out.tex = texCoord;
+
+	// Sample textures
+	float  cDepth  = SampleLvlTex2D(Get(tDepth),  Get(pointBorder), texCoord, 0).x;
+	float3 wNormal = SampleLvlTex2D(Get(tNormal), Get(pointBorder), texCoord, 0).xyz;
+	Out.albedo     = SampleLvlTex2D(Get(tBase),   Get(pointBorder), texCoord, 0).xyz;
+
+	// Igor: simpler maths can be used, but it won't change performance.
+	// Use this solution to simplify the code.
+	// Clip-space position, except x and y scale-biased (the invMvp has this prebaked into it)
+	float4 cPos = float4(texCoord, cDepth, 1.0f);
+
+	// World-space position
+	float4 pos = mul(Get(uniformsData).invMvp, cPos);
+	//	Since transform is orthogonal, can save on division
+	//	BE careful if will use this for spot lights
+	//float3 wPos = pos.xyz / pos.w;
+	//	View-space depth
+	float vDepth = 1.0f / pos.w;
+
+	//Out.position = mul( WorldToGrid, float4(wPos, 1.0f));
+	Out.position = float4(pos.xyz * Get(uniformsData).WorldToGridScale + Get(uniformsData).WorldToGridTranslate, 1.0f);
+
+	//	Offset half normal dir to avoid self-lighting
+	float hpCellSize = 0.5f / GridRes;
+	Out.position.xyz += wNormal * hpCellSize;
+
+	float borderFactor = calculateBorderFadeout(Out.position.xyz + Get(uniformsData).smoothGridPosOffset);
+
+	//	Convert texture coords to screen coords
+	Out.position.xy *= float2(2.0f, -2.0f);
+	Out.position.xy += float2(-1.0f, 1.0f);
+
+	float pozZ = Out.position.z;
+	if (pozZ < 0.0f || pozZ >= 1.0f)
+		Out.position.xy = f2(-20.0f);
+	
+	Out.position.z = 0.0f;
+	Out.rtIndex = uint(pozZ * GridRes);
+	Out.pointSize = 1.0f;
+
+	// Opposing to the occluder, don't need to unproject light area.
+	// Quantity of light recieved by the surfel is equivalent to 
+	// float	dotFactor = 1;//max(0.001f, abs(dot(-camDir, wNormal)));
+
+	Out.coeffs = SHProjectCone(wNormal);
+	// Igor: comment this for the point/spot light. vDepth doesn't matter for orthogonal projection.
+	vDepth = 1;
+
+	// Igor: Don't need to scale by dot-product
+	// Surfel with any front-facing orientation which occupies a single pixel
+	// will recieve and emit exactly the same amout of flux.
+	// if (dot(-camDir,wNormal)<0)
+	// scaleFactor = 0;
+	Out.coeffs *= (dot(-Get(uniformsData).camDir, wNormal) < 0) ? 0.0f : borderFactor * Get(uniformsData).scaleFactor * vDepth * vDepth;
+
+	RETURN(Out);
+}
