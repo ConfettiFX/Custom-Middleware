@@ -28,7 +28,7 @@ Check out the demo video by clicking the main image above!
 |---|
 |![](Screenshots/02.png)|
 
-| Day Scene |
+| Night Scene |
 |---|
 |![](Screenshots/03.png)|
 
@@ -40,11 +40,11 @@ Check out the demo video by clicking the main image above!
 |---|
 |![](Screenshots/05.png)|
 
-| Cloudy Scene |
+| Above Clouds |
 |---|
 |![](Screenshots/06.png)|
 
-| Above the Clouds |
+| Clouds |
 |---|
 |![](Screenshots/01.png)|
 
