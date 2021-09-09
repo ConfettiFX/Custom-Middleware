@@ -20,11 +20,7 @@ DistantCloud::DistantCloud(const mat4 &Transform, Texture* tex):
 {
 }
 
-DistantCloud::~DistantCloud(void)
-{
-}
-
-void DistantCloud::moveCloud(const vec3 direction)
+void DistantCloud::moveCloud(const vec3& direction)
 {
   float temp = m_Transform.getRow(0).getW();
   temp += direction.getX();

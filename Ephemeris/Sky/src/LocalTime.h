@@ -37,14 +37,14 @@ public:
 	double	getJ200Centuries(bool bAtomic) const;
 
 private:
+	double	m_localSeconds;
+	double	m_GMTOffset;
 	int		m_localYear;
 	int		m_localMonth;
 	int		m_localDay;
 	int		m_localHours;
 	int		m_localMinutes;
-	double	m_localSeconds;
 
-	double	m_GMTOffset;
 	
 	//	Rename this to something more system-like
 	bool	m_isDST;

@@ -28,7 +28,7 @@ Check out the demo video by clicking the main image above!
 |---|
 |![](Screenshots/02.png)|
 
-| Night Scene |
+| Day Scene |
 |---|
 |![](Screenshots/03.png)|
 
@@ -40,17 +40,24 @@ Check out the demo video by clicking the main image above!
 |---|
 |![](Screenshots/05.png)|
 
-| Above Clouds |
+| Cloudy Scene |
 |---|
 |![](Screenshots/06.png)|
 
-| Clouds |
+| Above the Clouds |
 |---|
 |![](Screenshots/01.png)|
 
 
 # News
 All the releases happen in sync with [The Forge](https://github.com/ConfettiFX/The-Forge) and have therefore the same release number.
+
+## Release 1.32 - August 8th - 
+
+- Added Procedural Night Sky and Star-field
+  - Now, the user can costomize the night sky's nebula colors 
+- Added Glow effects on Sun and Moon
+- Fix a issue that Godrays can be drawn on unexpected area
 
  
 ## Installation

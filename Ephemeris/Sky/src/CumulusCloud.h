@@ -20,7 +20,6 @@ class CumulusCloud
 {
 	public:
 		CumulusCloud(const mat4 &Transform, Texture* tex, float ParticlesScale);
-		~CumulusCloud(void);
 
 		const mat4& Transform() const { return m_Transform; }
 		void	setTransform(const mat4 & transform) { m_Transform = transform; }
@@ -34,7 +33,7 @@ class CumulusCloud
 		void	setupConstants( const vec3 &camPos, const char* pszPositionScalesName, const char* pszTexIDsName );
 		size_t	getParticlesCount()  const {return m_OffsetScales.size();}
 		float	getRadius() const;
-		void	moveCloud(const vec3 direction);
+		void	moveCloud(const vec3 & direction);
 		void	clipCloud(const vec3 & camPos, float XZClipR);
 
         static const int MaxParticles;

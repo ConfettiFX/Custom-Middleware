@@ -230,7 +230,6 @@ void CloudImpostor::setupRenderer( Cmd *cmd, CumulusCloud *pCloud, const vec3 &c
 
 	/////////////////////////////////////////
 	//	Calc projection
-	const vec3 camUp = view.getRow(1).getXYZ();
 	const mat4 &cT = pCloud->Transform();
   vec3 cloudPos = vec3(cT.getRow(0).getW(), cT.getRow(1).getW(), cT.getRow(2).getW());
   vec3 cloudDir = cloudPos-camPos;
@@ -243,9 +242,9 @@ void CloudImpostor::setupRenderer( Cmd *cmd, CumulusCloud *pCloud, const vec3 &c
 	//	Can be safely removed if alternative approach is used for near clouds rendering
 	{
 		const float lerpDist = 1000;
-		const vec3 camDir = view.getRow(2).getXYZ();
 		if ( distance<m_Radius+lerpDist )
 		{
+			const vec3 camDir = view.getRow(2).getXYZ();
 			float lerpParam = clamp((distance-m_Radius)/lerpDist, 0, 1);
 			cloudPos = lerp(camPos + camDir*m_Radius, cloudPos, lerpParam);
 
@@ -327,6 +326,7 @@ void CloudImpostor::setupRenderer( Cmd *cmd, CumulusCloud *pCloud, const vec3 &c
 	//	Just to make sure. distance should always be big enough.
 	if (distance>0.0001)
 	{
+		const vec3 camUp = view.getRow(1).getXYZ();
 		//const float particleSize = pCloud->ParticlesScale();
 		vec3 cloudDirUnit = cloudDir / distance;
 

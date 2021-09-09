@@ -361,30 +361,20 @@ void Terrain::Exit()
 	removeResource(pTerrainNormalTexture);
 	removeResource(pTerrainMaskTexture);
 
+	for (uint32_t i = 0; i < gTerrainTextureCount; ++i)
+	{
+		removeResource(gTerrainTiledColorTexturesStorage[i]);
+		removeResource(gTerrainTiledNormalTexturesStorage[i]);
+	}
+	
 	tf_free(gTerrainTiledColorTexturesStorage);
 	tf_free(gTerrainTiledNormalTexturesStorage);
-
-	for (int i = 0; i < 5; ++i)
-	{
-		removeResource(pTerrainTiledColorTextures[i]);
-		removeResource(pTerrainTiledNormalTextures[i]);
-	}
 
 	removeResource(pTerrainHeightMap);
 	removeRenderTarget(pRenderer, pNormalMapFromHeightmapRT);
 
 	meshSegments.set_capacity(0);
 	meshSegments.clear();
-
-	pTerrainTiledColorTextures.set_capacity(0);
-	pTerrainTiledColorTextures.clear();
-	pTerrainTiledNormalTextures.set_capacity(0);
-	pTerrainTiledNormalTextures.clear();
-
-	gTerrainTiledColorTexturesPacked.set_capacity(0);
-	gTerrainTiledColorTexturesPacked.clear();
-	gTerrainTiledNormalTexturesPacked.set_capacity(0);
-	gTerrainTiledNormalTexturesPacked.clear();
 }
 
 void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
@@ -393,7 +383,7 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 
 	eastl::vector<TerrainVertex> vertices;
 	meshSegments.clear();
-	HeightData dataSource("Terrain/HeightMap.r32", height);
+	HeightData dataSource("Terrain/HeightMap.r32", NULL, height);
 	HemisphereBuilder hemisphereBuilder;
 #if _DEBUG
 	hemisphereBuilder.build(pRenderer, &dataSource, vertices, meshSegments, radius * 10.0f - 720000.0f, 0.15f, 64, 15, 33);
@@ -430,20 +420,20 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 	addResource(&TerrainMaskTextureDesc, &token);
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+	gTerrainTiledColorTexturesStorage = (Texture**)tf_malloc(sizeof(Texture*) * gTerrainTextureCount);
+	gTerrainTiledNormalTexturesStorage = (Texture**)tf_malloc(sizeof(Texture*) * gTerrainTextureCount);
 
-	pTerrainTiledColorTextures.resize(5);
-	pTerrainTiledNormalTextures.resize(5);
-
-	for (int i = 0; i < 5; ++i)
+	for (uint32_t i = 0; i < gTerrainTextureCount; ++i)
 	{
 		TextureLoadDesc TerrainTiledColorTextureDesc = {};
 		TerrainTiledColorTextureDesc.pFileName = TextureTileFilePaths[i];
-		TerrainTiledColorTextureDesc.ppTexture = &pTerrainTiledColorTextures[i];
+		TerrainTiledColorTextureDesc.ppTexture = &gTerrainTiledColorTexturesStorage[i];
 		addResource(&TerrainTiledColorTextureDesc, &token);
 
 		TextureLoadDesc TerrainTiledNormalTextureDesc = {};
 		TerrainTiledNormalTextureDesc.pFileName = TextureNormalTileFilePaths[i];
-		TerrainTiledNormalTextureDesc.ppTexture = &pTerrainTiledNormalTextures[i];
+		TerrainTiledNormalTextureDesc.ppTexture = &gTerrainTiledNormalTexturesStorage[i];
 		addResource(&TerrainTiledNormalTextureDesc, &token);
 	}
 
@@ -467,22 +457,6 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 	NormalMapFromHeightmapRenderTarget.mHeight = pTerrainHeightMap->mHeight;
 	NormalMapFromHeightmapRenderTarget.pName = "NormalMapFromHeightmap RenderTarget";
 	addRenderTarget(pRenderer, &NormalMapFromHeightmapRenderTarget, &pNormalMapFromHeightmapRT);
-
-	gTerrainTiledColorTexturesStorage = (Texture*)tf_malloc(sizeof(Texture) * pTerrainTiledColorTextures.size());
-	gTerrainTiledNormalTexturesStorage = (Texture*)tf_malloc(sizeof(Texture) * pTerrainTiledNormalTextures.size());
-
-	for (uint32_t i = 0; i < (uint32_t)pTerrainTiledColorTextures.size(); ++i)
-	{
-		memcpy(&gTerrainTiledColorTexturesStorage[i], pTerrainTiledColorTextures[i], sizeof(Texture));
-		gTerrainTiledColorTexturesPacked.push_back(&gTerrainTiledColorTexturesStorage[i]);
-	}
-
-	for (uint32_t i = 0; i < (uint32_t)pTerrainTiledNormalTextures.size(); ++i)
-	{
-		memcpy(&gTerrainTiledNormalTexturesStorage[i], pTerrainTiledNormalTextures[i], sizeof(Texture));
-		gTerrainTiledNormalTexturesPacked.push_back(&gTerrainTiledNormalTexturesStorage[i]);
-	}
-
 	///////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
@@ -700,11 +674,11 @@ bool Terrain::Load(int32_t width, int32_t height)
 	{
 		DescriptorData ScParams[4] = {};
 		ScParams[0].pName = "tileTextures";
-		ScParams[0].mCount = (uint32_t)gTerrainTiledColorTexturesPacked.size();
-		ScParams[0].ppTextures = gTerrainTiledColorTexturesPacked.data();
+		ScParams[0].mCount = gTerrainTextureCount;
+		ScParams[0].ppTextures = gTerrainTiledColorTexturesStorage;
 		ScParams[1].pName = "tileTexturesNrm";
-		ScParams[1].mCount = (uint32_t)gTerrainTiledNormalTexturesPacked.size();
-		ScParams[1].ppTextures = gTerrainTiledNormalTexturesPacked.data();
+		ScParams[1].mCount = gTerrainTextureCount;
+		ScParams[1].ppTextures = gTerrainTiledNormalTexturesStorage;
 		ScParams[2].pName = "NormalMap";
 		ScParams[2].ppTextures = &pTerrainNormalTexture;
 		ScParams[3].pName = "MaskMap";
@@ -964,10 +938,9 @@ void Terrain::Draw(Cmd* cmd)
 
 void Terrain::Update(float deltaTime)
 {
-	vec4 WindInfo = volumetricCloudsShadowCB.StandardPosition;
-
 	if (volumetricCloudsShadowCB.ShadowInfo.getZ() != 0.0f)
 	{
+		vec4 WindInfo = volumetricCloudsShadowCB.StandardPosition;
 
 		volumetricCloudsShadowCB.SettingInfo00 = vec4(volumetricCloudsShadowCB.SettingInfo00.getX(), volumetricCloudsShadowCB.SettingInfo00.getY(), volumetricCloudsShadowCB.SettingInfo00.getZ() / volumetricCloudsShadowCB.ShadowInfo.getZ(), 0.0f);
 		float DistanceWithCurrentSpeed = WindInfo.getW() * deltaTime * 100.0f;
@@ -1073,7 +1046,7 @@ void Terrain::InitializeWithLoad(RenderTarget* InDepthRenderTarget)
 
 void Terrain::Initialize(uint InImageCount,
 	ICameraController* InCameraController, Queue*	InGraphicsQueue, CmdPool* InTransCmdPool,
-	Cmd** InTransCmds, Fence* InTransitionCompleteFences, ProfileToken InGraphicsGpuProfiler, UIApp* InGAppUI)
+	Cmd** InTransCmds, Fence* InTransitionCompleteFences, ProfileToken InGraphicsGpuProfiler)
 {
 	gImageCount = InImageCount;
 
@@ -1083,5 +1056,4 @@ void Terrain::Initialize(uint InImageCount,
 	ppTransCmds = InTransCmds;
 	pTransitionCompleteFences = InTransitionCompleteFences;
 	gGpuProfileToken = InGraphicsGpuProfiler;
-	pGAppUI = InGAppUI;
 }

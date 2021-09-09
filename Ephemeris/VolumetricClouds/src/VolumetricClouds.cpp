@@ -11,6 +11,7 @@
 
 #include "../../../../The-Forge/Common_3/Renderer/IResourceLoader.h"
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IFileSystem.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IScripting.h"
 #include "../../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IMemory.h"
 
@@ -164,17 +165,11 @@ Sampler*                  pLinearBorderSampler = NULL;
 const uint32_t            gHighFreq3DTextureSize = 32;
 const uint32_t            gLowFreq3DTextureSize = 128;
 
-Texture*                  gHighFrequencyOriginTextureStorage = NULL;
-Texture*                  gLowFrequencyOriginTextureStorage = NULL;
+Texture**                  gHighFrequencyOriginTextureStorage = NULL;
+Texture**                  gLowFrequencyOriginTextureStorage = NULL;
 
 eastl::vector<eastl::string> gHighFrequencyTextureNames;
 eastl::vector<eastl::string> gLowFrequencyTextureNames;
-
-eastl::vector<Texture*>		gHighFrequencyOriginTexture;
-eastl::vector<Texture*>		gLowFrequencyOriginTexture;
-
-eastl::vector<Texture*>		gHighFrequencyOriginTexturePacked;
-eastl::vector<Texture*>		gLowFrequencyOriginTexturePacked;
 
 Texture*                  pHighFrequency3DTextureOrigin;
 Texture*                  pLowFrequency3DTextureOrigin;
@@ -203,7 +198,7 @@ static mat4				projMat;
 static float4			g_ProjectionExtents;
 static float			g_currentTime = 0.0f;
 typedef struct AppSettings
-{
+{ //-V802 : Only one of these structs is ever going to exist
 	bool				m_Enabled = true;
 
 	float				m_EarthRadiusScale = 10.0f;
@@ -733,8 +728,7 @@ bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 	screenQuadVbDesc.ppBuffer = &pTriangularScreenVertexBuffer;
 	addResource(&screenQuadVbDesc, &token);
 
-	gHighFrequencyOriginTexture = eastl::vector<Texture*>(gHighFreq3DTextureSize);
-
+	gHighFrequencyOriginTextureStorage = (Texture**)tf_malloc(sizeof(Texture*) * gHighFreq3DTextureSize);
 
 	eastl::string gHighFrequencyOriginTextureName("VolumetricClouds/hiResCloudShape/hiResClouds (");
 	for (uint32_t i = 0; i < gHighFreq3DTextureSize; ++i)
@@ -746,19 +740,17 @@ bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 
 		gHighFrequencyNameLocal += eastl::string(stringInt);
 		gHighFrequencyNameLocal += eastl::string(")");
-
-		TextureLoadDesc highFrequencyOrigin3DTextureDesc = {};
 		gHighFrequencyTextureNames.push_back(gHighFrequencyNameLocal);
 
+		TextureLoadDesc highFrequencyOrigin3DTextureDesc = {};
 		highFrequencyOrigin3DTextureDesc.pFileName = gHighFrequencyTextureNames[i].c_str();
-		highFrequencyOrigin3DTextureDesc.ppTexture = &gHighFrequencyOriginTexture[i];
+		highFrequencyOrigin3DTextureDesc.ppTexture = &gHighFrequencyOriginTextureStorage[i];
 		addResource(&highFrequencyOrigin3DTextureDesc, &token);
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////////////
-
-	gLowFrequencyOriginTexture = eastl::vector<Texture*>(gLowFreq3DTextureSize);
-
+	gLowFrequencyOriginTextureStorage = (Texture**)tf_malloc(sizeof(Texture*) * gLowFreq3DTextureSize);
+	
 	eastl::string gLowFrequencyOriginTextureName("VolumetricClouds/lowResCloudShape/lowResCloud(");
 	for (uint32_t i = 0; i < gLowFreq3DTextureSize; ++i)
 	{
@@ -770,29 +762,14 @@ bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 		gLowFrequencyNameLocal += eastl::string(stringInt);
 		gLowFrequencyNameLocal += eastl::string(")");
 		gLowFrequencyTextureNames.push_back(gLowFrequencyNameLocal);
-		TextureLoadDesc lowFrequencyOrigin3DTextureDesc = {};
 
+		TextureLoadDesc lowFrequencyOrigin3DTextureDesc = {};
 		lowFrequencyOrigin3DTextureDesc.pFileName = gLowFrequencyTextureNames[i].c_str();
-		lowFrequencyOrigin3DTextureDesc.ppTexture = &gLowFrequencyOriginTexture[i];
+		lowFrequencyOrigin3DTextureDesc.ppTexture = &gLowFrequencyOriginTextureStorage[i];
 		addResource(&lowFrequencyOrigin3DTextureDesc, &token);
 	}
 
 	waitForToken(&token);
-
-	gHighFrequencyOriginTextureStorage = (Texture*)tf_malloc(sizeof(Texture) * gHighFrequencyOriginTexture.size());
-	gLowFrequencyOriginTextureStorage = (Texture*)tf_malloc(sizeof(Texture) * gLowFrequencyOriginTexture.size());
-
-	for (uint32_t i = 0; i < (uint32_t)gHighFrequencyOriginTexture.size(); ++i)
-	{
-		memcpy(&gHighFrequencyOriginTextureStorage[i], gHighFrequencyOriginTexture[i], sizeof(Texture));
-		gHighFrequencyOriginTexturePacked.push_back(&gHighFrequencyOriginTextureStorage[i]);
-	}
-
-	for (uint32_t i = 0; i < (uint32_t)gLowFrequencyOriginTexture.size(); ++i)
-	{
-		memcpy(&gLowFrequencyOriginTextureStorage[i], gLowFrequencyOriginTexture[i], sizeof(Texture));
-		gLowFrequencyOriginTexturePacked.push_back(&gLowFrequencyOriginTextureStorage[i]);
-	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////
 	TextureDesc lowFreqImgDesc = {};
@@ -913,10 +890,12 @@ bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 	// UI
 	///////////////////////////////////////////////////////////////////
 
-	GuiDesc guiDesc = {};
-	guiDesc.mStartPosition = vec2(1600.0f / getDpiScale().getX(), 0.0f / getDpiScale().getY());
-	guiDesc.mStartSize = vec2(300.0f / getDpiScale().getX(), 250.0f / getDpiScale().getY());
-	pGuiWindow = addAppUIGuiComponent(pGAppUI, "Volumetric Cloud", &guiDesc);
+	UIComponentDesc UIComponentDesc = {};
+	float dpiScale[2];
+	getDpiScale(dpiScale);
+	UIComponentDesc.mStartPosition = vec2(1600.0f / dpiScale[0], 0.0f / dpiScale[1]);
+	UIComponentDesc.mStartSize = vec2(300.0f / dpiScale[0], 250.0f / dpiScale[1]);
+	uiCreateComponent("Volumetric Cloud", &UIComponentDesc, &pGuiWindow);
 
 	SliderUintWidget sliderUint;
 	CheckboxWidget checkbox;
@@ -927,44 +906,44 @@ bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 	sliderUint.mMin = 1;
 	sliderUint.mMax = 3;
 	sliderUint.mStep = 1;
-	addWidgetLua(addGuiWidget(pGuiWindow, "Downsampling", &sliderUint, WIDGET_TYPE_SLIDER_UINT));
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "Downsampling", &sliderUint, WIDGET_TYPE_SLIDER_UINT));
 
-	addWidgetLua(addGuiWidget(pGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
 
 	ButtonWidget UseLowQuality;
-	IWidget* pUseLowQuality = addGuiWidget(pGuiWindow, "Use  Low Quality Settings", &UseLowQuality, WIDGET_TYPE_BUTTON);
-	pUseLowQuality->pOnEdited = VolumetricClouds::UseLowQualitySettings;
-	addWidgetLua(pUseLowQuality);
+	UIWidget* pUseLowQuality = uiCreateComponentWidget(pGuiWindow, "Use  Low Quality Settings", &UseLowQuality, WIDGET_TYPE_BUTTON);
+	uiSetWidgetOnEditedCallback(pUseLowQuality, VolumetricClouds::UseLowQualitySettings);
+	luaRegisterWidget(pUseLowQuality);
 
 	ButtonWidget UseMiddleQuality;
-	IWidget* pUseMiddleQuality = addGuiWidget(pGuiWindow, "Use  Middle Quality Settings", &UseMiddleQuality, WIDGET_TYPE_BUTTON);
-	pUseMiddleQuality->pOnEdited = VolumetricClouds::UseMiddleQualitySettings;
-	addWidgetLua(pUseMiddleQuality);
+	UIWidget* pUseMiddleQuality = uiCreateComponentWidget(pGuiWindow, "Use  Middle Quality Settings", &UseMiddleQuality, WIDGET_TYPE_BUTTON);
+	uiSetWidgetOnEditedCallback(pUseMiddleQuality, VolumetricClouds::UseMiddleQualitySettings);
+	luaRegisterWidget(pUseMiddleQuality);
 
 	ButtonWidget UseHighQuality;
-	IWidget* pUseHighQuality = addGuiWidget(pGuiWindow, "Use  High Quality Settings", &UseHighQuality, WIDGET_TYPE_BUTTON);
-	pUseHighQuality->pOnEdited = VolumetricClouds::UseHighQualitySettings;
-	addWidgetLua(pUseHighQuality);
+	UIWidget* pUseHighQuality = uiCreateComponentWidget(pGuiWindow, "Use  High Quality Settings", &UseHighQuality, WIDGET_TYPE_BUTTON);
+	uiSetWidgetOnEditedCallback(pUseHighQuality, VolumetricClouds::UseHighQualitySettings);
+	luaRegisterWidget(pUseHighQuality);
 
 	ButtonWidget UseUltraQuality;
-	IWidget* pUseUltraQuality = addGuiWidget(pGuiWindow, "Use  Ultra Quality Settings", &UseUltraQuality, WIDGET_TYPE_BUTTON);
-	pUseUltraQuality->pOnEdited = VolumetricClouds::UseUltraQualitySettings;
-	addWidgetLua(pUseUltraQuality);
+	UIWidget* pUseUltraQuality = uiCreateComponentWidget(pGuiWindow, "Use  Ultra Quality Settings", &UseUltraQuality, WIDGET_TYPE_BUTTON);
+	uiSetWidgetOnEditedCallback(pUseUltraQuality, VolumetricClouds::UseUltraQualitySettings);
+	luaRegisterWidget(pUseUltraQuality);
 
-	addWidgetLua(addGuiWidget(pGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
 
 	checkbox.pData = &gAppSettings.m_EnableBlur;
-	addWidgetLua(addGuiWidget(pGuiWindow, "Enabled Edge Blur", &checkbox, WIDGET_TYPE_CHECKBOX));
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "Enabled Edge Blur", &checkbox, WIDGET_TYPE_CHECKBOX));
 
-	addWidgetLua(addGuiWidget(pGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
 
 	sliderFloat.pData = &gAppSettings.m_EarthRadiusScale;
 	sliderFloat.mMin = 0.01f;
 	sliderFloat.mMax = 10.0f;
 	sliderFloat.mStep = 0.01f;
-	addWidgetLua(addGuiWidget(pGuiWindow, "Earth Radius Scale", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT));
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "Earth Radius Scale", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT));
 
-	addWidgetLua(addGuiWidget(pGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
 
 	CollapsingHeaderWidget CollapsingRayMarching;
 
@@ -972,38 +951,38 @@ bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 	sliderUint.mMin = 1;
 	sliderUint.mMax = 256;
 	sliderUint.mStep = 1;
-	addCollapsingHeaderSubWidget(&CollapsingRayMarching, "Min Sample Iteration", &sliderUint, WIDGET_TYPE_SLIDER_UINT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingRayMarching, "Min Sample Iteration", &sliderUint, WIDGET_TYPE_SLIDER_UINT);
 
 	sliderUint.pData = &gAppSettings.m_MaxSampleCount;
 	sliderUint.mMin = 1;
 	sliderUint.mMax = 1024;
 	sliderUint.mStep = 1;
-	addCollapsingHeaderSubWidget(&CollapsingRayMarching, "Max Sample Iteration", &sliderUint, WIDGET_TYPE_SLIDER_UINT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingRayMarching, "Max Sample Iteration", &sliderUint, WIDGET_TYPE_SLIDER_UINT);
 
 	sliderFloat.pData = &gAppSettings.m_MinStepSize;
 	sliderFloat.mMin = 1.0f;
 	sliderFloat.mMax = 2048.0f;
 	sliderFloat.mStep = 32.0f;
-	addCollapsingHeaderSubWidget(&CollapsingRayMarching, "Min Step Size", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingRayMarching, "Min Step Size", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_MaxStepSize;
 	sliderFloat.mMin = 1.0f;
 	sliderFloat.mMax = 4096.0f;
 	sliderFloat.mStep = 32.0f;
-	addCollapsingHeaderSubWidget(&CollapsingRayMarching, "Max Step Size", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingRayMarching, "Max Step Size", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_MaxSampleDistance;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 250000.0f;
 	sliderFloat.mStep = 32.0f;
-	addCollapsingHeaderSubWidget(&CollapsingRayMarching, "Max Sample Distance", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingRayMarching, "Max Sample Distance", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 	
 	checkbox.pData = &gAppSettings.m_EnabledTemporalRayOffset;
-	addCollapsingHeaderSubWidget(&CollapsingRayMarching, "Enabled Temporal RayOffset", &checkbox, WIDGET_TYPE_CHECKBOX);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingRayMarching, "Enabled Temporal RayOffset", &checkbox, WIDGET_TYPE_CHECKBOX);
 
-	addWidgetLua(addGuiWidget(pGuiWindow, "Ray Marching", &CollapsingRayMarching, WIDGET_TYPE_COLLAPSING_HEADER));
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "Ray Marching", &CollapsingRayMarching, WIDGET_TYPE_COLLAPSING_HEADER));
 
-	addWidgetLua(addGuiWidget(pGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
 
 	CollapsingHeaderWidget CollapsingVC01;
 
@@ -1013,13 +992,13 @@ bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 	sliderFloat.mMin = -1000000.0f;
 	sliderFloat.mMax = 1000000.0f;
 	sliderFloat.mStep = 100.0f;
-	addCollapsingHeaderSubWidget(&CollapsingSkyDome, "Clouds Layer Start Height", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingSkyDome, "Clouds Layer Start Height", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_LayerThickness;
 	sliderFloat.mMin = 1.0f;
 	sliderFloat.mMax = 1000000.0f;
 	sliderFloat.mStep = 100.0f;
-	addCollapsingHeaderSubWidget(&CollapsingSkyDome, "Layer Thickness", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingSkyDome, "Layer Thickness", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	CollapsingHeaderWidget CollapsingCloud;
 
@@ -1027,55 +1006,55 @@ bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 	sliderFloat.mMin = 0.001f;
 	sliderFloat.mMax = 10.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingCloud, "Base Cloud Tiling", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloud, "Base Cloud Tiling", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_DetailTile;
 	sliderFloat.mMin = 0.001f;
 	sliderFloat.mMax = 10.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingCloud, "Detail Cloud Tiling", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloud, "Detail Cloud Tiling", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_DetailStrength;
 	sliderFloat.mMin = 0.001f;
 	sliderFloat.mMax = 2.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingCloud, "Detail Strength", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloud, "Detail Strength", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_CloudTopOffset;
 	sliderFloat.mMin = 0.01f;
 	sliderFloat.mMax = 2000.0f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingCloud, "Cloud Top Offset", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloud, "Cloud Top Offset", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_CloudSize;
 	sliderFloat.mMin = 0.001f;
 	sliderFloat.mMax = 1000000.0f;
 	sliderFloat.mStep = 0.1f;
-	addCollapsingHeaderSubWidget(&CollapsingCloud, "Cloud Size", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloud, "Cloud Size", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_CloudDensity;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 10.0f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingCloud, "Cloud Density", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloud, "Cloud Density", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_CloudCoverageModifier;
 	sliderFloat.mMin = -1.0f;
 	sliderFloat.mMax = 1.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingCloud, "Cloud Coverage Modifier", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloud, "Cloud Coverage Modifier", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_CloudTypeModifier;
 	sliderFloat.mMin = -1.0f;
 	sliderFloat.mMax = 1.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingCloud, "Cloud Type Modifier", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloud, "Cloud Type Modifier", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_AnvilBias;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 1.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingCloud, "Anvil Bias", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloud, "Anvil Bias", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	CollapsingHeaderWidget CollapsingCloudCurl;
 
@@ -1083,13 +1062,13 @@ bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 	sliderFloat.mMin = 0.001f;
 	sliderFloat.mMax = 4.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingCloudCurl, "Curl Tiling", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloudCurl, "Curl Tiling", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_CurlStrength;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 10000.0f;
 	sliderFloat.mStep = 0.1f;
-	addCollapsingHeaderSubWidget(&CollapsingCloudCurl, "Curl Strength", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloudCurl, "Curl Strength", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	CollapsingHeaderWidget CollapsingCloudWeather;
 
@@ -1097,19 +1076,19 @@ bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 	sliderFloat.mMin = 0.001f;
 	sliderFloat.mMax = 10000000.0f;
 	sliderFloat.mStep = 0.1f;
-	addCollapsingHeaderSubWidget(&CollapsingCloudWeather, "Weather Texture Size", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloudWeather, "Weather Texture Size", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.WeatherTextureAzimuth;
 	sliderFloat.mMin = -180.0f;
 	sliderFloat.mMax = 180.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingCloudWeather, "Weather Texture Direction", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloudWeather, "Weather Texture Direction", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.WeatherTextureDistance;
 	sliderFloat.mMin = -1000000.0f;
 	sliderFloat.mMax = 1000000.0f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingCloudWeather, "Weather Texture Distance", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloudWeather, "Weather Texture Distance", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	CollapsingHeaderWidget CollapsingWind;
 
@@ -1117,77 +1096,77 @@ bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 	sliderFloat.mMin = -180.0f;
 	sliderFloat.mMax = 180.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingWind, "Wind Direction", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingWind, "Wind Direction", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_WindIntensity;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 100.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingWind, "Wind Intensity", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingWind, "Wind Intensity", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	checkbox.pData = &gAppSettings.m_EnabledRotation;
-	addCollapsingHeaderSubWidget(&CollapsingWind, "Enabled Rotation", &checkbox, WIDGET_TYPE_CHECKBOX);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingWind, "Enabled Rotation", &checkbox, WIDGET_TYPE_CHECKBOX);
 
 	sliderFloat.pData = &gAppSettings.m_RotationPivotAzimuth;
 	sliderFloat.mMin = -180.0f;
 	sliderFloat.mMax = 180.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingWind, "Rotation Pivot Azimuth", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingWind, "Rotation Pivot Azimuth", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_RotationPivotDistance;
 	sliderFloat.mMin = -10.0f;
 	sliderFloat.mMax = 10.0f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingWind, "Rotation Pivot Distance", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingWind, "Rotation Pivot Distance", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_RotationIntensity;
 	sliderFloat.mMin = -20.0f;
 	sliderFloat.mMax = 20.0f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingWind, "Rotation Intensity", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingWind, "Rotation Intensity", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_RisingVaporScale;
 	sliderFloat.mMin = 0.001f;
 	sliderFloat.mMax = 1.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingWind, "RisingVapor Scale", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingWind, "RisingVapor Scale", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_RisingVaporUpDirection;
 	sliderFloat.mMin = -1.0f;
 	sliderFloat.mMax = 1.0f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingWind, "RisingVapor UpDirection", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingWind, "RisingVapor UpDirection", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_RisingVaporIntensity;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 10.0f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingWind, "RisingVapor Intensity", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingWind, "RisingVapor Intensity", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 	
 	sliderFloat.pData = &gAppSettings.m_NoiseFlowAzimuth;
 	sliderFloat.mMin = -180.0f;
 	sliderFloat.mMax = 180.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingWind, "Noise Flow Azimuth", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingWind, "Noise Flow Azimuth", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 	
 	sliderFloat.pData = &gAppSettings.m_NoiseFlowIntensity;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 100.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingWind, "Noise Flow Intensity", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingWind, "Noise Flow Intensity", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
-	addCollapsingHeaderSubWidget(&CollapsingVC01, "Sky Dome", &CollapsingSkyDome, WIDGET_TYPE_COLLAPSING_HEADER);
-	addCollapsingHeaderSubWidget(&CollapsingVC01, "Cloud Modeling", &CollapsingCloud, WIDGET_TYPE_COLLAPSING_HEADER);
-	addCollapsingHeaderSubWidget(&CollapsingVC01, "Cloud Curl", &CollapsingCloudCurl, WIDGET_TYPE_COLLAPSING_HEADER);
-	addCollapsingHeaderSubWidget(&CollapsingVC01, "Weather", &CollapsingCloudWeather, WIDGET_TYPE_COLLAPSING_HEADER);
-	addCollapsingHeaderSubWidget(&CollapsingVC01, "Wind", &CollapsingWind, WIDGET_TYPE_COLLAPSING_HEADER);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingVC01, "Sky Dome", &CollapsingSkyDome, WIDGET_TYPE_COLLAPSING_HEADER);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingVC01, "Cloud Modeling", &CollapsingCloud, WIDGET_TYPE_COLLAPSING_HEADER);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingVC01, "Cloud Curl", &CollapsingCloudCurl, WIDGET_TYPE_COLLAPSING_HEADER);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingVC01, "Weather", &CollapsingCloudWeather, WIDGET_TYPE_COLLAPSING_HEADER);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingVC01, "Wind", &CollapsingWind, WIDGET_TYPE_COLLAPSING_HEADER);
 
-	addWidgetLua(addGuiWidget(pGuiWindow, "Volumetric Clouds", &CollapsingVC01, WIDGET_TYPE_COLLAPSING_HEADER));
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "Volumetric Clouds", &CollapsingVC01, WIDGET_TYPE_COLLAPSING_HEADER));
 
-	addWidgetLua(addGuiWidget(pGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
 
 	checkbox.pData = &gAppSettings.m_Enabled2ndLayer;
-	addWidgetLua(addGuiWidget(pGuiWindow, "Enabled 2nd Layer", &checkbox, WIDGET_TYPE_CHECKBOX));
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "Enabled 2nd Layer", &checkbox, WIDGET_TYPE_CHECKBOX));
 
 	CollapsingHeaderWidget CollapsingVC02;
 
@@ -1197,13 +1176,13 @@ bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 	sliderFloat.mMin = -1000000.0f;
 	sliderFloat.mMax = 1000000.0f;
 	sliderFloat.mStep = 100.0f;
-	addCollapsingHeaderSubWidget(&CollapsingSkyDome2, "Clouds Layer Start Height 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingSkyDome2, "Clouds Layer Start Height 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_LayerThickness_2nd;
 	sliderFloat.mMin = 1.0f;
 	sliderFloat.mMax = 1000000.0f;
 	sliderFloat.mStep = 100.0f;
-	addCollapsingHeaderSubWidget(&CollapsingSkyDome2, "Layer Thickness 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingSkyDome2, "Layer Thickness 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	CollapsingHeaderWidget CollapsingCloud2;
 
@@ -1211,55 +1190,55 @@ bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 	sliderFloat.mMin = 0.001f;
 	sliderFloat.mMax = 10.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingCloud2, "Base Cloud Tiling 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloud2, "Base Cloud Tiling 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_DetailTile_2nd;
 	sliderFloat.mMin = 0.001f;
 	sliderFloat.mMax = 10.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingCloud2, "Detail Cloud Tiling 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloud2, "Detail Cloud Tiling 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_DetailStrength_2nd;
 	sliderFloat.mMin = 0.001f;
 	sliderFloat.mMax = 2.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingCloud2, "Detail Strength 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloud2, "Detail Strength 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_CloudTopOffset_2nd;
 	sliderFloat.mMin = 0.01f;
 	sliderFloat.mMax = 2000.0f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingCloud2, "Cloud Top Offset 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloud2, "Cloud Top Offset 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_CloudSize_2nd;
 	sliderFloat.mMin = 0.001f;
 	sliderFloat.mMax = 1000000.0f;
 	sliderFloat.mStep = 0.1f;
-	addCollapsingHeaderSubWidget(&CollapsingCloud2, "Cloud Size 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloud2, "Cloud Size 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_CloudDensity_2nd;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 10.0f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingCloud2, "Cloud Density 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloud2, "Cloud Density 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_CloudCoverageModifier_2nd;
 	sliderFloat.mMin = -1.0f;
 	sliderFloat.mMax = 1.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingCloud2, "Cloud Coverage Modifier 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloud2, "Cloud Coverage Modifier 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_CloudTypeModifier_2nd;
 	sliderFloat.mMin = -1.0f;
 	sliderFloat.mMax = 1.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingCloud2, "Cloud Type Modifier 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloud2, "Cloud Type Modifier 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_AnvilBias_2nd;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 1.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingCloud2, "Anvil Bias 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloud2, "Anvil Bias 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	CollapsingHeaderWidget CollapsingCloudCurl2;
 
@@ -1267,13 +1246,13 @@ bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 	sliderFloat.mMin = 0.001f;
 	sliderFloat.mMax = 4.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingCloudCurl2, "Curl Tiling 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloudCurl2, "Curl Tiling 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_CurlStrength_2nd;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 10000.0f;
 	sliderFloat.mStep = 0.1f;
-	addCollapsingHeaderSubWidget(&CollapsingCloudCurl2, "Curl Strength 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloudCurl2, "Curl Strength 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	CollapsingHeaderWidget CollapsingCloudWeather2;
 
@@ -1281,19 +1260,19 @@ bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 	sliderFloat.mMin = 0.001f;
 	sliderFloat.mMax = 10000000.0f;
 	sliderFloat.mStep = 0.1f;
-	addCollapsingHeaderSubWidget(&CollapsingCloudWeather2, "Weather Texture Size 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloudWeather2, "Weather Texture Size 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.WeatherTextureAzimuth_2nd;
 	sliderFloat.mMin = -180.0f;
 	sliderFloat.mMax = 180.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingCloudWeather2, "Weather Texture Direction 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloudWeather2, "Weather Texture Direction 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.WeatherTextureDistance_2nd;
 	sliderFloat.mMin = -1000000.0f;
 	sliderFloat.mMax = 1000000.0f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingCloudWeather2, "Weather Texture Distance 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloudWeather2, "Weather Texture Distance 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	CollapsingHeaderWidget CollapsingWind2;
 
@@ -1301,223 +1280,223 @@ bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 	sliderFloat.mMin = -180.0f;
 	sliderFloat.mMax = 180.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingWind2, "Wind Direction 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingWind2, "Wind Direction 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_WindIntensity_2nd;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 100.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingWind2, "Wind Intensity 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingWind2, "Wind Intensity 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	checkbox.pData = &gAppSettings.m_EnabledRotation_2nd;
-	addCollapsingHeaderSubWidget(&CollapsingWind2, "Enabled Rotation 2nd", &checkbox, WIDGET_TYPE_CHECKBOX);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingWind2, "Enabled Rotation 2nd", &checkbox, WIDGET_TYPE_CHECKBOX);
 
 	sliderFloat.pData = &gAppSettings.m_RotationPivotAzimuth_2nd;
 	sliderFloat.mMin = -180.0f;
 	sliderFloat.mMax = 180.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingWind2, "Rotation Pivot Azimuth 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingWind2, "Rotation Pivot Azimuth 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_RotationPivotDistance_2nd;
 	sliderFloat.mMin = -10.0f;
 	sliderFloat.mMax = 10.0f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingWind2, "Rotation Pivot Distance 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingWind2, "Rotation Pivot Distance 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_RotationIntensity_2nd;
 	sliderFloat.mMin = -20.0f;
 	sliderFloat.mMax = 20.0f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingWind2, "Rotation Intensity 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingWind2, "Rotation Intensity 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_RisingVaporScale_2nd;
 	sliderFloat.mMin = 0.001f;
 	sliderFloat.mMax = 1.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingWind2, "RisingVapor Scale 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingWind2, "RisingVapor Scale 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_RisingVaporUpDirection_2nd;
 	sliderFloat.mMin = -1.0f;
 	sliderFloat.mMax = 1.0f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingWind2, "RisingVapor UpDirection 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingWind2, "RisingVapor UpDirection 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_RisingVaporIntensity_2nd;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 10.0f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingWind2, "RisingVapor Intensity 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingWind2, "RisingVapor Intensity 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_NoiseFlowAzimuth_2nd;
 	sliderFloat.mMin = -180.0f;
 	sliderFloat.mMax = 180.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingWind2, "Noise Flow Azimuth 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingWind2, "Noise Flow Azimuth 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_NoiseFlowIntensity_2nd;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 100.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingWind2, "Noise Flow Intensity 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingWind2, "Noise Flow Intensity 2nd", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
-	addCollapsingHeaderSubWidget(&CollapsingVC02, "Sky Dome 2nd", &CollapsingSkyDome2, WIDGET_TYPE_COLLAPSING_HEADER);
-	addCollapsingHeaderSubWidget(&CollapsingVC02, "Cloud Modeling 2nd", &CollapsingCloud2, WIDGET_TYPE_COLLAPSING_HEADER);
-	addCollapsingHeaderSubWidget(&CollapsingVC02, "Cloud Curl 2nd", &CollapsingCloudCurl2, WIDGET_TYPE_COLLAPSING_HEADER);
-	addCollapsingHeaderSubWidget(&CollapsingVC02, "Weather 2nd", &CollapsingCloudWeather2, WIDGET_TYPE_COLLAPSING_HEADER);
-	addCollapsingHeaderSubWidget(&CollapsingVC02, "Wind 2nd", &CollapsingWind2, WIDGET_TYPE_COLLAPSING_HEADER);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingVC02, "Sky Dome 2nd", &CollapsingSkyDome2, WIDGET_TYPE_COLLAPSING_HEADER);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingVC02, "Cloud Modeling 2nd", &CollapsingCloud2, WIDGET_TYPE_COLLAPSING_HEADER);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingVC02, "Cloud Curl 2nd", &CollapsingCloudCurl2, WIDGET_TYPE_COLLAPSING_HEADER);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingVC02, "Weather 2nd", &CollapsingCloudWeather2, WIDGET_TYPE_COLLAPSING_HEADER);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingVC02, "Wind 2nd", &CollapsingWind2, WIDGET_TYPE_COLLAPSING_HEADER);
 
-	addWidgetLua(addGuiWidget(pGuiWindow, "Volumetric Clouds 2nd", &CollapsingVC02, WIDGET_TYPE_COLLAPSING_HEADER));
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "Volumetric Clouds 2nd", &CollapsingVC02, WIDGET_TYPE_COLLAPSING_HEADER));
 
-	addWidgetLua(addGuiWidget(pGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
 
 	CollapsingHeaderWidget CollapsingCloudLighting;
 
 	ColorPickerWidget colorPicker;
 	colorPicker.pData = &gAppSettings.m_CustomColor;
-	addCollapsingHeaderSubWidget(&CollapsingCloudLighting, "Custom Color", &colorPicker, WIDGET_TYPE_COLOR_PICKER);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloudLighting, "Custom Color", &colorPicker, WIDGET_TYPE_COLOR_PICKER);
 
 	sliderFloat.pData = &gAppSettings.m_CustomColorIntensity;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 1.0f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingCloudLighting, "Custom Color Intensity", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloudLighting, "Custom Color Intensity", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_CustomColorBlendFactor;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 1.0f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingCloudLighting, "Custom Color Blend", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloudLighting, "Custom Color Blend", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_TransStepSize;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 2048.0f;
 	sliderFloat.mStep = 1.0f;
-	addCollapsingHeaderSubWidget(&CollapsingCloudLighting, "Trans Step Size", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloudLighting, "Trans Step Size", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_Contrast;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 2.0f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingCloudLighting, "Contrast", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloudLighting, "Contrast", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_BackgroundBlendFactor;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 1.0f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingCloudLighting, "BackgroundBlendFactor", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloudLighting, "BackgroundBlendFactor", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_Precipitation;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 10.0f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingCloudLighting, "Precipitation", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloudLighting, "Precipitation", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 	
 	sliderFloat.pData = &gAppSettings.m_SilverIntensity;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 2.0f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingCloudLighting, "Silver Intensity", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloudLighting, "Silver Intensity", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_SilverSpread;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 0.99f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingCloudLighting, "Silver Spread", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloudLighting, "Silver Spread", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_Eccentricity;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 1.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingCloudLighting, "Eccentricity", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloudLighting, "Eccentricity", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_CloudBrightness;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 2.0f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingCloudLighting, "Cloud Brightness", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCloudLighting, "Cloud Brightness", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
-	addWidgetLua(addGuiWidget(pGuiWindow, "Cloud Lighting", &CollapsingCloudLighting, WIDGET_TYPE_COLLAPSING_HEADER));
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "Cloud Lighting", &CollapsingCloudLighting, WIDGET_TYPE_COLLAPSING_HEADER));
 
-	addWidgetLua(addGuiWidget(pGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
 
 
 	CollapsingHeaderWidget CollapsingCulling;
 
 	checkbox.pData = &gAppSettings.m_EnabledDepthCulling;
-	addCollapsingHeaderSubWidget(&CollapsingCulling, "Enabled Depth Culling", &checkbox, WIDGET_TYPE_CHECKBOX);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCulling, "Enabled Depth Culling", &checkbox, WIDGET_TYPE_CHECKBOX);
 
 	checkbox.pData = &gAppSettings.m_EnabledLodDepth;
-	addCollapsingHeaderSubWidget(&CollapsingCulling, "Enabled Lod Depth", &checkbox, WIDGET_TYPE_CHECKBOX);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingCulling, "Enabled Lod Depth", &checkbox, WIDGET_TYPE_CHECKBOX);
 
-	addWidgetLua(addGuiWidget(pGuiWindow, "Depth Culling", &CollapsingCulling, WIDGET_TYPE_COLLAPSING_HEADER));
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "Depth Culling", &CollapsingCulling, WIDGET_TYPE_COLLAPSING_HEADER));
 
-	addWidgetLua(addGuiWidget(pGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
 
 	CollapsingHeaderWidget CollapsingShadow;
 
 	checkbox.pData = &gAppSettings.m_EnabledShadow;
-	addCollapsingHeaderSubWidget(&CollapsingShadow, "Enabled Shadow", &checkbox, WIDGET_TYPE_CHECKBOX);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingShadow, "Enabled Shadow", &checkbox, WIDGET_TYPE_CHECKBOX);
 
 	sliderFloat.pData = &gAppSettings.m_ShadowBrightness;
 	sliderFloat.mMin = -1.0f;
 	sliderFloat.mMax = 1.0f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingShadow, "Shadow Brightness", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingShadow, "Shadow Brightness", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_ShadowTiling;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 100.0f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingShadow, "Shadow Tiling", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingShadow, "Shadow Tiling", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_ShadowSpeed;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 100.0f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingShadow, "Shadow Speed", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingShadow, "Shadow Speed", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
-	addWidgetLua(addGuiWidget(pGuiWindow, "Clouds Shadow", &CollapsingShadow, WIDGET_TYPE_COLLAPSING_HEADER));
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "Clouds Shadow", &CollapsingShadow, WIDGET_TYPE_COLLAPSING_HEADER));
 
-	addWidgetLua(addGuiWidget(pGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
 
 	CollapsingHeaderWidget CollapsingGodray;
 
 	checkbox.pData = &gAppSettings.m_EnabledGodray;
-	addCollapsingHeaderSubWidget(&CollapsingGodray, "Enabled Godray", &checkbox, WIDGET_TYPE_CHECKBOX);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingGodray, "Enabled Godray", &checkbox, WIDGET_TYPE_CHECKBOX);
 
 	sliderUint.pData = &gAppSettings.m_GodNumSamples;
 	sliderUint.mMin = 1;
 	sliderUint.mMax = 256;
 	sliderUint.mStep = 1;
-	addCollapsingHeaderSubWidget(&CollapsingGodray, "Number of Samples", &sliderUint, WIDGET_TYPE_SLIDER_UINT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingGodray, "Number of Samples", &sliderUint, WIDGET_TYPE_SLIDER_UINT);
 
 	sliderFloat.pData = &gAppSettings.m_Exposure;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 0.1f;
 	sliderFloat.mStep = 0.0001f;
-	addCollapsingHeaderSubWidget(&CollapsingGodray, "Exposure", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingGodray, "Exposure", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_Decay;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 2.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingGodray, "Decay", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingGodray, "Decay", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 	
 	sliderFloat.pData = &gAppSettings.m_Density;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 2.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingGodray, "Density", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingGodray, "Density", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_Weight;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 2.0f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingGodray, "Weight", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingGodray, "Weight", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
-	addWidgetLua(addGuiWidget(pGuiWindow, "Clouds Godray", &CollapsingGodray, WIDGET_TYPE_COLLAPSING_HEADER));
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "Clouds Godray", &CollapsingGodray, WIDGET_TYPE_COLLAPSING_HEADER));
 
-	addWidgetLua(addGuiWidget(pGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
 	
 	CollapsingHeaderWidget CollapsingTest;
 
@@ -1525,27 +1504,27 @@ bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 	sliderFloat.mMin = -1.0f;
 	sliderFloat.mMax = 1.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingTest, "Test00", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingTest, "Test00", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_Test01;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 2.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingTest, "Test01", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingTest, "Test01", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gAppSettings.m_Test02;
 	sliderFloat.mMin = 1.0f;
 	sliderFloat.mMax = 200000.0f;
 	sliderFloat.mStep = 100.0f;
-	addCollapsingHeaderSubWidget(&CollapsingTest, "Test02", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingTest, "Test02", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 	
 	sliderFloat.pData = &gAppSettings.m_Test03;
 	sliderFloat.mMin = -0.999f;
 	sliderFloat.mMax = 0.999f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingTest, "Test03", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingTest, "Test03", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
-	addWidgetLua(addGuiWidget(pGuiWindow, "Clouds Test", &CollapsingTest, WIDGET_TYPE_COLLAPSING_HEADER));
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "Clouds Test", &CollapsingTest, WIDGET_TYPE_COLLAPSING_HEADER));
 	
 	///////////////////////////
 
@@ -1607,13 +1586,13 @@ void VolumetricClouds::Exit()
 	// Remove Textures
 	for (uint32_t i = 0; i < gHighFreq3DTextureSize; ++i)
 	{
-		removeResource(gHighFrequencyOriginTexture[i]);
+		removeResource(gHighFrequencyOriginTextureStorage[i]);
 	}
 
 	// Remove Textures
 	for (uint32_t i = 0; i < gLowFreq3DTextureSize; ++i)
 	{
-		removeResource(gLowFrequencyOriginTexture[i]);
+		removeResource(gLowFrequencyOriginTextureStorage[i]);
 	}
 
 	tf_free(gHighFrequencyOriginTextureStorage);
@@ -1623,17 +1602,7 @@ void VolumetricClouds::Exit()
 	gHighFrequencyTextureNames.clear();
 	gLowFrequencyTextureNames.set_capacity(0);
 	gLowFrequencyTextureNames.clear();
-
-	gHighFrequencyOriginTexturePacked.set_capacity(0);
-	gHighFrequencyOriginTexturePacked.clear();
-	gLowFrequencyOriginTexturePacked.set_capacity(0);
-	gLowFrequencyOriginTexturePacked.clear();
-
-	gHighFrequencyOriginTexture.set_capacity(0);
-	gHighFrequencyOriginTexture.clear();
-	gLowFrequencyOriginTexture.set_capacity(0);
-	gLowFrequencyOriginTexture.clear();
-
+	
 	removeResource(pTriangularScreenVertexBuffer);
 
 	removeShader(pRenderer, pCompositeOverlayShader);
@@ -3501,7 +3470,7 @@ void VolumetricClouds::InitializeWithLoad(RenderTarget* InLinearDepthTexture, Re
 
 void VolumetricClouds::Initialize(uint InImageCount,
 	ICameraController* InCameraController, Queue*	InGraphicsQueue, CmdPool* InTransCmdPool,
-	Cmd** InTransCmds, Fence* InTransitionCompleteFences, Fence** InRenderCompleteFences, ProfileToken InGraphicsGpuProfiler, UIApp* InGAppUI, Buffer*	InTransmittanceBuffer)
+	Cmd** InTransCmds, Fence* InTransitionCompleteFences, Fence** InRenderCompleteFences, ProfileToken InGraphicsGpuProfiler, Buffer*	InTransmittanceBuffer)
 {
 	gImageCount = InImageCount;
 
@@ -3512,7 +3481,6 @@ void VolumetricClouds::Initialize(uint InImageCount,
 	pTransitionCompleteFences = InTransitionCompleteFences;
 	pRenderCompleteFences = InRenderCompleteFences;
     gGpuProfileToken = InGraphicsGpuProfiler;
-	pGAppUI = InGAppUI;
 	pTransmittanceBuffer = InTransmittanceBuffer;
 
 }
@@ -3644,16 +3612,16 @@ void VolumetricClouds::GenerateCloudTextures()
 	
 	DescriptorData params[2] = {};
 	params[0].pName = "SrcTexture";
-	params[0].mCount = (uint32_t)gHighFrequencyOriginTexturePacked.size();
-	params[0].ppTextures = gHighFrequencyOriginTexturePacked.data();
+	params[0].mCount = gHighFreq3DTextureSize;
+	params[0].ppTextures = gHighFrequencyOriginTextureStorage;
 	params[1].pName = "DstTexture";
 	params[1].ppTextures = &pHighFrequency3DTextureOrigin;
 	updateDescriptorSet(pRenderer, 0, pGenHighTopFreq3DTexDescriptorSet, 2, params);
 	
 	params[0] = params[1] = {};
 	params[0].pName = "SrcTexture";
-	params[0].mCount = (uint32_t)gLowFrequencyOriginTexturePacked.size();
-	params[0].ppTextures = gLowFrequencyOriginTexturePacked.data();
+	params[0].mCount = gLowFreq3DTextureSize;
+	params[0].ppTextures = gLowFrequencyOriginTextureStorage;
 	params[1].pName = "DstTexture";
 	params[1].ppTextures = &pLowFrequency3DTextureOrigin;
 	updateDescriptorSet(pRenderer, 0, pGenLowTopFreq3DTexDescriptorSet, 2, params);

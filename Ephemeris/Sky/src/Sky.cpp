@@ -13,6 +13,7 @@
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IFileSystem.h"
 #include "../../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IMemory.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IScripting.h"
 
 #define SKY_NEAR 50.0f
 #define SKY_FAR 100000000.0f
@@ -103,7 +104,7 @@ struct SpaceUniformBuffer
 	float4 NebulaLowColor;
 };
 
-mat4 MakeRotationMatrix(float angle, vec3 axis)
+mat4 MakeRotationMatrix(float angle, const vec3& axis)
 {
 	float s, c;
 	//sincos(-angle, s, c);
@@ -163,7 +164,7 @@ float hash(vec2 p) { return fmod(10000.0f * sin(17.0f * p.getX() + p.getY() * 0.
 float noise(float x) { float i = floor(x); float f = fmod(x, 1.0f); float u = f * f * (3.0f - 2.0f * f); return lerp(hash(i), hash(i + 1.0f), u); }
 float noise(vec2 x) { vec2 i = vec2(floor(x.getX()), floor(x.getY())); vec2 f = vec2(fmod(x.getX(), 1.0f), fmod(x.getY(), 1.0f)); float a = hash(i); float b = hash(i + vec2(1.0f, 0.0f)); float c = hash(i + vec2(0.0f, 1.0f)); float d = hash(i + vec2(1.0f, 1.0f)); vec2 u = vec2(f.getX() * f.getX() * (3.0f - 2.0f * f.getX()), f.getY() * f.getY() * (3.0f - 2.0f * f.getY())); return lerp(a, b, u.getX()) + (c - a) * u.getY() * (1.0f - u.getX()) + (d - b) * u.getX() * u.getY(); }
 
-float noise(vec3 x)
+float noise(const vec3& x)
 {
 	// The noise function returns a value in the range -1.0f -> 1.0f
 
@@ -438,10 +439,13 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
 	// UI
 	///////////////////////////////////////////////////////////////////
 
-	GuiDesc guiDesc = {};
-	guiDesc.mStartPosition = vec2(1280.0f / getDpiScale().getX(), 700.0f / getDpiScale().getY());
-	guiDesc.mStartSize = vec2(300.0f / getDpiScale().getX(), 250.0f / getDpiScale().getY());
-	pGuiWindow = addAppUIGuiComponent(pGAppUI, "Sky", &guiDesc);
+	UIComponentDesc UIComponentDesc = {};
+
+	float dpiScale[2];
+	getDpiScale(dpiScale);
+	UIComponentDesc.mStartPosition = vec2(1280.0f / dpiScale[0], 700.0f / dpiScale[1]);
+	UIComponentDesc.mStartSize = vec2(300.0f / dpiScale[0], 250.0f / dpiScale[1]);
+	uiCreateComponent("Sky", &UIComponentDesc, &pGuiWindow);
 
 	gSkySettings.SkyInfo.x = 0.12f;
 	gSkySettings.SkyInfo.y = 3.0f;
@@ -460,27 +464,27 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 1.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingPAS, "Exposure", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingPAS, "Exposure", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gSkySettings.SkyInfo.y;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 3.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingPAS, "InscatterIntensity", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingPAS, "InscatterIntensity", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	sliderFloat.pData = &gSkySettings.SkyInfo.z;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 2.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingPAS, "InscatterContrast", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingPAS, "InscatterContrast", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 	
 	sliderFloat.pData = &gSkySettings.SkyInfo.w;
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 2.0f;
 	sliderFloat.mStep = 0.001f;
-	addCollapsingHeaderSubWidget(&CollapsingPAS, "UnitsToM", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingPAS, "UnitsToM", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
-	addWidgetLua(addGuiWidget(pGuiWindow, "Precomputed Atmosphere Scattering", &CollapsingPAS, WIDGET_TYPE_COLLAPSING_HEADER));
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "Precomputed Atmosphere Scattering", &CollapsingPAS, WIDGET_TYPE_COLLAPSING_HEADER));
 
 	CollapsingHeaderWidget CollapsingNebula;
 
@@ -488,19 +492,19 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
 	sliderFloat.mMin = 0.0f;
 	sliderFloat.mMax = 20.0f;
 	sliderFloat.mStep = 0.01f;
-	addCollapsingHeaderSubWidget(&CollapsingNebula, "Nebula Scale", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingNebula, "Nebula Scale", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
 
 	ColorPickerWidget colorPicker;
 	colorPicker.pData = &NebulaHighColor;
-	addCollapsingHeaderSubWidget(&CollapsingNebula, "Nebula High Color", &colorPicker, WIDGET_TYPE_COLOR_PICKER);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingNebula, "Nebula High Color", &colorPicker, WIDGET_TYPE_COLOR_PICKER);
 
 	colorPicker.pData = &NebulaMidColor;
-	addCollapsingHeaderSubWidget(&CollapsingNebula, "Nebula Mid Color", &colorPicker, WIDGET_TYPE_COLOR_PICKER);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingNebula, "Nebula Mid Color", &colorPicker, WIDGET_TYPE_COLOR_PICKER);
 
 	colorPicker.pData = &NebulaLowColor;
-	addCollapsingHeaderSubWidget(&CollapsingNebula, "Nebula Low Color", &colorPicker, WIDGET_TYPE_COLOR_PICKER);
+	uiCreateCollapsingHeaderSubWidget(&CollapsingNebula, "Nebula Low Color", &colorPicker, WIDGET_TYPE_COLOR_PICKER);
 
-	addWidgetLua(addGuiWidget(pGuiWindow, "Nebula", &CollapsingNebula, WIDGET_TYPE_COLLAPSING_HEADER));
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "Nebula", &CollapsingNebula, WIDGET_TYPE_COLLAPSING_HEADER));
 
 	waitForToken(&token);
 
@@ -971,7 +975,7 @@ void Sky::Draw(Cmd* cmd)
 
 void Sky::Initialize(uint InImageCount,
 	ICameraController* InCameraController, Queue*	InGraphicsQueue, CmdPool* InTransCmdPool,
-	Cmd** InTransCmds, Fence* InTransitionCompleteFences, ProfileToken InGraphicsGpuProfiler, UIApp* InGAppUI, Buffer*	InTransmittanceBuffer)
+	Cmd** InTransCmds, Fence* InTransitionCompleteFences, ProfileToken InGraphicsGpuProfiler, Buffer*	InTransmittanceBuffer)
 {
 	gImageCount = InImageCount;
 
@@ -981,7 +985,6 @@ void Sky::Initialize(uint InImageCount,
 	ppTransCmds = InTransCmds;
 	pTransitionCompleteFences = InTransitionCompleteFences;
 	gGpuProfileToken = InGraphicsGpuProfiler;
-	pGAppUI = InGAppUI;
 	pTransmittanceBuffer = InTransmittanceBuffer;
 }
 

@@ -14,7 +14,7 @@
 #include "../../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
 
 // Creates data source from the specified raw data file
-HeightData::HeightData(const char* fileName, float heightScale) :
+HeightData::HeightData(const char* fileName, const char* filePassword, float heightScale) :
 	colOffset(1356),
 	rowOffset(924),
 	levels(0),
@@ -23,7 +23,7 @@ HeightData::HeightData(const char* fileName, float heightScale) :
 	// open file
 	FileStream modelFile0FH = {};
 	
-	if (!fsOpenStreamFromPath(RD_TEXTURES, fileName, FM_READ_BINARY, &modelFile0FH))
+	if (!fsOpenStreamFromPath(RD_TEXTURES, fileName, FM_READ_BINARY, filePassword, &modelFile0FH))
 	{
 		char output[256];
 		sprintf(output, "\"%s\": Image file not found.", fileName);

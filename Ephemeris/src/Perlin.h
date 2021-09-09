@@ -27,7 +27,15 @@ public:
   Perlin() {};
   ~Perlin() {};
 
+  // ubsan complains about integer overflow, which is expected with Perlin,
+  // so silence ubsan for these 2 functions
+#if defined(__clang__)
+  __attribute__((no_sanitize("undefined")))
+#endif
   static float noise2D(const int32_t x, const int32_t y);
+#if defined(__clang__)
+  __attribute__((no_sanitize("undefined")))
+#endif
   static float noise3D(const int32_t x, const int32_t y, const int32_t z);
 
   static float interpolate(const float, const float, const float, const float, const float);

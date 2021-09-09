@@ -18,7 +18,7 @@
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IProfiler.h"
 #include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/string.h"
 #include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/unordered_map.h"
-#include "../../../../The-Forge/Middleware_3/UI/AppUI.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IUI.h"
 #include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
 
 #define GRID_SIZE 256
@@ -84,7 +84,7 @@ public:
 
 	void Initialize(uint InImageCount,
 		ICameraController* InCameraController, Queue*	InGraphicsQueue, CmdPool* InTransCmdPool,
-		Cmd** InTransCmds, Fence* InTransitionCompleteFences, ProfileToken InGraphicsGpuProfiler, UIApp* InGAppUI);
+		Cmd** InTransCmds, Fence* InTransitionCompleteFences, ProfileToken InGraphicsGpuProfiler);
 
 	bool Load(int32_t width, int32_t height);
 	void GenerateTerrainFromHeightmap(float height, float radius);
@@ -100,8 +100,7 @@ public:
 
 	uint                      gFrameIndex = 0;
 
-	GuiComponent*             pGuiWindow = NULL;
-	UIApp*                    pGAppUI = NULL;
+	UIComponent*             pGuiWindow = NULL;
 
 	Queue*                    pGraphicsQueue = NULL;
 	CmdPool*                  pTransCmdPool = NULL;
@@ -137,14 +136,10 @@ public:
 	Texture*                  pTerrainNormalTexture = NULL;
 	Texture*                  pTerrainMaskTexture = NULL;
 
-	eastl::vector<Texture*>   pTerrainTiledColorTextures;
-	eastl::vector<Texture*>   pTerrainTiledNormalTextures;
+	Texture**                  gTerrainTiledColorTexturesStorage = NULL;
+	Texture**                  gTerrainTiledNormalTexturesStorage = NULL;
 
-	Texture*                  gTerrainTiledColorTexturesStorage = NULL;
-	Texture*                  gTerrainTiledNormalTexturesStorage = NULL;
-
-	eastl::vector<Texture*>   gTerrainTiledColorTexturesPacked;
-	eastl::vector<Texture*>   gTerrainTiledNormalTexturesPacked;
+	const uint32_t             gTerrainTextureCount = 5;
 
 	bool                      bFirstDraw = true;
 

@@ -18,7 +18,7 @@
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IProfiler.h"
 #include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/string.h"
 #include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/unordered_map.h"
-#include "../../../../The-Forge/Middleware_3/UI/AppUI.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IUI.h"
 #include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
 
 typedef struct ParticleData
@@ -53,7 +53,7 @@ public:
 
 	void Initialize(uint InImageCount,
 		ICameraController* InCameraController, Queue*	InGraphicsQueue, CmdPool* InTransCmdPool,
-		Cmd** InTransCmds, Fence* InTransitionCompleteFences, ProfileToken InGraphicsGpuProfiler, UIApp* InGAppUI, Buffer*	pTransmittanceBuffer);
+		Cmd** InTransCmds, Fence* InTransitionCompleteFences, ProfileToken InGraphicsGpuProfiler, Buffer*	pTransmittanceBuffer);
 
 	void InitializeWithLoad(RenderTarget* InDepthRenderTarget, RenderTarget* InLinearDepthRenderTarget);
 
@@ -74,8 +74,7 @@ public:
 	uint                  mWidth = 0;
 	uint                  mHeight = 0;
 
-	GuiComponent*         pGuiWindow = NULL;
-	UIApp*                pGAppUI = NULL;
+	UIComponent*         pGuiWindow = NULL;
 
 	Queue*                pGraphicsQueue = NULL;
 	CmdPool*              pTransCmdPool = NULL;
