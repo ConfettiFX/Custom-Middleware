@@ -27,7 +27,11 @@
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IFileSystem.h"
 #include "../../../../The-Forge/Common_3/OS/Interfaces/ITime.h"
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IProfiler.h"
-#include "../../../../The-Forge/Middleware_3/UI/AppUI.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IScripting.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IUI.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IFont.h"
+
+//Renderer
 #include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
 #include "../../../../The-Forge/Common_3/Renderer/IResourceLoader.h"
 
@@ -43,7 +47,6 @@ static bool         gToggleVSync = false;
 static bool         gTogglePerformance = true;
 static bool         gToggleFXAA = true;
 static bool         gShowUI = true;
-static uint32_t		gSelectedApiIndex = 0;
 
 Renderer*           pRenderer = NULL;
 
@@ -84,7 +87,7 @@ Semaphore*          pImageAcquiredSemaphore = NULL;
 Semaphore*          pRenderCompleteSemaphores[gImageCount] = { NULL };
 
 ProfileToken        gGpuProfileToken;
-GuiComponent*       pMainGuiWindow = NULL;
+UIComponent*       pMainGuiWindow = NULL;
 
 Buffer*             pTransmittanceBuffer = NULL;
 
@@ -136,19 +139,19 @@ uint32_t			gFrameIndex = 0;
 
 ICameraController*  pCameraController = NULL;
 
-/// UI
-UIApp*				pAppUI = NULL;
-
 VolumetricClouds	gVolumetricClouds;
 Terrain						gTerrain;
 Sky								gSky;
 SpaceObjects			gSpaceObjects;
 
-TextDrawDesc gFrameTimeDraw = TextDrawDesc(0, 0xff00ffff, 18);
-TextDrawDesc gDefaultTextDrawDesc = TextDrawDesc(0, 0xffffffff, 16);
+FontDrawDesc gFrameTimeDraw;
+FontDrawDesc gDefaultTextDrawDesc;
+uint32_t     gFontID = 0;
 
 const char* pPipelineCacheName = "PipelineCache.cache";
 PipelineCache* pPipelineCache = NULL;
+
+static HiresTimer gTimer;
 
 class RenderEphemeris : public IApp
 {
@@ -156,6 +159,8 @@ public:
 
 	bool Init()
 	{
+		initHiresTimer(&gTimer);
+
 		// FILE PATHS
 		fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_SHADER_SOURCES, "Shaders");
 		fsSetPathForResourceDir(pSystemFileIO, RM_DEBUG,   RD_SHADER_BINARIES, "CompiledShaders");
@@ -176,9 +181,10 @@ public:
 		pCameraController = initFpsCameraController(camPos, lookAt);
 		pCameraController->setMotionParameters(cmp);
 
-		// window and renderer setup
-		RendererDesc settings = { 0 };
-		settings.mApi = (RendererApi)gSelectedApiIndex;
+		RendererDesc settings;
+		memset(&settings, 0, sizeof(settings));
+		settings.mD3D11Unsupported = true; 
+		settings.mGLESUnsupported = true; 
 		initRenderer(GetName(), &settings, &pRenderer);
 		//check for init success
 		if (!pRenderer)
@@ -217,19 +223,31 @@ public:
 
 		initResourceLoaderInterface(pRenderer);
 
-		UIAppDesc appUIDesc = {};
-		initAppUI(pRenderer, &appUIDesc, &pAppUI);
-		if (!pAppUI)
-			return false;
+		// Load fonts
+		FontDesc font = {};
+		font.pFontPath = "TitilliumText/TitilliumText-Bold.otf";
+		fntDefineFonts(&font, 1, &gFontID);
 
-		initAppUIFont(pAppUI, "TitilliumText/TitilliumText-Bold.otf");
+		FontSystemDesc fontRenderDesc = {};
+		fontRenderDesc.pRenderer = pRenderer;
+		if (!initFontSystem(&fontRenderDesc))
+			return false; // report?
+
+		// Initialize Forge User Interface Rendering
+		UserInterfaceDesc uiRenderDesc = {};
+		uiRenderDesc.pRenderer = pRenderer;
+		initUserInterface(&uiRenderDesc);
 
 		PipelineCacheLoadDesc cacheDesc = {};
 		cacheDesc.pFileName = pPipelineCacheName;
 		loadPipelineCache(pRenderer, &cacheDesc, &pPipelineCache);
 
-		initProfiler();
-		initProfilerUI(pAppUI, mSettings.mWidth, mSettings.mHeight);
+		// Initialize micro profiler and its UI.
+		ProfilerDesc profiler = {};
+		profiler.pRenderer = pRenderer;
+		profiler.mWidthUI = mSettings.mWidth;
+		profiler.mHeightUI = mSettings.mHeight;
+		initProfiler(&profiler);
 
 		gGpuProfileToken = addGpuProfiler(pRenderer, pGraphicsQueue, "GpuProfiler");
 
@@ -243,8 +261,13 @@ public:
 #endif
 
 #if defined(METAL)
-		gFrameTimeDraw.mFontSize /= getDpiScale().getY();
-		gDefaultTextDrawDesc.mFontSize /= getDpiScale().getY();
+        {
+            float dpiScale[2];
+            getDpiScale(dpiScale);
+            gFrameTimeDraw.mFontSize /= dpiScale[1];
+            gFrameTimeDraw.mFontID = gFontID;
+            gDefaultTextDrawDesc.mFontSize /= dpiScale[1];
+        }
 #endif
 
 
@@ -312,91 +335,73 @@ public:
 		TransBufferDesc.ppBuffer = &pTransmittanceBuffer;
 		addResource(&TransBufferDesc, NULL);
 
-		gTerrain.Initialize(gImageCount, pCameraController, pGraphicsQueue, pTransCmdPool, ppTransCmds, pTransitionCompleteFences, gGpuProfileToken, pAppUI);
+		gTerrain.Initialize(gImageCount, pCameraController, pGraphicsQueue, pTransCmdPool, ppTransCmds, pTransitionCompleteFences, gGpuProfileToken);
 		gTerrain.Init(pRenderer, pPipelineCache);
 
-		gSky.Initialize(gImageCount, pCameraController, pGraphicsQueue, pTransCmdPool, ppTransCmds, pTransitionCompleteFences, gGpuProfileToken, pAppUI, pTransmittanceBuffer);
+		gSky.Initialize(gImageCount, pCameraController, pGraphicsQueue, pTransCmdPool, ppTransCmds, pTransitionCompleteFences, gGpuProfileToken, pTransmittanceBuffer);
 		gSky.Init(pRenderer, pPipelineCache);
 
-		gVolumetricClouds.Initialize(gImageCount, pCameraController, pGraphicsQueue, pTransCmdPool, ppTransCmds, pTransitionCompleteFences, pRenderCompleteFences, gGpuProfileToken, pAppUI, pTransmittanceBuffer);
+		gVolumetricClouds.Initialize(gImageCount, pCameraController, pGraphicsQueue, pTransCmdPool, ppTransCmds, pTransitionCompleteFences, pRenderCompleteFences, gGpuProfileToken, pTransmittanceBuffer);
 		gVolumetricClouds.Init(pRenderer, pPipelineCache);
 
-		gSpaceObjects.Initialize(gImageCount, pCameraController, pGraphicsQueue, pTransCmdPool, ppTransCmds, pTransitionCompleteFences, gGpuProfileToken, pAppUI, pTransmittanceBuffer);
+		gSpaceObjects.Initialize(gImageCount, pCameraController, pGraphicsQueue, pTransCmdPool, ppTransCmds, pTransitionCompleteFences, gGpuProfileToken, pTransmittanceBuffer);
 		gSpaceObjects.Init(pRenderer, pPipelineCache);
 
-		GuiDesc guiDesc = {};
-		guiDesc.mStartPosition = vec2(960.0f / getDpiScale().getX(), 700.0f / getDpiScale().getY());
-		guiDesc.mStartSize = vec2(300.0f / getDpiScale().getX(), 250.0f / getDpiScale().getY());
-		guiDesc.mDefaultTextDrawDesc = gDefaultTextDrawDesc;
-		pMainGuiWindow = addAppUIGuiComponent(pAppUI, "Global Settings", &guiDesc);
+		UIComponentDesc UIComponentDesc = {};
+		float dpiScale[2];
+		getDpiScale(dpiScale);
 
-#if defined(USE_MULTIPLE_RENDER_APIS)
-		static const char* pApiNames[] =
-		{
-		#if defined(DIRECT3D12)
-			"D3D12",
-		#endif
-		#if defined(VULKAN)
-			"Vulkan",
-		#endif
-		};
-		// Select Api 
-		DropdownWidget selectApiWidget;
-		selectApiWidget.pData = &gSelectedApiIndex;
-		for (uint32_t i = 0; i < 2; ++i)
-		{
-			selectApiWidget.mNames.push_back((char*)pApiNames[i]);
-			selectApiWidget.mValues.push_back(i);
-		}
-		IWidget* pSelectApiWidget = addGuiWidget(pMainGuiWindow, "Select API", &selectApiWidget, WIDGET_TYPE_DROPDOWN);
-		pSelectApiWidget->pOnEdited = onAPISwitch;
-		addWidgetLua(pSelectApiWidget);
-		const char* apiTestScript = "Test_API_Switching.lua";
-		addAppUITestScripts(pAppUI, &apiTestScript, 1);
-#endif
+		UIComponentDesc.mStartPosition = vec2(960.0f / dpiScale[0], 700.0f / dpiScale[1]);
+		UIComponentDesc.mStartSize = vec2(300.0f / dpiScale[0], 250.0f / dpiScale[1]);
+		UIComponentDesc.mFontID = 0; 
+		UIComponentDesc.mFontSize = 16.0f; 
+		uiCreateComponent("Global Settings", &UIComponentDesc, &pMainGuiWindow);
 
 		CheckboxWidget checkbox;
 		checkbox.pData = &gToggleFXAA;
-		addWidgetLua(addGuiWidget(pMainGuiWindow, "Enable FXAA", &checkbox, WIDGET_TYPE_CHECKBOX));
+		luaRegisterWidget(uiCreateComponentWidget(pMainGuiWindow, "Enable FXAA", &checkbox, WIDGET_TYPE_CHECKBOX));
 
 		SeparatorWidget separator;
-		addWidgetLua(addGuiWidget(pMainGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
+		luaRegisterWidget(uiCreateComponentWidget(pMainGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
 
 		SliderFloatWidget sliderFloat;
 		sliderFloat.pData = &LightDirection.x;
 		sliderFloat.mMin = -180.0f;
 		sliderFloat.mMax = 180.0f;
 		sliderFloat.mStep = 0.001f;
-		addWidgetLua(addGuiWidget(pMainGuiWindow, "Light Azimuth", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT));
+		luaRegisterWidget(uiCreateComponentWidget(pMainGuiWindow, "Light Azimuth", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT));
 
 		sliderFloat.pData = &LightDirection.y;
 		sliderFloat.mMin = 0.0f;
 		sliderFloat.mMax = 360.0f;
 		sliderFloat.mStep = 0.001f;
-		addWidgetLua(addGuiWidget(pMainGuiWindow, "Light Elevation", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT));
+		luaRegisterWidget(uiCreateComponentWidget(pMainGuiWindow, "Light Elevation", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT));
 
-		addWidgetLua(addGuiWidget(pMainGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
+		luaRegisterWidget(uiCreateComponentWidget(pMainGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
 
 		SliderFloat4Widget sliderFloat4;
 		sliderFloat4.pData = &LightColorAndIntensity;
 		sliderFloat4.mMin = float4(0.0f);
 		sliderFloat4.mMax = float4(10.0f);
 		sliderFloat4.mStep = float4(0.01f);
-		addWidgetLua(addGuiWidget(pMainGuiWindow, "Light Color & Intensity", &sliderFloat4, WIDGET_TYPE_SLIDER_FLOAT4));
+		luaRegisterWidget(uiCreateComponentWidget(pMainGuiWindow, "Light Color & Intensity", &sliderFloat4, WIDGET_TYPE_SLIDER_FLOAT4));
 
-		addWidgetLua(addGuiWidget(pMainGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
+		luaRegisterWidget(uiCreateComponentWidget(pMainGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
 
 		checkbox.pData = &bSunMove;
-		addWidgetLua(addGuiWidget(pMainGuiWindow, "Automatic Sun Moving", &checkbox, WIDGET_TYPE_CHECKBOX));
+		luaRegisterWidget(uiCreateComponentWidget(pMainGuiWindow, "Automatic Sun Moving", &checkbox, WIDGET_TYPE_CHECKBOX));
 
 		sliderFloat.pData = &SunMovingSpeed;
 		sliderFloat.mMin = -100.0f;
 		sliderFloat.mMax = 100.0f;
 		sliderFloat.mStep = 0.01f;
-		addWidgetLua(addGuiWidget(pMainGuiWindow, "Sun Moving Speed", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT));
+		luaRegisterWidget(uiCreateComponentWidget(pMainGuiWindow, "Sun Moving Speed", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT));
 
-		if (!initInputSystem(pWindow))
-		  return false;
+		InputSystemDesc inputDesc = {};
+		inputDesc.pRenderer = pRenderer;
+		inputDesc.pWindow = pWindow;
+		if (!initInputSystem(&inputDesc))
+			return false;
 		
 		// Microprofiler Actions
 		// #TODO: Remove this once the profiler UI is ported to use our UI system
@@ -411,7 +416,7 @@ public:
 		{
 		  InputBindings::BUTTON_ANY, [](InputActionContext* ctx)
 		  {
-		    bool capture = appUIOnButton(pAppUI, ctx->mBinding, ctx->mBool, ctx->pPosition);
+		    bool capture = uiOnButton(ctx->mBinding, ctx->mBool, ctx->pPosition);
 		    setEnableCaptureInput(capture && INPUT_ACTION_PHASE_CANCELED != ctx->mPhase);
 		    return true;
 		  }, this
@@ -420,7 +425,7 @@ public:
 		typedef bool(*CameraInputHandler)(InputActionContext* ctx, uint32_t index);
 		static CameraInputHandler onCameraInput = [](InputActionContext* ctx, uint32_t index)
 		{
-		  if (!appUIIsFocused(pAppUI) && *ctx->pCaptured)
+		  if (!uiIsFocused() && *ctx->pCaptured)
 		    index ? pCameraController->onRotate(ctx->mFloat2) : pCameraController->onMove(ctx->mFloat2);
 		  return true;
 		};
@@ -460,10 +465,11 @@ public:
 		gSky.Exit();
 		gTerrain.Exit();
 
-		exitProfilerUI();
 		exitProfiler();
 
-		exitAppUI(pAppUI);
+		exitUserInterface();
+
+		exitFontSystem(); 
 
 		removeResource(pTransmittanceBuffer);
 
@@ -504,6 +510,7 @@ public:
 		exitResourceLoaderInterface(pRenderer);
 
 		exitRenderer(pRenderer);
+		pRenderer = NULL; 
 	}
 
 	bool Load()
@@ -517,7 +524,15 @@ public:
 		if (!addDepthBuffer())
 			return false;
 
-		if (!addAppGUIDriver(pAppUI, pSwapChain->ppRenderTargets))
+		RenderTarget* ppPipelineRenderTargets[] = {
+			pSwapChain->ppRenderTargets[0],
+			pDepthBuffer
+		};
+
+		if (!addFontSystemPipelines(ppPipelineRenderTargets, 2, NULL))
+			return false;
+
+		if (!addUserInterfacePipelines(ppPipelineRenderTargets[0]))
 			return false;
 
 #if defined(TARGET_IOS) || defined(__ANDROID__)
@@ -623,7 +638,9 @@ public:
 	{
 		waitQueueIdle(pGraphicsQueue);
 
-		removeAppGUIDriver(pAppUI);
+		removeUserInterfacePipelines();
+
+		removeFontSystemPipelines(); 
 
 #if defined(TARGET_IOS) || defined(__ANDROID__)
 		unloadVirtualJoystickUI(pVirtualJoystick);
@@ -712,11 +729,6 @@ public:
 		gFXAAinfo.ScreenSize = vec2((float)mSettings.mWidth, (float)mSettings.mHeight);
 		gFXAAinfo.Use = gToggleFXAA ? 1.0f : 0.0f;
 		gFXAAinfo.Time = currentTime;
-
-		/************************************************************************/
-		// UI
-		/************************************************************************/
-		updateAppUI(pAppUI, deltaTime);
 
 	}
 
@@ -857,8 +869,7 @@ public:
 			cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 0.0f, 1.0f);
 			cmdSetScissor(cmd, 0, 0, pRenderTarget->mWidth, pRenderTarget->mHeight);
 
-			static HiresTimer gTimer;
-			gTimer.GetUSec(true);
+			getHiresTimerUSec(&gTimer, true);
 
 #if defined(TARGET_IOS) || defined(__ANDROID__)
 			drawVirtualJoystickUI(pVirtualJoystick, cmd, pCameraController, { 1.0f, 1.0f, 1.0f, 1.0f });
@@ -866,17 +877,14 @@ public:
 
 			if (gTogglePerformance)
 			{
+				gFrameTimeDraw.mFontColor = 0xff00ffff;
+				gFrameTimeDraw.mFontSize = 18.0f;
+				gFrameTimeDraw.mFontID = gFontID;
                 cmdDrawCpuProfile(cmd, float2(8.0f, 15.0f), &gFrameTimeDraw);
-				cmdDrawGpuProfile(cmd, float2(8.0f, 40.0f), gGpuProfileToken);
-
-				cmdDrawProfilerUI();
+				cmdDrawGpuProfile(cmd, float2(8.0f, 40.0f), gGpuProfileToken, &gFrameTimeDraw);
 			}
-			
-			appUIGui(pAppUI, pMainGuiWindow);
-			appUIGui(pAppUI, gSky.pGuiWindow);
-			appUIGui(pAppUI, gVolumetricClouds.pGuiWindow);
 
-			drawAppUI(pAppUI, cmd);
+			cmdDrawUserInterface(cmd);
 
 			cmdBindRenderTargets(cmd, 0, NULL, NULL, NULL, NULL, NULL, -1, -1);
 
@@ -997,7 +1005,7 @@ public:
 		return pSkydomeResultRT != NULL;
 	}
 
-	void RecenterCameraView(float maxDistance, vec3 lookAt = vec3(0))
+	void RecenterCameraView(float maxDistance, const vec3& lookAt = vec3(0))
 	{
 		vec3 p = pCameraController->getViewPosition();
 		vec3 d = p - lookAt;

@@ -13,7 +13,7 @@
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IMiddleware.h"
 #include "../../../../The-Forge/Common_3/OS/Interfaces/IProfiler.h"
 #include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/string.h"
-#include "../../../../The-Forge/Middleware_3/UI/AppUI.h"
+#include "../../../../The-Forge/Common_3/OS/Interfaces/IUI.h"
 #include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
 
 struct DataPerEye
@@ -262,7 +262,7 @@ public:
 
 	void Initialize(uint InImageCount,
 		ICameraController* InCameraController, Queue*	InGraphicsQueue, CmdPool* InTransCmdPool,
-		Cmd** InTransCmds, Fence* InTransitionCompleteFences, Fence** InRenderCompleteFences, ProfileToken InGraphicsGpuProfiler, UIApp* InGAppUI, Buffer*	pTransmittanceBuffer);
+		Cmd** InTransCmds, Fence* InTransitionCompleteFences, Fence** InRenderCompleteFences, ProfileToken InGraphicsGpuProfiler, Buffer*	pTransmittanceBuffer);
 
 
 	void Update(uint frameIndex);
@@ -296,8 +296,6 @@ public:
 	RenderTarget*           pSceneColorTexture = NULL;
 	ICameraController*      pCameraController = NULL;
 
-
-	UIApp*                  pGAppUI = NULL;
 	Queue*                  pGraphicsQueue = NULL;
 
 	CmdPool*                pTransCmdPool = NULL;
@@ -307,7 +305,7 @@ public:
 
 	ProfileToken            gGpuProfileToken = {};
 
-	GuiComponent*           pGuiWindow = NULL;
+	UIComponent*           pGuiWindow = NULL;
 	RenderTarget*           pCastShadowRT = NULL;
 	RenderTarget**          pFinalRT = NULL;
 

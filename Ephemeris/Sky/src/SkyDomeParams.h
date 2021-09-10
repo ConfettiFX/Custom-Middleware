@@ -28,13 +28,13 @@
 
 struct SkyDomeParams
 {
+	vec3		vLocationOrigin;	//	coordinates of Location point in client units
 	float		fSunPosition;
 	float		fExposure;
 	float		fInscatterIntencity;
 	float		fInscatterContrast;
 	float		fSunSpeed;
 	float		fUnitsToM;	//	client units to m conversion multiplier (m/units ratio)
-	vec3		vLocationOrigin;	//	coordinates of Location point in client units
 	bool		bMoveSun;
 };
 

@@ -54,7 +54,7 @@ namespace aura
 	struct half {
 		unsigned short sh;
 
-		half() {}; //-V730
+		half() = default; //-V730
 		half(const float x);
 		operator float () const;
 	};
@@ -64,7 +64,7 @@ namespace aura
 	struct vec2 {
 		float x, y;
 
-		vec2() {} //-V730
+		vec2() = default; //-V730
 		vec2(const float ixy) {
 			x = y = ixy;
 		}
@@ -111,7 +111,7 @@ namespace aura
 	struct vec3 {
 		float x, y, z;
 
-		vec3() {} //-V730
+		vec3() = default; //-V730
 		vec3(const float ixyz) {
 			x = y = z = ixyz;
 		}
@@ -120,12 +120,12 @@ namespace aura
 			y = iy;
 			z = iz;
 		}
-		vec3(const vec2 iv, const float iz) {
+		vec3(const vec2& iv, const float iz) {
 			x = iv.x;
 			y = iv.y;
 			z = iz;
 		}
-		vec3(const float ix, const vec2 iv) {
+		vec3(const float ix, const vec2& iv) {
 			x = ix;
 			y = iv.x;
 			z = iv.y;
@@ -174,7 +174,7 @@ namespace aura
 	struct vec4 {
 		float x, y, z, w;
 
-		vec4() {} //-V730
+		vec4() = default; //-V730
 		vec4(const float ixyzw) {
 			x = y = z = w = ixyzw;
 		}
@@ -184,37 +184,37 @@ namespace aura
 			z = iz;
 			w = iw;
 		}
-		vec4(const vec2 iv, const float iz, const float iw) {
+		vec4(const vec2& iv, const float iz, const float iw) {
 			x = iv.x;
 			y = iv.y;
 			z = iz;
 			w = iw;
 		}
-		vec4(const float ix, const vec2 iv, const float iw) {
+		vec4(const float ix, const vec2& iv, const float iw) {
 			x = ix;
 			y = iv.x;
 			z = iv.y;
 			w = iw;
 		}
-		vec4(const float ix, const float iy, const vec2 iv) {
+		vec4(const float ix, const float iy, const vec2& iv) {
 			x = ix;
 			y = iy;
 			z = iv.x;
 			w = iv.y;
 		}
-		vec4(const vec2 iv0, const vec2 iv1) {
+		vec4(const vec2& iv0, const vec2& iv1) {
 			x = iv0.x;
 			y = iv0.y;
 			z = iv1.x;
 			w = iv1.y;
 		}
-		vec4(const vec3 iv, const float iw) {
+		vec4(const vec3& iv, const float iw) {
 			x = iv.x;
 			y = iv.y;
 			z = iv.z;
 			w = iw;
 		}
-		vec4(const float ix, const vec3 iv) {
+		vec4(const float ix, const vec3& iv) {
 			x = ix;
 			y = iv.x;
 			z = iv.y;
@@ -352,7 +352,7 @@ namespace aura
 	struct mat2 {
 		vec2 rows[2];
 
-		mat2() {}
+		mat2() = default;
 		mat2(const vec2 &row0, const vec2 &row1) {
 			rows[0] = row0;
 			rows[1] = row1;
@@ -383,7 +383,7 @@ namespace aura
 	struct mat3 {
 		vec3 rows[3];
 
-		mat3() {}
+		mat3() = default;
 		mat3(const vec3 &row0, const vec3 &row1, const vec3 &row2) {
 			rows[0] = row0;
 			rows[1] = row1;
@@ -417,7 +417,7 @@ namespace aura
 	struct mat4 {
 		vec4 rows[4];
 
-		mat4() {}
+		mat4() = default;
 		mat4(const vec4 &row0, const vec4 &row1, const vec4 &row2, const vec4 &row3) {
 			rows[0] = row0;
 			rows[1] = row1;

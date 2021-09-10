@@ -40,6 +40,8 @@ const int FirstDay = 1;
 //};
 
 LocalTime::LocalTime( bool bNow/*=false*/ ):
+	m_localSeconds(0),
+	m_GMTOffset(0),
 	m_localYear(2000),
 	m_localMonth(1),
 	m_localDay(1),
@@ -47,10 +49,8 @@ LocalTime::LocalTime( bool bNow/*=false*/ ):
 	m_localMinutes(0),
 // 	m_localHours(6),
 // 	m_localMinutes(35),
-	m_localSeconds(0),
 
 //	m_GMTOffset(8),
-	m_GMTOffset(0),
 
 	m_isDST(false)
 {

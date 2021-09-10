@@ -122,9 +122,8 @@ namespace aura
 		//offset *= (sideHalf-8*cellSize);
 		//	Leave some cells behind to allow light behind the camera to propagate forward
 		offset *= (sideHalf - 4 * cellSize);
-		vec3 gridCenter = camPos + offset;
 		if ((!pCascade->mFlags) & CASCADE_NOT_MOVING)
-			setGridCenter(pCascade, gridCenter);
+			setGridCenter(pCascade, camPos + offset);
 
 		pCascade->mOccludersInjected = false;
 	}

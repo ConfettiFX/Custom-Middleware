@@ -499,10 +499,12 @@ bool SpaceObjects::Init(Renderer* const renderer, PipelineCache* pCache)
 	// UI
 	///////////////////////////////////////////////////////////////////
 
-	GuiDesc guiDesc = {};
-	guiDesc.mStartPosition = vec2(1280.0f / getDpiScale().getX(), 700.0f / getDpiScale().getY());
-	guiDesc.mStartSize = vec2(300.0f / getDpiScale().getX(), 250.0f / getDpiScale().getY());
-	pGuiWindow = addAppUIGuiComponent(pGAppUI, "Space Objects", &guiDesc);
+	UIComponentDesc UIComponentDesc = {};
+	float dpiScale[2];
+	getDpiScale(dpiScale);
+	UIComponentDesc.mStartPosition = vec2(1280.0f / dpiScale[0], 700.0f / dpiScale[1]);
+	UIComponentDesc.mStartSize = vec2(300.0f / dpiScale[0], 250.0f / dpiScale[1]);
+	uiCreateComponent("Space Objects", &UIComponentDesc, &pGuiWindow);
 	
 	waitForToken(&token);
 
@@ -921,12 +923,14 @@ void SpaceObjects::Draw(Cmd* cmd)
 			float4 Dy;
 		} starData;
 
+		const mat4 viewMatrix = pCameraController->getViewMatrix();
+
 		starData.RotMat = rotMat;
-		starData.ViewProjMat = SpaceProjectionMatrix * pCameraController->getViewMatrix();
+		starData.ViewProjMat = SpaceProjectionMatrix * viewMatrix;
 		starData.LightDirection = float4(LightDirection, g_ElapsedTime * 2.0f);
 
-		starData.Dx = v4ToF4(pCameraController->getViewMatrix().getRow(0));
-		starData.Dy = v4ToF4(pCameraController->getViewMatrix().getRow(1));
+		starData.Dx = v4ToF4(viewMatrix.getRow(0));
+		starData.Dy = v4ToF4(viewMatrix.getRow(1));
 
 		BufferUpdateDesc BufferUniformSettingDesc2 = { pStarUniformBuffer[gFrameIndex] };
 		beginUpdateResource(&BufferUniformSettingDesc2);
@@ -1068,7 +1072,7 @@ void SpaceObjects::Draw(Cmd* cmd)
 
 void SpaceObjects::Initialize(uint InImageCount,
 	ICameraController* InCameraController, Queue*	InGraphicsQueue, CmdPool* InTransCmdPool,
-	Cmd** InTransCmds, Fence* InTransitionCompleteFences, ProfileToken InGraphicsGpuProfiler, UIApp* InGAppUI, Buffer*	InTransmittanceBuffer)
+	Cmd** InTransCmds, Fence* InTransitionCompleteFences, ProfileToken InGraphicsGpuProfiler, Buffer*	InTransmittanceBuffer)
 {
 	gImageCount = InImageCount;
 
@@ -1078,7 +1082,6 @@ void SpaceObjects::Initialize(uint InImageCount,
 	ppTransCmds = InTransCmds;
 	pTransitionCompleteFences = InTransitionCompleteFences;
 	gGpuProfileToken = InGraphicsGpuProfiler;
-	pGAppUI = InGAppUI;
 }
 
 void SpaceObjects::InitializeWithLoad(RenderTarget* InDepthRenderTarget, RenderTarget* InLinearDepthRenderTarget,

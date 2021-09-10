@@ -1,5 +1,7 @@
 #include "Icosahedron.h"
 
+#include "../../../../The-Forge/Common_3/OS/Math/MathTypes.h"
+
 void Icosahedron::GetBasicData(eastl::vector<TriangleVertex> &vertices, eastl::vector<TriangleIndex> &indicies)
 {
   const float X = .525731112119133606f;
@@ -79,7 +81,7 @@ uint32_t Icosahedron::vertex_for_edge(eastl::map<eastl::pair<uint32_t, uint32_t>
   return inserted.first->second;
 }
 
-eastl::vector<TriangleIndex> Icosahedron::Subdivide(eastl::vector<TriangleVertex>& vertices, eastl::vector<TriangleIndex> triangles)
+eastl::vector<TriangleIndex> Icosahedron::Subdivide(eastl::vector<TriangleVertex>& vertices, const eastl::vector<TriangleIndex>& triangles)
 {
   eastl::map<eastl::pair<uint32_t, uint32_t>, uint32_t> lookup;
   eastl::vector<TriangleIndex> result;

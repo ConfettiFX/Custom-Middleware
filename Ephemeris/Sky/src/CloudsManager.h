@@ -47,8 +47,8 @@ public:
 //	Just use arrays. Array index identifies corresponding instances of different types
 struct CloudSortData
 {
-	enum { CT_Distant, CT_Cumulus} type;
 	size_t	index;
+	enum { CT_Distant, CT_Cumulus} type;
 	float distanceSQR;
 };
 
@@ -69,7 +69,7 @@ public:
 	void	update(float frameTime);
 	void	clipClouds(const vec3 & camPos);
 	void drawFrame(Cmd *cmd, const mat4 &vp, const mat4 &view, const vec3 &camPos, const vec3 &camPosLocalKM, const vec4 &offsetScale, vec3 &sunDir,
-  Texture* Transmittance, Texture* Irradiance, Texture* Inscatter, Texture* shaftsMask, float exposure, vec2 inscatterParams, vec4 QNnear, const Texture* rtDepth, bool bSoftClouds);
+  Texture* Transmittance, Texture* Irradiance, Texture* Inscatter, Texture* shaftsMask, float exposure, vec2 inscatterParams, const vec4& QNnear, const Texture* rtDepth, bool bSoftClouds);
 
 	void	drawDebug();
 

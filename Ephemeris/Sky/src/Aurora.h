@@ -1,5 +1,7 @@
 #pragma once
 
+
+#include "../../../../The-Forge/Common_3/OS/Math/MathTypes.h"
 #include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
 #include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/vector.h"
 
@@ -11,21 +13,21 @@ class AuroraParticle
 {
   public:
     AuroraParticle(vec3 position) :
-		mass(1.0f),
 		position(position),
 		prevPosition(position),
 		acceleration(vec3(0.0f, 0.0f, 0.0f)),
+		mass(1.0f),
 		IsMovable(true)
 	{}
 	AuroraParticle() :
-		mass(1.0f),
 		position(vec3(0.0f, 0.0f, 0.0f)),
 		prevPosition(vec3(0.0f, 0.0f, 0.0f)),
 		acceleration(vec3(0.0f, 0.0f, 0.0f)),
+		mass(1.0f),
 		IsMovable(true)
 	{}
 
-    void addForce(vec3 force)
+    void addForce(const vec3& force)
     {
       acceleration += force / mass;
     }
@@ -43,7 +45,7 @@ class AuroraParticle
     }
 
     inline void resetAcceleration() { acceleration = vec3(0.0f, 0.0f, 0.0f); }
-    inline void offsetPosition(const vec3 v) { if (IsMovable) position += v; }
+    inline void offsetPosition(const vec3& v) { if (IsMovable) position += v; }
     inline void makeUnmovable() { IsMovable = false; }
 
     /*
@@ -53,10 +55,10 @@ class AuroraParticle
     }
     */
 
-    float mass; // the mass of the particle (is always 1 in this example)
     vec3 position; // the current position of the particle in 3D space
     vec3 prevPosition; // the position of the particle in the previous time step, used as part of the verlet numerical integration scheme
     vec3 acceleration; // a vector representing the current acceleration of the particle
+    float mass; // the mass of the particle (is always 1 in this example)
 	bool IsMovable;
     //vec4 accumulated_normal; // an accumulated normal (i.e. non normalized), used for OpenGL soft shading
 };
@@ -95,7 +97,6 @@ class Aurora
 {
 public:    
     Aurora() : numOfWidth(0), numOfHeight(0) {}
-    ~Aurora() {}
 
     void Init(float width, float height, uint32_t num_particles_width, uint32_t num_particles_height)
     {
@@ -196,7 +197,7 @@ public:
     }
 
     /* used to add gravity (or any other arbitrary vector) to all particles*/
-    void addForce(const vec3 direction)
+    void addForce(const vec3& direction)
     {
       eastl::vector<AuroraParticle>::iterator particle;
       for (particle = particles.begin(); particle != particles.end(); particle++)
@@ -219,7 +220,7 @@ public:
 
     /* A private method used by windForce() to calcualte the wind force for a single triangle
       defined by p1,p2,p3*/
-    void addWindForcesForTriangle(AuroraParticle *p1, AuroraParticle *p2, AuroraParticle *p3, const vec3 direction)
+    void addWindForcesForTriangle(AuroraParticle *p1, AuroraParticle *p2, AuroraParticle *p3, const vec3& direction)
     {
       vec3 normal = calcTriangleNormal(p1, p2, p3);
       vec3 d = normalize(normal);
@@ -229,13 +230,13 @@ public:
       p3->addForce(force);
     }
 
-    void addWindForces(AuroraParticle *p1, const vec3 direction)
+    void addWindForces(AuroraParticle *p1, const vec3& direction)
     {
       p1->addForce(direction);
     }
 
     /* used to add wind forces to all particles, is added for each triangle since the final force is proportional to the triangle area as seen from the wind direction*/
-    void windForce(const vec3 direction)
+    void windForce(const vec3& direction)
     {
       for (uint32_t x = 0; x < numOfWidth; x++)
       {

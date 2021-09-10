@@ -630,6 +630,18 @@ namespace aura
 	/// Data structure holding necessary info to create a Texture
 	typedef struct TextureDesc
 	{
+		/// Optimized clear value (recommended to use this same value when clearing the rendertarget)
+		ClearValue				mClearValue;
+		/// Pointer to native texture handle if the texture does not own underlying resource
+		const void*				pNativeHandle;
+		/// Debug name used in gpu profile
+		const char*				pName;
+		/// GPU indices to share this texture
+		uint32_t*				pSharedNodeIndices;
+#if defined(VULKAN)
+		/// VkSamplerYcbcrConversionInfo*
+		void* pVkSamplerYcbcrConversionInfo;
+#endif
 		/// Texture creation flags (decides memory allocation strategy, sharing access,...)
 		TextureCreationFlags	mFlags;
 		/// Width
@@ -648,24 +660,14 @@ namespace aura
 		uint32_t				mSampleQuality;
 		/// Internal image format
 		TinyImageFormat			mFormat;
-		/// Optimized clear value (recommended to use this same value when clearing the rendertarget)
-		ClearValue				mClearValue;
 		/// What state will the texture get created in
 		ResourceState			mStartState;
 		/// Descriptor creation
 		DescriptorType			mDescriptors;
-		/// Pointer to native texture handle if the texture does not own underlying resource
-		const void*				pNativeHandle;
-		/// Debug name used in gpu profile
-		const char*				pName;
-		/// GPU indices to share this texture
-		uint32_t*				pSharedNodeIndices;
 		/// Number of GPUs to share this texture
 		uint32_t				mSharedNodeIndexCount;
 		/// GPU which will own this texture
 		uint32_t				mNodeIndex;
-		/// Is the texture CPU accessible (applicable on hardware supporting CPU mapped textures (UMA))
-		bool					mHostVisible;
 	} TextureDesc;
 
 	typedef struct SamplerDesc
@@ -718,18 +720,24 @@ namespace aura
 		uint32_t				mNodeIndex;
 	} RenderTargetDesc;
 
+	typedef enum RootSignatureFlags
+	{
+		/// Default flag
+		ROOT_SIGNATURE_FLAG_NONE = 0,
+		/// Local root signature used mainly in raytracing shaders
+		ROOT_SIGNATURE_FLAG_LOCAL_BIT = 0x1,
+	} RootSignatureFlags;
+	MAKE_ENUM_FLAG(uint32_t, RootSignatureFlags)
+
 	typedef struct RootSignatureDesc
 	{
-		Shader**			ppShaders;
-		uint32_t			mShaderCount;
-		uint32_t			mMaxBindlessTextures;
-		const char**		ppStaticSamplerNames;
-		Sampler**			ppStaticSamplers;
-		uint32_t			mStaticSamplerCount;
-#if defined(VULKAN)
-		const char**		ppDynamicUniformBufferNames;
-		uint32_t			mDynamicUniformBufferCount;
-#endif
+		Shader**               ppShaders;
+		uint32_t               mShaderCount;
+		uint32_t               mMaxBindlessTextures;
+		const char**           ppStaticSamplerNames;
+		Sampler**              ppStaticSamplers;
+		uint32_t               mStaticSamplerCount;
+		RootSignatureFlags     mFlags;
 	} RootSignatureDesc;
 
 	typedef struct ShaderMacro
@@ -752,7 +760,7 @@ namespace aura
 	MAKE_ENUM_FLAG(uint32_t, ShaderStageLoadFlags);
 
 	typedef struct ShaderStageLoadDesc
-	{
+	{ //-V802 : Very user-facing struct, and order is highly important to convenience
 		const char*          pFileName;
 		ShaderMacro*         pMacros;
 		uint32_t             mMacroCount;
@@ -890,7 +898,6 @@ namespace aura
 
 	typedef struct PipelineDesc
 	{
-		PipelineType                mType;
 		union
 		{
 			ComputePipelineDesc     mComputeDesc;
@@ -899,8 +906,9 @@ namespace aura
 		};
 		PipelineCache*              pCache;
 		void*                       pPipelineExtensions;
-		uint32_t                    mExtensionCount;
 		const char*                 pName;
+		PipelineType                mType;
+		uint32_t                    mExtensionCount;
 	} PipelineDesc;
 
 	typedef struct DescriptorData
@@ -920,8 +928,8 @@ namespace aura
 			// Descriptor set buffer extraction options
 			struct
 			{
-				uint32_t    mDescriptorSetBufferIndex;
 				Shader*     mDescriptorSetShader;
+				uint32_t    mDescriptorSetBufferIndex;
 				ShaderStage mDescriptorSetShaderStage;
 			};
 

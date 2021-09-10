@@ -9,6 +9,8 @@
 
 #pragma once
 
+#include "../../../../The-Forge/Common_3/OS/Math/MathTypes.h"
+
 #include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/vector.h"
 #include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
 
@@ -16,9 +18,8 @@ class DistantCloud
 {
 	public:
 		DistantCloud(const mat4 &Transform, Texture* tex);
-		~DistantCloud(void);
 
-		void	moveCloud(const vec3 direction);
+		void	moveCloud(const vec3& direction);
 
 		const mat4& Transform() const { return m_Transform; }
 		void	setTransform(const mat4 & transform) { m_Transform = transform; }

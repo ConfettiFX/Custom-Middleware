@@ -34,13 +34,10 @@ class Icosahedron
 public:    
     Icosahedron():radius(1.0f), subdivision(5), IndexCount(0) {}
     Icosahedron(uint32_t div) :radius(1.0f), subdivision(div), IndexCount(0) {};
-		~Icosahedron()
-		{
-		}
    
     void GetBasicData(eastl::vector<TriangleVertex> &vertices, eastl::vector<TriangleIndex> &indicies);
     uint32_t vertex_for_edge(eastl::map< eastl::pair<uint32_t, uint32_t>, uint32_t>& lookup, eastl::vector<TriangleVertex>& vertices, uint32_t first, uint32_t second);
-    eastl::vector<TriangleIndex> Subdivide(eastl::vector<TriangleVertex>& vertices, eastl::vector<TriangleIndex> triangles);
+    eastl::vector<TriangleIndex> Subdivide(eastl::vector<TriangleVertex>& vertices, const eastl::vector<TriangleIndex>& triangles);
     void CreateIcosphere(int subdivisions, eastl::vector<float> &vertices, eastl::vector<uint32_t> &indices);
 
     float radius;

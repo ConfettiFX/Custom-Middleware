@@ -27,10 +27,6 @@ CumulusCloud::CumulusCloud(const mat4 &Transform, Texture* tex, float ParticlesS
 {
 }
 
-CumulusCloud::~CumulusCloud(void)
-{
-}
-
 // void CumulusCloud::pushParticle( const vec3 &offset, float scale, int texID )
 // {
 // 	assert(texID<=MaxTexID);
@@ -85,7 +81,7 @@ void CumulusCloud::setupConstants( const vec3 &camPos, const char* pszPositionSc
 }
 */
 
-void CumulusCloud::moveCloud(const vec3 direction)
+void CumulusCloud::moveCloud(const vec3& direction)
 {
   //m_Transform.rows[0].w += direction.x;
 	//m_Transform.rows[1].w += direction.y;
