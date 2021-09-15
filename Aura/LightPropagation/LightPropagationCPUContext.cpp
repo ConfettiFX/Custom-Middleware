@@ -27,7 +27,7 @@ using aura::float4;
 #include "../Shaders/FSL/lightPropagation.h"
 #include "../Shaders/FSL/lpvSHMaths.h"
 
-#if !defined(__linux__) && !defined(NX64)
+#if !defined(__linux__) && !defined(NX64) && !defined(__aarch64__)
 //#ifndef __linux__
 #define INTRIN_USE
 #endif
