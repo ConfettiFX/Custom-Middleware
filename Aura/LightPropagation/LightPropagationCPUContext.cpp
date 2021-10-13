@@ -40,14 +40,6 @@ using aura::float4;
 #include <immintrin.h>
 #endif
 
-#if defined(_WIN32)
-#define DEFINE_ALIGNED(def, a) __declspec(align(a)) def
-#elif defined(__OSX__)
-#define DEFINE_ALIGNED(def, a) def __attribute__((aligned(a)))
-#else
-#define DEFINE_ALIGNED(def, a) alignas(a) def
-#endif
-
 #if defined(__linux__) || defined(NX64) || defined(__APPLE__)
 #define __declspec(x)
 #define __forceinline __attribute__((always_inline))

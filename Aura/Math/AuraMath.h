@@ -25,7 +25,7 @@
 #undef max
 
 // Tim: building with VS2012 for XBOX using our Renderer produces a re-naming error with this
-#if !defined(XBOX)
+#if !defined(XBOX) && !defined(_WINDOWS)
 template <class T>
 T min(const T &x, const T &y) { return (x < y) ? x : y; }
 template <class T>

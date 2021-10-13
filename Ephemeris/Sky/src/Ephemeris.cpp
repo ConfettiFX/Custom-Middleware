@@ -46,7 +46,7 @@ namespace confetti
 
 void Ephemeris::Update( const Location& location, const LocalTime& localTime )
 {	
-#if !defined(METAL) && !defined(__linux__)
+#if !defined(__APPLE__) && !defined(__linux__)
 	m_TimeAtomic = localTime.getJ200Centuries(true);
 	m_TimeGMT = localTime.getJ200Centuries(false);
 

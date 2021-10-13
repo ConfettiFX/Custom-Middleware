@@ -26,7 +26,7 @@
 int				        gNumberOfSpherePoints;
 int				        gNumberOfSphereIndices;
 
-#if _DEBUG
+#ifdef _DEBUG
 const int				gSphereResolution = 3;    // Increase for higher resolution spheres
 #else
 const int				gSphereResolution = 6;    // Increase for higher resolution spheres
@@ -277,18 +277,18 @@ void Sky::GenerateIcosahedron(float **ppPoints, eastl::vector<float> &vertices, 
 		for (int j = 0; j < maxStar; j++)
 		{
 			vec3 Positions = f3Tov3(pPoints[index - 1])* SpaceScale;
-			Positions += (vec3((float)rand() / RAND_MAX, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX) * 2.0f - vec3(1.0f, 1.0f, 1.0f)) * StarDistribution;
+			Positions += (vec3((float)rand() / (float)RAND_MAX, (float)rand() / (float)RAND_MAX, (float)rand() / (float)RAND_MAX) * 2.0f - vec3(1.0f, 1.0f, 1.0f)) * StarDistribution;
 			Positions = normalize(Positions) * SpaceScale;
 			Positions.setY(Positions.getY() - EARTH_RADIUS * 10.0f);
 
-			float temperature = ((float)rand() / RAND_MAX) * 30000.0f + 3700.0f;
+			float temperature = ((float)rand() / (float)RAND_MAX) * 30000.0f + 3700.0f;
 			vec3 StarColor = f3Tov3(ColorTemperatureToRGB(temperature));
-			vec4 Colors = vec4(StarColor, (((float)rand() / RAND_MAX * 0.9f) + 0.1f) * StarIntensity);
+			vec4 Colors = vec4(StarColor, (((float)rand() / (float)RAND_MAX * 0.9f) + 0.1f) * StarIntensity);
 
-			float starSize = (((float)rand() / RAND_MAX * 1.1f) + 0.5f);
+			float starSize = (((float)rand() / (float)RAND_MAX * 1.1f) + 0.5f);
 			starSize *= starSize;
 
-			vec4 Info = vec4(temperature, starSize * ParticleSize, (float)rand() / RAND_MAX, (float)rand() / RAND_MAX);
+			vec4 Info = vec4(temperature, starSize * ParticleSize, (float)rand() / (float)RAND_MAX, (float)rand() / (float)RAND_MAX);
 
 			ParticleData tempParticleData;
 			tempParticleData.ParticlePositions = vec4(Positions, 1.0f);

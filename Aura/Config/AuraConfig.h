@@ -16,6 +16,22 @@
 #ifndef	__LPV_CONFIG_H_INCLUDED__
 #define	__LPV_CONFIG_H_INCLUDED__
 
+#include "../../../The-Forge/Common_3/Renderer/RendererConfig.h"
+
+#if defined(_WINDOWS) || defined(XBOX)
+#define ENABLE_CPU_PROPAGATION
+#elif defined(ORBIS)
+// orbis fibers and sanitizer don't work well together at the moment
+// enable cpu propagation only if sanitizers are turned off
+#if !__has_feature(address_sanitizer) && !__has_feature(undefined_behavior_sanitizer)
+#define ENABLE_CPU_PROPAGATION
+#endif
+#endif
+
+#ifdef ORBIS
+// #define ORBIS_TASK_MANAGER
+#endif
+
 #define USE_COMPUTE_SHADERS 0
 
 #if USE_COMPUTE_SHADERS

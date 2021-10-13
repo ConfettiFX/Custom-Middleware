@@ -103,13 +103,13 @@ struct ImposterUniformBuffer
 
 float RandomValue()
 {
-	return ((float)rand() / RAND_MAX);
+	return ((float)rand() / (float)RAND_MAX);
 }
 
 
 float RandomValueNormalized()
 {
-	return ((float)rand() / RAND_MAX) * 2.0f - 1.0f;
+	return ((float)rand() / (float)RAND_MAX) * 2.0f - 1.0f;
 }
 
 float RandomValue( float2 a_Range )
@@ -1151,9 +1151,9 @@ void CloudsManager::generateCumulusCloudParticles( eastl::vector<vec4> & particl
 		for (int j=0; j<dimY; ++j)
 		{
 			vec4 offset;
-			offset[0] = -1.0f + i * 2.0f / (dimX-1) + 64.0f * (0.5f - (((float)rand()) / RAND_MAX)) / (dimX - 1);
-			offset[1] = 2.0f * (0.5f - (((float)rand()) / RAND_MAX)) / 5;
-			offset[2] = -1.0f + j * 2.0f / (dimY-1) + 64.0f * (0.5f - (((float)rand()) / RAND_MAX)) / (dimY - 1);
+			offset[0] = -1.0f + i * 2.0f / (dimX-1) + 64.0f * (0.5f - (((float)rand()) / (float)RAND_MAX)) / (dimX - 1);
+			offset[1] = 2.0f * (0.5f - (((float)rand()) / (float)RAND_MAX)) / 5;
+			offset[2] = -1.0f + j * 2.0f / (dimY-1) + 64.0f * (0.5f - (((float)rand()) / (float)RAND_MAX)) / (dimY - 1);
 
 			// use w component to hold fade factor for this particle
 			offset[3] = 1.0f;
