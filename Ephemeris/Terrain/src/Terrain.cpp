@@ -385,7 +385,7 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 	meshSegments.clear();
 	HeightData dataSource("Terrain/HeightMap.r32", NULL, height);
 	HemisphereBuilder hemisphereBuilder;
-#if _DEBUG
+#ifdef _DEBUG
 	hemisphereBuilder.build(pRenderer, &dataSource, vertices, meshSegments, radius * 10.0f - 720000.0f, 0.15f, 64, 15, 33);
 #else
 	hemisphereBuilder.build(pRenderer, &dataSource, vertices, meshSegments, radius * 10.0f - 720000.0f, 0.15f, 64, 15, 513);

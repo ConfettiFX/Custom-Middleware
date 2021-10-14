@@ -412,6 +412,29 @@ namespace aura
 		MIPMAP_MODE_LINEAR
 	} MipMapMode;
 
+#if defined(VULKAN)
+	typedef enum SamplerRange
+	{
+		SAMPLER_RANGE_FULL = 0,
+		SAMPLER_RANGE_NARROW = 1,
+	} SamplerRange;
+
+	typedef enum SamplerModelConversion
+	{
+		SAMPLER_MODEL_CONVERSION_RGB_IDENTITY = 0,
+		SAMPLER_MODEL_CONVERSION_YCBCR_IDENTITY = 1,
+		SAMPLER_MODEL_CONVERSION_YCBCR_709 = 2,
+		SAMPLER_MODEL_CONVERSION_YCBCR_601 = 3,
+		SAMPLER_MODEL_CONVERSION_YCBCR_2020 = 4,
+	} SamplerModelConversion;
+
+	typedef enum SampleLocation
+	{
+		SAMPLE_LOCATION_COSITED = 0,
+		SAMPLE_LOCATION_MIDPOINT = 1,
+	} SampleLocation;
+#endif
+
 	typedef enum LoadActionType
 	{
 		LOAD_ACTION_DONTCARE,
@@ -672,15 +695,28 @@ namespace aura
 
 	typedef struct SamplerDesc
 	{
-		FilterType	mMinFilter;
-		FilterType	mMagFilter;
-		MipMapMode	mMipMapMode;
-		AddressMode	mAddressU;
-		AddressMode	mAddressV;
-		AddressMode	mAddressW;
-		float		mMipLosBias;
-		float		mMaxAnisotropy;
-		CompareMode	mCompareFunc;
+		FilterType  mMinFilter;
+		FilterType  mMagFilter;
+		MipMapMode  mMipMapMode;
+		AddressMode mAddressU;
+		AddressMode mAddressV;
+		AddressMode mAddressW;
+		float       mMipLodBias;
+		float       mMaxAnisotropy;
+		CompareMode mCompareFunc;
+
+#if defined(VULKAN)
+		struct
+		{
+			TinyImageFormat        mFormat;
+			SamplerModelConversion mModel;
+			SamplerRange           mRange;
+			SampleLocation         mChromaOffsetX;
+			SampleLocation         mChromaOffsetY;
+			FilterType             mChromaFilter;
+			bool                   mForceExplicitReconstruction;
+		} mSamplerConversionDesc;
+#endif
 	} SamplerDesc;
 
 	typedef struct RenderTargetDesc
@@ -759,6 +795,14 @@ namespace aura
 	} ShaderStageLoadFlags;
 	MAKE_ENUM_FLAG(uint32_t, ShaderStageLoadFlags);
 
+	/// ShaderConstant only supported by Vulkan and Metal APIs
+	typedef struct ShaderConstant
+	{
+		const void* pValue;
+		uint32_t       mIndex;
+		uint32_t       mSize;
+	} ShaderConstant;
+
 	typedef struct ShaderStageLoadDesc
 	{ //-V802 : Very user-facing struct, and order is highly important to convenience
 		const char*          pFileName;
@@ -770,8 +814,10 @@ namespace aura
 
 	typedef struct ShaderLoadDesc
 	{
-		ShaderStageLoadDesc mStages[SHADER_STAGE_COUNT];
-		ShaderTarget        mTarget;
+		ShaderStageLoadDesc   mStages[SHADER_STAGE_COUNT];
+		ShaderTarget          mTarget;
+		const ShaderConstant* pConstants;
+		uint32_t              mConstantCount;
 	} ShaderLoadDesc;
 
 	typedef struct VertexAttrib
