@@ -33,6 +33,7 @@ Shader*                   pGenTerrainNormalShader = NULL;
 Pipeline*                 pGenTerrainNormalPipeline = NULL;
 RootSignature*            pGenTerrainNormalRootSignature = NULL;
 DescriptorSet*            pGenTerrainNormalDescriptorSet = NULL;
+uint32_t                  gTerrainRootConstantIndex = 0;
 
 // Draw Stage
 Shader*                   pTerrainShader = NULL;
@@ -176,6 +177,7 @@ bool Terrain::Init(Renderer* renderer, PipelineCache* pCache)
 	rootDesc.ppStaticSamplerNames = pStaticSamplerNames;
 	rootDesc.ppStaticSamplers = pStaticSamplers;
 	addRootSignature(pRenderer, &rootDesc, &pGenTerrainNormalRootSignature);
+	gTerrainRootConstantIndex = getDescriptorIndexFromName(pGenTerrainNormalRootSignature, "cbRootConstant");
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -429,6 +431,8 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 		TextureLoadDesc TerrainTiledColorTextureDesc = {};
 		TerrainTiledColorTextureDesc.pFileName = TextureTileFilePaths[i];
 		TerrainTiledColorTextureDesc.ppTexture = &gTerrainTiledColorTexturesStorage[i];
+		// Textures representing color should be stored in SRGB or HDR format
+		TerrainTiledColorTextureDesc.mCreationFlag = TEXTURE_CREATION_FLAG_SRGB;
 		addResource(&TerrainTiledColorTextureDesc, &token);
 
 		TextureLoadDesc TerrainTiledNormalTextureDesc = {};
@@ -472,7 +476,7 @@ bool Terrain::GenerateNormalMap(Cmd* cmd)
 		float	heightScale;
 	} cbTempRootConstantStruct;
 	cbTempRootConstantStruct.heightScale = HEIGHT_SCALE;
-	cmdBindPushConstants(cmd, pGenTerrainNormalRootSignature, "cbRootConstant", &cbTempRootConstantStruct);
+	cmdBindPushConstants(cmd, pGenTerrainNormalRootSignature, gTerrainRootConstantIndex, &cbTempRootConstantStruct);
 	cmdBindDescriptorSet(cmd, 0, pGenTerrainNormalDescriptorSet);
 	cmdDraw(cmd, 3, 0);
 
@@ -502,7 +506,7 @@ bool Terrain::Load(int32_t width, int32_t height)
 	SceneRT.mArraySize = 1;
 	SceneRT.mDepth = 1;
 	SceneRT.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
-	SceneRT.mFormat = TinyImageFormat_R8G8B8A8_UNORM;
+	SceneRT.mFormat = getRecommendedSwapchainFormat(true, true);
 	SceneRT.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
 	SceneRT.mSampleCount = SAMPLE_COUNT_1;
 	SceneRT.mSampleQuality = 0;
@@ -516,7 +520,7 @@ bool Terrain::Load(int32_t width, int32_t height)
 	BasicColorRT.mArraySize = 1;
 	BasicColorRT.mDepth = 1;
 	BasicColorRT.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
-	BasicColorRT.mFormat = TinyImageFormat_R8G8B8A8_UNORM;
+	BasicColorRT.mFormat = getRecommendedSwapchainFormat(true, true);
 	BasicColorRT.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
 	BasicColorRT.mSampleCount = SAMPLE_COUNT_1;
 	BasicColorRT.mSampleQuality = 0;

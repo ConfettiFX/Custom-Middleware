@@ -77,6 +77,7 @@ Pipeline*           pFXAAPipeline = NULL;
 
 DescriptorSet*      pExampleDescriptorSet = NULL;
 RootSignature*      pExampleRootSignature = NULL;
+uint32_t            gExampleRootConstantIndex = 0;
 
 Sampler*            pBilinearClampSampler = NULL;
 
@@ -318,6 +319,7 @@ public:
 		rootDesc.ppShaders = shaders;
 		rootDesc.mStaticSamplerCount = 1;
 		addRootSignature(pRenderer, &rootDesc, &pExampleRootSignature);
+		gExampleRootConstantIndex = getDescriptorIndexFromName(pExampleRootSignature, "ExampleRootConstant");
 
 		DescriptorSetDesc setDesc = { pExampleRootSignature, DESCRIPTOR_UPDATE_FREQ_NONE, 2 };
 		addDescriptorSet(pRenderer, &setDesc, &pExampleDescriptorSet);
@@ -788,7 +790,7 @@ public:
 			cmdSetScissor(cmd, 0, 0, pLinearDepthBuffer->mWidth, pLinearDepthBuffer->mHeight);
 
 			cmdBindPipeline(cmd, pLinearDepthResolvePipeline);
-			cmdBindPushConstants(cmd, pExampleRootSignature, "ExampleRootConstant", &cameraInfo);
+			cmdBindPushConstants(cmd, pExampleRootSignature, gExampleRootConstantIndex, &cameraInfo);
 			cmdBindDescriptorSet(cmd, 0, pExampleDescriptorSet);
 			cmdDraw(cmd, 3, 0);
 
@@ -850,7 +852,7 @@ public:
 			cmdBindPipeline(cmd, pFXAAPipeline);
 
 			cmdBindDescriptorSet(cmd, 1, pExampleDescriptorSet);
-			cmdBindPushConstants(cmd, pExampleRootSignature, "ExampleRootConstant", &gFXAAinfo);
+			cmdBindPushConstants(cmd, pExampleRootSignature, gExampleRootConstantIndex, &gFXAAinfo);
 
 			cmdDraw(cmd, 3, 0);
 
@@ -952,7 +954,7 @@ public:
 		swapChainDesc.mWidth = mSettings.mWidth;
 		swapChainDesc.mHeight = mSettings.mHeight;
 		swapChainDesc.mImageCount = gImageCount;
-		swapChainDesc.mColorFormat = getRecommendedSwapchainFormat(true);
+		swapChainDesc.mColorFormat = getRecommendedSwapchainFormat(true, true);
 		swapChainDesc.mEnableVsync = false;
 		::addSwapChain(pRenderer, &swapChainDesc, &pSwapChain);
 
@@ -992,7 +994,7 @@ public:
 		resultRT.mArraySize = 1;
 		resultRT.mDepth = 1;
 		resultRT.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
-		resultRT.mFormat = TinyImageFormat_R8G8B8A8_UNORM;
+		resultRT.mFormat = getRecommendedSwapchainFormat(true, true);
 		resultRT.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
 		resultRT.mSampleCount = SAMPLE_COUNT_1;
 		resultRT.mSampleQuality = 0;

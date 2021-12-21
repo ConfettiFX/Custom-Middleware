@@ -75,6 +75,7 @@ typedef struct LoadActionsDesc LoadActionsDesc;
 typedef struct BufferBarrier BufferBarrier;
 typedef struct TextureBarrier TextureBarrier;
 typedef struct DescriptorSet DescriptorSet;
+typedef struct AccelerationStructure AccelerationStructure;
 typedef struct PipelineCache PipelineCache;
 
 namespace aura
@@ -957,49 +958,59 @@ namespace aura
 		uint32_t                    mExtensionCount;
 	} PipelineDesc;
 
+	typedef struct DescriptorDataRange
+	{
+		uint32_t mOffset;
+		uint32_t mSize;
+	} DescriptorDataRange;
+
 	typedef struct DescriptorData
 	{
 		/// User can either set name of descriptor or index (index in pRootSignature->pDescriptors array)
 		/// Name of descriptor
-		const char* pName = NULL;
+		const char* pName;
+		/// Number of resources in the descriptor(applies to array of textures, buffers,...)
+		uint32_t    mCount;
+		/// Dst offset into the array descriptor (useful for updating few entries in a large array)
+		// Example: to update 6th entry in a bindless texture descriptor, mArrayOffset will be 6 and mCount will be 1)
+		uint32_t    mArrayOffset : 20;
+		// Index in pRootSignature->pDescriptors array - Cache index using getDescriptorIndexFromName to avoid using string checks at runtime
+		uint32_t    mIndex : 10;
+		uint32_t    mBindByIndex : 1;
+		uint32_t    mExtractBuffer : 1;
+
 		union
 		{
-			struct
-			{
-				/// Offset to bind the buffer descriptor
-				uint64_t* pOffsets;
-				uint64_t* pSizes;
-			};
-
+			// Range to bind (buffer offset, size)
+			DescriptorDataRange*    pRanges;
 			// Descriptor set buffer extraction options
+			uint32_t                mDescriptorSetBufferIndex;
 			struct
 			{
-				Shader*     mDescriptorSetShader;
-				uint32_t    mDescriptorSetBufferIndex;
-				ShaderStage mDescriptorSetShaderStage;
+				// When binding UAV, control the mip slice to to bind for UAV (example - generating mipmaps in a compute shader)
+				uint16_t            mUAVMipSlice;
+				// Binds entire mip chain as array of UAV
+				bool                mBindMipChain;
 			};
-
-			uint32_t mUAVMipSlice;
-			bool mBindStencilResource;
+			// Binds stencil only descriptor instead of color/depth
+			bool                    mBindStencilResource;
 		};
 		/// Array of resources containing descriptor handles or constant to be used in ring buffer memory - DescriptorRange can hold only one resource type array
 		union
 		{
 			/// Array of texture descriptors (srv and uav textures)
-			Texture** ppTextures;
+			Texture**               ppTextures;
 			/// Array of sampler descriptors
-			Sampler** ppSamplers;
+			Sampler**               ppSamplers;
 			/// Array of buffer descriptors (srv, uav and cbv buffers)
-			Buffer** ppBuffers;
-			/// Array of pipline descriptors
-			Pipeline** ppPipelines;
+			Buffer**                ppBuffers;
+			/// Array of pipeline descriptors
+			Pipeline**              ppPipelines;
 			/// DescriptorSet buffer extraction
-			DescriptorSet** ppDescriptorSet;
+			DescriptorSet**         ppDescriptorSet;
+			/// Custom binding (raytracing acceleration structure ...)
+			AccelerationStructure** ppAccelerationStructures;
 		};
-		/// Number of resources in the descriptor(applies to array of textures, buffers,...)
-		uint32_t mCount = 0;
-		uint32_t mIndex = (uint32_t)-1;
-		bool     mExtractBuffer = false;
 	} DescriptorData;
 
 	typedef struct BufferBarrier
@@ -1089,7 +1100,7 @@ namespace aura
 	void cmdSetScissor(Cmd* p_cmd, uint32_t x, uint32_t y, uint32_t width, uint32_t height);
 	void cmdBindPipeline(Cmd* p_cmd, Pipeline* p_pipeline);
 	void cmdBindDescriptorSet(Cmd* pCmd, uint32_t index, DescriptorSet* pDescriptorSet);
-	void cmdBindPushConstants(Cmd* pCmd, RootSignature* pRootSignature, const char* pName, const void* pConstants);
+	void cmdBindPushConstants(Cmd* pCmd, RootSignature* pRootSignature, uint32_t paramIndex, const void* pConstants);
 	void cmdDraw(Cmd* p_cmd, uint32_t vertex_count, uint32_t first_vertex);
 	void cmdDrawInstanced(Cmd* p_cmd, uint32_t vertex_count, uint32_t first_vertex, uint32_t instance_count, uint32_t first_instance);
 	void cmdDispatch(Cmd* p_cmd, uint32_t group_count_x, uint32_t group_count_y, uint32_t group_count_z);
@@ -1126,6 +1137,7 @@ namespace aura
 	void cmdEndDebugMarker(Cmd* pCmd);
 	void cmdAddDebugMarker(Cmd* pCmd, float r, float g, float b, const char* pName);
 	/************************************************************************/
+	uint32_t getDescriptorIndexFromName(const RootSignature* pRootSignature, const char* pName);
 }
 
 #endif //__AURARENDERER_H_9E2034BB_D65C_4EAE_9621_057ACCF12866_INCLUDED__

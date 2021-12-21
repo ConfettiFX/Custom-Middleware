@@ -294,20 +294,20 @@ typedef struct AppSettings
 	float				m_NoiseFlowIntensity_2nd = 10.0f;
 
 	// VolumetricClouds lighting	
-	uint32_t		m_CustomColor = 0xFFFFFFFF;
+	float4				m_CustomColor = float4(1.f);
 
 	float				m_CustomColorIntensity = 1.0f;
 	float				m_CustomColorBlendFactor = 0.0f;
-	float				m_Contrast = 1.3f;
+	float				m_Contrast = 1.8f;
 	float				m_TransStepSize = 768.0f * 2.0f;
 
 	float				m_BackgroundBlendFactor = 1.0f;
-	float				m_Precipitation = 1.0f;
+	float				m_Precipitation = 2.0f;
 	float				m_SilverIntensity = 0.175f;
 	float				m_SilverSpread = 0.29f;
 
 	float				m_Eccentricity = 0.65f;
-	float				m_CloudBrightness = 1.15f;
+	float				m_CloudBrightness = 1.5f;
 	//Culling
 	bool				m_EnabledDepthCulling = true;
 	bool				m_EnabledLodDepth = true;
@@ -3024,16 +3024,7 @@ void VolumetricClouds::Update(float deltaTime)
 
 	volumetricCloudsCB.Test01 = 0.0f;
 
-	//gAppSettings.m_CustomColor
-	vec4 customColor;
-
-	uint32_t red = (gAppSettings.m_CustomColor & 0xFF000000) >> 24;
-	uint32_t green = (gAppSettings.m_CustomColor & 0x00FF0000) >> 16;
-	uint32_t blue = (gAppSettings.m_CustomColor & 0x0000FF00) >> 8;
-
-	customColor = vec4((float)red / 255.0f, (float)green / 255.0f, (float)blue / 255.0f, gAppSettings.m_CustomColorIntensity);
-
-	volumetricCloudsCB.lightColorAndIntensity = lerp(gAppSettings.m_CustomColorBlendFactor, f4Tov4(LightColorAndIntensity), customColor);
+	volumetricCloudsCB.lightColorAndIntensity = lerp(gAppSettings.m_CustomColorBlendFactor, LightColorAndIntensity.toVec4(), gAppSettings.m_CustomColor.toVec4());
 
 	volumetricCloudsCB.m_DataPerEye[0].cameraPosition = vec4(pCameraController->getViewPosition());
 	volumetricCloudsCB.m_DataPerEye[0].cameraPosition.setW(1.0f);
@@ -3673,11 +3664,12 @@ void VolumetricClouds::GenerateCloudTextures()
 	} data = { 0 };
 
 	uint32_t setIndex = 0;
+	uint32_t rootConstantIndex = getDescriptorIndexFromName(pGenMipmapRootSignature, "RootConstant");
 
 	for (uint32_t i = 0; i < HighFreqMipCount; i++, ++setIndex)
 	{
 		data.mip = i;
-		cmdBindPushConstants(cmd, pGenMipmapRootSignature, "RootConstant", &data);
+		cmdBindPushConstants(cmd, pGenMipmapRootSignature, rootConstantIndex, &data);
 
 		DescriptorData mipParams[2] = {};
 		mipParams[0].pName = "SrcTexture";
@@ -3696,7 +3688,7 @@ void VolumetricClouds::GenerateCloudTextures()
 	for (uint32_t i = 0; i < LowFreqMipCount; i++, ++setIndex)
 	{
 		data.mip = i;
-		cmdBindPushConstants(cmd, pGenMipmapRootSignature, "RootConstant", &data);
+		cmdBindPushConstants(cmd, pGenMipmapRootSignature, rootConstantIndex, &data);
 
 		DescriptorData mipParams[2] = {};
 		mipParams[0].pName = "SrcTexture";

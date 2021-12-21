@@ -119,6 +119,8 @@ namespace aura
 		RootSignature*		pRootSignatureLightPropagateN;
 		RootSignature*		pRootSignatureLightCopy;
 		RootSignature*		pRootSignatureVisualizeLPV;
+		uint32_t			mPropagation1RootConstantIndex;
+		uint32_t			mPropagationNRootConstantIndex;
 
 		DescriptorSet*		pDescriptorSetInjectRSMLight;
 		DescriptorSet*		pDescriptorSetLightPropagate1;

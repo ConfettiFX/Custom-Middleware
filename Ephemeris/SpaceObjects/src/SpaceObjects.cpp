@@ -393,6 +393,8 @@ bool SpaceObjects::Init(Renderer* const renderer, PipelineCache* pCache)
 	TextureLoadDesc SkyMoonTextureDesc = {};
 	SkyMoonTextureDesc.pFileName = "SpaceObjects/Moon";
 	SkyMoonTextureDesc.ppTexture = &pMoonTexture;
+	// Textures representing color should be stored in SRGB or HDR format
+	SkyMoonTextureDesc.mCreationFlag = TEXTURE_CREATION_FLAG_SRGB;
 	addResource(&SkyMoonTextureDesc, &token);
 
 #if USING_MILKYWAY
