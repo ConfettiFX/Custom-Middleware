@@ -74,9 +74,9 @@ static float      StarDistribution = 20000000.0f;
 //static float ParticleScale = 100.0f;
 static float ParticleSize = 1000000.0f;
 
-uint32_t NebulaHighColor = 0x412C1D78;
-uint32_t NebulaMidColor = 0x041D22FF;
-uint32_t NebulaLowColor = 0x040315FF;
+float4 NebulaHighColor = unpackR8G8B8A8_SRGB(0x412C1D78);
+float4 NebulaMidColor = unpackR8G8B8A8_SRGB(0x041D22FF);
+float4 NebulaLowColor = unpackR8G8B8A8_SRGB(0x040315FF);
 
 static mat4 rotMat = mat4::identity();
 static mat4 rotMatStarField = mat4::identity();
@@ -849,26 +849,9 @@ void Sky::Draw(Cmd* cmd)
 
 		vec4 customColor;
 
-		uint32_t red = (NebulaHighColor & 0xFF000000) >> 24;
-		uint32_t green = (NebulaHighColor & 0x00FF0000) >> 16;
-		uint32_t blue = (NebulaHighColor & 0x0000FF00) >> 8;
-		uint32_t alpha = (NebulaHighColor & 0x000000FF);
-
-		data.NebulaHighColor = float4((float)red / 255.0f, (float)green / 255.0f, (float)blue / 255.0f, (float)alpha / 255.0f);
-
-		red = (NebulaMidColor & 0xFF000000) >> 24;
-		green = (NebulaMidColor & 0x00FF0000) >> 16;
-		blue = (NebulaMidColor & 0x0000FF00) >> 8;
-		alpha = (NebulaMidColor & 0x000000FF);
-
-		data.NebulaMidColor = float4((float)red / 255.0f, (float)green / 255.0f, (float)blue / 255.0f, (float)alpha / 255.0f);
-
-		red = (NebulaLowColor & 0xFF000000) >> 24;
-		green = (NebulaLowColor & 0x00FF0000) >> 16;
-		blue = (NebulaLowColor & 0x0000FF00) >> 8;
-		alpha = (NebulaLowColor & 0x000000FF);
-
-		data.NebulaLowColor = float4((float)red / 255.0f, (float)green / 255.0f, (float)blue / 255.0f, (float)alpha / 255.0f);
+		data.NebulaHighColor = NebulaHighColor;
+		data.NebulaMidColor = NebulaMidColor;
+		data.NebulaLowColor = NebulaLowColor;
 
 
 		data.viewProjMat = SpaceProjectionMatrix * pCameraController->getViewMatrix() * rotMat;

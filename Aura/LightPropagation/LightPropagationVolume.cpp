@@ -243,6 +243,7 @@ namespace aura
 		propagate1RootDesc.ppStaticSamplerNames = pStaticSamplerNames;
 		propagate1RootDesc.ppStaticSamplers = pStaticSamplers;
 		addRootSignature(pRenderer, &propagate1RootDesc, &pAura->pRootSignatureLightPropagate1);
+		pAura->mPropagation1RootConstantIndex = getDescriptorIndexFromName(pAura->pRootSignatureLightPropagate1, "PropagationSetupRootConstant");
 
 		RootSignatureDesc propagateNRootDesc = { &pAura->pShaderLightPropagateN[0], 1 };
 		propagateNRootDesc.mStaticSamplerCount = 1;
@@ -250,6 +251,7 @@ namespace aura
 		propagateNRootDesc.ppStaticSamplerNames = pStaticSamplerNames;
 		propagateNRootDesc.ppStaticSamplers = pStaticSamplers;
 		addRootSignature(pRenderer, &propagateNRootDesc, &pAura->pRootSignatureLightPropagateN);
+		pAura->mPropagationNRootConstantIndex = getDescriptorIndexFromName(pAura->pRootSignatureLightPropagateN, "PropagationSetupRootConstant");
 
 		RootSignatureDesc copyRootDesc = { &pAura->pShaderLightCopy, 1 };
 		copyRootDesc.mStaticSamplerCount = 1;
@@ -853,7 +855,7 @@ namespace aura
 		/************************************************************************/
 		cmdBindPipeline(pCmd, pPipelinePropagate1);
 		cmdBindDescriptorSet(pCmd, cascade, pAura->pDescriptorSetLightPropagate1);
-		cmdBindPushConstants(pCmd, pAura->pRootSignatureLightPropagate1, "PropagationSetupRootConstant", &pAura->mParams.fPropagationScale);
+		cmdBindPushConstants(pCmd, pAura->pRootSignatureLightPropagate1, pAura->mPropagation1RootConstantIndex, &pAura->mParams.fPropagationScale);
 		cmdDispatch(pCmd, GridRes / WorkGroupSize, GridRes / WorkGroupSize, GridRes / WorkGroupSize);
 		/************************************************************************/
 		// Barriers
@@ -882,7 +884,7 @@ namespace aura
 		cmdSetScissor(pCmd, 0, 0, GridRes, GridRes);
 		cmdBindPipeline(pCmd, pPipelinePropagate1);
 		cmdBindDescriptorSet(pCmd, cascade, pAura->pDescriptorSetLightPropagate1);
-		cmdBindPushConstants(pCmd, pAura->pRootSignatureLightPropagate1, "PropagationSetupRootConstant", &pAura->mParams.fPropagationScale);
+		cmdBindPushConstants(pCmd, pAura->pRootSignatureLightPropagate1, pAura->mPropagation1RootConstantIndex, &pAura->mParams.fPropagationScale);
 		cmdDrawInstanced(pCmd, 3, 0, GridRes, 0);
 		cmdBindRenderTargets(pCmd, 0, NULL, NULL, NULL, NULL, NULL, -1, -1);
 		/************************************************************************/
@@ -917,7 +919,7 @@ namespace aura
 		{
 #if USE_COMPUTE_SHADERS
 			cmdBindPipeline(pCmd, pPipelinePropagateN);
-			cmdBindPushConstants(pCmd, pAura->pRootSignatureLightPropagateN, "PropagationSetupRootConstant", &pAura->mParams.fPropagationScale);
+			cmdBindPushConstants(pCmd, pAura->pRootSignatureLightPropagateN, pAura->mPropagationNRootConstantIndex, &pAura->mParams.fPropagationScale);
 			cmdBindDescriptorSet(pCmd, cascade * 2 + !(i & 0x1), pAura->pDescriptorSetLightPropagateN);
 			cmdDispatch(pCmd, GridRes / WorkGroupSize, GridRes / WorkGroupSize, GridRes / WorkGroupSize);
 
@@ -942,7 +944,7 @@ namespace aura
 
 			cmdBindPipeline(pCmd, pPipelinePropagateN);
 			cmdBindDescriptorSet(pCmd, cascade * 2 + !(i & 0x1), pAura->pDescriptorSetLightPropagateN);
-			cmdBindPushConstants(pCmd, pAura->pRootSignatureLightPropagateN, "PropagationSetupRootConstant", &pAura->mParams.fPropagationScale);
+			cmdBindPushConstants(pCmd, pAura->pRootSignatureLightPropagateN, pAura->mPropagationNRootConstantIndex, &pAura->mParams.fPropagationScale);
 			cmdDrawInstanced(pCmd, 3, 0, GridRes, 0);
 
 #ifdef PROPOGATE_ACCUMULATE_ONE_PASS
