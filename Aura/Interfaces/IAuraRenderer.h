@@ -1,16 +1,10 @@
 /*
- * Copyright © 2018-2021 Confetti Interactive Inc.
- *
- * This is a part of Aura.
- * 
- * This file(code) is licensed under a 
- * Creative Commons Attribution-NonCommercial 4.0 International License 
- *
- *   (https://creativecommons.org/licenses/by-nc/4.0/legalcode) 
- *
- * Based on a work at https://github.com/ConfettiFX/The-Forge.
- * You may not use the material for commercial purposes.
- *
+* Copyright (c) 2017-2022 The Forge Interactive Inc.
+*
+* This is a part of Aura.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You can not use this code for commercial purposes.
+*
 */
 
 #ifndef __AURARENDERER_H_9E2034BB_D65C_4EAE_9621_057ACCF12866_INCLUDED__
@@ -443,6 +437,15 @@ namespace aura
 		LOAD_ACTION_CLEAR
 	} LoadActionType;
 
+	typedef enum StoreActionType
+	{
+		// Store is the most common use case so keep that as default
+		STORE_ACTION_STORE,
+		STORE_ACTION_DONTCARE,
+		STORE_ACTION_NONE,
+		MAX_STORE_ACTION
+	} StoreActionType;
+
 	typedef enum DescriptorType
 	{
 		DESCRIPTOR_TYPE_UNDEFINED = 0,
@@ -582,13 +585,14 @@ namespace aura
 	} DescriptorSetDesc;
 
 	typedef struct LoadActionsDesc {
-		ClearValue		mClearColorValues[MAX_RENDER_TARGET_ATTACHMENTS];
-		LoadActionType	mLoadActionsColor[MAX_RENDER_TARGET_ATTACHMENTS] = {};
-		ClearValue		mClearDepth;
-		LoadActionType	mLoadActionDepth = {};
-		LoadActionType	mLoadActionStencil = {};
-		uint32_t*		pColorRenderTargetViewIndices = NULL;
-		uint32_t		mDepthStencilViewIndex = (uint32_t)(-1);
+		LoadActionType  mLoadActionsColor[MAX_RENDER_TARGET_ATTACHMENTS];
+		LoadActionType  mLoadActionDepth;
+		LoadActionType  mLoadActionStencil;
+		ClearValue      mClearColorValues[MAX_RENDER_TARGET_ATTACHMENTS];
+		ClearValue      mClearDepth;
+		StoreActionType mStoreActionsColor[MAX_RENDER_TARGET_ATTACHMENTS];
+		StoreActionType mStoreActionDepth;
+		StoreActionType mStoreActionStencil;
 	} LoadActionsDesc;
 
 	typedef enum RenderTargetType {
@@ -702,7 +706,10 @@ namespace aura
 		AddressMode mAddressU;
 		AddressMode mAddressV;
 		AddressMode mAddressW;
+		bool		mSetLodRange;
 		float       mMipLodBias;
+		float       mMinLod;
+		float       mMaxLod;
 		float       mMaxAnisotropy;
 		CompareMode mCompareFunc;
 

@@ -2,7 +2,7 @@
 Render framework Copyright (c) 2001-2010 Emil Persson. Changes by Jack
 Hoxley, Ralf Kornmann, Niko Suni, Jason Zink and Wolfgang Engel
 
-http://code.google.com/p/??/
+http://code.google.com/p/?/
 
 This software is provided 'as-is', without any express or implied warranty.
 In no event will the authors be held liable for any damages arising from the

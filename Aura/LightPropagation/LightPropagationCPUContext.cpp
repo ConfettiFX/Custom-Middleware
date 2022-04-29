@@ -1,16 +1,10 @@
 /*
- * Copyright © 2018-2021 Confetti Interactive Inc.
- *
- * This is a part of Aura.
- * 
- * This file(code) is licensed under a 
- * Creative Commons Attribution-NonCommercial 4.0 International License 
- *
- *   (https://creativecommons.org/licenses/by-nc/4.0/legalcode) 
- *
- * Based on a work at https://github.com/ConfettiFX/The-Forge.
- * You may not use the material for commercial purposes.
- *
+* Copyright (c) 2017-2022 The Forge Interactive Inc.
+*
+* This is a part of Aura.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You can not use this code for commercial purposes.
+*
 */
 
 #include "LightPropagationCPUContext.h"
@@ -42,7 +36,7 @@ using aura::float4;
 
 #if defined(__linux__) || defined(NX64) || defined(__APPLE__)
 #define __declspec(x)
-#define __forceinline __attribute__((always_inline))
+#define __forceinline __attribute__((always_inline)) inline
 #endif
 
 #if defined ORBIS
@@ -167,7 +161,7 @@ namespace aura {
 			if (lightPropagationGridData != NULL)
 			{
 				float* floatBuf = (float*)m_CPUGrids[i];
-				for (int j = 0; j < lpvElementCount; ++j) {
+				for (uint32_t j = 0; j < lpvElementCount; ++j) {
 					floatBuf[j] = lightPropagationGridData[j];
 				}
 			}
@@ -179,18 +173,18 @@ namespace aura {
 		m_hLastTask = ITASKSETHANDLE_INVALID;
 		m_nPropagationSteps = 12;
 
-		for (int i = 0; i < ARRAY_COUNT(m_CPUGrids); ++i)
+		for (uint32_t i = 0; i < ARRAY_COUNT(m_CPUGrids); ++i)
 			m_CPUGrids[i] = 0;
 
 		eState = APPLIED_PROPAGATION;
 
-		for (int i = 0; i < ARRAY_COUNT(m_ReadbackLightGrids); ++i)
+		for (uint32_t i = 0; i < ARRAY_COUNT(m_ReadbackLightGrids); ++i)
 		{
 			addReadbackBuffer(pRenderer, lpvByteCount, &m_ReadbackLightGrids[i]);
 			addUploadBuffer(pRenderer, lpvByteCount, &m_UploadLightGrids[i]);
 		}
 
-		for (int i = 0; i < ARRAY_COUNT(m_CPUGrids); ++i)
+		for (uint32_t i = 0; i < ARRAY_COUNT(m_CPUGrids); ++i)
 			m_CPUGrids[i] = (vec4*)aura::alloc(lpvElementCount * sizeof(vec4));
 
 		return true;
@@ -209,7 +203,7 @@ namespace aura {
 
 		SyncToLastTask(pTaskManager);
 
-		for (int i = 0; i < ARRAY_COUNT(m_ReadbackLightGrids); i++)
+		for (uint32_t i = 0; i < ARRAY_COUNT(m_ReadbackLightGrids); i++)
 		{
 			void* readbackBuffer;
 			getCpuMappedAddress(m_ReadbackLightGrids[i], (void**)&readbackBuffer);
@@ -217,13 +211,13 @@ namespace aura {
 				unmapBuffer(pRenderer, m_ReadbackLightGrids[i]);
 		}
 
-		for (int i = 0; i < ARRAY_COUNT(m_ReadbackLightGrids); ++i)
+		for (uint32_t i = 0; i < ARRAY_COUNT(m_ReadbackLightGrids); ++i)
 		{
 			removeBuffer(pRenderer, m_ReadbackLightGrids[i]);
 			removeBuffer(pRenderer, m_UploadLightGrids[i]);
 		}
 
-		for (int i = 0; i < ARRAY_COUNT(m_CPUGrids); ++i)
+		for (uint32_t i = 0; i < ARRAY_COUNT(m_CPUGrids); ++i)
 			aura::dealloc(m_CPUGrids[i]);
 	}
 
@@ -273,7 +267,6 @@ namespace aura {
 
 		static char taskLabel[m_nMaxPropagationSteps][256];
 
-		unsigned int dependency[3];
 		for (int i = 1; i < m_nPropagationSteps; ++i)
 		{
 			snprintf(taskLabel[i], ARRAY_COUNT(taskLabel[i]), "Propagate step: %d", i);
@@ -285,7 +278,6 @@ namespace aura {
 				m_Contexts[i][j].targetStep = m_CPUGrids[iTargetStep * 3 + j];
 				m_Contexts[i][j].targetAccum = m_CPUGrids[iTsrgetAccum * 3 + j];
 
-				dependency[0] = (i - 1) * 3 + j;
 				pTaskManager->createTaskSet(i - 1,
 					TaskStepN,
 					&m_Contexts[i][j],
@@ -310,10 +302,6 @@ namespace aura {
 			m_CPUGrids[i] = m_CPUGrids[i + 2 * 3];
 			m_CPUGrids[i + 2 * 3] = pTmp;
 		}
-
-		dependency[0] = (m_nPropagationSteps - 1) * 3 + 0;
-		dependency[1] = (m_nPropagationSteps - 1) * 3 + 1;
-		dependency[2] = (m_nPropagationSteps - 1) * 3 + 2;
 
 		pTaskManager->waitAll();
 

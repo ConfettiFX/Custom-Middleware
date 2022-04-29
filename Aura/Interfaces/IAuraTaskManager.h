@@ -1,16 +1,10 @@
 /*
- * Copyright © 2018-2021 Confetti Interactive Inc.
- *
- * This is a part of Aura.
- * 
- * This file(code) is licensed under a 
- * Creative Commons Attribution-NonCommercial 4.0 International License 
- *
- *   (https://creativecommons.org/licenses/by-nc/4.0/legalcode) 
- *
- * Based on a work at https://github.com/ConfettiFX/The-Forge.
- * You may not use the material for commercial purposes.
- *
+* Copyright (c) 2017-2022 The Forge Interactive Inc.
+*
+* This is a part of Aura.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You can not use this code for commercial purposes.
+*
 */
 
 #ifndef __AURATASKMANAGER_H_9E2034BB_D65C_4EAE_9621_057ACCF12866_INCLUDED__

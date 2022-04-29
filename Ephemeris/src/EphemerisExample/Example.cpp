@@ -1,9 +1,9 @@
 /*
-* Copyright (c) 2018-2019 Confetti Interactive Inc.
+* Copyright (c) 2017-2022 The Forge Interactive Inc.
 *
 * This is a part of Ephemeris.
 * This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
-* You may not use the material for commercial purposes.
+* You can not use this code for commercial purposes.
 *
 */
 
@@ -43,7 +43,6 @@
 
 const uint32_t      gImageCount = 3;
 
-static bool         gToggleVSync = false;
 static bool         gTogglePerformance = true;
 static bool         gToggleFXAA = true;
 static bool         gShowUI = true;
@@ -184,8 +183,6 @@ public:
 
 		RendererDesc settings;
 		memset(&settings, 0, sizeof(settings));
-		settings.mD3D11Unsupported = true; 
-		settings.mGLESUnsupported = true; 
 		initRenderer(GetName(), &settings, &pRenderer);
 		//check for init success
 		if (!pRenderer)
@@ -666,13 +663,6 @@ public:
 	{
 		updateInputSystem(mSettings.mWidth, mSettings.mHeight);
 
-#if !defined(TARGET_IOS)
-		if (pSwapChain->mEnableVsync != gToggleVSync)
-		{
-			waitQueueIdle(pGraphicsQueue);
-			::toggleVSync(pRenderer, &pSwapChain);
-		}
-#endif
 		/************************************************************************/
 		// Input
 		/************************************************************************/
@@ -736,6 +726,12 @@ public:
 
 	void Draw()
 	{
+		if (pSwapChain->mEnableVsync != mSettings.mVSyncEnabled)
+		{
+			waitQueueIdle(pGraphicsQueue);
+			::toggleVSync(pRenderer, &pSwapChain);
+		}
+
 		acquireNextImage(pRenderer, pSwapChain, pImageAcquiredSemaphore, NULL, &gFrameIndex);
 
 		// update camera with time
@@ -883,7 +879,7 @@ public:
 				gFrameTimeDraw.mFontSize = 18.0f;
 				gFrameTimeDraw.mFontID = gFontID;
                 cmdDrawCpuProfile(cmd, float2(8.0f, 15.0f), &gFrameTimeDraw);
-				cmdDrawGpuProfile(cmd, float2(8.0f, 40.0f), gGpuProfileToken, &gFrameTimeDraw);
+				cmdDrawGpuProfile(cmd, float2(8.0f, 100.0f), gGpuProfileToken, &gFrameTimeDraw);
 			}
 
 			cmdDrawUserInterface(cmd);

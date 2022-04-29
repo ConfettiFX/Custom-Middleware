@@ -1,16 +1,10 @@
 /*
- * Copyright © 2018-2021 Confetti Interactive Inc.
- *
- * This is a part of Aura.
- * 
- * This file(code) is licensed under a 
- * Creative Commons Attribution-NonCommercial 4.0 International License 
- *
- *   (https://creativecommons.org/licenses/by-nc/4.0/legalcode) 
- *
- * Based on a work at https://github.com/ConfettiFX/The-Forge.
- * You may not use the material for commercial purposes.
- *
+* Copyright (c) 2017-2022 The Forge Interactive Inc.
+*
+* This is a part of Aura.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You can not use this code for commercial purposes.
+*
 */
 
 #include "LightPropagationVolume.h"
@@ -301,20 +295,6 @@ namespace aura
 		blendStateAddDesc.mRenderTargetMask = BLEND_STATE_TARGET_0 | BLEND_STATE_TARGET_1 | BLEND_STATE_TARGET_2;
 		blendStateAddDesc.mIndependentBlend = false;
 
-		BlendStateDesc blendStateMaxDesc = {};
-		for (uint32_t i = 0; i < NUM_GRIDS_PER_CASCADE; ++i)
-		{
-			blendStateMaxDesc.mSrcAlphaFactors[i] = BC_ONE;
-			blendStateMaxDesc.mDstAlphaFactors[i] = BC_ONE;
-			blendStateMaxDesc.mSrcFactors[i] = BC_ONE;
-			blendStateMaxDesc.mDstFactors[i] = BC_ONE;
-			blendStateMaxDesc.mMasks[i] = ALL;
-			blendStateMaxDesc.mBlendAlphaModes[i] = BM_MAX;
-			blendStateMaxDesc.mBlendModes[i] = BM_MAX;
-		}
-		blendStateMaxDesc.mRenderTargetMask = BLEND_STATE_TARGET_0 | BLEND_STATE_TARGET_1 | BLEND_STATE_TARGET_2;
-		blendStateMaxDesc.mIndependentBlend = false;
-
 		BlendStateDesc blendStateAlphaDesc = {};
 		for (uint32_t i = 0; i < NUM_GRIDS_PER_CASCADE; ++i)
 		{
@@ -348,19 +328,14 @@ namespace aura
 
 
 		TinyImageFormat gridRTDesc[NUM_GRIDS_PER_CASCADE] = {};
-		bool srgbValues[NUM_GRIDS_PER_CASCADE] = {};
 		for (uint32_t i = 0; i < NUM_GRIDS_PER_CASCADE; ++i)
 		{
-			srgbValues[i] = false;
 			gridRTDesc[i] = TinyImageFormat_R16G16B16A16_SFLOAT;
 		}
 
 		PipelineDesc graphicsPipelineDesc = {};
 		graphicsPipelineDesc.pCache = pCache;
 		graphicsPipelineDesc.mType = PIPELINE_TYPE_GRAPHICS;
-		PipelineDesc computePipelineDesc = {};
-		computePipelineDesc.pCache = pCache;
-		computePipelineDesc.mType = PIPELINE_TYPE_COMPUTE;
 
 		GraphicsPipelineDesc injectRSMPipelineDesc = {};
 		injectRSMPipelineDesc.mPrimitiveTopo = PRIMITIVE_TOPO_POINT_LIST;
@@ -377,6 +352,10 @@ namespace aura
 		addPipeline(pRenderer, &graphicsPipelineDesc, &pAura->pPipelineInjectRSMLight);
 
 #if USE_COMPUTE_SHADERS
+		PipelineDesc computePipelineDesc = {};
+		computePipelineDesc.pCache = pCache;
+		computePipelineDesc.mType = PIPELINE_TYPE_COMPUTE;
+        
 		ComputePipelineDesc propagatePipelineDesc = {};
 		propagatePipelineDesc.pRootSignature = pAura->pRootSignatureLightPropagate1;
 		propagatePipelineDesc.pShaderProgram = pAura->pShaderLightPropagate1[0];
@@ -738,7 +717,7 @@ namespace aura
 
 	void injectRSM(Cmd* pCmd, Renderer* pRenderer, Aura* pAura, uint32_t iVolume, const mat4 &invVP, const vec3 &camDir, uint32_t rtWidth, uint32_t rtHeight, float viewAreaForUnitDepth, Texture* baseRT, Texture* normalRT, Texture* depthRT)
 	{
-		if (doAlternateGPUUpdates(pAura) && (pAura->mGPUPropagationCurrentGrid != iVolume))
+		if (doAlternateGPUUpdates(pAura) && ((uint32_t)pAura->mGPUPropagationCurrentGrid != iVolume))
 			return;
 
 		float RSMSurfelAreaScaleFactor = viewAreaForUnitDepth / (float)(rtWidth*rtHeight);
