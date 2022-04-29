@@ -1,12 +1,11 @@
-//--------------------------------------------------------------------------------------------
-//
-// Coyright (C) 2009 - 2013 Confetti Special Effects Inc.
-// All rights reserved.
-//
-// This source may not be distributed and/or modified without expressly written permission
-// from Confetti Special Effects Inc.
-//
-//--------------------------------------------------------------------------------------------
+/*
+* Copyright (c) 2017-2022 The Forge Interactive Inc.
+*
+* This is a part of Ephemeris.
+* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
+* You can not use this code for commercial purposes.
+*
+*/
 
 #include "CumulusCloud.h"
 

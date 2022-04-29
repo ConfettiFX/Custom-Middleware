@@ -1,9 +1,9 @@
 /*
-* Copyright (c) 2018-2019 Confetti Interactive Inc.
+* Copyright (c) 2017-2022 The Forge Interactive Inc.
 *
 * This is a part of Ephemeris.
 * This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
-* You may not use the material for commercial purposes.
+* You can not use this code for commercial purposes.
 *
 */
 
@@ -1704,21 +1704,6 @@ bool VolumetricClouds::Load(RenderTarget** rts, uint32_t count)
 
 	volumetricCloudsCB = VolumetricCloudsCB();
 
-	//layout and pipeline for ScreenQuad
-	VertexLayout vertexLayout = {};
-	vertexLayout.mAttribCount = 2;
-	vertexLayout.mAttribs[0].mSemantic = SEMANTIC_POSITION;
-	vertexLayout.mAttribs[0].mFormat = TinyImageFormat_R32G32B32_SFLOAT;
-	vertexLayout.mAttribs[0].mBinding = 0;
-	vertexLayout.mAttribs[0].mLocation = 0;
-	vertexLayout.mAttribs[0].mOffset = 0;
-
-	vertexLayout.mAttribs[1].mSemantic = SEMANTIC_TEXCOORD0;
-	vertexLayout.mAttribs[1].mFormat = TinyImageFormat_R32G32_SFLOAT;
-	vertexLayout.mAttribs[1].mBinding = 0;
-	vertexLayout.mAttribs[1].mLocation = 1;
-	vertexLayout.mAttribs[1].mOffset = 3 * sizeof(float);
-
 	VertexLayout vertexLayoutForVC = {};
 	vertexLayoutForVC.mAttribCount = 1;
 	vertexLayoutForVC.mAttribs[0].mSemantic = SEMANTIC_TEXCOORD0;
@@ -2686,15 +2671,6 @@ void VolumetricClouds::Draw(Cmd* cmd)
 				{ pHBlurTex, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_UNORDERED_ACCESS },
 			};
 			cmdResourceBarrier(cmd, 0, NULL, 1, barriersForHBlur, 0, NULL);
-
-			struct Data
-			{
-				uint width;
-				uint height;
-			} data = { 0 };
-
-			data.width = blurTextureDesc.mWidth;
-			data.height = blurTextureDesc.mHeight;
 
 			cmdBindPipeline(cmd, pHorizontalBlurPipeline);
 			cmdBindDescriptorSet(cmd, 2, pVolumetricCloudsDescriptorSetCompute[0]);
