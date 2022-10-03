@@ -33,19 +33,6 @@ namespace aura
 {
 	static const uint32_t MAX_FRAMES = 3U;
 
-	
-	/************************************************************************/
-	// LPV Interface
-	/************************************************************************/
-	enum LPVOptions
-	{
-		LPV_NO_FRESNEL = 0x01,
-		LPV_ALLOW_OCCLUSION = 0x02,
-		LPV_UNPACK_NORMAL = 0x04,
-		LPV_SCALAR_SPECULAR = 0x08,
-		LPV_USE_SSGI = 0x10,
-	};
-
 	enum CascadeOptions
 	{
 		CASCADE_NOT_MOVING = 0x01,
@@ -66,10 +53,10 @@ namespace aura
 
 	typedef struct Aura
 	{
+		Renderer*						pRenderer;
 		LightPropagationVolumeParams	mParams;
 		CPUPropagationParams			mCPUParams;
 
-		uint32_t						mOptions;
 		//	Capture current, propagate current+1, apply current+2
 #ifdef ENABLE_CPU_PROPAGATION
 		int32_t							mCPUPropagationCurrentContext;
@@ -129,10 +116,9 @@ namespace aura
 		Sampler*			pSamplerPointBorder;
 	} Aura;
 
-	void initAura(Renderer* pRenderer, PipelineCache* pCache, uint32_t rtWidth, uint32_t rtHeight, LightPropagationVolumeParams params, uint32_t inFlightFrameCount, uint32_t options, TinyImageFormat visualizeFormat, TinyImageFormat visualizeDepthFormat, SampleCount sampleCount, uint32_t sampleQuality,
-		uint32_t cascadeCount, LightPropagationCascadeDesc* pCascades, Aura** ppAura);
+	void initAura(Renderer* pRenderer, uint32_t rtWidth, uint32_t rtHeight, LightPropagationVolumeParams params, uint32_t inFlightFrameCount, uint32_t cascadeCount, Aura** ppAura);
 	void loadCPUPropagationResources(Renderer* pRenderer, Aura* pAura);
-	void removeAura(Renderer* pRenderer, ITaskManager* pTaskManager, Aura* pAura);
+	void exitAura(Renderer* pRenderer, ITaskManager* pTaskManager, Aura* pAura);
 	void getShaderMacros(Aura* pAura, ShaderMacro pMacros[4], uint32_t* pCount);
 
 	void setCascadeCenter(Aura* pAura, uint32_t Cascade, const vec3& center);
@@ -142,6 +128,19 @@ namespace aura
 	void beginFrame(Renderer* pRenderer, Aura* pAura, const vec3& camPos, const vec3& camDir);
 	void endFrame(Renderer* pRenderer, Aura* pAura);
 	void mapAsyncResources(Renderer* pRenderer);
+
+	void addRenderTargets(LightPropagationCascadeDesc* pCascades);
+	void removeRenderTargets();
+
+	void addDescriptorSets();
+	void removeDescriptorSets();
+	void addRootSignatures();
+	void removeRootSignatures();
+	void addShaders();
+	void removeShaders();
+	void addPipelines(PipelineCache* pCache, TinyImageFormat visualizeFormat, TinyImageFormat visualizeDepthFormat, SampleCount sampleCount, uint32_t sampleQuality);
+	void removePipelines();
+	void prepareDescriptorSets();
 
 	void injectRSM(Cmd* pCmd, Renderer* pRenderer, Aura* pAura, uint32_t iVolume, const mat4& invVP, const vec3& camDir, uint32_t rtWidth, uint32_t rtHeight, float viewAreaForUnitDepth, Texture* baseRT, Texture* normalRT, Texture* depthRT);
 	// CPU propagation

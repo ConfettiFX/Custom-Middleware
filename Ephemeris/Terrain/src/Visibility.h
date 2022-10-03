@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include "../../../../The-Forge/Common_3/OS/Math/MathTypes.h"
+#include "../../../../The-Forge/Common_3/Utilities/Math/MathTypes.h"
 
 struct TerrainBoundingBox { float3 min, max; };
 

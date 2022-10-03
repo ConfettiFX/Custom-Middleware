@@ -48,7 +48,7 @@ float4 PS_MAIN(PsIn In)
 
 	float4 result = lerp(prevSample, currSample, blend);
 
-	if(any(isnan(result)))
+	if(any(isnan(result)) || any(isinf(result)))
 	{
 		result = f4(0.0f);
 	}

@@ -1,0 +1,62 @@
+
+#include "../Shared.h"
+
+#vert lpvInjectRSMLight.vert
+#include "lpvInjectRSMLight.vert.fsl"
+#end
+
+#frag lpvInjectRSMLight.frag
+#include "lpvInjectRSMLight.frag.fsl"
+#end
+
+#vert lpvVisualize.vert
+#include "lpvVisualize.vert.fsl"
+#end
+
+#frag lpvVisualize.frag
+#include "lpvVisualize.frag.fsl"
+#end
+
+// Only compile the shaders we need
+#if USE_COMPUTE_SHADERS
+
+#comp lpvLightPropagate1.comp
+#include "lpvLightPropagate1.comp.fsl"
+#end
+
+#comp lpvLightPropagateN.comp
+#include "lpvLightPropagateN.comp.fsl"
+#end
+
+#comp lpvLightCopy.comp
+#include "lpvLightCopy.comp.fsl"
+#end
+
+#else // !USE_COMPUTE_SHADERS
+
+#vert lpvLightPropagate1.vert
+#include "lpvLightPropagate1.vert.fsl"
+#end
+
+#frag lpvLightPropagate1.frag
+#include "lpvLightPropagate1.frag.fsl"
+#end
+
+#vert lpvLightPropagateN.vert
+#include "lpvLightPropagateN.vert.fsl"
+#end
+
+#frag lpvLightPropagateN.frag
+#include "lpvLightPropagateN.frag.fsl"
+#end
+
+#vert lpvLightCopy.vert
+#include "lpvLightCopy.vert.fsl"
+#end
+
+#frag lpvLightCopy.frag
+#include "lpvLightCopy.frag.fsl"
+#end
+
+#endif // USE_COMPUTE_SHADERS
+

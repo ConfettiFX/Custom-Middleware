@@ -1,0 +1,105 @@
+
+#comp GenHighTopFreq3Dtex.comp
+#include "GenHighTopFreq3Dtex.comp.fsl"
+#end
+
+#comp GenLowTopFreq3Dtex.comp
+#include "GenLowTopFreq3Dtex.comp.fsl"
+#end
+
+#comp Gen3DtexMipmap.comp
+#include "Gen3DtexMipmap.comp.fsl"
+#end
+
+#frag PostProcess.frag
+#include "PostProcess.frag.fsl"
+#end
+
+#frag PostProcessWithBlur.frag
+#include "PostProcessWithBlur.frag.fsl"
+#end
+
+#frag Reprojection.frag
+#include "Reprojection.frag.fsl"
+#end
+
+#frag Godray.frag
+#include "Godray.frag.fsl"
+#end
+
+#vert Triangular.vert
+#include "Triangular.vert.fsl"
+#end
+
+#frag GodrayAdd.frag
+#include "GodrayAdd.frag.fsl"
+#end
+
+#frag Composite.frag
+#include "Composite.frag.fsl"
+#end
+
+#frag CompositeOverlay.frag
+#include "CompositeOverlay.frag.fsl"
+#end
+
+#comp HiZdownSampling.comp
+#include "HiZdownSampling.comp.fsl"
+#end
+
+#comp HiZdownSamplingPR.comp
+#include "HiZdownSamplingPR.comp.fsl"
+#end
+
+#comp CopyTexture.comp
+#include "CopyTexture.comp.fsl"
+#end
+
+#comp BlurHorizontal.comp
+#include "BlurHorizontal.comp.fsl"
+#end
+
+#comp BlurVertical.comp
+#include "BlurVertical.comp.fsl"
+#end
+
+#comp CopyRT.comp
+#include "CopyRT.comp.fsl"
+#end
+
+#vert VolumetricCloud.vert
+#include "VolumetricCloud.vert.fsl"
+#end
+
+#frag VolumetricCloud.frag
+#include "VolumetricCloud.frag.fsl"
+#end
+
+#frag VolumetricCloudWithDepth.frag
+#include "VolumetricCloudWithDepth.frag.fsl"
+#end
+
+#frag VolumetricCloud_2nd.frag
+#include "VolumetricCloud_2nd.frag.fsl"
+#end
+
+#frag VolumetricCloud_2ndWithDepth.frag
+#include "VolumetricCloud_2ndWithDepth.frag.fsl"
+#end
+
+#comp VolumetricCloud.comp
+#include "VolumetricCloud.comp.fsl"
+#end
+
+#comp VolumetricCloud_2nd.comp
+#include "VolumetricCloud_2nd.comp.fsl"
+#end
+
+#comp VolumetricCloudWithDepth.comp
+#include "VolumetricCloudWithDepth.comp.fsl"
+#end
+
+#comp VolumetricCloud_2ndWithDepth.comp
+#include "VolumetricCloud_2ndWithDepth.comp.fsl"
+#end
+

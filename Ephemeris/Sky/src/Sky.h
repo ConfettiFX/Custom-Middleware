@@ -13,13 +13,13 @@
 #include "Icosahedron.h"
 #include "../../src/Perlin.h"
 
-#include "../../../../The-Forge/Common_3/OS/Interfaces/ICameraController.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IMiddleware.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IProfiler.h"
-#include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/string.h"
-#include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/unordered_map.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IUI.h"
-#include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
+#include "../../../../The-Forge/Common_3/Application/Interfaces/ICameraController.h"
+#include "../../../../The-Forge/Common_3/Application/Interfaces/IMiddleware.h"
+#include "../../../../The-Forge/Common_3/Application/Interfaces/IProfiler.h"
+#include "../../../../The-Forge/Common_3/Utilities/ThirdParty/OpenSource/EASTL/string.h"
+#include "../../../../The-Forge/Common_3/Utilities/ThirdParty/OpenSource/EASTL/unordered_map.h"
+#include "../../../../The-Forge/Common_3/Application/Interfaces/IUI.h"
+#include "../../../../The-Forge/Common_3/Graphics/Interfaces/IGraphics.h"
 
 typedef struct ParticleData
 {
@@ -51,12 +51,25 @@ public:
 	virtual void Draw(Cmd* cmd) final;
 	virtual void Update(float deltaTime) final;
 
+	virtual void addDescriptorSets();
+	virtual void removeDescriptorSets();
+	virtual void addRootSignatures();
+	virtual void removeRootSignatures();
+	virtual void addShaders();
+	virtual void removeShaders();
+	virtual void addPipelines();
+	virtual void removePipelines();
+	virtual void addRenderTargets();
+	virtual void removeRenderTargets();
+	virtual void prepareDescriptorSets(RenderTarget** ppPreStageRenderTargets, uint32_t count = 1);
+
 	void Initialize(uint InImageCount,
 		ICameraController* InCameraController, Queue*	InGraphicsQueue, CmdPool* InTransCmdPool,
 		Cmd** InTransCmds, Fence* InTransitionCompleteFences, ProfileToken InGraphicsGpuProfiler, Buffer*	pTransmittanceBuffer);
 
 	void InitializeWithLoad(RenderTarget* InDepthRenderTarget, RenderTarget* InLinearDepthRenderTarget);
 
+	bool Load(int32_t width, int32_t height);
 	void CalculateLookupData();
 	float3 GetSunColor();
 	void GenerateIcosahedron(float **ppPoints, eastl::vector<float> &vertices, eastl::vector<uint32_t> &indices, int numberOfDivisions, float radius = 1.0f);
@@ -88,7 +101,6 @@ public:
 	Sampler*              pLinearClampSampler = NULL;
 	Sampler*              pLinearBorderSampler = NULL;
 
-	RenderTarget*         pPreStageRenderTarget = NULL;
 	RenderTarget*         pSkyRenderTarget = NULL;
 	RenderTarget*         pDepthBuffer = NULL;
 	RenderTarget*         pLinearDepthBuffer = NULL;

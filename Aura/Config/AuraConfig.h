@@ -10,7 +10,9 @@
 #ifndef	__LPV_CONFIG_H_INCLUDED__
 #define	__LPV_CONFIG_H_INCLUDED__
 
-#include "../../../The-Forge/Common_3/Renderer/RendererConfig.h"
+#include "../../../The-Forge/Common_3/Graphics/GraphicsConfig.h"
+
+#include "../Shaders/Shared.h"
 
 #if defined(_WINDOWS) || defined(XBOX)
 #define ENABLE_CPU_PROPAGATION
@@ -25,8 +27,6 @@
 #ifdef ORBIS
 // #define ORBIS_TASK_MANAGER
 #endif
-
-#define USE_COMPUTE_SHADERS 0
 
 #if USE_COMPUTE_SHADERS
 #define RESOURCE_STATE_LPV RESOURCE_STATE_UNORDERED_ACCESS

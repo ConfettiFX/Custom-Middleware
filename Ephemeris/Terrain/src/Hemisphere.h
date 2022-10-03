@@ -10,7 +10,7 @@
 #pragma once
 
 //asimp importer
-#include "../../../../The-Forge/Common_3/Renderer/IResourceLoader.h"
+#include "../../../../The-Forge/Common_3/Resources/ResourceLoader/Interfaces/IResourceLoader.h"
 
 #include "HeightData.h"
 #include "Visibility.h"

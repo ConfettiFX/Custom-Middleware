@@ -77,6 +77,7 @@ namespace aura
 	enum
 	{
 		MAX_RENDER_TARGET_ATTACHMENTS = 8,
+		MAX_VERTEX_BINDINGS = 15,
 		MAX_VERTEX_ATTRIBS = 15,
 		MAX_SEMANTIC_NAME_LENGTH = 128,
 	};
@@ -443,6 +444,12 @@ namespace aura
 		STORE_ACTION_STORE,
 		STORE_ACTION_DONTCARE,
 		STORE_ACTION_NONE,
+	#if defined(USE_MSAA_RESOLVE_ATTACHMENTS)
+		// Resolve into pResolveAttachment and also store the MSAA attachment (rare - maybe used for debug)
+		STORE_ACTION_RESOLVE_STORE,
+		// Resolve into pResolveAttachment and discard MSAA attachment (most common use case for resolve)
+		STORE_ACTION_RESOLVE_DONTCARE,
+	#endif
 		MAX_STORE_ACTION
 	} StoreActionType;
 
@@ -462,22 +469,34 @@ namespace aura
 		DESCRIPTOR_TYPE_RW_BUFFER_RAW = (DESCRIPTOR_TYPE_RW_BUFFER | (DESCRIPTOR_TYPE_RW_BUFFER << 1)),
 		/// Uniform buffer
 		DESCRIPTOR_TYPE_UNIFORM_BUFFER = (DESCRIPTOR_TYPE_RW_BUFFER << 2),
-		DESCRIPTOR_TYPE_VERTEX_BUFFER = (DESCRIPTOR_TYPE_UNIFORM_BUFFER << 1),
+	/// Push constant / Root constant
+	DESCRIPTOR_TYPE_ROOT_CONSTANT = (DESCRIPTOR_TYPE_UNIFORM_BUFFER << 1),
+	/// IA
+	DESCRIPTOR_TYPE_VERTEX_BUFFER = (DESCRIPTOR_TYPE_ROOT_CONSTANT << 1),
 		DESCRIPTOR_TYPE_INDEX_BUFFER = (DESCRIPTOR_TYPE_VERTEX_BUFFER << 1),
 		DESCRIPTOR_TYPE_INDIRECT_BUFFER = (DESCRIPTOR_TYPE_INDEX_BUFFER << 1),
-		/// Push constant / Root constant
-		DESCRIPTOR_TYPE_ROOT_CONSTANT = (DESCRIPTOR_TYPE_INDIRECT_BUFFER << 1),
 		/// Cubemap SRV
-		DESCRIPTOR_TYPE_TEXTURE_CUBE = (DESCRIPTOR_TYPE_TEXTURE | (DESCRIPTOR_TYPE_ROOT_CONSTANT << 1)),
+	DESCRIPTOR_TYPE_TEXTURE_CUBE = (DESCRIPTOR_TYPE_TEXTURE | (DESCRIPTOR_TYPE_INDIRECT_BUFFER << 1)),
+	/// RTV / DSV per mip slice
+	DESCRIPTOR_TYPE_RENDER_TARGET_MIP_SLICES = (DESCRIPTOR_TYPE_INDIRECT_BUFFER << 2),
 		/// RTV / DSV per array slice
-		DESCRIPTOR_TYPE_RENDER_TARGET_ARRAY_SLICES = (DESCRIPTOR_TYPE_ROOT_CONSTANT << 2),
+	DESCRIPTOR_TYPE_RENDER_TARGET_ARRAY_SLICES = (DESCRIPTOR_TYPE_RENDER_TARGET_MIP_SLICES << 1),
 		/// RTV / DSV per depth slice
 		DESCRIPTOR_TYPE_RENDER_TARGET_DEPTH_SLICES = (DESCRIPTOR_TYPE_RENDER_TARGET_ARRAY_SLICES << 1),
+	DESCRIPTOR_TYPE_RAY_TRACING = (DESCRIPTOR_TYPE_RENDER_TARGET_DEPTH_SLICES << 1),
+	DESCRIPTOR_TYPE_INDIRECT_COMMAND_BUFFER = (DESCRIPTOR_TYPE_RAY_TRACING << 1),
 #if defined(VULKAN)
 		/// Subpass input (descriptor type only available in Vulkan)
-		DESCRIPTOR_TYPE_INPUT_ATTACHMENT = (DESCRIPTOR_TYPE_RENDER_TARGET_DEPTH_SLICES << 1),
+	DESCRIPTOR_TYPE_INPUT_ATTACHMENT = (DESCRIPTOR_TYPE_INDIRECT_COMMAND_BUFFER << 1),
 		DESCRIPTOR_TYPE_TEXEL_BUFFER = (DESCRIPTOR_TYPE_INPUT_ATTACHMENT << 1),
 		DESCRIPTOR_TYPE_RW_TEXEL_BUFFER = (DESCRIPTOR_TYPE_TEXEL_BUFFER << 1),
+	DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER = (DESCRIPTOR_TYPE_RW_TEXEL_BUFFER << 1),
+    
+	/// Khronos extension ray tracing
+	DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE = (DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER << 1),
+	DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_BUILD_INPUT = (DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE << 1),
+	DESCRIPTOR_TYPE_SHADER_DEVICE_ADDRESS = (DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_BUILD_INPUT << 1),
+	DESCRIPTOR_TYPE_SHADER_BINDING_TABLE = (DESCRIPTOR_TYPE_SHADER_DEVICE_ADDRESS << 1),
 #endif
 	} DescriptorType;
 	MAKE_ENUM_FLAG(uint32_t, DescriptorType)
@@ -488,6 +507,7 @@ namespace aura
 		SAMPLE_COUNT_4 = 4,
 		SAMPLE_COUNT_8 = 8,
 		SAMPLE_COUNT_16 = 16,
+		SAMPLE_COUNT_COUNT = 5,
 	} SampleCount;
 
 #ifdef METAL
@@ -496,7 +516,7 @@ namespace aura
 		SHADER_STAGE_VERT = 0X00000001,
 		SHADER_STAGE_FRAG = 0X00000002,
 		SHADER_STAGE_COMP = 0X00000004,
-		SHADER_STAGE_ALL_GRAPHICS = 0X00000003,
+		SHADER_STAGE_ALL_GRAPHICS = ((uint32_t)SHADER_STAGE_VERT | (uint32_t)SHADER_STAGE_FRAG),
 		SHADER_STAGE_COUNT = 3,
 	} ShaderStage;
 #else
@@ -595,27 +615,6 @@ namespace aura
 		StoreActionType mStoreActionStencil;
 	} LoadActionsDesc;
 
-	typedef enum RenderTargetType {
-		RENDER_TARGET_TYPE_UNKNOWN = 0,
-		RENDER_TARGET_TYPE_1D,
-		RENDER_TARGET_TYPE_2D,
-		RENDER_TARGET_TYPE_3D,
-		RENDER_TARGET_TYPE_BUFFER,
-	} RenderTargetType;
-
-	typedef enum RenderTargetUsage {
-		RENDER_TARGET_USAGE_UNDEFINED = 0x00,
-		RENDER_TARGET_USAGE_UNORDERED_ACCESS = 0x04,
-		RENDER_TARGET_USAGE_1D_MIPPED = 0x08,
-		RENDER_TARGET_USAGE_2D_MIPPED = 0x10,
-		RENDER_TARGET_USAGE_3D_MIPPED = 0x20,
-		RENDER_TARGET_USAGE_1D_SLICES = 0x40,
-		RENDER_TARGET_USAGE_2D_SLICES = 0x80,
-		RENDER_TARGET_USAGE_1D_MIPPED_SLICES = 0x200,
-		RENDER_TARGET_USAGE_2D_MIPPED_SLICES = 0x400,
-	} RenderTargetUsage;
-	MAKE_ENUM_FLAG(uint32_t, RenderTargetUsage)
-
 	typedef enum TextureCreationFlags
 	{
 		/// Default flag (Texture will use default allocation strategy decided by the api specific allocator)
@@ -630,6 +629,32 @@ namespace aura
 		TEXTURE_CREATION_FLAG_IMPORT_BIT = 0x08,
 		/// Use ESRAM to store this texture
 		TEXTURE_CREATION_FLAG_ESRAM = 0x10,
+		/// Use on-tile memory to store this texture
+		TEXTURE_CREATION_FLAG_ON_TILE = 0x20,
+		/// Prevent compression meta data from generating (XBox)
+		TEXTURE_CREATION_FLAG_NO_COMPRESSION = 0x40,
+		/// Force 2D instead of automatically determining dimension based on width, height, depth
+		TEXTURE_CREATION_FLAG_FORCE_2D = 0x80,
+		/// Force 3D instead of automatically determining dimension based on width, height, depth
+		TEXTURE_CREATION_FLAG_FORCE_3D = 0x100,
+		/// Display target
+		TEXTURE_CREATION_FLAG_ALLOW_DISPLAY_TARGET = 0x200,
+		/// Create an sRGB texture.
+		TEXTURE_CREATION_FLAG_SRGB = 0x400,
+		/// Create a normal map texture
+		TEXTURE_CREATION_FLAG_NORMAL_MAP = 0x800,
+		/// Fast clear
+		TEXTURE_CREATION_FLAG_FAST_CLEAR = 0x1000,
+		/// Fragment mask
+		TEXTURE_CREATION_FLAG_FRAG_MASK = 0x2000,
+		/// Doubles the amount of array layers of the texture when rendering VR. Also forces the texture to be a 2D Array texture.
+		TEXTURE_CREATION_FLAG_VR_MULTIVIEW = 0x4000,
+		/// Binds the FFR fragment density if this texture is used as a render target.
+		TEXTURE_CREATION_FLAG_VR_FOVEATED_RENDERING = 0x8000,
+	#if defined(USE_MSAA_RESOLVE_ATTACHMENTS)
+		/// Creates resolve attachment for auto resolve (MSAA on tiled architecture - Resolve can be done on tile through render pass)
+		TEXTURE_CREATION_FLAG_CREATE_RESOLVE_ATTACHMENT = 0x10000,
+	#endif
 	} TextureCreationFlags;
 	MAKE_ENUM_FLAG(uint32_t, TextureCreationFlags)
 	
@@ -650,8 +675,10 @@ namespace aura
 		RESOURCE_STATE_COPY_DEST = 0x400,
 		RESOURCE_STATE_COPY_SOURCE = 0x800,
 		RESOURCE_STATE_GENERIC_READ = (((((0x1 | 0x2) | 0x40) | 0x80) | 0x200) | 0x800),
-		RESOURCE_STATE_PRESENT = 0x4000,
-		RESOURCE_STATE_COMMON = 0x8000,
+		RESOURCE_STATE_PRESENT = 0x1000,
+		RESOURCE_STATE_COMMON = 0x2000,
+		RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE = 0x4000,
+		RESOURCE_STATE_SHADING_RATE_SOURCE = 0x8000,
 	} ResourceState;
 	MAKE_ENUM_FLAG(uint32_t, ResourceState)
 
@@ -828,15 +855,23 @@ namespace aura
 		uint32_t              mConstantCount;
 	} ShaderLoadDesc;
 
+	typedef enum VertexAttribRate
+	{
+		VERTEX_ATTRIB_RATE_VERTEX = 0,
+		VERTEX_ATTRIB_RATE_INSTANCE = 1,
+		VERTEX_ATTRIB_RATE_COUNT,
+	} VertexAttribRate;
+
 	typedef struct VertexAttrib
 	{
-		ShaderSemantic		mSemantic;
-		uint32_t			mSemanticNameLength;
-		char				mSemanticName[MAX_SEMANTIC_NAME_LENGTH];
-		TinyImageFormat		mFormat;
-		uint32_t			mBinding;
-		uint32_t			mLocation;
-		uint32_t			mOffset;
+		ShaderSemantic   mSemantic;
+		uint32_t         mSemanticNameLength;
+		char             mSemanticName[MAX_SEMANTIC_NAME_LENGTH];
+		TinyImageFormat  mFormat;
+		uint32_t         mBinding;
+		uint32_t         mLocation;
+		uint32_t         mOffset;
+		VertexAttribRate mRate;
 	} VertexAttrib;
 
 	typedef struct BlendStateDesc
@@ -883,19 +918,21 @@ namespace aura
 
 	typedef struct RasterizerStateDesc
 	{
-		CullMode	mCullMode;
-		int32_t		mDepthBias;
-		float		mSlopeScaledDepthBias;
-		FillMode	mFillMode;
-		bool		mMultiSample;
-		bool		mScissor;
-		FrontFace	mFrontFace;
+		CullMode  mCullMode;
+		int32_t   mDepthBias;
+		float     mSlopeScaledDepthBias;
+		FillMode  mFillMode;
+		FrontFace mFrontFace;
+		bool      mMultiSample;
+		bool      mScissor;
+		bool      mDepthClampEnable;
 	} RasterizerStateDesc;
 
 	typedef struct VertexLayout
 	{
-		uint32_t			mAttribCount;
-		VertexAttrib		mAttribs[MAX_VERTEX_ATTRIBS];
+		uint32_t     mAttribCount;
+		VertexAttrib mAttribs[MAX_VERTEX_ATTRIBS];
+		uint32_t     mStrides[MAX_VERTEX_BINDINGS];
 	} VertexLayout;
 
 	typedef enum PipelineType
@@ -929,19 +966,24 @@ namespace aura
 
 	typedef struct GraphicsPipelineDesc
 	{
-		Shader*					pShaderProgram;
-		RootSignature*			pRootSignature;
-		VertexLayout*			pVertexLayout;
-		BlendStateDesc*			pBlendState;
-		DepthStateDesc*			pDepthState;
-		RasterizerStateDesc*	pRasterizerState;
-		TinyImageFormat*		pColorFormats;
-		uint32_t				mRenderTargetCount;
-		SampleCount				mSampleCount;
-		uint32_t				mSampleQuality;
-		TinyImageFormat			mDepthStencilFormat;
-		PrimitiveTopology		mPrimitiveTopo;
-		bool					mSupportIndirectCommandBuffer;
+		Shader*              pShaderProgram;
+		RootSignature*       pRootSignature;
+		VertexLayout*        pVertexLayout;
+		BlendStateDesc*      pBlendState;
+		DepthStateDesc*      pDepthState;
+		RasterizerStateDesc* pRasterizerState;
+		TinyImageFormat*     pColorFormats;
+	#if defined(USE_MSAA_RESOLVE_ATTACHMENTS)
+		/// Used to specify resolve attachment for render pass
+		StoreActionType*     pColorResolveActions;
+	#endif
+		uint32_t             mRenderTargetCount;
+		SampleCount          mSampleCount;
+		uint32_t             mSampleQuality;
+		TinyImageFormat      mDepthStencilFormat;
+		PrimitiveTopology    mPrimitiveTopo;
+		bool                 mSupportIndirectCommandBuffer;
+		bool                 mVRFoveatedRendering;
 	} GraphicsPipelineDesc;
 
 	typedef struct ComputePipelineDesc
@@ -976,22 +1018,23 @@ namespace aura
 		/// User can either set name of descriptor or index (index in pRootSignature->pDescriptors array)
 		/// Name of descriptor
 		const char* pName;
-		/// Number of resources in the descriptor(applies to array of textures, buffers,...)
-		uint32_t    mCount;
+		/// Number of array entries to update (array size of ppTextures/ppBuffers/...)
+		uint32_t    mCount : 31;
 		/// Dst offset into the array descriptor (useful for updating few entries in a large array)
 		// Example: to update 6th entry in a bindless texture descriptor, mArrayOffset will be 6 and mCount will be 1)
 		uint32_t    mArrayOffset : 20;
 		// Index in pRootSignature->pDescriptors array - Cache index using getDescriptorIndexFromName to avoid using string checks at runtime
 		uint32_t    mIndex : 10;
 		uint32_t    mBindByIndex : 1;
-		uint32_t    mExtractBuffer : 1;
+
+		// Range to bind (buffer offset, size)
+		DescriptorDataRange* pRanges;
+
+		// Binds stencil only descriptor instead of color/depth
+		bool mBindStencilResource : 1;
 
 		union
 		{
-			// Range to bind (buffer offset, size)
-			DescriptorDataRange*    pRanges;
-			// Descriptor set buffer extraction options
-			uint32_t                mDescriptorSetBufferIndex;
 			struct
 			{
 				// When binding UAV, control the mip slice to to bind for UAV (example - generating mipmaps in a compute shader)
@@ -999,22 +1042,23 @@ namespace aura
 				// Binds entire mip chain as array of UAV
 				bool                mBindMipChain;
 			};
-			// Binds stencil only descriptor instead of color/depth
-			bool                    mBindStencilResource;
+			struct
+			{
+				// Bind MTLIndirectCommandBuffer along with the MTLBuffer
+				const char*         pICBName;
+				uint32_t            mICBIndex;
+				bool                mBindICB;
+			};
 		};
 		/// Array of resources containing descriptor handles or constant to be used in ring buffer memory - DescriptorRange can hold only one resource type array
 		union
 		{
 			/// Array of texture descriptors (srv and uav textures)
-			Texture**               ppTextures;
+			Texture** ppTextures;
 			/// Array of sampler descriptors
-			Sampler**               ppSamplers;
+			Sampler** ppSamplers;
 			/// Array of buffer descriptors (srv, uav and cbv buffers)
-			Buffer**                ppBuffers;
-			/// Array of pipeline descriptors
-			Pipeline**              ppPipelines;
-			/// DescriptorSet buffer extraction
-			DescriptorSet**         ppDescriptorSet;
+			Buffer** ppBuffers;
 			/// Custom binding (raytracing acceleration structure ...)
 			AccelerationStructure** ppAccelerationStructures;
 		};

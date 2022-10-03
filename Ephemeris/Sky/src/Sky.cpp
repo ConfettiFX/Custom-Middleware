@@ -9,11 +9,11 @@
 
 #include "Sky.h"
 
-#include "../../../../The-Forge/Common_3/Renderer/IResourceLoader.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IFileSystem.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IMemory.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IScripting.h"
+#include "../../../../The-Forge/Common_3/Resources/ResourceLoader/Interfaces/IResourceLoader.h"
+#include "../../../../The-Forge/Common_3/Utilities/Interfaces/IFileSystem.h"
+#include "../../../../The-Forge/Common_3/Utilities/Interfaces/ILog.h"
+#include "../../../../The-Forge/Common_3/Utilities/Interfaces/IMemory.h"
+#include "../../../../The-Forge/Common_3/Game/Interfaces/IScripting.h"
 
 #define SKY_NEAR 50.0f
 #define SKY_FAR 100000000.0f
@@ -127,6 +127,22 @@ mat4 MakeRotationMatrix(float angle, const vec3& axis)
 	result.setCol2(vec4(zx * oneMinusC + y * s, yz * oneMinusC - x * s, z * z * oneMinusC + c, 0.0f));
 	result.setCol3(vec4(0.0f, 0.0f, 0.0f, 1.0f));
 	return result;
+}
+
+bool Sky::Load(int32_t width, int32_t height)
+{
+	mWidth = width;
+	mHeight = height;
+
+	float aspect = (float)mWidth / (float)mHeight;
+	float aspectInverse = 1.0f / aspect;
+	float horizontal_fov = PI / 3.0f;
+	//float vertical_fov = 2.0f * atan(tan(horizontal_fov*0.5f) * aspectInverse);
+
+	SkyProjectionMatrix = mat4::perspective(horizontal_fov, aspectInverse, SKY_NEAR, SKY_FAR);
+	SpaceProjectionMatrix = mat4::perspective(horizontal_fov, aspectInverse, SPACE_NEAR, SPACE_FAR);
+
+	return false;
 }
 
 void Sky::CalculateLookupData()
@@ -325,37 +341,6 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	ShaderLoadDesc skyShader = {};
-	skyShader.mStages[0] = { "RenderSky.vert", NULL, 0, NULL };
-	skyShader.mStages[1] = { "RenderSky.frag", NULL, 0, NULL };
-	addShader(pRenderer, &skyShader, &pPAS_Shader);
-
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	ShaderLoadDesc spaceShader = {};
-	spaceShader.mStages[0] = { "Space.vert", NULL, 0,  NULL };
-	spaceShader.mStages[1] = { "Space.frag", NULL, 0,  NULL };
-
-	addShader(pRenderer, &spaceShader, &pSpaceShader);
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	const char* pSkySamplerNames[] = { "g_LinearClamp", "g_LinearBorder" };
-	Sampler* pSkySamplers[] = { pLinearClampSampler, pLinearBorderSampler };
-	Shader*           shaders[] = { pPAS_Shader, pSpaceShader };
-	RootSignatureDesc rootDesc = {};
-	rootDesc.mShaderCount = 2;
-	rootDesc.ppShaders = shaders;
-	rootDesc.mStaticSamplerCount = 2;
-	rootDesc.ppStaticSamplerNames = pSkySamplerNames;
-	rootDesc.ppStaticSamplers = pSkySamplers;
-
-	addRootSignature(pRenderer, &rootDesc, &pSkyRootSignature);
-
-	DescriptorSetDesc setDesc = { pSkyRootSignature, DESCRIPTOR_UPDATE_FREQ_NONE, 1 };
-	addDescriptorSet(pRenderer, &setDesc, &pSkyDescriptorSet[0]);
-	setDesc = { pSkyRootSignature, DESCRIPTOR_UPDATE_FREQ_PER_FRAME, gImageCount };
-	addDescriptorSet(pRenderer, &setDesc, &pSkyDescriptorSet[1]);
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	CalculateLookupData();
 
 	// Generate sphere vertex buffer
@@ -457,54 +442,107 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
 	gSkySettings.OriginLocation.z = 788.0f;
 	gSkySettings.OriginLocation.w = 1.0f;
 
-	CollapsingHeaderWidget CollapsingPAS;
+	enum
+	{
+		PAS_WIDGET_EXPOSURE,
+		PAS_WIDGET_INSCATTER_INTENSITY,
+		PAS_WIDGET_INSCATTER_CONTRAST,
+		PAS_WIDGET_UNITS_TO_M,
 
-	SliderFloatWidget sliderFloat;
-	sliderFloat.pData = &gSkySettings.SkyInfo.x;
-	sliderFloat.mMin = 0.0f;
-	sliderFloat.mMax = 1.0f;
-	sliderFloat.mStep = 0.001f;
-	uiCreateCollapsingHeaderSubWidget(&CollapsingPAS, "Exposure", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+		PAS_WIDGET_COUNT
+	};
+	enum
+	{
+		NEBULA_WIDGET_SCALE,
+		NEBULA_WIDGET_HIGH_COLOR,
+		NEBULA_WIDGET_MID_COLOR,
+		NEBULA_WIDGET_LOW_COLOR,
 
-	sliderFloat.pData = &gSkySettings.SkyInfo.y;
-	sliderFloat.mMin = 0.0f;
-	sliderFloat.mMax = 3.0f;
-	sliderFloat.mStep = 0.001f;
-	uiCreateCollapsingHeaderSubWidget(&CollapsingPAS, "InscatterIntensity", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+		NEBULA_WIDGET_COUNT
+	};
 
-	sliderFloat.pData = &gSkySettings.SkyInfo.z;
-	sliderFloat.mMin = 0.0f;
-	sliderFloat.mMax = 2.0f;
-	sliderFloat.mStep = 0.001f;
-	uiCreateCollapsingHeaderSubWidget(&CollapsingPAS, "InscatterContrast", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
-	
-	sliderFloat.pData = &gSkySettings.SkyInfo.w;
-	sliderFloat.mMin = 0.0f;
-	sliderFloat.mMax = 2.0f;
-	sliderFloat.mStep = 0.001f;
-	uiCreateCollapsingHeaderSubWidget(&CollapsingPAS, "UnitsToM", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	static const uint32_t maxWidgetCount = max((uint32_t)PAS_WIDGET_COUNT, (uint32_t)NEBULA_WIDGET_COUNT);
 
-	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "Precomputed Atmosphere Scattering", &CollapsingPAS, WIDGET_TYPE_COLLAPSING_HEADER));
+	UIWidget widgetBases[maxWidgetCount] = {};
+	UIWidget* widgets[maxWidgetCount];
+	for (uint32_t i = 0; i < maxWidgetCount; ++i)
+		widgets[i] = &widgetBases[i];
 
-	CollapsingHeaderWidget CollapsingNebula;
+	CollapsingHeaderWidget collapsingPAS;
+	collapsingPAS.pGroupedWidgets = widgets;
+	collapsingPAS.mWidgetsCount = maxWidgetCount;
 
-	sliderFloat.pData = &NebulaScale;
-	sliderFloat.mMin = 0.0f;
-	sliderFloat.mMax = 20.0f;
-	sliderFloat.mStep = 0.01f;
-	uiCreateCollapsingHeaderSubWidget(&CollapsingNebula, "Nebula Scale", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT);
+	SliderFloatWidget exposure;
+	exposure.pData = &gSkySettings.SkyInfo.x;
+	exposure.mMin = 0.0f;
+	exposure.mMax = 1.0f;
+	exposure.mStep = 0.001f;
+	widgets[PAS_WIDGET_EXPOSURE]->mType = WIDGET_TYPE_SLIDER_FLOAT;
+	strcpy(widgets[PAS_WIDGET_EXPOSURE]->mLabel, "Exposure");
+	widgets[PAS_WIDGET_EXPOSURE]->pWidget = &exposure;
 
-	ColorPickerWidget colorPicker;
-	colorPicker.pData = &NebulaHighColor;
-	uiCreateCollapsingHeaderSubWidget(&CollapsingNebula, "Nebula High Color", &colorPicker, WIDGET_TYPE_COLOR_PICKER);
+	SliderFloatWidget inscatterIntensity;
+	inscatterIntensity.pData = &gSkySettings.SkyInfo.y;
+	inscatterIntensity.mMin = 0.0f;
+	inscatterIntensity.mMax = 3.0f;
+	inscatterIntensity.mStep = 0.001f;
+	widgets[PAS_WIDGET_INSCATTER_INTENSITY]->mType = WIDGET_TYPE_SLIDER_FLOAT;
+	strcpy(widgets[PAS_WIDGET_INSCATTER_INTENSITY]->mLabel, "InscatterIntensity");
+	widgets[PAS_WIDGET_INSCATTER_INTENSITY]->pWidget = &inscatterIntensity;
 
-	colorPicker.pData = &NebulaMidColor;
-	uiCreateCollapsingHeaderSubWidget(&CollapsingNebula, "Nebula Mid Color", &colorPicker, WIDGET_TYPE_COLOR_PICKER);
 
-	colorPicker.pData = &NebulaLowColor;
-	uiCreateCollapsingHeaderSubWidget(&CollapsingNebula, "Nebula Low Color", &colorPicker, WIDGET_TYPE_COLOR_PICKER);
+	SliderFloatWidget inscatterContrast;
+	inscatterContrast.pData = &gSkySettings.SkyInfo.z;
+	inscatterContrast.mMin = 0.0f;
+	inscatterContrast.mMax = 2.0f;
+	inscatterContrast.mStep = 0.001f;
+	widgets[PAS_WIDGET_INSCATTER_CONTRAST]->mType = WIDGET_TYPE_SLIDER_FLOAT;
+	strcpy(widgets[PAS_WIDGET_INSCATTER_CONTRAST]->mLabel, "InscatterContrast");
+	widgets[PAS_WIDGET_INSCATTER_CONTRAST]->pWidget = &inscatterContrast;
 
-	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "Nebula", &CollapsingNebula, WIDGET_TYPE_COLLAPSING_HEADER));
+	SliderFloatWidget unitsToM;
+	unitsToM.pData = &gSkySettings.SkyInfo.w;
+	unitsToM.mMin = 0.0f;
+	unitsToM.mMax = 2.0f;
+	unitsToM.mStep = 0.001f;
+	widgets[PAS_WIDGET_UNITS_TO_M]->mType = WIDGET_TYPE_SLIDER_FLOAT;
+	strcpy(widgets[PAS_WIDGET_UNITS_TO_M]->mLabel, "UnitsToM");
+	widgets[PAS_WIDGET_UNITS_TO_M]->pWidget = &unitsToM;
+
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "Precomputed Atmosphere Scattering", &collapsingPAS, WIDGET_TYPE_COLLAPSING_HEADER));
+
+	CollapsingHeaderWidget collapsingNebula;
+	collapsingNebula.pGroupedWidgets = widgets;
+	collapsingNebula.mWidgetsCount = NEBULA_WIDGET_COUNT;
+
+	SliderFloatWidget scale;
+	scale.pData = &NebulaScale;
+	scale.mMin = 0.0f;
+	scale.mMax = 20.0f;
+	scale.mStep = 0.01f;
+	widgets[NEBULA_WIDGET_SCALE]->mType = WIDGET_TYPE_SLIDER_FLOAT;
+	strcpy(widgets[NEBULA_WIDGET_SCALE]->mLabel, "Nebula Scale");
+	widgets[NEBULA_WIDGET_SCALE]->pWidget = &scale;
+
+	ColorPickerWidget highColor;
+	highColor.pData = &NebulaHighColor;
+	widgets[NEBULA_WIDGET_HIGH_COLOR]->mType = WIDGET_TYPE_COLOR_PICKER;
+	strcpy(widgets[NEBULA_WIDGET_HIGH_COLOR]->mLabel, "Nebula High Color");
+	widgets[NEBULA_WIDGET_HIGH_COLOR]->pWidget = &highColor;
+
+	ColorPickerWidget midColor;
+	midColor.pData = &NebulaMidColor;
+	widgets[NEBULA_WIDGET_MID_COLOR]->mType = WIDGET_TYPE_COLOR_PICKER;
+	strcpy(widgets[NEBULA_WIDGET_MID_COLOR]->mLabel, "Nebula Mid Color");
+	widgets[NEBULA_WIDGET_MID_COLOR]->pWidget = &midColor;
+
+	ColorPickerWidget lowColor;
+	lowColor.pData = &NebulaLowColor;
+	widgets[NEBULA_WIDGET_LOW_COLOR]->mType = WIDGET_TYPE_COLOR_PICKER;
+	strcpy(widgets[NEBULA_WIDGET_LOW_COLOR]->mLabel, "Nebula Low Color");
+	widgets[NEBULA_WIDGET_LOW_COLOR]->pWidget = &lowColor;
+
+	luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "Nebula", &collapsingNebula, WIDGET_TYPE_COLLAPSING_HEADER));
 
 	waitForToken(&token);
 
@@ -515,15 +553,7 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
 }
 
 void Sky::Exit()
-{
-	removeDescriptorSet(pRenderer, pSkyDescriptorSet[0]);
-	removeDescriptorSet(pRenderer, pSkyDescriptorSet[1]);
-	
-	removeShader(pRenderer, pPAS_Shader);
-	removeShader(pRenderer, pSpaceShader);
-
-	removeRootSignature(pRenderer, pSkyRootSignature);
-
+{	
 	removeSampler(pRenderer, pLinearClampSampler);
 	removeSampler(pRenderer, pLinearBorderSampler);
 
@@ -549,48 +579,77 @@ void Sky::Exit()
 
 bool Sky::Load(RenderTarget** rts, uint32_t count)
 {
-	pPreStageRenderTarget = rts[0];
+	return false;
+}
 
-	mWidth = pPreStageRenderTarget->mWidth;
-	mHeight = pPreStageRenderTarget->mHeight;
+void Sky::Unload()
+{
+}
 
-	float aspect = (float)mWidth / (float)mHeight;
-	float aspectInverse = 1.0f / aspect;
-	float horizontal_fov = PI / 3.0f;
-	//float vertical_fov = 2.0f * atan(tan(horizontal_fov*0.5f) * aspectInverse);
+void Sky::Update(float deltaTime)
+{
+	g_ElapsedTime += deltaTime;
 
-	SkyProjectionMatrix = mat4::perspective(horizontal_fov, aspectInverse, SKY_NEAR, SKY_FAR);
-	SpaceProjectionMatrix = mat4::perspective(horizontal_fov, aspectInverse, SPACE_NEAR, SPACE_FAR);
+	rotMat = mat4::translation(vec3(0.0f, -EARTH_RADIUS * 10.0f, 0.0f)) * (mat4::rotationY(-Azimuth) * mat4::rotationZ(Elevation)) * mat4::translation(vec3(0.0f, EARTH_RADIUS* 10.0f, 0.0f));
+	rotMatStarField = (mat4::rotationY(-Azimuth) * mat4::rotationZ(Elevation));
+}
 
-	//layout and pipeline for ScreenQuad
-	VertexLayout vertexLayout = {};
-	vertexLayout.mAttribCount = 2;
-	vertexLayout.mAttribs[0].mSemantic = SEMANTIC_POSITION;
-	vertexLayout.mAttribs[0].mFormat = TinyImageFormat_R32G32B32_SFLOAT;
-	vertexLayout.mAttribs[0].mBinding = 0;
-	vertexLayout.mAttribs[0].mLocation = 0;
-	vertexLayout.mAttribs[0].mOffset = 0;
+void Sky::addDescriptorSets()
+{
+	DescriptorSetDesc setDesc = { pSkyRootSignature, DESCRIPTOR_UPDATE_FREQ_NONE, 1 };
+	addDescriptorSet(pRenderer, &setDesc, &pSkyDescriptorSet[0]);
+	setDesc = { pSkyRootSignature, DESCRIPTOR_UPDATE_FREQ_PER_FRAME, gImageCount };
+	addDescriptorSet(pRenderer, &setDesc, &pSkyDescriptorSet[1]);
+}
 
-	vertexLayout.mAttribs[1].mSemantic = SEMANTIC_TEXCOORD0;
-	vertexLayout.mAttribs[1].mFormat = TinyImageFormat_R32G32_SFLOAT;
-	vertexLayout.mAttribs[1].mBinding = 0;
-	vertexLayout.mAttribs[1].mLocation = 1;
-	vertexLayout.mAttribs[1].mOffset = 3 * sizeof(float);
+void Sky::removeDescriptorSets()
+{
+	removeDescriptorSet(pRenderer, pSkyDescriptorSet[0]);
+	removeDescriptorSet(pRenderer, pSkyDescriptorSet[1]);
+}
 
-	RenderTargetDesc SkyRenderTarget = {};
-	SkyRenderTarget.mArraySize = 1;
-	SkyRenderTarget.mDepth = 1;
-	SkyRenderTarget.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
-	SkyRenderTarget.mFormat = TinyImageFormat_R10G10B10A2_UNORM;
-	SkyRenderTarget.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
-	SkyRenderTarget.mSampleCount = SAMPLE_COUNT_1;
-	SkyRenderTarget.mSampleQuality = 0;
-	//SkyRenderTarget.mSrgb = false;
-	SkyRenderTarget.mWidth = pPreStageRenderTarget->mWidth;
-	SkyRenderTarget.mHeight = pPreStageRenderTarget->mHeight;
-	SkyRenderTarget.pName = "Sky RenderTarget";
-	addRenderTarget(pRenderer, &SkyRenderTarget, &pSkyRenderTarget);
+void Sky::addRootSignatures()
+{
+	const char* pSkySamplerNames[] = { "g_LinearClamp", "g_LinearBorder" };
+	Sampler* pSkySamplers[] = { pLinearClampSampler, pLinearBorderSampler };
+	Shader*           shaders[] = { pPAS_Shader, pSpaceShader };
+	RootSignatureDesc rootDesc = {};
+	rootDesc.mShaderCount = 2;
+	rootDesc.ppShaders = shaders;
+	rootDesc.mStaticSamplerCount = 2;
+	rootDesc.ppStaticSamplerNames = pSkySamplerNames;
+	rootDesc.ppStaticSamplers = pSkySamplers;
 
+	addRootSignature(pRenderer, &rootDesc, &pSkyRootSignature);
+}
+
+void Sky::removeRootSignatures()
+{
+	removeRootSignature(pRenderer, pSkyRootSignature);
+}
+
+void Sky::addShaders()
+{
+
+	ShaderLoadDesc skyShader = {};
+	skyShader.mStages[0] = { "RenderSky.vert", NULL, 0, NULL };
+	skyShader.mStages[1] = { "RenderSky.frag", NULL, 0, NULL };
+	addShader(pRenderer, &skyShader, &pPAS_Shader);
+
+	ShaderLoadDesc spaceShader = {};
+	spaceShader.mStages[0] = { "Space.vert", NULL, 0,  NULL };
+	spaceShader.mStages[1] = { "Space.frag", NULL, 0,  NULL };
+	addShader(pRenderer, &spaceShader, &pSpaceShader);
+}
+
+void Sky::removeShaders()
+{
+	removeShader(pRenderer, pPAS_Shader);
+	removeShader(pRenderer, pSpaceShader);
+}
+
+void Sky::addPipelines()
+{
 	RasterizerStateDesc rasterizerStateDesc = {};
 	rasterizerStateDesc.mCullMode = CULL_MODE_NONE;
 
@@ -629,7 +688,7 @@ bool Sky::Load(RenderTarget** rts, uint32_t count)
 		addPipeline(pRenderer, &pipelineDescPAS, &pPAS_Pipeline);
 	}
 
-	vertexLayout = {};
+	VertexLayout vertexLayout = {};
 	vertexLayout.mAttribCount = 3;
 	vertexLayout.mAttribs[0].mSemantic = SEMANTIC_POSITION;
 	vertexLayout.mAttribs[0].mFormat = TinyImageFormat_R32G32B32_SFLOAT;
@@ -670,48 +729,43 @@ bool Sky::Load(RenderTarget** rts, uint32_t count)
 
 		addPipeline(pRenderer, &pipelineDescSpace, &pSpacePipeline);
 	}
+}
 
-	vertexLayout = {};
-	vertexLayout.mAttribCount = 5;
-	vertexLayout.mAttribs[0].mSemantic = SEMANTIC_POSITION;
-	vertexLayout.mAttribs[0].mFormat = TinyImageFormat_R32G32B32A32_SFLOAT;
-	vertexLayout.mAttribs[0].mBinding = 0;
-	vertexLayout.mAttribs[0].mLocation = 0;
-	vertexLayout.mAttribs[0].mOffset = 0;
+void Sky::removePipelines()
+{
+	removePipeline(pRenderer, pPAS_Pipeline);
+	removePipeline(pRenderer, pSpacePipeline);
+}
 
-	vertexLayout.mAttribs[1].mSemantic = SEMANTIC_TEXCOORD0;
-	vertexLayout.mAttribs[1].mFormat = TinyImageFormat_R32G32_SFLOAT;
-	vertexLayout.mAttribs[1].mBinding = 0;
-	vertexLayout.mAttribs[1].mLocation = 1;
-	vertexLayout.mAttribs[1].mOffset = 4 * sizeof(float);
+void Sky::addRenderTargets()
+{
+	RenderTargetDesc SkyRenderTarget = {};
+	SkyRenderTarget.mArraySize = 1;
+	SkyRenderTarget.mDepth = 1;
+	SkyRenderTarget.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
+	SkyRenderTarget.mFormat = TinyImageFormat_R10G10B10A2_UNORM;
+	SkyRenderTarget.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
+	SkyRenderTarget.mSampleCount = SAMPLE_COUNT_1;
+	SkyRenderTarget.mSampleQuality = 0;
+	//SkyRenderTarget.mSrgb = false;
+	SkyRenderTarget.mWidth = mWidth;
+	SkyRenderTarget.mHeight = mHeight;
+	SkyRenderTarget.pName = "Sky RenderTarget";
+	addRenderTarget(pRenderer, &SkyRenderTarget, &pSkyRenderTarget);
+}
 
-	vertexLayout.mAttribs[2].mSemantic = SEMANTIC_TEXCOORD1;
-	vertexLayout.mAttribs[2].mFormat = TinyImageFormat_R32G32B32A32_SFLOAT;
-	vertexLayout.mAttribs[2].mBinding = 1;
-	vertexLayout.mAttribs[2].mLocation = 2;
-	vertexLayout.mAttribs[2].mOffset = 0;
-	vertexLayout.mAttribs[2].mRate = VERTEX_ATTRIB_RATE_INSTANCE;
+void Sky::removeRenderTargets()
+{
+	removeRenderTarget(pRenderer, pSkyRenderTarget);
+}
 
-	vertexLayout.mAttribs[3].mSemantic = SEMANTIC_TEXCOORD2;
-	vertexLayout.mAttribs[3].mFormat = TinyImageFormat_R32G32B32A32_SFLOAT;
-	vertexLayout.mAttribs[3].mBinding = 1;
-	vertexLayout.mAttribs[3].mLocation = 3;
-	vertexLayout.mAttribs[3].mOffset = 4 * sizeof(float);
-	vertexLayout.mAttribs[3].mRate = VERTEX_ATTRIB_RATE_INSTANCE;
-
-	vertexLayout.mAttribs[4].mSemantic = SEMANTIC_TEXCOORD3;
-	vertexLayout.mAttribs[4].mFormat = TinyImageFormat_R32G32B32A32_SFLOAT;
-	vertexLayout.mAttribs[4].mBinding = 1;
-	vertexLayout.mAttribs[4].mLocation = 4;
-	vertexLayout.mAttribs[4].mOffset = 8 * sizeof(float);
-	vertexLayout.mAttribs[4].mRate = VERTEX_ATTRIB_RATE_INSTANCE;
-
-	// Prepare descriptor sets
+void Sky::prepareDescriptorSets(RenderTarget** ppPreStageRenderTargets, uint32_t count)
+{
 	// Sky
 	{
 		DescriptorData ScParams[8] = {};
 		ScParams[0].pName = "SceneColorTexture";
-		ScParams[0].ppTextures = &pPreStageRenderTarget->pTexture;
+		ScParams[0].ppTextures = &ppPreStageRenderTargets[0]->pTexture;
 		ScParams[1].pName = "Depth";
 		ScParams[1].ppTextures = &pDepthBuffer->pTexture;
 		ScParams[2].pName = "TransmittanceTexture";
@@ -733,23 +787,6 @@ bool Sky::Load(RenderTarget** rts, uint32_t count)
 			updateDescriptorSet(pRenderer, i, pSkyDescriptorSet[1], 2, ScParams);
 		}
 	}
-
-	return false;
-}
-
-void Sky::Unload()
-{
-	removeRenderTarget(pRenderer, pSkyRenderTarget);
-	removePipeline(pRenderer, pPAS_Pipeline);
-	removePipeline(pRenderer, pSpacePipeline);
-}
-
-void Sky::Update(float deltaTime)
-{
-	g_ElapsedTime += deltaTime;
-
-	rotMat = mat4::translation(vec3(0.0f, -EARTH_RADIUS * 10.0f, 0.0f)) * (mat4::rotationY(-Azimuth) * mat4::rotationZ(Elevation)) * mat4::translation(vec3(0.0f, EARTH_RADIUS* 10.0f, 0.0f));
-	rotMatStarField = (mat4::rotationY(-Azimuth) * mat4::rotationZ(Elevation));
 }
 
 
@@ -820,8 +857,6 @@ void Sky::Draw(Cmd* cmd)
 
 		cmdDraw(cmd, 3, 0);
 
-		cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
-
 		cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
 	}
 
@@ -833,7 +868,6 @@ void Sky::Draw(Cmd* cmd)
 
 		cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw Space");
 
-		cmdBindRenderTargets(cmd, 1, &pSkyRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
 		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pSkyRenderTarget->mWidth, (float)pSkyRenderTarget->mHeight, 0.0f, 1.0f);
 		cmdSetScissor(cmd, 0, 0, pSkyRenderTarget->mWidth, pSkyRenderTarget->mHeight);
 
@@ -862,7 +896,7 @@ void Sky::Draw(Cmd* cmd)
 		beginUpdateResource(&BufferUniformSettingDesc);
 		*(Data*)BufferUniformSettingDesc.pMappedData = data;
 		endUpdateResource(&BufferUniformSettingDesc, NULL);
-
+		
 		cmdBindPipeline(cmd, pSpacePipeline);
 		cmdBindDescriptorSet(cmd, 0, pSkyDescriptorSet[0]);
 		cmdBindDescriptorSet(cmd, gFrameIndex, pSkyDescriptorSet[1]);
@@ -872,12 +906,13 @@ void Sky::Draw(Cmd* cmd)
 		cmdBindIndexBuffer(cmd, pSphereIndexBuffer, INDEX_TYPE_UINT32, 0);
 		cmdDrawIndexed(cmd, sphere.IndexCount, 0, 0);
 
-		cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
 
 		cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
 		
 		cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
 	}
+	
+	cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
 
 	////////////////////////////////////////////////////////////////////////
 

@@ -1,0 +1,16 @@
+
+#vert Sun.vert
+#include "Sun.vert.fsl"
+#end
+
+#frag Sun.frag
+#include "Sun.frag.fsl"
+#end
+
+#vert Star.vert
+#include "Star.vert.fsl"
+#end
+
+#frag Star.frag
+#include "Star.frag.fsl"
+#end

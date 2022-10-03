@@ -9,10 +9,10 @@
 
 #pragma once
 
-#include "../../../../The-Forge/Common_3/OS/Math/MathTypes.h"
+#include "../../../../The-Forge/Common_3/Utilities/Math/MathTypes.h"
 
-#include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/vector.h"
-#include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
+#include "../../../../The-Forge/Common_3/Utilities/ThirdParty/OpenSource/EASTL/vector.h"
+#include "../../../../The-Forge/Common_3/Graphics/Interfaces/IGraphics.h"
 
 class DistantCloud
 {

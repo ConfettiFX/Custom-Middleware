@@ -10,8 +10,8 @@
 #include "HeightData.h"
 #include <exception>
 
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IFileSystem.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
+#include "../../../../The-Forge/Common_3/Utilities/Interfaces/IFileSystem.h"
+#include "../../../../The-Forge/Common_3/Utilities/Interfaces/ILog.h"
 
 // Creates data source from the specified raw data file
 HeightData::HeightData(const char* fileName, const char* filePassword, float heightScale) :

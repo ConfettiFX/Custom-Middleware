@@ -13,13 +13,14 @@
 //#include "B_Spline.h"
 //#include "Aurora.h"
 
-#include "../../../../The-Forge/Common_3/OS/Interfaces/ICameraController.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IMiddleware.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IProfiler.h"
-#include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/string.h"
-#include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/unordered_map.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IUI.h"
-#include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
+#include "../../../../The-Forge/Common_3/Application/Interfaces/ICameraController.h"
+#include "../../../../The-Forge/Common_3/Application/Interfaces/IMiddleware.h"
+#include "../../../../The-Forge/Common_3/Application/Interfaces/IProfiler.h"
+#include "../../../../The-Forge/Common_3/Utilities/ThirdParty/OpenSource/EASTL/vector.h"
+#include "../../../../The-Forge/Common_3/Utilities/ThirdParty/OpenSource/EASTL/string.h"
+#include "../../../../The-Forge/Common_3/Utilities/ThirdParty/OpenSource/EASTL/unordered_map.h"
+#include "../../../../The-Forge/Common_3/Application/Interfaces/IUI.h"
+#include "../../../../The-Forge/Common_3/Graphics/Interfaces/IGraphics.h"
 
 class SpaceObjects : public IMiddleware
 {
@@ -32,11 +33,22 @@ public:
 	virtual void Draw(Cmd* cmd) final;
 	virtual void Update(float deltaTime) final;
 
+	virtual void addDescriptorSets();
+	virtual void removeDescriptorSets();
+	virtual void addRootSignatures();
+	virtual void removeRootSignatures();
+	virtual void addShaders();
+	virtual void removeShaders();
+	virtual void addPipelines();
+	virtual void removePipelines();
+	virtual void prepareDescriptorSets(RenderTarget** ppPreStageRenderTargets, uint32_t count = 1);
+
 	void Initialize(uint InImageCount,
 		ICameraController* InCameraController, Queue*	InGraphicsQueue, CmdPool* InTransCmdPool,
 		Cmd** InTransCmds, Fence* InTransitionCompleteFences, ProfileToken InGraphicsGpuProfiler, Buffer*	pTransmittanceBuffer);
 
 	void InitializeWithLoad(RenderTarget* InDepthRenderTarget, RenderTarget* InLinearDepthRenderTarget, Texture* SavePrevTexture, Buffer* ParticleVertexBuffer, Buffer* ParticleInstanceBuffer, uint32_t ParticleCountParam, uint32_t ParticleVertexStride, uint32_t ParticleInstanceStride);
+	bool Load(int32_t width, int32_t height);
 
 
 	void GenerateRing(eastl::vector<float> &vertices, eastl::vector<uint32_t> &indices, uint32_t WidthDividor, uint32_t HeightDividor, float radius = 1.0f, float height = 1.0f);
