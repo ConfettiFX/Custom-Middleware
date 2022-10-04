@@ -25,8 +25,7 @@ HeightData::HeightData(const char* fileName, const char* filePassword, float hei
 	
 	if (!fsOpenStreamFromPath(RD_TEXTURES, fileName, FM_READ_BINARY, filePassword, &modelFile0FH))
 	{
-		char output[256];
-		sprintf(output, "\"%s\": Image file not found.", fileName);
+        LOGF(LogLevel::eERROR, "Image File not found: %s\n", fileName);
 		return;
 	}
 	
@@ -34,8 +33,7 @@ HeightData::HeightData(const char* fileName, const char* filePassword, float hei
 	uint length = (uint)fsGetStreamFileSize(&modelFile0FH);
 	if (length == 0)
 	{
-		char output[256];
-		sprintf(output, "\"%s\": Image file is empty.", fileName);
+        LOGF(LogLevel::eERROR, "Image File not found: %s\n", fileName);
 		fsCloseStream(&modelFile0FH);
 		return;
 	}
