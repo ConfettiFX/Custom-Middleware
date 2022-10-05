@@ -9,12 +9,12 @@
 
 #pragma once
 
-#include "../../../../The-Forge/Common_3/OS/Interfaces/ICameraController.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IMiddleware.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IProfiler.h"
-#include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/string.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IUI.h"
-#include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
+#include "../../../../The-Forge/Common_3/Application/Interfaces/ICameraController.h"
+#include "../../../../The-Forge/Common_3/Application/Interfaces/IMiddleware.h"
+#include "../../../../The-Forge/Common_3/Application/Interfaces/IProfiler.h"
+#include "../../../../The-Forge/Common_3/Utilities/ThirdParty/OpenSource/EASTL/string.h"
+#include "../../../../The-Forge/Common_3/Application/Interfaces/IUI.h"
+#include "../../../../The-Forge/Common_3/Graphics/Interfaces/IGraphics.h"
 
 struct DataPerEye
 {
@@ -256,19 +256,31 @@ public:
 	virtual void Draw(Cmd* cmd) final;
 	virtual void Update(float deltaTime) final;
 
+	virtual void addDescriptorSets();
+	virtual void removeDescriptorSets();
+	virtual void addRootSignatures();
+	virtual void removeRootSignatures();
+	virtual void addShaders();
+	virtual void removeShaders();
+	virtual void addPipelines();
+	virtual void removePipelines();
+	virtual void addRenderTargets();
+	virtual void removeRenderTargets();
+	virtual void prepareDescriptorSets(RenderTarget** ppPreStageRenderTargets, uint32_t count = 1);
 
-	void InitializeWithLoad(RenderTarget* InLinearDepthTexture, RenderTarget* InSceneColorTexture, RenderTarget* InDepthTexture);
+	void InitializeWithLoad(RenderTarget* InLinearDepthTexture, RenderTarget* InDepthTexture);
 
 
 	void Initialize(uint InImageCount,
 		ICameraController* InCameraController, Queue*	InGraphicsQueue, CmdPool* InTransCmdPool,
 		Cmd** InTransCmds, Fence* InTransitionCompleteFences, Fence** InRenderCompleteFences, ProfileToken InGraphicsGpuProfiler, Buffer*	pTransmittanceBuffer);
 
+	bool Load(uint32_t width, uint32_t height);
 
 	void Update(uint frameIndex);
 
 	bool AddHiZDepthBuffer();
-	bool AddVolumetricCloudsRenderTargets();
+	void addVolumetricCloudsSaveTextures();
 
 	void AddUniformBuffers();
 	void RemoveUniformBuffers();
@@ -276,10 +288,10 @@ public:
 	bool AfterSubmit(uint currentFrameIndex);
 	float4 GetProjectionExtents(float fov, float aspect, float width, float height, float texelOffsetX, float texelOffsetY);
 
-	static void UseLowQualitySettings();
-	static void UseMiddleQualitySettings();
-	static void UseHighQualitySettings();
-	static void UseUltraQualitySettings();
+	static void UseLowQualitySettings(void* pUserData);
+	static void UseMiddleQualitySettings(void* pUserData);
+	static void UseHighQualitySettings(void* pUserData);
+	static void UseUltraQualitySettings(void* pUserData);
 
 	Texture* GetWeatherMap();
 
@@ -306,8 +318,8 @@ public:
 	ProfileToken            gGpuProfileToken = {};
 
 	UIComponent*           pGuiWindow = NULL;
-	RenderTarget*           pCastShadowRT = NULL;
-	RenderTarget**          pFinalRT = NULL;
+	RenderTarget*          pCastShadowRT = NULL;
+	RenderTarget*          pFinalRT = NULL;
 
 	float3                  LightDirection;
 	float4                  LightColorAndIntensity;

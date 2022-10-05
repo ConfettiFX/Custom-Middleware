@@ -1,0 +1,32 @@
+
+#vert GenNormalMap.vert
+#include "GenNormalMap.vert.fsl"
+#end
+
+#frag GenNormalMap.frag
+#include "GenNormalMap.frag.fsl"
+#end
+
+#vert Terrain.vert
+#include "Terrain.vert.fsl"
+#end
+
+#frag Terrain.frag
+#include "Terrain.frag.fsl"
+#end
+
+#vert RenderTerrain.vert
+#include "RenderTerrain.vert.fsl"
+#end
+
+#frag RenderTerrain.frag
+#include "RenderTerrain.frag.fsl"
+#end
+
+#vert LightingTerrain.vert
+#include "LightingTerrain.vert.fsl"
+#end
+
+#frag LightingTerrain.frag
+#include "LightingTerrain.frag.fsl"
+#end

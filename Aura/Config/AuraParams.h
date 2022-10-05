@@ -92,15 +92,6 @@ namespace aura
 		"Minimum",
 		"Medium",
 		"Maximum - default",
-		nullptr
-	};
-
-	const uint32_t SPECULAR_QUALITY_VALS[] =
-	{
-		0,
-		1,
-		2,
-		3
 	};
 
 }

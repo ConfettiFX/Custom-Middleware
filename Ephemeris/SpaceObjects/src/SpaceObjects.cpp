@@ -9,10 +9,10 @@
 
 #include "SpaceObjects.h"
 
-#include "../../../../The-Forge/Common_3/Renderer/IResourceLoader.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IFileSystem.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IMemory.h"
+#include "../../../../The-Forge/Common_3/Resources/ResourceLoader/Interfaces/IResourceLoader.h"
+#include "../../../../The-Forge/Common_3/Utilities/Interfaces/IFileSystem.h"
+#include "../../../../The-Forge/Common_3/Utilities/Interfaces/ILog.h"
+#include "../../../../The-Forge/Common_3/Utilities/Interfaces/IMemory.h"
 
 #define SKY_NEAR 50.0f
 #define SKY_FAR 100000000.0f
@@ -296,83 +296,6 @@ bool SpaceObjects::Init(Renderer* const renderer, PipelineCache* pCache)
 
 	addSampler(pRenderer, &samplerClampDesc, &pLinearBorderSampler);
 
-	////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	ShaderLoadDesc sunShader = {};
-	sunShader.mStages[0] = { "Sun.vert" , NULL, 0, NULL };
-	sunShader.mStages[1] = { "Sun.frag", NULL, 0, NULL };
-	addShader(pRenderer, &sunShader, &pSunShader);
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	ShaderLoadDesc starShader = {};
-	starShader.mStages[0] = { "Star.vert", NULL, 0, NULL };
-	starShader.mStages[1] = { "Star.frag", NULL, 0, NULL };
-	addShader(pRenderer, &starShader, &pStarShader);
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	/*ShaderLoadDesc MilkyWayShader = {};
-	MilkyWayShader.mStages[0] = { "SpaceObjects/MilkyWay.vert", NULL, 0, NULL };
-	MilkyWayShader.mStages[1] = { "SpaceObjects/MilkyWay.frag", NULL, 0, NULL };
-	addShader(pRenderer, &MilkyWayShader, &pMilkyWayShader);*/
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	/*ShaderLoadDesc AuroraShader = {};
-#if !defined(METAL)
-	AuroraShader.mStages[0] = { "SpaceObjects/Aurora.vert", NULL, 0, NULL };
-	AuroraShader.mStages[1] = { "SpaceObjects/Aurora.geom", NULL, 0, NULL };
-	AuroraShader.mStages[2] = { "SpaceObjects/Aurora.frag", NULL, 0, NULL };
-#else
-	AuroraShader.mStages[0] = { "SpaceObjects/Aurora.vert", NULL, 0, NULL };
-	AuroraShader.mStages[1] = { "SpaceObjects/Aurora.frag", NULL, 0, NULL };
-#endif
-	addShader(pRenderer, &AuroraShader, &pAuroraShader);*/
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	/*ShaderLoadDesc AuroraComputeShader = {};
-	AuroraComputeShader.mStages[0] = { "SpaceObjects/Aurora.comp", NULL, 0, NULL };
-	addShader(pRenderer, &AuroraComputeShader, &pAuroraComputeShader);*/
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////
-	const char* pSkySamplerNames[] = { "g_LinearClamp", "g_LinearBorder" };
-	Sampler* pSkySamplers[] = { pLinearClampSampler, pLinearBorderSampler };
-
-	RootSignatureDesc sunRootDesc = {};
-	sunRootDesc.mShaderCount = 1;
-	sunRootDesc.ppShaders = &pSunShader;
-	sunRootDesc.mStaticSamplerCount = 2;
-	sunRootDesc.ppStaticSamplerNames = pSkySamplerNames;
-	sunRootDesc.ppStaticSamplers = pSkySamplers;
-	addRootSignature(pRenderer, &sunRootDesc, &pSunRootSignature);
-
-	RootSignatureDesc starRootDesc = {};
-	starRootDesc.mShaderCount = 1;
-	starRootDesc.ppShaders = &pStarShader;
-	starRootDesc.mStaticSamplerCount = 2;
-	starRootDesc.ppStaticSamplerNames = pSkySamplerNames;
-	starRootDesc.ppStaticSamplers = pSkySamplers;
-	addRootSignature(pRenderer, &starRootDesc, &pStarRootSignature);
-
-	/*Shader*           shaderComputes[] = { pAuroraComputeShader };
-	rootDesc = {};
-	rootDesc.mShaderCount = 1;
-	rootDesc.ppShaders = shaderComputes;
-
-	addRootSignature(pRenderer, &rootDesc, &pSpaceObjectsRootSignatureCompute);*/
-
-	DescriptorSetDesc setDesc = { pSunRootSignature, DESCRIPTOR_UPDATE_FREQ_NONE, 1 };
-	addDescriptorSet(pRenderer, &setDesc, &pSunDescriptorSet[0]);
-	setDesc = { pSunRootSignature, DESCRIPTOR_UPDATE_FREQ_PER_FRAME, gImageCount };
-	addDescriptorSet(pRenderer, &setDesc, &pSunDescriptorSet[1]);
-
-	setDesc = { pStarRootSignature, DESCRIPTOR_UPDATE_FREQ_NONE, 1 };
-	addDescriptorSet(pRenderer, &setDesc, &pStarDescriptorSet[0]);
-	setDesc = { pStarRootSignature, DESCRIPTOR_UPDATE_FREQ_PER_FRAME, gImageCount };
-	addDescriptorSet(pRenderer, &setDesc, &pStarDescriptorSet[1]);
-
 	SyncToken token = {};
 
 	float screenQuadPoints[] = {
@@ -514,22 +437,7 @@ bool SpaceObjects::Init(Renderer* const renderer, PipelineCache* pCache)
 }
 
 void SpaceObjects::Exit()
-{
-	removeDescriptorSet(pRenderer, pSunDescriptorSet[0]);
-	removeDescriptorSet(pRenderer, pSunDescriptorSet[1]);
-	removeDescriptorSet(pRenderer, pStarDescriptorSet[0]);
-	removeDescriptorSet(pRenderer, pStarDescriptorSet[1]);
-	
-	/*removeShader(pRenderer, pMilkyWayShader);
-	removeShader(pRenderer, pAuroraShader);
-	removeShader(pRenderer, pAuroraComputeShader);*/
-	removeShader(pRenderer, pSunShader);
-	removeShader(pRenderer, pStarShader);
-
-	removeRootSignature(pRenderer, pSunRootSignature);
-	removeRootSignature(pRenderer, pStarRootSignature);
-	//removeRootSignature(pRenderer, pSpaceObjectsRootSignatureCompute);
-
+{	
 	removeSampler(pRenderer, pLinearClampSampler);
 	removeSampler(pRenderer, pLinearBorderSampler);
 
@@ -565,10 +473,13 @@ void SpaceObjects::Exit()
 
 bool SpaceObjects::Load(RenderTarget** rts, uint32_t count)
 {
-	pPreStageRenderTarget = rts[0];
+	return false;
+}
 
-	mWidth = pPreStageRenderTarget->mWidth;
-	mHeight = pPreStageRenderTarget->mHeight;
+bool SpaceObjects::Load(int32_t width, int32_t height)
+{
+	mWidth = width;
+	mHeight = height;
 
 	float aspect = (float)mWidth / (float)mHeight;
 	float aspectInverse = 1.0f / aspect;
@@ -576,245 +487,12 @@ bool SpaceObjects::Load(RenderTarget** rts, uint32_t count)
 
 	SpaceProjectionMatrix = mat4::perspective(horizontal_fov, aspectInverse, SPACE_NEAR, SPACE_FAR);
 
-	//layout and pipeline for ScreenQuad
-	VertexLayout vertexLayout = {};
-	vertexLayout.mAttribCount = 2;
-	vertexLayout.mAttribs[0].mSemantic = SEMANTIC_POSITION;
-	vertexLayout.mAttribs[0].mFormat = TinyImageFormat_R32G32B32_SFLOAT;
-	vertexLayout.mAttribs[0].mBinding = 0;
-	vertexLayout.mAttribs[0].mLocation = 0;
-	vertexLayout.mAttribs[0].mOffset = 0;
-
-	vertexLayout.mAttribs[1].mSemantic = SEMANTIC_TEXCOORD0;
-	vertexLayout.mAttribs[1].mFormat = TinyImageFormat_R32G32_SFLOAT;
-	vertexLayout.mAttribs[1].mBinding = 0;
-	vertexLayout.mAttribs[1].mLocation = 1;
-	vertexLayout.mAttribs[1].mOffset = 3 * sizeof(float);
-
-	vertexLayout = {};
-	vertexLayout.mAttribCount = 3;
-	vertexLayout.mAttribs[0].mSemantic = SEMANTIC_POSITION;
-	vertexLayout.mAttribs[0].mFormat = TinyImageFormat_R32G32B32_SFLOAT;
-	vertexLayout.mAttribs[0].mBinding = 0;
-	vertexLayout.mAttribs[0].mLocation = 0;
-	vertexLayout.mAttribs[0].mOffset = 0;
-	vertexLayout.mAttribs[1].mSemantic = SEMANTIC_NORMAL;
-	vertexLayout.mAttribs[1].mFormat = TinyImageFormat_R32G32B32_SFLOAT;
-	vertexLayout.mAttribs[1].mBinding = 0;
-	vertexLayout.mAttribs[1].mLocation = 1;
-	vertexLayout.mAttribs[1].mOffset = 3 * sizeof(float);
-	vertexLayout.mAttribs[2].mSemantic = SEMANTIC_TEXCOORD0;
-	vertexLayout.mAttribs[2].mFormat = TinyImageFormat_R32G32B32_SFLOAT;
-	vertexLayout.mAttribs[2].mBinding = 0;
-	vertexLayout.mAttribs[2].mLocation = 2;
-	vertexLayout.mAttribs[2].mOffset = 6 * sizeof(float);
-
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	RasterizerStateDesc rasterizerStateDesc = {};
-	rasterizerStateDesc.mCullMode = CULL_MODE_NONE;
-
-	BlendStateDesc blendStateSunDesc = {};
-	blendStateSunDesc.mBlendModes[0] = BM_ADD;
-	blendStateSunDesc.mBlendAlphaModes[0] = BM_ADD;
-
-	blendStateSunDesc.mSrcFactors[0] = BC_SRC_ALPHA;
-	blendStateSunDesc.mDstFactors[0] = BC_ONE;
-
-	blendStateSunDesc.mSrcAlphaFactors[0] = BC_ONE;
-	blendStateSunDesc.mDstAlphaFactors[0] = BC_ZERO;
-
-	blendStateSunDesc.mMasks[0] = ALL;
-	blendStateSunDesc.mRenderTargetMask = BLEND_STATE_TARGET_0;
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	BlendStateDesc blendStateAdditiveDesc = {};
-	blendStateAdditiveDesc.mBlendModes[0] = BM_ADD;
-	blendStateAdditiveDesc.mBlendAlphaModes[0] = BM_ADD;
-
-	blendStateAdditiveDesc.mSrcFactors[0] = BC_SRC_ALPHA;
-	blendStateAdditiveDesc.mDstFactors[0] = BC_ONE;
-
-	blendStateAdditiveDesc.mSrcAlphaFactors[0] = BC_SRC_ALPHA;
-	blendStateAdditiveDesc.mDstAlphaFactors[0] = BC_ONE;
-
-	blendStateAdditiveDesc.mMasks[0] = ALL;
-	blendStateAdditiveDesc.mRenderTargetMask = BLEND_STATE_TARGET_0;
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	//PipelineDesc pipelineDescMilkyWay = {};
-	//pipelineDescMilkyWay.pCache = pPipelineCache;
-	//{
-	//	pipelineDescMilkyWay.mType = PIPELINE_TYPE_GRAPHICS;
-	//	GraphicsPipelineDesc &pipelineSettings = pipelineDescMilkyWay.mGraphicsDesc;
-
-	//	pipelineSettings = { 0 };
-
-	//	pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
-	//	pipelineSettings.mRenderTargetCount = 1;
-
-	//	pipelineSettings.pColorFormats = &pPreStageRenderTarget->mFormat;
-	//	pipelineSettings.mSampleCount = pPreStageRenderTarget->mSampleCount;
-	//	pipelineSettings.mSampleQuality = pPreStageRenderTarget->mSampleQuality;
-
-	//	pipelineSettings.pRootSignature = pSpaceObjectsRootSignature;
-	//	pipelineSettings.pShaderProgram = pMilkyWayShader;
-	//	pipelineSettings.pVertexLayout = &vertexLayout;
-	//	pipelineSettings.pRasterizerState = &rasterizerStateDesc;
-	//	//pipelineSettings.pBlendState = pBlendStateSpace;
-	//	pipelineSettings.pBlendState = &blendStateSunDesc;
-
-	//	addPipeline(pRenderer, &pipelineDescMilkyWay, &pMilkyWayPipeline);
-	//}
-
-	//PipelineDesc pipelineDescAurora = {};
-	//pipelineDescAurora.pCache = pPipelineCache;
-	//{
-	//	pipelineDescAurora.mType = PIPELINE_TYPE_GRAPHICS;
-	//	GraphicsPipelineDesc &pipelineSettings = pipelineDescAurora.mGraphicsDesc;
-
-	//	pipelineSettings = { 0 };
-
-	//	pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_POINT_LIST;
-	//	pipelineSettings.mRenderTargetCount = 1;
-
-	//	pipelineSettings.pColorFormats = &pPreStageRenderTarget->mFormat;
-	//	pipelineSettings.mSampleCount = pPreStageRenderTarget->mSampleCount;
-	//	pipelineSettings.mSampleQuality = pPreStageRenderTarget->mSampleQuality;
-
-	//	pipelineSettings.pRootSignature = pSpaceObjectsRootSignature;
-	//	pipelineSettings.pShaderProgram = pAuroraShader;
-	//	pipelineSettings.pRasterizerState = &rasterizerStateDesc;
-	//	pipelineSettings.pBlendState = &blendStateSunDesc;
-
-	//	addPipeline(pRenderer, &pipelineDescAurora, &pAuroraPipeline);
-	//}
-
-	//PipelineDesc pipelineDescAuroraCompute = {};
-	//pipelineDescAuroraCompute.pCache = pPipelineCache;
-	//{
-	//	pipelineDescAuroraCompute.mType = PIPELINE_TYPE_COMPUTE;
-	//	ComputePipelineDesc &pipelineSettings = pipelineDescAuroraCompute.mComputeDesc;
-
-	//	pipelineSettings = { 0 };
-
-	//	pipelineSettings.pRootSignature = pSpaceObjectsRootSignatureCompute;
-	//	pipelineSettings.pShaderProgram = pAuroraComputeShader;
-
-	//	addPipeline(pRenderer, &pipelineDescAuroraCompute, &pAuroraComputePipeline);
-	//}
-
-
-	PipelineDesc pipelineDesSun = {};
-	pipelineDesSun.pCache = pPipelineCache;
-	{
-		pipelineDesSun.mType = PIPELINE_TYPE_GRAPHICS;
-		GraphicsPipelineDesc &pipelineSettings = pipelineDesSun.mGraphicsDesc;
-
-		pipelineSettings = { 0 };
-		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_STRIP;
-		pipelineSettings.mRenderTargetCount = 1;
-		pipelineSettings.pColorFormats = &pPreStageRenderTarget->mFormat;
-		pipelineSettings.mSampleCount = pPreStageRenderTarget->mSampleCount;
-		pipelineSettings.mSampleQuality = pPreStageRenderTarget->mSampleQuality;
-		pipelineSettings.pRootSignature = pSunRootSignature;
-		pipelineSettings.pShaderProgram = pSunShader;
-		pipelineSettings.pRasterizerState = &rasterizerStateDesc;
-		pipelineSettings.pBlendState = &blendStateSunDesc;
-
-		addPipeline(pRenderer, &pipelineDesSun, &pSunPipeline);
-	}
-
-	vertexLayout = {};
-	vertexLayout.mAttribCount = 3;
-
-	vertexLayout.mAttribs[0].mSemantic = SEMANTIC_TEXCOORD0;
-	vertexLayout.mAttribs[0].mFormat = TinyImageFormat_R32G32B32A32_SFLOAT;
-	vertexLayout.mAttribs[0].mBinding = 0;
-	vertexLayout.mAttribs[0].mLocation = 0;
-	vertexLayout.mAttribs[0].mOffset = 0;
-	vertexLayout.mAttribs[0].mRate = VERTEX_ATTRIB_RATE_INSTANCE;
-
-	vertexLayout.mAttribs[1].mSemantic = SEMANTIC_TEXCOORD1;
-	vertexLayout.mAttribs[1].mFormat = TinyImageFormat_R32G32B32A32_SFLOAT;
-	vertexLayout.mAttribs[1].mBinding = 0;
-	vertexLayout.mAttribs[1].mLocation = 1;
-	vertexLayout.mAttribs[1].mOffset = 4 * sizeof(float);
-	vertexLayout.mAttribs[1].mRate = VERTEX_ATTRIB_RATE_INSTANCE;
-
-	vertexLayout.mAttribs[2].mSemantic = SEMANTIC_TEXCOORD2;
-	vertexLayout.mAttribs[2].mFormat = TinyImageFormat_R32G32B32A32_SFLOAT;
-	vertexLayout.mAttribs[2].mBinding = 0;
-	vertexLayout.mAttribs[2].mLocation = 2;
-	vertexLayout.mAttribs[2].mOffset = 8 * sizeof(float);
-	vertexLayout.mAttribs[2].mRate = VERTEX_ATTRIB_RATE_INSTANCE;
-
-	PipelineDesc pipelineDescStar = {};
-	pipelineDescStar.pCache = pPipelineCache;
-	{
-		pipelineDescStar.mType = PIPELINE_TYPE_GRAPHICS;
-		GraphicsPipelineDesc &pipelineSettings = pipelineDescStar.mGraphicsDesc;
-
-		pipelineSettings = { 0 };
-		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_STRIP;
-		pipelineSettings.mRenderTargetCount = 1;
-		pipelineSettings.pColorFormats = &pPreStageRenderTarget->mFormat;
-		pipelineSettings.mSampleCount = pPreStageRenderTarget->mSampleCount;
-		pipelineSettings.mSampleQuality = pPreStageRenderTarget->mSampleQuality;
-
-		pipelineSettings.pRootSignature = pStarRootSignature;
-		pipelineSettings.pShaderProgram = pStarShader;
-		pipelineSettings.pVertexLayout = &vertexLayout;
-		pipelineSettings.pRasterizerState = &rasterizerStateDesc;
-		pipelineSettings.pBlendState = &blendStateAdditiveDesc;
-
-		addPipeline(pRenderer, &pipelineDescStar, &pStarPipeline);
-	}
-
-	// Prepare descriptor sets
-	// Sky
-	{
-		DescriptorData ScParams[8] = {};	
-		ScParams[0].pName = "depthTexture";
-		ScParams[0].ppTextures = &pDepthBuffer->pTexture;
-		ScParams[1].pName = "volumetricCloudsTexture";
-		ScParams[1].ppTextures = &pSavePrevTexture;
-#if defined(ORBIS)
-		ScParams[2].pName = "starInstanceBuffer";
-		ScParams[2].ppBuffers = &pParticleInstanceBuffer;
-		updateDescriptorSet(pRenderer, 0, pStarDescriptorSet[0], 3, ScParams);
-#else
-		updateDescriptorSet(pRenderer, 0, pStarDescriptorSet[0], 2, ScParams);
-#endif
-		ScParams[2] = {};
-		ScParams[2].pName = "moonAtlas";
-		ScParams[2].ppTextures = &pMoonTexture;
-		updateDescriptorSet(pRenderer, 0, pSunDescriptorSet[0], 3, ScParams);
-
-		ScParams[0] = {};
-		for (uint32_t i = 0; i < gImageCount; ++i)
-		{
-			ScParams[0].pName = "StarUniform";
-			ScParams[0].ppBuffers = &pStarUniformBuffer[i];
-			updateDescriptorSet(pRenderer, i, pStarDescriptorSet[1], 1, ScParams);
-
-			ScParams[0].pName = "SunUniform";
-			ScParams[0].ppBuffers = &pSunUniformBuffer[i];
-			updateDescriptorSet(pRenderer, i, pSunDescriptorSet[1], 1, ScParams);
-		}
-	}
-
-	return false;
+	return true;
 }
+
 
 void SpaceObjects::Unload()
 {	
-	/*removePipeline(pRenderer, pMilkyWayPipeline);
-	removePipeline(pRenderer, pAuroraPipeline);
-	removePipeline(pRenderer, pAuroraComputePipeline);*/
-	removePipeline(pRenderer, pSunPipeline);
-	removePipeline(pRenderer, pStarPipeline);
 }
 
 void SpaceObjects::Update(float deltaTime)
@@ -874,7 +552,9 @@ void SpaceObjects::Draw(Cmd* cmd)
 
 			cmdResourceBarrier(cmd, 0, NULL, 1, barriersSky, false);
 
-			cmdBindRenderTargets(cmd, 1, &pPreStageRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
+			LoadActionsDesc loadActions = {};
+			loadActions.mLoadActionsColor[0] = LOAD_ACTION_LOAD;
+			cmdBindRenderTargets(cmd, 1, &pPreStageRenderTarget, NULL, &loadActions, NULL, NULL, -1, -1);
 			cmdSetViewport(cmd, 0.0f, 0.0f, (float)pPreStageRenderTarget->mWidth, (float)pPreStageRenderTarget->mHeight, 0.0f, 1.0f);
 			cmdSetScissor(cmd, 0, 0, pPreStageRenderTarget->mWidth, pPreStageRenderTarget->mHeight);
 
@@ -912,7 +592,9 @@ void SpaceObjects::Draw(Cmd* cmd)
 
 		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriersSky2);
 
-		cmdBindRenderTargets(cmd, 1, &pPreStageRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
+		LoadActionsDesc loadActions = {};
+		loadActions.mLoadActionsColor[0] = LOAD_ACTION_LOAD;
+		cmdBindRenderTargets(cmd, 1, &pPreStageRenderTarget, NULL, &loadActions, NULL, NULL, -1, -1);
 		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pPreStageRenderTarget->mWidth, (float)pPreStageRenderTarget->mHeight, 0.0f, 1.0f);
 		cmdSetScissor(cmd, 0, 0, pPreStageRenderTarget->mWidth, pPreStageRenderTarget->mHeight);
 
@@ -957,7 +639,9 @@ void SpaceObjects::Draw(Cmd* cmd)
 	{
 		cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw Sun and Moon");
 
-		cmdBindRenderTargets(cmd, 1, &pPreStageRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
+		LoadActionsDesc loadActions = {};
+		loadActions.mLoadActionsColor[0] = LOAD_ACTION_LOAD;
+		cmdBindRenderTargets(cmd, 1, &pPreStageRenderTarget, NULL, &loadActions, NULL, NULL, -1, -1);
 		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pPreStageRenderTarget->mWidth, (float)pPreStageRenderTarget->mHeight, 0.0f, 1.0f);
 		cmdSetScissor(cmd, 0, 0, pPreStageRenderTarget->mWidth, pPreStageRenderTarget->mHeight);
 
@@ -1070,6 +754,354 @@ void SpaceObjects::Draw(Cmd* cmd)
   */
 
 	cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
+}
+
+void SpaceObjects::addDescriptorSets()
+{
+	DescriptorSetDesc setDesc = { pSunRootSignature, DESCRIPTOR_UPDATE_FREQ_NONE, 1 };
+	addDescriptorSet(pRenderer, &setDesc, &pSunDescriptorSet[0]);
+	setDesc = { pSunRootSignature, DESCRIPTOR_UPDATE_FREQ_PER_FRAME, gImageCount };
+	addDescriptorSet(pRenderer, &setDesc, &pSunDescriptorSet[1]);
+
+	setDesc = { pStarRootSignature, DESCRIPTOR_UPDATE_FREQ_NONE, 1 };
+	addDescriptorSet(pRenderer, &setDesc, &pStarDescriptorSet[0]);
+	setDesc = { pStarRootSignature, DESCRIPTOR_UPDATE_FREQ_PER_FRAME, gImageCount };
+	addDescriptorSet(pRenderer, &setDesc, &pStarDescriptorSet[1]);
+}
+
+void SpaceObjects::removeDescriptorSets()
+{
+	removeDescriptorSet(pRenderer, pSunDescriptorSet[0]);
+	removeDescriptorSet(pRenderer, pSunDescriptorSet[1]);
+	removeDescriptorSet(pRenderer, pStarDescriptorSet[0]);
+	removeDescriptorSet(pRenderer, pStarDescriptorSet[1]);
+}
+
+void SpaceObjects::addRootSignatures()
+{
+	const char* pSkySamplerNames[] = { "g_LinearClamp", "g_LinearBorder" };
+	Sampler* pSkySamplers[] = { pLinearClampSampler, pLinearBorderSampler };
+
+	RootSignatureDesc sunRootDesc = {};
+	sunRootDesc.mShaderCount = 1;
+	sunRootDesc.ppShaders = &pSunShader;
+	sunRootDesc.mStaticSamplerCount = 2;
+	sunRootDesc.ppStaticSamplerNames = pSkySamplerNames;
+	sunRootDesc.ppStaticSamplers = pSkySamplers;
+	addRootSignature(pRenderer, &sunRootDesc, &pSunRootSignature);
+
+	RootSignatureDesc starRootDesc = {};
+	starRootDesc.mShaderCount = 1;
+	starRootDesc.ppShaders = &pStarShader;
+	starRootDesc.mStaticSamplerCount = 2;
+	starRootDesc.ppStaticSamplerNames = pSkySamplerNames;
+	starRootDesc.ppStaticSamplers = pSkySamplers;
+	addRootSignature(pRenderer, &starRootDesc, &pStarRootSignature);
+
+	/*Shader*           shaderComputes[] = { pAuroraComputeShader };
+	rootDesc = {};
+	rootDesc.mShaderCount = 1;
+	rootDesc.ppShaders = shaderComputes;
+
+	addRootSignature(pRenderer, &rootDesc, &pSpaceObjectsRootSignatureCompute);*/
+}
+
+void SpaceObjects::removeRootSignatures()
+{
+	removeRootSignature(pRenderer, pSunRootSignature);
+	removeRootSignature(pRenderer, pStarRootSignature);
+	//removeRootSignature(pRenderer, pSpaceObjectsRootSignatureCompute);
+}
+
+void SpaceObjects::addShaders()
+{
+	ShaderLoadDesc sunShader = {};
+	sunShader.mStages[0] = { "Sun.vert" , NULL, 0, NULL };
+	sunShader.mStages[1] = { "Sun.frag", NULL, 0, NULL };
+	addShader(pRenderer, &sunShader, &pSunShader);
+
+	ShaderLoadDesc starShader = {};
+	starShader.mStages[0] = { "Star.vert", NULL, 0, NULL };
+	starShader.mStages[1] = { "Star.frag", NULL, 0, NULL };
+	addShader(pRenderer, &starShader, &pStarShader);
+
+	/*ShaderLoadDesc MilkyWayShader = {};
+	MilkyWayShader.mStages[0] = { "SpaceObjects/MilkyWay.vert", NULL, 0, NULL };
+	MilkyWayShader.mStages[1] = { "SpaceObjects/MilkyWay.frag", NULL, 0, NULL };
+	addShader(pRenderer, &MilkyWayShader, &pMilkyWayShader);*/
+
+	/*ShaderLoadDesc AuroraShader = {};
+#if !defined(METAL)
+	AuroraShader.mStages[0] = { "SpaceObjects/Aurora.vert", NULL, 0, NULL };
+	AuroraShader.mStages[1] = { "SpaceObjects/Aurora.geom", NULL, 0, NULL };
+	AuroraShader.mStages[2] = { "SpaceObjects/Aurora.frag", NULL, 0, NULL };
+#else
+	AuroraShader.mStages[0] = { "SpaceObjects/Aurora.vert", NULL, 0, NULL };
+	AuroraShader.mStages[1] = { "SpaceObjects/Aurora.frag", NULL, 0, NULL };
+#endif
+	addShader(pRenderer, &AuroraShader, &pAuroraShader);*/
+
+	/*ShaderLoadDesc AuroraComputeShader = {};
+	AuroraComputeShader.mStages[0] = { "SpaceObjects/Aurora.comp", NULL, 0, NULL };
+	addShader(pRenderer, &AuroraComputeShader, &pAuroraComputeShader);*/
+}
+
+void SpaceObjects::removeShaders()
+{
+	/*
+	removeShader(pRenderer, pMilkyWayShader);
+	removeShader(pRenderer, pAuroraShader);
+	removeShader(pRenderer, pAuroraComputeShader);
+	*/
+	removeShader(pRenderer, pSunShader);
+	removeShader(pRenderer, pStarShader);
+}
+
+void SpaceObjects::addPipelines()
+{
+	//layout and pipeline for ScreenQuad
+	VertexLayout vertexLayout = {};
+	vertexLayout.mAttribCount = 2;
+	vertexLayout.mAttribs[0].mSemantic = SEMANTIC_POSITION;
+	vertexLayout.mAttribs[0].mFormat = TinyImageFormat_R32G32B32_SFLOAT;
+	vertexLayout.mAttribs[0].mBinding = 0;
+	vertexLayout.mAttribs[0].mLocation = 0;
+	vertexLayout.mAttribs[0].mOffset = 0;
+
+	vertexLayout.mAttribs[1].mSemantic = SEMANTIC_TEXCOORD0;
+	vertexLayout.mAttribs[1].mFormat = TinyImageFormat_R32G32_SFLOAT;
+	vertexLayout.mAttribs[1].mBinding = 0;
+	vertexLayout.mAttribs[1].mLocation = 1;
+	vertexLayout.mAttribs[1].mOffset = 3 * sizeof(float);
+
+	vertexLayout = {};
+	vertexLayout.mAttribCount = 3;
+	vertexLayout.mAttribs[0].mSemantic = SEMANTIC_POSITION;
+	vertexLayout.mAttribs[0].mFormat = TinyImageFormat_R32G32B32_SFLOAT;
+	vertexLayout.mAttribs[0].mBinding = 0;
+	vertexLayout.mAttribs[0].mLocation = 0;
+	vertexLayout.mAttribs[0].mOffset = 0;
+	vertexLayout.mAttribs[1].mSemantic = SEMANTIC_NORMAL;
+	vertexLayout.mAttribs[1].mFormat = TinyImageFormat_R32G32B32_SFLOAT;
+	vertexLayout.mAttribs[1].mBinding = 0;
+	vertexLayout.mAttribs[1].mLocation = 1;
+	vertexLayout.mAttribs[1].mOffset = 3 * sizeof(float);
+	vertexLayout.mAttribs[2].mSemantic = SEMANTIC_TEXCOORD0;
+	vertexLayout.mAttribs[2].mFormat = TinyImageFormat_R32G32B32_SFLOAT;
+	vertexLayout.mAttribs[2].mBinding = 0;
+	vertexLayout.mAttribs[2].mLocation = 2;
+	vertexLayout.mAttribs[2].mOffset = 6 * sizeof(float);
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	RasterizerStateDesc rasterizerStateDesc = {};
+	rasterizerStateDesc.mCullMode = CULL_MODE_NONE;
+
+	BlendStateDesc blendStateSunDesc = {};
+	blendStateSunDesc.mBlendModes[0] = BM_ADD;
+	blendStateSunDesc.mBlendAlphaModes[0] = BM_ADD;
+
+	blendStateSunDesc.mSrcFactors[0] = BC_SRC_ALPHA;
+	blendStateSunDesc.mDstFactors[0] = BC_ONE;
+
+	blendStateSunDesc.mSrcAlphaFactors[0] = BC_ONE;
+	blendStateSunDesc.mDstAlphaFactors[0] = BC_ZERO;
+
+	blendStateSunDesc.mMasks[0] = ALL;
+	blendStateSunDesc.mRenderTargetMask = BLEND_STATE_TARGET_0;
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	BlendStateDesc blendStateAdditiveDesc = {};
+	blendStateAdditiveDesc.mBlendModes[0] = BM_ADD;
+	blendStateAdditiveDesc.mBlendAlphaModes[0] = BM_ADD;
+
+	blendStateAdditiveDesc.mSrcFactors[0] = BC_SRC_ALPHA;
+	blendStateAdditiveDesc.mDstFactors[0] = BC_ONE;
+
+	blendStateAdditiveDesc.mSrcAlphaFactors[0] = BC_SRC_ALPHA;
+	blendStateAdditiveDesc.mDstAlphaFactors[0] = BC_ONE;
+
+	blendStateAdditiveDesc.mMasks[0] = ALL;
+	blendStateAdditiveDesc.mRenderTargetMask = BLEND_STATE_TARGET_0;
+
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	TinyImageFormat mRtFormat[1] = { TinyImageFormat_R10G10B10A2_UNORM };
+
+	//PipelineDesc pipelineDescMilkyWay = {};
+	//pipelineDescMilkyWay.pCache = pPipelineCache;
+	//{
+	//	pipelineDescMilkyWay.mType = PIPELINE_TYPE_GRAPHICS;
+	//	GraphicsPipelineDesc &pipelineSettings = pipelineDescMilkyWay.mGraphicsDesc;
+
+	//	pipelineSettings = { 0 };
+
+	//	pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
+	//	pipelineSettings.mRenderTargetCount = 1;
+
+	//	pipelineSettings.pColorFormats = mRtFormat;
+	//	pipelineSettings.mSampleCount = SAMPLE_COUNT_1;
+	//	pipelineSettings.mSampleQuality = 0;
+
+	//	pipelineSettings.pRootSignature = pSpaceObjectsRootSignature;
+	//	pipelineSettings.pShaderProgram = pMilkyWayShader;
+	//	pipelineSettings.pVertexLayout = &vertexLayout;
+	//	pipelineSettings.pRasterizerState = &rasterizerStateDesc;
+	//	//pipelineSettings.pBlendState = pBlendStateSpace;
+	//	pipelineSettings.pBlendState = &blendStateSunDesc;
+
+	//	addPipeline(pRenderer, &pipelineDescMilkyWay, &pMilkyWayPipeline);
+	//}
+
+	//PipelineDesc pipelineDescAurora = {};
+	//pipelineDescAurora.pCache = pPipelineCache;
+	//{
+	//	pipelineDescAurora.mType = PIPELINE_TYPE_GRAPHICS;
+	//	GraphicsPipelineDesc &pipelineSettings = pipelineDescAurora.mGraphicsDesc;
+
+	//	pipelineSettings = { 0 };
+
+	//	pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_POINT_LIST;
+	//	pipelineSettings.mRenderTargetCount = 1;
+
+	//	pipelineSettings.pColorFormats = mRtFormat;
+	//	pipelineSettings.mSampleCount = SAMPLE_COUNT_1;
+	//	pipelineSettings.mSampleQuality = 0;
+
+	//	pipelineSettings.pRootSignature = pSpaceObjectsRootSignature;
+	//	pipelineSettings.pShaderProgram = pAuroraShader;
+	//	pipelineSettings.pRasterizerState = &rasterizerStateDesc;
+	//	pipelineSettings.pBlendState = &blendStateSunDesc;
+
+	//	addPipeline(pRenderer, &pipelineDescAurora, &pAuroraPipeline);
+	//}
+
+	//PipelineDesc pipelineDescAuroraCompute = {};
+	//pipelineDescAuroraCompute.pCache = pPipelineCache;
+	//{
+	//	pipelineDescAuroraCompute.mType = PIPELINE_TYPE_COMPUTE;
+	//	ComputePipelineDesc &pipelineSettings = pipelineDescAuroraCompute.mComputeDesc;
+
+	//	pipelineSettings = { 0 };
+
+	//	pipelineSettings.pRootSignature = pSpaceObjectsRootSignatureCompute;
+	//	pipelineSettings.pShaderProgram = pAuroraComputeShader;
+
+	//	addPipeline(pRenderer, &pipelineDescAuroraCompute, &pAuroraComputePipeline);
+	//}
+
+
+	PipelineDesc pipelineDesSun = {};
+	pipelineDesSun.pCache = pPipelineCache;
+	{
+		pipelineDesSun.mType = PIPELINE_TYPE_GRAPHICS;
+		GraphicsPipelineDesc &pipelineSettings = pipelineDesSun.mGraphicsDesc;
+		pipelineSettings = { 0 };
+		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_STRIP;
+		pipelineSettings.mRenderTargetCount = 1;
+		pipelineSettings.pColorFormats = mRtFormat;
+		pipelineSettings.mSampleCount = SAMPLE_COUNT_1;
+		pipelineSettings.mSampleQuality = 0;
+		pipelineSettings.pRootSignature = pSunRootSignature;
+		pipelineSettings.pShaderProgram = pSunShader;
+		pipelineSettings.pRasterizerState = &rasterizerStateDesc;
+		pipelineSettings.pBlendState = &blendStateSunDesc;
+
+		addPipeline(pRenderer, &pipelineDesSun, &pSunPipeline);
+	}
+
+	vertexLayout = {};
+	vertexLayout.mAttribCount = 3;
+
+	vertexLayout.mAttribs[0].mSemantic = SEMANTIC_TEXCOORD0;
+	vertexLayout.mAttribs[0].mFormat = TinyImageFormat_R32G32B32A32_SFLOAT;
+	vertexLayout.mAttribs[0].mBinding = 0;
+	vertexLayout.mAttribs[0].mLocation = 0;
+	vertexLayout.mAttribs[0].mOffset = 0;
+	vertexLayout.mAttribs[0].mRate = VERTEX_ATTRIB_RATE_INSTANCE;
+
+	vertexLayout.mAttribs[1].mSemantic = SEMANTIC_TEXCOORD1;
+	vertexLayout.mAttribs[1].mFormat = TinyImageFormat_R32G32B32A32_SFLOAT;
+	vertexLayout.mAttribs[1].mBinding = 0;
+	vertexLayout.mAttribs[1].mLocation = 1;
+	vertexLayout.mAttribs[1].mOffset = 4 * sizeof(float);
+	vertexLayout.mAttribs[1].mRate = VERTEX_ATTRIB_RATE_INSTANCE;
+
+	vertexLayout.mAttribs[2].mSemantic = SEMANTIC_TEXCOORD2;
+	vertexLayout.mAttribs[2].mFormat = TinyImageFormat_R32G32B32A32_SFLOAT;
+	vertexLayout.mAttribs[2].mBinding = 0;
+	vertexLayout.mAttribs[2].mLocation = 2;
+	vertexLayout.mAttribs[2].mOffset = 8 * sizeof(float);
+	vertexLayout.mAttribs[2].mRate = VERTEX_ATTRIB_RATE_INSTANCE;
+
+	PipelineDesc pipelineDescStar = {};
+	pipelineDescStar.pCache = pPipelineCache;
+	{
+		pipelineDescStar.mType = PIPELINE_TYPE_GRAPHICS;
+		GraphicsPipelineDesc &pipelineSettings = pipelineDescStar.mGraphicsDesc;
+
+		pipelineSettings = { 0 };
+		pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_STRIP;
+		pipelineSettings.mRenderTargetCount = 1;
+		pipelineSettings.pColorFormats = mRtFormat;
+		pipelineSettings.mSampleCount = SAMPLE_COUNT_1;
+		pipelineSettings.mSampleQuality = 0;
+
+		pipelineSettings.pRootSignature = pStarRootSignature;
+		pipelineSettings.pShaderProgram = pStarShader;
+		pipelineSettings.pVertexLayout = &vertexLayout;
+		pipelineSettings.pRasterizerState = &rasterizerStateDesc;
+		pipelineSettings.pBlendState = &blendStateAdditiveDesc;
+
+		addPipeline(pRenderer, &pipelineDescStar, &pStarPipeline);
+	}
+}
+
+void SpaceObjects::removePipelines()
+{
+	/*
+	removePipeline(pRenderer, pMilkyWayPipeline);
+	removePipeline(pRenderer, pAuroraPipeline);
+	removePipeline(pRenderer, pAuroraComputePipeline);
+	*/
+	removePipeline(pRenderer, pSunPipeline);
+	removePipeline(pRenderer, pStarPipeline);
+}
+
+void SpaceObjects::prepareDescriptorSets(RenderTarget** ppPreStageRenderTargets, uint32_t count)
+{
+	pPreStageRenderTarget = ppPreStageRenderTargets[0];
+
+	// Sky
+	{
+		DescriptorData ScParams[8] = {};
+		ScParams[0].pName = "depthTexture";
+		ScParams[0].ppTextures = &pDepthBuffer->pTexture;
+		ScParams[1].pName = "volumetricCloudsTexture";
+		ScParams[1].ppTextures = &pSavePrevTexture;
+#if defined(ORBIS)
+		ScParams[2].pName = "starInstanceBuffer";
+		ScParams[2].ppBuffers = &pParticleInstanceBuffer;
+		updateDescriptorSet(pRenderer, 0, pStarDescriptorSet[0], 3, ScParams);
+#else
+		updateDescriptorSet(pRenderer, 0, pStarDescriptorSet[0], 2, ScParams);
+#endif
+		ScParams[2] = {};
+		ScParams[2].pName = "moonAtlas";
+		ScParams[2].ppTextures = &pMoonTexture;
+		updateDescriptorSet(pRenderer, 0, pSunDescriptorSet[0], 3, ScParams);
+
+		ScParams[0] = {};
+		for (uint32_t i = 0; i < gImageCount; ++i)
+		{
+			ScParams[0].pName = "StarUniform";
+			ScParams[0].ppBuffers = &pStarUniformBuffer[i];
+			updateDescriptorSet(pRenderer, i, pStarDescriptorSet[1], 1, ScParams);
+
+			ScParams[0].pName = "SunUniform";
+			ScParams[0].ppBuffers = &pSunUniformBuffer[i];
+			updateDescriptorSet(pRenderer, i, pSunDescriptorSet[1], 1, ScParams);
+		}
+	}
 }
 
 void SpaceObjects::Initialize(uint InImageCount,

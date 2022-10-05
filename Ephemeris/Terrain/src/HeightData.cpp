@@ -10,8 +10,8 @@
 #include "HeightData.h"
 #include <exception>
 
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IFileSystem.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
+#include "../../../../The-Forge/Common_3/Utilities/Interfaces/IFileSystem.h"
+#include "../../../../The-Forge/Common_3/Utilities/Interfaces/ILog.h"
 
 // Creates data source from the specified raw data file
 HeightData::HeightData(const char* fileName, const char* filePassword, float heightScale) :
@@ -25,8 +25,7 @@ HeightData::HeightData(const char* fileName, const char* filePassword, float hei
 	
 	if (!fsOpenStreamFromPath(RD_TEXTURES, fileName, FM_READ_BINARY, filePassword, &modelFile0FH))
 	{
-		char output[256];
-		sprintf(output, "\"%s\": Image file not found.", fileName);
+        LOGF(LogLevel::eERROR, "Image File not found: %s\n", fileName);
 		return;
 	}
 	
@@ -34,8 +33,7 @@ HeightData::HeightData(const char* fileName, const char* filePassword, float hei
 	uint length = (uint)fsGetStreamFileSize(&modelFile0FH);
 	if (length == 0)
 	{
-		char output[256];
-		sprintf(output, "\"%s\": Image file is empty.", fileName);
+        LOGF(LogLevel::eERROR, "Image File not found: %s\n", fileName);
 		fsCloseStream(&modelFile0FH);
 		return;
 	}

@@ -1,0 +1,12 @@
+
+#frag DepthLinearization.frag
+#include "DepthLinearization.frag.fsl"
+#end
+
+#frag FXAA.frag
+#include "FXAA.frag.fsl"
+#end
+
+#vert Triangular.vert
+#include "Triangular.vert.fsl"
+#end

@@ -9,8 +9,8 @@
 
 //asimp importer
 //stl
-#include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/vector.h"
-#include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/string.h"
+#include "../../../../The-Forge/Common_3/Utilities/ThirdParty/OpenSource/EASTL/vector.h"
+#include "../../../../The-Forge/Common_3/Utilities/ThirdParty/OpenSource/EASTL/string.h"
 
 // Ephemeris BEGIN
 #include "../../Terrain/src/Terrain.h"
@@ -20,32 +20,55 @@
 // Ephemeris END
 
 //Interfaces
-#include "../../../../The-Forge/Common_3/OS/Interfaces/ICameraController.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IApp.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IInput.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IFileSystem.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/ITime.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IProfiler.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IScripting.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IUI.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IFont.h"
+#include "../../../../The-Forge/Common_3/Application/Interfaces/ICameraController.h"
+#include "../../../../The-Forge/Common_3/Application/Interfaces/IApp.h"
+#include "../../../../The-Forge/Common_3/Utilities/Interfaces/ILog.h"
+#include "../../../../The-Forge/Common_3/Application/Interfaces/IInput.h"
+#include "../../../../The-Forge/Common_3/Utilities/Interfaces/IFileSystem.h"
+#include "../../../../The-Forge/Common_3/Utilities/Interfaces/ITime.h"
+#include "../../../../The-Forge/Common_3/Application/Interfaces/IProfiler.h"
+#include "../../../../The-Forge/Common_3/Game/Interfaces/IScripting.h"
+#include "../../../../The-Forge/Common_3/Application/Interfaces/IUI.h"
+#include "../../../../The-Forge/Common_3/Application/Interfaces/IFont.h"
 
 //Renderer
-#include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
-#include "../../../../The-Forge/Common_3/Renderer/IResourceLoader.h"
+#include "../../../../The-Forge/Common_3/Graphics/Interfaces/IGraphics.h"
+#include "../../../../The-Forge/Common_3/Resources/ResourceLoader/Interfaces/IResourceLoader.h"
 
 //Math
-#include "../../../../The-Forge/Common_3/OS/Math/MathTypes.h"
+#include "../../../../The-Forge/Common_3/Utilities/Math/MathTypes.h"
 
 //Memory
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IMemory.h"
+#include "../../../../The-Forge/Common_3/Utilities/Interfaces/IMemory.h"
+
+#define FOREACH_SETTING(X) \
+	X(InsufficientBindlessEntries, 0)
+
+#define GENERATE_ENUM(x,y) x,
+#define GENERATE_STRING(x,y) #x,
+#define GENERATE_STRUCT(x, y) uint32_t m##x = y;
+
+typedef enum ESettings
+{
+	FOREACH_SETTING(GENERATE_ENUM)
+	Count
+} ESettings;
+
+const char* gSettingNames[] =
+{
+	FOREACH_SETTING(GENERATE_STRING)
+};
+
+// Useful for using names directly instead of subscripting an array
+struct ConfigSettings
+{
+	FOREACH_SETTING(GENERATE_STRUCT)
+} gGpuSettings;
 
 const uint32_t      gImageCount = 3;
 
 static bool         gTogglePerformance = true;
 static bool         gToggleFXAA = true;
-static bool         gShowUI = true;
 
 Renderer*           pRenderer = NULL;
 
@@ -87,7 +110,7 @@ Semaphore*          pImageAcquiredSemaphore = NULL;
 Semaphore*          pRenderCompleteSemaphores[gImageCount] = { NULL };
 
 ProfileToken        gGpuProfileToken;
-UIComponent*       pMainGuiWindow = NULL;
+UIComponent*        pMainGuiWindow = NULL;
 
 Buffer*             pTransmittanceBuffer = NULL;
 
@@ -131,10 +154,6 @@ struct FXAAINFO
 
 FXAAINFO gFXAAinfo;
 
-#if defined(TARGET_IOS) || defined(__ANDROID__)
-VirtualJoystickUI*   pVirtualJoystick = NULL;
-#endif
-
 uint32_t			gFrameIndex = 0;
 
 ICameraController*  pCameraController = NULL;
@@ -163,7 +182,7 @@ public:
 
 		// FILE PATHS
 		fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_SHADER_SOURCES, "Shaders");
-		fsSetPathForResourceDir(pSystemFileIO, RM_DEBUG,   RD_SHADER_BINARIES, "CompiledShaders");
+		fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT,   RD_SHADER_BINARIES, "CompiledShaders");
 		fsSetPathForResourceDir(pSystemFileIO, RM_DEBUG,   RD_PIPELINE_CACHE, "PipelineCaches");
 		fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_GPU_CONFIG, "GPUCfg");
 		fsSetPathForResourceDir(pSystemFileIO, RM_CONTENT, RD_TEXTURES, "Textures");
@@ -181,8 +200,14 @@ public:
 		pCameraController = initFpsCameraController(camPos, lookAt);
 		pCameraController->setMotionParameters(cmp);
 
+		ExtendedSettings extendedSettings = {};
+		extendedSettings.numSettings = ESettings::Count;
+		extendedSettings.pSettings = (uint32_t*)&gGpuSettings;
+		extendedSettings.ppSettingNames = gSettingNames;
+
 		RendererDesc settings;
 		memset(&settings, 0, sizeof(settings));
+		settings.pExtendedSettings = &extendedSettings;
 		initRenderer(GetName(), &settings, &pRenderer);
 		//check for init success
 		if (!pRenderer)
@@ -240,6 +265,35 @@ public:
 		cacheDesc.pFileName = pPipelineCacheName;
 		loadPipelineCache(pRenderer, &cacheDesc, &pPipelineCache);
 
+		InputSystemDesc inputDesc = {};
+		inputDesc.pRenderer = pRenderer;
+		inputDesc.pWindow = pWindow;
+		if (!initInputSystem(&inputDesc))
+			return false;
+
+		UIComponentDesc UIComponentDesc = {};
+		float dpiScale[2];
+		getDpiScale(dpiScale);
+
+		UIComponentDesc.mStartPosition = vec2(960.0f / dpiScale[0], 700.0f / dpiScale[1]);
+		UIComponentDesc.mStartSize = vec2(300.0f / dpiScale[0], 250.0f / dpiScale[1]);
+		UIComponentDesc.mFontID = 0;
+		UIComponentDesc.mFontSize = 16.0f;
+		uiCreateComponent("Global Settings", &UIComponentDesc, &pMainGuiWindow);
+
+		if(gGpuSettings.mInsufficientBindlessEntries)
+		{
+			LabelWidget notSupportedLabel;
+			pMainGuiWindow->mInitialWindowRect.x = mSettings.mWidth * 0.5f - pMainGuiWindow->mInitialWindowRect.z * 0.5f;
+			pMainGuiWindow->mInitialWindowRect.y = mSettings.mHeight * 0.5f - pMainGuiWindow->mInitialWindowRect.w * 0.5f;
+			uiSetComponentFlags(pMainGuiWindow, GUI_COMPONENT_FLAGS_ALWAYS_AUTO_RESIZE);
+
+			uiCreateComponentWidget(pMainGuiWindow, "Ephemeris does not run on this device\n Doesn't support enough bindless texture entries", &notSupportedLabel, WIDGET_TYPE_LABEL);
+
+			LOGF(LogLevel::eERROR, "Ephemeris does not run on this device. Doesn't support enough bindless texture entries");
+			return true;
+		}
+
 		// Initialize micro profiler and its UI.
 		ProfilerDesc profiler = {};
 		profiler.pRenderer = pRenderer;
@@ -248,15 +302,6 @@ public:
 		initProfiler(&profiler);
 
 		gGpuProfileToken = addGpuProfiler(pRenderer, pGraphicsQueue, "GpuProfiler");
-
-#if defined(__ANDROID__) || defined(TARGET_IOS)
-		pVirtualJoystick = addVirtualJoystickUI(pRenderer, "circlepad.png");
-		if (!pVirtualJoystick)
-		{
-			LOGERRORF("Could not initialize Virtual Joystick.");
-			return false;
-		}
-#endif
 
 #if defined(METAL)
         {
@@ -267,60 +312,6 @@ public:
             gDefaultTextDrawDesc.mFontSize /= dpiScale[1];
         }
 #endif
-
-
-		SamplerDesc samplerClampDesc = {
-		FILTER_LINEAR, FILTER_LINEAR, MIPMAP_MODE_LINEAR,
-		ADDRESS_MODE_CLAMP_TO_EDGE, ADDRESS_MODE_CLAMP_TO_EDGE, ADDRESS_MODE_CLAMP_TO_EDGE
-		};
-		addSampler(pRenderer, &samplerClampDesc, &pBilinearClampSampler);
-
-		eastl::string shaderPath("");
-		//eastl::string shaderFullPath;
-
-		RootSignatureDesc rootDesc;
-
-		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-		ShaderLoadDesc FXAAShader = {};
-		FXAAShader.mStages[0] = { "Triangular.vert", NULL, 0 };
-		FXAAShader.mStages[1] = { "FXAA.frag", NULL, 0 };
-		addShader(pRenderer, &FXAAShader, &pFXAAShader);
-
-		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-		ShaderLoadDesc depthLinearizationResolveShader = {};
-		depthLinearizationResolveShader.mStages[0] = { "Triangular.vert", NULL, 0 };
-		depthLinearizationResolveShader.mStages[1] = { "DepthLinearization.frag", NULL, 0 };
-		addShader(pRenderer, &depthLinearizationResolveShader, &pLinearDepthResolveShader);
-
-		////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		/*ShaderLoadDesc depthLinearizationShader = {};
-		depthLinearizationShader.mStages[0] = { "depthLinearization.comp", NULL, 0 };
-		addShader(pRenderer, &depthLinearizationShader, &pLinearDepthCompShader);
-
-		rootDesc = {};
-		rootDesc = { 0 };
-		rootDesc.mShaderCount = 1;
-		rootDesc.ppShaders = &pLinearDepthCompShader;
-
-		addRootSignature(pRenderer, &rootDesc, &pLinearDepthCompRootSignature);*/
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////
-		const char* pStaticSamplerNames[] = { "g_LinearClamp" };
-		Sampler* pStaticSamplers[] = { pBilinearClampSampler };
-		Shader*           shaders[] = { pFXAAShader, pLinearDepthResolveShader };
-		rootDesc = {};
-		rootDesc.mShaderCount = 2;
-		rootDesc.ppStaticSamplerNames = pStaticSamplerNames;
-		rootDesc.ppStaticSamplers = pStaticSamplers;
-		rootDesc.ppShaders = shaders;
-		rootDesc.mStaticSamplerCount = 1;
-		addRootSignature(pRenderer, &rootDesc, &pExampleRootSignature);
-		gExampleRootConstantIndex = getDescriptorIndexFromName(pExampleRootSignature, "ExampleRootConstant");
-
-		DescriptorSetDesc setDesc = { pExampleRootSignature, DESCRIPTOR_UPDATE_FREQ_NONE, 2 };
-		addDescriptorSet(pRenderer, &setDesc, &pExampleDescriptorSet);
-
 		// Add TransmittanceBuffer buffer
 		BufferLoadDesc TransBufferDesc = {};
 		TransBufferDesc.mDesc.mDescriptors = DESCRIPTOR_TYPE_RW_BUFFER | DESCRIPTOR_TYPE_BUFFER;
@@ -342,19 +333,16 @@ public:
 
 		gVolumetricClouds.Initialize(gImageCount, pCameraController, pGraphicsQueue, pTransCmdPool, ppTransCmds, pTransitionCompleteFences, pRenderCompleteFences, gGpuProfileToken, pTransmittanceBuffer);
 		gVolumetricClouds.Init(pRenderer, pPipelineCache);
+		gTerrain.pWeatherMap = gVolumetricClouds.GetWeatherMap();
 
 		gSpaceObjects.Initialize(gImageCount, pCameraController, pGraphicsQueue, pTransCmdPool, ppTransCmds, pTransitionCompleteFences, gGpuProfileToken, pTransmittanceBuffer);
 		gSpaceObjects.Init(pRenderer, pPipelineCache);
 
-		UIComponentDesc UIComponentDesc = {};
-		float dpiScale[2];
-		getDpiScale(dpiScale);
-
-		UIComponentDesc.mStartPosition = vec2(960.0f / dpiScale[0], 700.0f / dpiScale[1]);
-		UIComponentDesc.mStartSize = vec2(300.0f / dpiScale[0], 250.0f / dpiScale[1]);
-		UIComponentDesc.mFontID = 0; 
-		UIComponentDesc.mFontSize = 16.0f; 
-		uiCreateComponent("Global Settings", &UIComponentDesc, &pMainGuiWindow);
+		SamplerDesc samplerClampDesc = {
+		FILTER_LINEAR, FILTER_LINEAR, MIPMAP_MODE_LINEAR,
+		ADDRESS_MODE_CLAMP_TO_EDGE, ADDRESS_MODE_CLAMP_TO_EDGE, ADDRESS_MODE_CLAMP_TO_EDGE
+		};
+		addSampler(pRenderer, &samplerClampDesc, &pBilinearClampSampler);
 
 		CheckboxWidget checkbox;
 		checkbox.pData = &gToggleFXAA;
@@ -396,49 +384,42 @@ public:
 		sliderFloat.mStep = 0.01f;
 		luaRegisterWidget(uiCreateComponentWidget(pMainGuiWindow, "Sun Moving Speed", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT));
 
-		InputSystemDesc inputDesc = {};
-		inputDesc.pRenderer = pRenderer;
-		inputDesc.pWindow = pWindow;
-		if (!initInputSystem(&inputDesc))
-			return false;
-		
-		// Microprofiler Actions
-		// #TODO: Remove this once the profiler UI is ported to use our UI system
-		InputActionDesc actionDesc;
-		
 		// App Actions
-		actionDesc = { InputBindings::BUTTON_FULLSCREEN, [](InputActionContext* ctx) { toggleFullscreen(((IApp*)ctx->pUserData)->pWindow); return true; }, this };
+		InputActionDesc actionDesc = {DefaultInputActions::DUMP_PROFILE_DATA, [](InputActionContext* ctx) {  dumpProfileData(((Renderer*)ctx->pUserData)->pName); return true; }, pRenderer};
 		addInputAction(&actionDesc);
-		actionDesc = { InputBindings::BUTTON_EXIT, [](InputActionContext* ctx) { requestShutdown(); return true; } };
+		actionDesc = {DefaultInputActions::TOGGLE_FULLSCREEN, [](InputActionContext* ctx) { toggleFullscreen(((IApp*)ctx->pUserData)->pWindow); return true; }, this};
 		addInputAction(&actionDesc);
-		actionDesc =
+		actionDesc = {DefaultInputActions::EXIT, [](InputActionContext* ctx) { requestShutdown(); return true; }};
+		addInputAction(&actionDesc);
+		InputActionCallback onUIInput = [](InputActionContext* ctx)
 		{
-		  InputBindings::BUTTON_ANY, [](InputActionContext* ctx)
-		  {
-		    bool capture = uiOnButton(ctx->mBinding, ctx->mBool, ctx->pPosition);
-		    setEnableCaptureInput(capture && INPUT_ACTION_PHASE_CANCELED != ctx->mPhase);
-		    return true;
-		  }, this
+			if (ctx->mActionId > UISystemInputActions::UI_ACTION_START_ID_)
+			{
+				uiOnInput(ctx->mActionId, ctx->mBool, ctx->pPosition, &ctx->mFloat2);
+			}
+			return true;
 		};
-		addInputAction(&actionDesc);
+
 		typedef bool(*CameraInputHandler)(InputActionContext* ctx, uint32_t index);
 		static CameraInputHandler onCameraInput = [](InputActionContext* ctx, uint32_t index)
 		{
-		  if (!uiIsFocused() && *ctx->pCaptured)
-		    index ? pCameraController->onRotate(ctx->mFloat2) : pCameraController->onMove(ctx->mFloat2);
-		  return true;
+			if (*(ctx->pCaptured))
+			{
+				float2 delta = uiIsFocused() ? float2(0.f, 0.f) : ctx->mFloat2;
+				index ? pCameraController->onRotate(delta) : pCameraController->onMove(delta);
+			}
+			return true;
 		};
-		actionDesc = { InputBindings::FLOAT_RIGHTSTICK, [](InputActionContext* ctx) { return onCameraInput(ctx, 1); }, NULL, 20.0f, 200.0f, 1.0f };
+		actionDesc = {DefaultInputActions::CAPTURE_INPUT, [](InputActionContext* ctx) {setEnableCaptureInput(!uiIsFocused() && INPUT_ACTION_PHASE_CANCELED != ctx->mPhase);	return true; }, NULL};
 		addInputAction(&actionDesc);
-		actionDesc = { InputBindings::FLOAT_LEFTSTICK, [](InputActionContext* ctx) { return onCameraInput(ctx, 0); }, NULL, 20.0f, 200.0f, 1.0f };
+		actionDesc = {DefaultInputActions::ROTATE_CAMERA, [](InputActionContext* ctx) { return onCameraInput(ctx, 1); }, NULL};
 		addInputAction(&actionDesc);
-		actionDesc = { InputBindings::BUTTON_NORTH, [](InputActionContext* ctx) { pCameraController->resetView(); return true; } };
+		actionDesc = {DefaultInputActions::TRANSLATE_CAMERA, [](InputActionContext* ctx) { return onCameraInput(ctx, 0); }, NULL};
 		addInputAction(&actionDesc);
-		
-		actionDesc = { InputBindings::BUTTON_L3, [](InputActionContext* ctx) { gShowUI = !gShowUI; return true; } };
+		actionDesc = {DefaultInputActions::RESET_CAMERA, [](InputActionContext* ctx) { if (!uiWantTextInput()) pCameraController->resetView(); return true; }};
 		addInputAction(&actionDesc);
-		actionDesc = { InputBindings::BUTTON_R3, [](InputActionContext* ctx) { gTogglePerformance = !gTogglePerformance; return true; } };
-		addInputAction(&actionDesc);
+		GlobalInputActionDesc globalInputActionDesc = {GlobalInputActionDesc::ANY_BUTTON_ACTION, onUIInput, this};
+		setGlobalInputAction(&globalInputActionDesc);
 
 		gFrameIndex = 0;
 
@@ -452,34 +433,21 @@ public:
 
 		gFrameIndex = 0;
 		gPrevFrameIndex = 0;
+		if(!gGpuSettings.mInsufficientBindlessEntries)
+		{
+			gSpaceObjects.Exit();
+			gVolumetricClouds.Exit();
+			gSky.Exit();
+			gTerrain.Exit();
+			exitProfiler();
 
-		removeDescriptorSet(pRenderer, pExampleDescriptorSet);
-
-#if defined(TARGET_IOS) || defined(__ANDROID__)
-		removeVirtualJoystickUI(pVirtualJoystick);
-#endif
-
-		gSpaceObjects.Exit();
-		gVolumetricClouds.Exit();
-		gSky.Exit();
-		gTerrain.Exit();
-
-		exitProfiler();
+			removeResource(pTransmittanceBuffer);
+			removeSampler(pRenderer, pBilinearClampSampler);
+		}
 
 		exitUserInterface();
 
-		exitFontSystem(); 
-
-		removeResource(pTransmittanceBuffer);
-
-		removeSampler(pRenderer, pBilinearClampSampler);
-
-		removeShader(pRenderer, pFXAAShader);
-		//removeShader(pRenderer, pLinearDepthCompShader);
-		removeShader(pRenderer, pLinearDepthResolveShader);
-
-		//removeRootSignature(pRenderer, pLinearDepthCompRootSignature);
-		removeRootSignature(pRenderer, pExampleRootSignature);
+		exitFontSystem();
 
 		removeFence(pRenderer, pTransitionCompleteFences);
 
@@ -512,157 +480,115 @@ public:
 		pRenderer = NULL; 
 	}
 
-	bool Load()
+	bool Load(ReloadDesc* pReloadDesc)
 	{
-		if (!addSwapChain())
-			return false;
-
-		if (!addSceneRenderTarget())
-			return false;
-
-		if (!addDepthBuffer())
-			return false;
-
-		RenderTarget* ppPipelineRenderTargets[] = {
-			pSwapChain->ppRenderTargets[0],
-			pDepthBuffer
-		};
-
-		if (!addFontSystemPipelines(ppPipelineRenderTargets, 2, NULL))
-			return false;
-
-		if (!addUserInterfacePipelines(ppPipelineRenderTargets[0]))
-			return false;
-
-#if defined(TARGET_IOS) || defined(__ANDROID__)
-		if (!loadVirtualJoystickUI(pVirtualJoystick, pSwapChain->ppRenderTargets[0], pDepthBuffer->mFormat))
-			return false;
-#endif
-
-		gTerrain.pWeatherMap = gVolumetricClouds.GetWeatherMap();
-		gTerrain.InitializeWithLoad(pDepthBuffer);
-		gTerrain.Load(mSettings.mWidth, mSettings.mHeight);
-
-		gSky.InitializeWithLoad(pDepthBuffer, pLinearDepthBuffer);
-		gSky.Load(&gTerrain.pTerrainRT);
-
-		gVolumetricClouds.InitializeWithLoad(pLinearDepthBuffer, gSky.pSkyRenderTarget, pDepthBuffer);
-		gVolumetricClouds.Load(&gSky.pSkyRenderTarget);
-
-		gSpaceObjects.InitializeWithLoad(pDepthBuffer, pLinearDepthBuffer, gVolumetricClouds.pSavePrevTexture,
-			gSky.GetParticleVertexBuffer(), gSky.GetParticleInstanceBuffer(), gSky.GetParticleCount(),
-			sizeof(float) * 6, sizeof(ParticleData));
-		gSpaceObjects.Load(&gSky.pSkyRenderTarget);
-
-		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		RasterizerStateDesc rasterizerStateDesc = {};
-		rasterizerStateDesc.mCullMode = CULL_MODE_NONE;
-
+		if (pReloadDesc->mType & RELOAD_TYPE_SHADER && !gGpuSettings.mInsufficientBindlessEntries)
 		{
-			PipelineDesc desc = {};
-			desc.pCache = pPipelineCache;
-			desc.mType = PIPELINE_TYPE_GRAPHICS;
-			GraphicsPipelineDesc& pipelineSettings = desc.mGraphicsDesc;
-			pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
-			pipelineSettings.mRenderTargetCount = 1;
-			pipelineSettings.pDepthState = NULL;
-			pipelineSettings.pBlendState = NULL;
-			pipelineSettings.pColorFormats = &pSwapChain->ppRenderTargets[0]->mFormat;
-			pipelineSettings.mSampleCount = pSwapChain->ppRenderTargets[0]->mSampleCount;
-			pipelineSettings.mSampleQuality = pSwapChain->ppRenderTargets[0]->mSampleQuality;
-			pipelineSettings.pRootSignature = pExampleRootSignature;
-			pipelineSettings.pRasterizerState = &rasterizerStateDesc;
-			pipelineSettings.pShaderProgram = pFXAAShader;
-			addPipeline(pRenderer, &desc, &pFXAAPipeline);
+			addShaders();
+			addRootSignatures();
+			addDescriptorSets();
 		}
 
-		//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-		PipelineDesc LinearDepthResolvePipelineDesc = {};
-		LinearDepthResolvePipelineDesc.pCache = pPipelineCache;
+		if (pReloadDesc->mType & (RELOAD_TYPE_RESIZE | RELOAD_TYPE_RENDERTARGET))
 		{
-			LinearDepthResolvePipelineDesc.mType = PIPELINE_TYPE_GRAPHICS;
-			GraphicsPipelineDesc &pipelineSettings = LinearDepthResolvePipelineDesc.mGraphicsDesc;
+			//set frame index to 0
+			gFrameIndex = 0;
 
-			pipelineSettings = { 0 };
-			pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
-			pipelineSettings.mRenderTargetCount = 1;
-			pipelineSettings.pDepthState = NULL;
-			pipelineSettings.pColorFormats = &pLinearDepthBuffer->mFormat;
-			pipelineSettings.mSampleCount = pLinearDepthBuffer->mSampleCount;
-			pipelineSettings.mSampleQuality = pLinearDepthBuffer->mSampleQuality;
-			pipelineSettings.pRootSignature = pExampleRootSignature;
-			pipelineSettings.pShaderProgram = pLinearDepthResolveShader;
-			pipelineSettings.pRasterizerState = &rasterizerStateDesc;
+			if (!addSwapChain())
+				return false;
 
-			addPipeline(pRenderer, &LinearDepthResolvePipelineDesc, &pLinearDepthResolvePipeline);
+			// if device isn't supported then there's no need to load everythung
+			if(!gGpuSettings.mInsufficientBindlessEntries)
+			{
+				if (!addDepthBuffer())
+					return false;
+
+				if (pReloadDesc->mType & RELOAD_TYPE_RESIZE)
+				{
+					gTerrain.Load(mSettings.mWidth, mSettings.mHeight);
+					gSky.Load(mSettings.mWidth, mSettings.mHeight);
+					gVolumetricClouds.Load(mSettings.mWidth, mSettings.mHeight);
+					gSpaceObjects.Load(mSettings.mWidth, mSettings.mHeight);
+				}
+
+				gTerrain.InitializeWithLoad(pDepthBuffer);
+				gSky.InitializeWithLoad(pDepthBuffer, pLinearDepthBuffer);
+				gVolumetricClouds.InitializeWithLoad(pLinearDepthBuffer, pDepthBuffer);
+				gSpaceObjects.InitializeWithLoad(pDepthBuffer, pLinearDepthBuffer, gVolumetricClouds.pSavePrevTexture,
+				gSky.GetParticleVertexBuffer(), gSky.GetParticleInstanceBuffer(), gSky.GetParticleCount(),
+				sizeof(float) * 6, sizeof(ParticleData));
+
+				addRenderTargets();
+			}
+
 		}
 
-		///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-		/*PipelineDesc LinearDepthCompPipelineDesc = {};
-		LinearDepthCompPipelineDesc.pCache = pPipelineCache;
+		if (pReloadDesc->mType & (RELOAD_TYPE_SHADER | RELOAD_TYPE_RENDERTARGET) && !gGpuSettings.mInsufficientBindlessEntries)
 		{
-			LinearDepthCompPipelineDesc.mType = PIPELINE_TYPE_COMPUTE;
-			ComputePipelineDesc &comPipelineSettings = LinearDepthCompPipelineDesc.mComputeDesc;
-
-			comPipelineSettings = { 0 };
-			comPipelineSettings.pShaderProgram = pLinearDepthCompShader;
-			comPipelineSettings.pRootSignature = pLinearDepthCompRootSignature;
-			addPipeline(pRenderer, &LinearDepthCompPipelineDesc, &pLinearDepthCompPipeline);
-		}*/
+			addPipelines();
+		}
 
 		waitForAllResourceLoads();
 
-		DescriptorData LinearDepthpparams[1] = {};
-		LinearDepthpparams[0].pName = "SrcTexture";
-		LinearDepthpparams[0].ppTextures = &pDepthBuffer->pTexture;
-		updateDescriptorSet(pRenderer, 0, pExampleDescriptorSet, 1, LinearDepthpparams);
+		if(!gGpuSettings.mInsufficientBindlessEntries)
+			prepareDescriptorSets();
 
-		DescriptorData Presentpparams[1] = {};
-		Presentpparams[0].pName = "SrcTexture";
-		Presentpparams[0].ppTextures = &(gSky.pSkyRenderTarget->pTexture);
-		updateDescriptorSet(pRenderer, 1, pExampleDescriptorSet, 1, Presentpparams);
+		UserInterfaceLoadDesc uiLoad = {};
+		uiLoad.mColorFormat = pSwapChain->ppRenderTargets[0]->mFormat;
+		uiLoad.mHeight = mSettings.mHeight;
+		uiLoad.mWidth = mSettings.mWidth;
+		uiLoad.mLoadType = pReloadDesc->mType;
+		loadUserInterface(&uiLoad);
 
-/*
-		DescriptorData FXAApparams[1] = {};
-		FXAApparams[0].pName = "SrcTexture";
-		FXAApparams[0].ppTextures = &(gSky.pSkyRenderTarget->pTexture);
-		updateDescriptorSet(pRenderer, 2, pExampleDescriptorSet, 1, FXAApparams);
-*/
+		FontSystemLoadDesc fontLoad = {};
+		fontLoad.mColorFormat = pSwapChain->ppRenderTargets[0]->mFormat;
+		fontLoad.mHeight = mSettings.mHeight;
+		fontLoad.mWidth = mSettings.mWidth;
+		fontLoad.mLoadType = pReloadDesc->mType;
+		loadFontSystem(&fontLoad);
+
 		return true;
 	}
 
-	void Unload()
+	void Unload(ReloadDesc* pReloadDesc)
 	{
 		waitQueueIdle(pGraphicsQueue);
 
-		removeUserInterfacePipelines();
+		unloadFontSystem(pReloadDesc->mType);
+		unloadUserInterface(pReloadDesc->mType);
 
-		removeFontSystemPipelines(); 
+		if (pReloadDesc->mType & (RELOAD_TYPE_SHADER | RELOAD_TYPE_RENDERTARGET) && !gGpuSettings.mInsufficientBindlessEntries)
+		{
+			removePipelines();
+		}
 
-#if defined(TARGET_IOS) || defined(__ANDROID__)
-		unloadVirtualJoystickUI(pVirtualJoystick);
-#endif
-		gTerrain.Unload();
-		gSky.Unload();
-		gVolumetricClouds.Unload();
-		gSpaceObjects.Unload();
+		if (pReloadDesc->mType & (RELOAD_TYPE_RESIZE | RELOAD_TYPE_RENDERTARGET))
+		{
+			removeSwapChain(pRenderer, pSwapChain);
 
-		removePipeline(pRenderer, pLinearDepthResolvePipeline);
-		//removePipeline(pRenderer, pLinearDepthCompPipeline);
-		removePipeline(pRenderer, pFXAAPipeline);
-		removeRenderTarget(pRenderer, pDepthBuffer);
-		removeRenderTarget(pRenderer, pLinearDepthBuffer);
-		removeRenderTarget(pRenderer, pSkydomeResultRT);
+			if(!gGpuSettings.mInsufficientBindlessEntries)
+			{
+				removeRenderTargets();
+				gSky.Unload();
+				gVolumetricClouds.Unload();
+				gSpaceObjects.Unload();
+			}
+		}
 
-		removeSwapChain(pRenderer, pSwapChain);
+		if (pReloadDesc->mType & RELOAD_TYPE_SHADER && !gGpuSettings.mInsufficientBindlessEntries)
+		{
+			removeDescriptorSets();
+			removeRootSignatures();
+			removeShaders();
+		}
 	}
 
 	void Update(float deltaTime)
 	{
-		updateInputSystem(mSettings.mWidth, mSettings.mHeight);
+		updateInputSystem(deltaTime, mSettings.mWidth, mSettings.mHeight);
 
+		if(gGpuSettings.mInsufficientBindlessEntries)
+			return;
 		/************************************************************************/
 		// Input
 		/************************************************************************/
@@ -750,6 +676,37 @@ public:
 
 		Cmd* cmd = pGraphicsCmds[gFrameIndex];
 		beginCmd(cmd);
+		//Draw user interface for unsupported device.
+		if(gGpuSettings.mInsufficientBindlessEntries)
+		{
+			LoadActionsDesc loadActions = {};
+			loadActions.mLoadActionsColor[0] = LOAD_ACTION_CLEAR;
+			loadActions.mClearColorValues[0] = {{0.15f,0.15f,0.15f,1.0f}};
+			cmdBindRenderTargets(cmd, 1, &pSwapChain->ppRenderTargets[gFrameIndex], NULL, &loadActions, NULL, NULL, -1, -1);
+			
+			cmdDrawUserInterface(cmd);
+			endCmd(cmd);
+
+			// Submit all the work to the GPU and present
+			QueueSubmitDesc submitDesc = {};
+			submitDesc.mCmdCount = 1;
+			submitDesc.mSignalSemaphoreCount = 1;
+			submitDesc.ppCmds = &cmd;
+			submitDesc.ppSignalSemaphores = &pRenderCompleteSemaphores[gFrameIndex];
+			submitDesc.pSignalFence = pRenderCompleteFences[gFrameIndex];
+			submitDesc.mWaitSemaphoreCount = 1;
+			submitDesc.ppWaitSemaphores = &pImageAcquiredSemaphore;
+
+			queueSubmit(pGraphicsQueue, &submitDesc);
+			QueuePresentDesc presentDesc = {};
+			presentDesc.mIndex = gFrameIndex;
+			presentDesc.mWaitSemaphoreCount = 1;
+			presentDesc.ppWaitSemaphores = &pRenderCompleteSemaphores[gFrameIndex];
+			presentDesc.pSwapChain = pSwapChain;
+			presentDesc.mSubmitDone = true;
+			queuePresent(pGraphicsQueue, &presentDesc);
+			return;
+		}
 
 		cmdBeginGpuFrameProfile(cmd, gGpuProfileToken);
 
@@ -781,7 +738,13 @@ public:
 
 			cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriersLinearDepth);
 
-			cmdBindRenderTargets(cmd, 1, &pLinearDepthBuffer, NULL, NULL, NULL, NULL, -1, -1);
+			LoadActionsDesc loadActions = {};
+			loadActions.mLoadActionsColor[0] = LOAD_ACTION_CLEAR;
+			loadActions.mClearColorValues[0].r = 0.0f;
+			loadActions.mClearColorValues[0].g = 0.0f;
+			loadActions.mClearColorValues[0].b = 0.0f;
+			loadActions.mClearColorValues[0].a = 0.0f;
+			cmdBindRenderTargets(cmd, 1, &pLinearDepthBuffer, NULL, &loadActions, NULL, NULL, -1, -1);
 			cmdSetViewport(cmd, 0.0f, 0.0f, (float)pLinearDepthBuffer->mWidth, (float)pLinearDepthBuffer->mHeight, 0.0f, 1.0f);
 			cmdSetScissor(cmd, 0, 0, pLinearDepthBuffer->mWidth, pLinearDepthBuffer->mHeight);
 
@@ -857,21 +820,19 @@ public:
 			cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
 		}
 
-		if (gShowUI)
+		// UI
 		{
 			cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw UI");
 
 			pRenderTarget = pSwapChain->ppRenderTargets[gFrameIndex];
 
-			cmdBindRenderTargets(cmd, 1, &pRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
+			LoadActionsDesc loadActions = {};
+			loadActions.mLoadActionsColor[0] = LOAD_ACTION_LOAD;
+			cmdBindRenderTargets(cmd, 1, &pRenderTarget, NULL, &loadActions, NULL, NULL, -1, -1);
 			cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 0.0f, 1.0f);
 			cmdSetScissor(cmd, 0, 0, pRenderTarget->mWidth, pRenderTarget->mHeight);
 
 			getHiresTimerUSec(&gTimer, true);
-
-#if defined(TARGET_IOS) || defined(__ANDROID__)
-			drawVirtualJoystickUI(pVirtualJoystick, cmd, pCameraController, { 1.0f, 1.0f, 1.0f, 1.0f });
-#endif
 
 			if (gTogglePerformance)
 			{
@@ -923,16 +884,22 @@ public:
 
 			gSpaceObjects.Unload();
 			gVolumetricClouds.Unload();
+			gVolumetricClouds.removeRenderTargets();
 
-			gVolumetricClouds.InitializeWithLoad(pLinearDepthBuffer, gSky.pSkyRenderTarget, pDepthBuffer);
-			gVolumetricClouds.Load(&gSky.pSkyRenderTarget);
+			gVolumetricClouds.InitializeWithLoad(pLinearDepthBuffer, pDepthBuffer);
+			gVolumetricClouds.Load(mSettings.mWidth, mSettings.mHeight);
+			gVolumetricClouds.addRenderTargets();
 
 			gSpaceObjects.InitializeWithLoad(pDepthBuffer, pLinearDepthBuffer, gVolumetricClouds.pSavePrevTexture,
 				gSky.GetParticleVertexBuffer(), gSky.GetParticleInstanceBuffer(), gSky.GetParticleCount(),
 				sizeof(float) * 6, sizeof(ParticleData));
-			gSpaceObjects.Load(&gSky.pSkyRenderTarget);
+			gSpaceObjects.Load(mSettings.mWidth, mSettings.mHeight);
 
 			gTerrain.pWeatherMap = gVolumetricClouds.GetWeatherMap();
+
+			RenderTarget* ppVolumetricCloudsUsedRTs[2] = { gSky.pSkyRenderTarget, gSky.pSkyRenderTarget };
+			gVolumetricClouds.prepareDescriptorSets(ppVolumetricCloudsUsedRTs, 2);
+			gSpaceObjects.prepareDescriptorSets(&gSky.pSkyRenderTarget);
 		}
 	}
 
@@ -955,6 +922,202 @@ public:
 		::addSwapChain(pRenderer, &swapChainDesc, &pSwapChain);
 
 		return pSwapChain != NULL;
+	}
+
+	void addDescriptorSets()
+	{
+		gTerrain.addDescriptorSets();
+		gSky.addDescriptorSets();
+		gVolumetricClouds.addDescriptorSets();
+		gSpaceObjects.addDescriptorSets();
+
+		DescriptorSetDesc setDesc = { pExampleRootSignature, DESCRIPTOR_UPDATE_FREQ_NONE, 2 };
+		addDescriptorSet(pRenderer, &setDesc, &pExampleDescriptorSet);
+	}
+
+	void removeDescriptorSets()
+	{
+		gSpaceObjects.removeDescriptorSets();
+		gVolumetricClouds.removeDescriptorSets();
+		gSky.removeDescriptorSets();
+		gTerrain.removeDescriptorSets();
+
+		removeDescriptorSet(pRenderer, pExampleDescriptorSet);
+	}
+
+	void addRootSignatures()
+	{
+		gTerrain.addRootSignatures();
+		gSky.addRootSignatures();
+		gVolumetricClouds.addRootSignatures();
+		gSpaceObjects.addRootSignatures();
+
+		RootSignatureDesc rootDesc;
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		/*rootDesc = {};
+		rootDesc = { 0 };
+		rootDesc.mShaderCount = 1;
+		rootDesc.ppShaders = &pLinearDepthCompShader;
+		
+		addRootSignature(pRenderer, &rootDesc, &pLinearDepthCompRootSignature);*/
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		const char* pStaticSamplerNames[] = { "g_LinearClamp" };
+		Sampler* pStaticSamplers[] = { pBilinearClampSampler };
+		Shader*           shaders[] = { pFXAAShader, pLinearDepthResolveShader };
+		rootDesc = {};
+		rootDesc.mShaderCount = 2;
+		rootDesc.ppStaticSamplerNames = pStaticSamplerNames;
+		rootDesc.ppStaticSamplers = pStaticSamplers;
+		rootDesc.ppShaders = shaders;
+		rootDesc.mStaticSamplerCount = 1;
+		addRootSignature(pRenderer, &rootDesc, &pExampleRootSignature);
+		gExampleRootConstantIndex = getDescriptorIndexFromName(pExampleRootSignature, "ExampleRootConstant");
+	}
+
+	void removeRootSignatures()
+	{
+		gSpaceObjects.removeRootSignatures();
+		gVolumetricClouds.removeRootSignatures();
+		gSky.removeRootSignatures();
+		gTerrain.removeRootSignatures();
+
+		//removeRootSignature(pRenderer, pLinearDepthCompRootSignature);
+		removeRootSignature(pRenderer, pExampleRootSignature);
+	}
+
+	void addShaders()
+	{
+		gTerrain.addShaders();
+		gSky.addShaders();
+		gVolumetricClouds.addShaders();
+		gSpaceObjects.addShaders();
+
+		ShaderLoadDesc FXAAShader = {};
+		FXAAShader.mStages[0] = { "Triangular.vert", NULL, 0 };
+		FXAAShader.mStages[1] = { "FXAA.frag", NULL, 0 };
+		addShader(pRenderer, &FXAAShader, &pFXAAShader);
+
+		ShaderLoadDesc depthLinearizationResolveShader = {};
+		depthLinearizationResolveShader.mStages[0] = { "Triangular.vert", NULL, 0 };
+		depthLinearizationResolveShader.mStages[1] = { "DepthLinearization.frag", NULL, 0 };
+		addShader(pRenderer, &depthLinearizationResolveShader, &pLinearDepthResolveShader);
+
+		/*ShaderLoadDesc depthLinearizationShader = {};
+		depthLinearizationShader.mStages[0] = { "depthLinearization.comp", NULL, 0 };
+		addShader(pRenderer, &depthLinearizationShader, &pLinearDepthCompShader);
+		*/
+	}
+
+	void removeShaders()
+	{
+		gSpaceObjects.removeShaders();
+		gVolumetricClouds.removeShaders();
+		gSky.removeShaders();
+		gTerrain.removeShaders();
+
+		removeShader(pRenderer, pFXAAShader);
+		//removeShader(pRenderer, pLinearDepthCompShader);
+		removeShader(pRenderer, pLinearDepthResolveShader);
+	}
+
+	void addPipelines()
+	{
+		gTerrain.addPipelines();
+		gSky.addPipelines();
+		gVolumetricClouds.addPipelines();
+		gSpaceObjects.addPipelines();
+
+		RasterizerStateDesc rasterizerStateDesc = {};
+		rasterizerStateDesc.mCullMode = CULL_MODE_NONE;
+
+		{
+			PipelineDesc desc = {};
+			desc.pCache = pPipelineCache;
+			desc.mType = PIPELINE_TYPE_GRAPHICS;
+			GraphicsPipelineDesc& pipelineSettings = desc.mGraphicsDesc;
+			pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
+			pipelineSettings.mRenderTargetCount = 1;
+			pipelineSettings.pDepthState = NULL;
+			pipelineSettings.pBlendState = NULL;
+			pipelineSettings.pColorFormats = &pSwapChain->ppRenderTargets[0]->mFormat;
+			pipelineSettings.mSampleCount = pSwapChain->ppRenderTargets[0]->mSampleCount;
+			pipelineSettings.mSampleQuality = pSwapChain->ppRenderTargets[0]->mSampleQuality;
+			pipelineSettings.pRootSignature = pExampleRootSignature;
+			pipelineSettings.pRasterizerState = &rasterizerStateDesc;
+			pipelineSettings.pShaderProgram = pFXAAShader;
+			addPipeline(pRenderer, &desc, &pFXAAPipeline);
+		}
+
+		PipelineDesc LinearDepthResolvePipelineDesc = {};
+		LinearDepthResolvePipelineDesc.pCache = pPipelineCache;
+		{
+			LinearDepthResolvePipelineDesc.mType = PIPELINE_TYPE_GRAPHICS;
+			GraphicsPipelineDesc &pipelineSettings = LinearDepthResolvePipelineDesc.mGraphicsDesc;
+
+			pipelineSettings = { 0 };
+			pipelineSettings.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
+			pipelineSettings.mRenderTargetCount = 1;
+			pipelineSettings.pDepthState = NULL;
+			pipelineSettings.pColorFormats = &pLinearDepthBuffer->mFormat;
+			pipelineSettings.mSampleCount = pLinearDepthBuffer->mSampleCount;
+			pipelineSettings.mSampleQuality = pLinearDepthBuffer->mSampleQuality;
+			pipelineSettings.pRootSignature = pExampleRootSignature;
+			pipelineSettings.pShaderProgram = pLinearDepthResolveShader;
+			pipelineSettings.pRasterizerState = &rasterizerStateDesc;
+
+			addPipeline(pRenderer, &LinearDepthResolvePipelineDesc, &pLinearDepthResolvePipeline);
+		}
+
+		/*PipelineDesc LinearDepthCompPipelineDesc = {};
+		LinearDepthCompPipelineDesc.pCache = pPipelineCache;
+		{
+			LinearDepthCompPipelineDesc.mType = PIPELINE_TYPE_COMPUTE;
+			ComputePipelineDesc &comPipelineSettings = LinearDepthCompPipelineDesc.mComputeDesc;
+
+			comPipelineSettings = { 0 };
+			comPipelineSettings.pShaderProgram = pLinearDepthCompShader;
+			comPipelineSettings.pRootSignature = pLinearDepthCompRootSignature;
+			addPipeline(pRenderer, &LinearDepthCompPipelineDesc, &pLinearDepthCompPipeline);
+		}*/
+	}
+
+	void removePipelines()
+	{
+		gSpaceObjects.removePipelines();
+		gVolumetricClouds.removePipelines();
+		gSky.removePipelines();
+		gTerrain.removePipelines();
+
+		removePipeline(pRenderer, pLinearDepthResolvePipeline);
+		//removePipeline(pRenderer, pLinearDepthCompPipeline);
+		removePipeline(pRenderer, pFXAAPipeline);
+	}
+
+	void prepareDescriptorSets()
+	{
+		gTerrain.prepareDescriptorSets();
+		gSky.prepareDescriptorSets(&gTerrain.pTerrainRT);
+		RenderTarget* ppVolumetricCloudsUsedRTs[2] = { gSky.pSkyRenderTarget, gSky.pSkyRenderTarget };
+		gVolumetricClouds.prepareDescriptorSets(ppVolumetricCloudsUsedRTs, 2);
+		gSpaceObjects.prepareDescriptorSets(&gSky.pSkyRenderTarget);
+
+		DescriptorData LinearDepthpparams[1] = {};
+		LinearDepthpparams[0].pName = "SrcTexture";
+		LinearDepthpparams[0].ppTextures = &pDepthBuffer->pTexture;
+		updateDescriptorSet(pRenderer, 0, pExampleDescriptorSet, 1, LinearDepthpparams);
+
+		DescriptorData Presentpparams[1] = {};
+		Presentpparams[0].pName = "SrcTexture";
+		Presentpparams[0].ppTextures = &(gSky.pSkyRenderTarget->pTexture);
+		updateDescriptorSet(pRenderer, 1, pExampleDescriptorSet, 1, Presentpparams);
+
+		/*
+				DescriptorData FXAApparams[1] = {};
+				FXAApparams[0].pName = "SrcTexture";
+				FXAApparams[0].ppTextures = &(gSky.pSkyRenderTarget->pTexture);
+				updateDescriptorSet(pRenderer, 2, pExampleDescriptorSet, 1, FXAApparams);
+		*/
 	}
 
 	bool addDepthBuffer()
@@ -984,8 +1147,12 @@ public:
 		return pDepthBuffer != NULL && pLinearDepthBuffer != NULL;
 	}
 
-	bool addSceneRenderTarget()
+	void addRenderTargets()
 	{
+		gTerrain.addRenderTargets();
+		gSky.addRenderTargets();
+		gVolumetricClouds.addRenderTargets();
+
 		RenderTargetDesc resultRT = {};
 		resultRT.mArraySize = 1;
 		resultRT.mDepth = 1;
@@ -999,8 +1166,17 @@ public:
 		resultRT.mHeight = mSettings.mHeight;
 
 		addRenderTarget(pRenderer, &resultRT, &pSkydomeResultRT);
+	}
 
-		return pSkydomeResultRT != NULL;
+	void removeRenderTargets()
+	{
+		gVolumetricClouds.removeRenderTargets();
+		gSky.removeRenderTargets();
+		gTerrain.removeRenderTargets();
+
+		removeRenderTarget(pRenderer, pDepthBuffer);
+		removeRenderTarget(pRenderer, pLinearDepthBuffer);
+		removeRenderTarget(pRenderer, pSkydomeResultRT);
 	}
 
 	void RecenterCameraView(float maxDistance, const vec3& lookAt = vec3(0))

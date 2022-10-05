@@ -9,9 +9,9 @@
 
 #pragma once
 
-#include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
-#include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/vector.h"
-#include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/map.h"
+#include "../../../../The-Forge/Common_3/Graphics/Interfaces/IGraphics.h"
+#include "../../../../The-Forge/Common_3/Utilities/ThirdParty/OpenSource/EASTL/vector.h"
+#include "../../../../The-Forge/Common_3/Utilities/ThirdParty/OpenSource/EASTL/map.h"
 
 typedef struct TriangleVertex
 {

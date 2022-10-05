@@ -9,10 +9,10 @@
 
 #include "Terrain.h"
 
-#include "../../../../The-Forge/Common_3/Renderer/IResourceLoader.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IFileSystem.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/ILog.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IMemory.h"
+#include "../../../../The-Forge/Common_3/Resources/ResourceLoader/Interfaces/IResourceLoader.h"
+#include "../../../../The-Forge/Common_3/Utilities/Interfaces/IFileSystem.h"
+#include "../../../../The-Forge/Common_3/Utilities/Interfaces/ILog.h"
+#include "../../../../The-Forge/Common_3/Utilities/Interfaces/IMemory.h"
 
 char TextureTileFilePaths[5][255] = {
   "Terrain/Tiles/grass_DM",
@@ -160,58 +160,6 @@ bool Terrain::Init(Renderer* renderer, PipelineCache* pCache)
 	};
 	addSampler(pRenderer, &samplerClampDesc, &pLinearBorderSampler);
 
-	const char* pStaticSamplerNames[] = { "g_LinearMirror", "g_LinearWrap" };
-	Sampler* pStaticSamplers[] = { pLinearMirrorSampler, pLinearWrapSampler };
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	ShaderLoadDesc terrainNormalShader = {};
-	terrainNormalShader.mStages[0] = { "GenNormalMap.vert", NULL, 0, NULL };
-	terrainNormalShader.mStages[1] = { "GenNormalMap.frag", NULL, 0, NULL };
-	addShader(pRenderer, &terrainNormalShader, &pGenTerrainNormalShader);
-
-	RootSignatureDesc rootDesc = {};
-	rootDesc.mShaderCount = 1;
-	rootDesc.ppShaders = &pGenTerrainNormalShader;
-	rootDesc.mStaticSamplerCount = 2;
-	rootDesc.ppStaticSamplerNames = pStaticSamplerNames;
-	rootDesc.ppStaticSamplers = pStaticSamplers;
-	addRootSignature(pRenderer, &rootDesc, &pGenTerrainNormalRootSignature);
-	gTerrainRootConstantIndex = getDescriptorIndexFromName(pGenTerrainNormalRootSignature, "cbRootConstant");
-
-	////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	ShaderLoadDesc terrainShader = {};
-	terrainShader.mStages[0] = { "Terrain.vert", NULL, 0, NULL};
-	terrainShader.mStages[1] = { "Terrain.frag", NULL, 0, NULL};
-	addShader(pRenderer, &terrainShader, &pTerrainShader);
-
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	ShaderLoadDesc terrainRenderShader = {};
-	terrainRenderShader.mStages[0] = { "RenderTerrain.vert", NULL, 0, NULL };
-	terrainRenderShader.mStages[1] = { "RenderTerrain.frag", NULL, 0, NULL };
-	addShader(pRenderer, &terrainRenderShader, &pRenderTerrainShader);
-
-	///////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	ShaderLoadDesc terrainlightingShader = {};
-	terrainlightingShader.mStages[0] = { "LightingTerrain.vert", NULL, 0, NULL };
-	terrainlightingShader.mStages[1] = { "LightingTerrain.frag", NULL, 0, NULL };
-	addShader(pRenderer, &terrainlightingShader, &pLightingTerrainShader);
-
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	Shader*           shaders[] = { pTerrainShader, pRenderTerrainShader, pLightingTerrainShader };
-	rootDesc = {};
-	rootDesc.mShaderCount = 3;
-	rootDesc.ppShaders = shaders;
-	rootDesc.mStaticSamplerCount = 2;
-	rootDesc.ppStaticSamplerNames = pStaticSamplerNames;
-	rootDesc.ppStaticSamplers = pStaticSamplers;
-	rootDesc.mMaxBindlessTextures = 5;
-	addRootSignature(pRenderer, &rootDesc, &pTerrainRootSignature);
-
 	SyncToken token = {};
 
 #if USE_PROCEDUAL_TERRAIN
@@ -301,34 +249,15 @@ bool Terrain::Init(Renderer* renderer, PipelineCache* pCache)
 
 	GenerateTerrainFromHeightmap(HEIGHT_SCALE, EARTH_RADIUS);
 
-	DescriptorSetDesc setDesc = { pGenTerrainNormalRootSignature, DESCRIPTOR_UPDATE_FREQ_NONE, 1 };
-	addDescriptorSet(pRenderer, &setDesc, &pGenTerrainNormalDescriptorSet);
-	setDesc = { pTerrainRootSignature, DESCRIPTOR_UPDATE_FREQ_NONE, 2 };
-	addDescriptorSet(pRenderer, &setDesc, &pTerrainDescriptorSet[0]);
-	setDesc = { pTerrainRootSignature, DESCRIPTOR_UPDATE_FREQ_PER_FRAME, gImageCount };
-	addDescriptorSet(pRenderer, &setDesc, &pTerrainDescriptorSet[1]);
-
 	return true;
 }
 
 
 void Terrain::Exit()
 {
-	removeDescriptorSet(pRenderer, pTerrainDescriptorSet[0]);
-	removeDescriptorSet(pRenderer, pTerrainDescriptorSet[1]);
-	removeDescriptorSet(pRenderer, pGenTerrainNormalDescriptorSet);
-	
 	removeSampler(pRenderer, pLinearMirrorSampler);
 	removeSampler(pRenderer, pLinearWrapSampler);
 	removeSampler(pRenderer, pLinearBorderSampler);
-
-	removeRootSignature(pRenderer, pTerrainRootSignature);
-	removeRootSignature(pRenderer, pGenTerrainNormalRootSignature);
-
-	removeShader(pRenderer, pGenTerrainNormalShader);
-	removeShader(pRenderer, pTerrainShader);
-	removeShader(pRenderer, pRenderTerrainShader);
-	removeShader(pRenderer, pLightingTerrainShader);
 
 #if	USE_PROCEDUAL_TERRAIN
 	removeResource(pGlobalZoneIndexBuffer);
@@ -373,7 +302,6 @@ void Terrain::Exit()
 	tf_free(gTerrainTiledNormalTexturesStorage);
 
 	removeResource(pTerrainHeightMap);
-	removeRenderTarget(pRenderer, pNormalMapFromHeightmapRT);
 
 	meshSegments.set_capacity(0);
 	meshSegments.clear();
@@ -447,21 +375,6 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 	addResource(&TerrainHeightMapDesc, &token);
 	waitForToken(&token);
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	RenderTargetDesc NormalMapFromHeightmapRenderTarget = {};
-	NormalMapFromHeightmapRenderTarget.mArraySize = 1;
-	NormalMapFromHeightmapRenderTarget.mDepth = 1;
-	NormalMapFromHeightmapRenderTarget.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
-	NormalMapFromHeightmapRenderTarget.mFormat = TinyImageFormat_R16G16_SFLOAT;
-	NormalMapFromHeightmapRenderTarget.mStartState = RESOURCE_STATE_RENDER_TARGET;
-	NormalMapFromHeightmapRenderTarget.mSampleCount = SAMPLE_COUNT_1;
-	NormalMapFromHeightmapRenderTarget.mSampleQuality = 0;
-	//NormalMapFromHeightmapRenderTarget.mSrgb = false;
-	NormalMapFromHeightmapRenderTarget.mWidth = pTerrainHeightMap->mWidth;
-	NormalMapFromHeightmapRenderTarget.mHeight = pTerrainHeightMap->mHeight;
-	NormalMapFromHeightmapRenderTarget.pName = "NormalMapFromHeightmap RenderTarget";
-	addRenderTarget(pRenderer, &NormalMapFromHeightmapRenderTarget, &pNormalMapFromHeightmapRT);
-	///////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
 bool Terrain::GenerateNormalMap(Cmd* cmd)
@@ -490,6 +403,10 @@ bool Terrain::Load(RenderTarget** rts, uint32_t count)
 	return false;
 }
 
+void Terrain::Unload()
+{
+}
+
 bool Terrain::Load(int32_t width, int32_t height)
 {
 	mWidth = width;
@@ -502,46 +419,90 @@ bool Terrain::Load(int32_t width, int32_t height)
 
 	TerrainProjectionMatrix = mat4::perspective(horizontal_fov, aspectInverse, TERRAIN_NEAR, TERRAIN_FAR);
 
-	RenderTargetDesc SceneRT = {};
-	SceneRT.mArraySize = 1;
-	SceneRT.mDepth = 1;
-	SceneRT.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
-	SceneRT.mFormat = getRecommendedSwapchainFormat(true, true);
-	SceneRT.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
-	SceneRT.mSampleCount = SAMPLE_COUNT_1;
-	SceneRT.mSampleQuality = 0;
+	return true;
+}
 
-	SceneRT.mWidth = mWidth;
-	SceneRT.mHeight = mHeight;
+void Terrain::addDescriptorSets() 
+{
+	DescriptorSetDesc setDesc = { pGenTerrainNormalRootSignature, DESCRIPTOR_UPDATE_FREQ_NONE, 1 };
+	addDescriptorSet(pRenderer, &setDesc, &pGenTerrainNormalDescriptorSet);
+	setDesc = { pTerrainRootSignature, DESCRIPTOR_UPDATE_FREQ_NONE, 2 };
+	addDescriptorSet(pRenderer, &setDesc, &pTerrainDescriptorSet[0]);
+	setDesc = { pTerrainRootSignature, DESCRIPTOR_UPDATE_FREQ_PER_FRAME, gImageCount };
+	addDescriptorSet(pRenderer, &setDesc, &pTerrainDescriptorSet[1]);
+}
 
-	addRenderTarget(pRenderer, &SceneRT, &pTerrainRT);
+void Terrain::removeDescriptorSets()
+{
+	removeDescriptorSet(pRenderer, pTerrainDescriptorSet[0]);
+	removeDescriptorSet(pRenderer, pTerrainDescriptorSet[1]);
+	removeDescriptorSet(pRenderer, pGenTerrainNormalDescriptorSet);
+}
 
-	RenderTargetDesc BasicColorRT = {};
-	BasicColorRT.mArraySize = 1;
-	BasicColorRT.mDepth = 1;
-	BasicColorRT.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
-	BasicColorRT.mFormat = getRecommendedSwapchainFormat(true, true);
-	BasicColorRT.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
-	BasicColorRT.mSampleCount = SAMPLE_COUNT_1;
-	BasicColorRT.mSampleQuality = 0;
-	BasicColorRT.mWidth = mWidth;
-	BasicColorRT.mHeight = mHeight;
+void Terrain::addRootSignatures()
+{
+	const char* pStaticSamplerNames[] = { "g_LinearMirror", "g_LinearWrap" };
+	Sampler* pStaticSamplers[] = { pLinearMirrorSampler, pLinearWrapSampler };
 
-	addRenderTarget(pRenderer, &BasicColorRT, &pGBuffer_BasicRT);
+	RootSignatureDesc rootDesc = {};
+	rootDesc.mShaderCount = 1;
+	rootDesc.ppShaders = &pGenTerrainNormalShader;
+	rootDesc.mStaticSamplerCount = 2;
+	rootDesc.ppStaticSamplerNames = pStaticSamplerNames;
+	rootDesc.ppStaticSamplers = pStaticSamplers;
+	addRootSignature(pRenderer, &rootDesc, &pGenTerrainNormalRootSignature);
+	gTerrainRootConstantIndex = getDescriptorIndexFromName(pGenTerrainNormalRootSignature, "cbRootConstant");
 
-	RenderTargetDesc NormalRT = {};
-	NormalRT.mArraySize = 1;
-	NormalRT.mDepth = 1;
-	NormalRT.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
-	NormalRT.mFormat = TinyImageFormat_R16G16B16A16_SFLOAT;
-	NormalRT.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
-	NormalRT.mSampleCount = SAMPLE_COUNT_1;
-	NormalRT.mSampleQuality = 0;
-	NormalRT.mWidth = mWidth;
-	NormalRT.mHeight = mHeight;
+	Shader*           shaders[] = { pTerrainShader, pRenderTerrainShader, pLightingTerrainShader };
+	rootDesc = {};
+	rootDesc.mShaderCount = 3;
+	rootDesc.ppShaders = shaders;
+	rootDesc.mStaticSamplerCount = 2;
+	rootDesc.ppStaticSamplerNames = pStaticSamplerNames;
+	rootDesc.ppStaticSamplers = pStaticSamplers;
+	rootDesc.mMaxBindlessTextures = 5;
+	addRootSignature(pRenderer, &rootDesc, &pTerrainRootSignature);
+}
 
-	addRenderTarget(pRenderer, &NormalRT, &pGBuffer_NormalRT);
+void Terrain::removeRootSignatures()
+{
+	removeRootSignature(pRenderer, pTerrainRootSignature);
+	removeRootSignature(pRenderer, pGenTerrainNormalRootSignature);
+}
 
+void Terrain::addShaders()
+{
+	ShaderLoadDesc terrainNormalShader = {};
+	terrainNormalShader.mStages[0] = { "GenNormalMap.vert", NULL, 0, NULL };
+	terrainNormalShader.mStages[1] = { "GenNormalMap.frag", NULL, 0, NULL };
+	addShader(pRenderer, &terrainNormalShader, &pGenTerrainNormalShader);
+
+	ShaderLoadDesc terrainShader = {};
+	terrainShader.mStages[0] = { "Terrain.vert", NULL, 0, NULL };
+	terrainShader.mStages[1] = { "Terrain.frag", NULL, 0, NULL };
+	addShader(pRenderer, &terrainShader, &pTerrainShader);
+
+	ShaderLoadDesc terrainRenderShader = {};
+	terrainRenderShader.mStages[0] = { "RenderTerrain.vert", NULL, 0, NULL };
+	terrainRenderShader.mStages[1] = { "RenderTerrain.frag", NULL, 0, NULL };
+	addShader(pRenderer, &terrainRenderShader, &pRenderTerrainShader);
+
+	ShaderLoadDesc terrainlightingShader = {};
+	terrainlightingShader.mStages[0] = { "LightingTerrain.vert", NULL, 0, NULL };
+	terrainlightingShader.mStages[1] = { "LightingTerrain.frag", NULL, 0, NULL };
+	addShader(pRenderer, &terrainlightingShader, &pLightingTerrainShader);
+}
+
+void Terrain::removeShaders()
+{
+	removeShader(pRenderer, pGenTerrainNormalShader);
+	removeShader(pRenderer, pTerrainShader);
+	removeShader(pRenderer, pRenderTerrainShader);
+	removeShader(pRenderer, pLightingTerrainShader);
+}
+
+void Terrain::addPipelines()
+{
 	//layout and pipeline for ScreenQuad
 	VertexLayout vertexLayout = {};
 	vertexLayout.mAttribCount = 2;
@@ -662,7 +623,83 @@ bool Terrain::Load(int32_t width, int32_t height)
 		//addPipeline(pRenderer, &pipelineSettings, &pLightingTerrainPipeline);
 		addPipeline(pRenderer, &pipelineDescLightingTerrain, &pLightingTerrainPipeline);
 	}
+}
 
+void Terrain::removePipelines()
+{
+	removePipeline(pRenderer, pTerrainPipeline);
+	removePipeline(pRenderer, pGenTerrainNormalPipeline);
+	removePipeline(pRenderer, pRenderTerrainPipeline);
+	removePipeline(pRenderer, pLightingTerrainPipeline);
+}
+
+void Terrain::addRenderTargets()
+{
+	RenderTargetDesc SceneRT = {};
+	SceneRT.mArraySize = 1;
+	SceneRT.mDepth = 1;
+	SceneRT.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
+	SceneRT.mFormat = getRecommendedSwapchainFormat(true, true);
+	SceneRT.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
+	SceneRT.mSampleCount = SAMPLE_COUNT_1;
+	SceneRT.mSampleQuality = 0;
+
+	SceneRT.mWidth = mWidth;
+	SceneRT.mHeight = mHeight;
+
+	addRenderTarget(pRenderer, &SceneRT, &pTerrainRT);
+
+	RenderTargetDesc BasicColorRT = {};
+	BasicColorRT.mArraySize = 1;
+	BasicColorRT.mDepth = 1;
+	BasicColorRT.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
+	BasicColorRT.mFormat = getRecommendedSwapchainFormat(true, true);
+	BasicColorRT.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
+	BasicColorRT.mSampleCount = SAMPLE_COUNT_1;
+	BasicColorRT.mSampleQuality = 0;
+	BasicColorRT.mWidth = mWidth;
+	BasicColorRT.mHeight = mHeight;
+
+	addRenderTarget(pRenderer, &BasicColorRT, &pGBuffer_BasicRT);
+
+	RenderTargetDesc NormalRT = {};
+	NormalRT.mArraySize = 1;
+	NormalRT.mDepth = 1;
+	NormalRT.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
+	NormalRT.mFormat = TinyImageFormat_R16G16B16A16_SFLOAT;
+	NormalRT.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
+	NormalRT.mSampleCount = SAMPLE_COUNT_1;
+	NormalRT.mSampleQuality = 0;
+	NormalRT.mWidth = mWidth;
+	NormalRT.mHeight = mHeight;
+
+	addRenderTarget(pRenderer, &NormalRT, &pGBuffer_NormalRT);
+
+	RenderTargetDesc NormalMapFromHeightmapRenderTarget = {};
+	NormalMapFromHeightmapRenderTarget.mArraySize = 1;
+	NormalMapFromHeightmapRenderTarget.mDepth = 1;
+	NormalMapFromHeightmapRenderTarget.mDescriptors = DESCRIPTOR_TYPE_TEXTURE;
+	NormalMapFromHeightmapRenderTarget.mFormat = TinyImageFormat_R16G16_SFLOAT;
+	NormalMapFromHeightmapRenderTarget.mStartState = RESOURCE_STATE_RENDER_TARGET;
+	NormalMapFromHeightmapRenderTarget.mSampleCount = SAMPLE_COUNT_1;
+	NormalMapFromHeightmapRenderTarget.mSampleQuality = 0;
+	//NormalMapFromHeightmapRenderTarget.mSrgb = false;
+	NormalMapFromHeightmapRenderTarget.mWidth = pTerrainHeightMap->mWidth;
+	NormalMapFromHeightmapRenderTarget.mHeight = pTerrainHeightMap->mHeight;
+	NormalMapFromHeightmapRenderTarget.pName = "NormalMapFromHeightmap RenderTarget";
+	addRenderTarget(pRenderer, &NormalMapFromHeightmapRenderTarget, &pNormalMapFromHeightmapRT);
+}
+
+void Terrain::removeRenderTargets()
+{
+	removeRenderTarget(pRenderer, pTerrainRT);
+	removeRenderTarget(pRenderer, pGBuffer_BasicRT);
+	removeRenderTarget(pRenderer, pGBuffer_NormalRT);
+	removeRenderTarget(pRenderer, pNormalMapFromHeightmapRT);
+}
+
+void Terrain::prepareDescriptorSets()
+{
 	DescriptorData LtParams[1] = {};
 	LtParams[0].pName = "Heightmap";
 	LtParams[0].ppTextures = &pTerrainHeightMap;
@@ -706,20 +743,6 @@ bool Terrain::Load(int32_t width, int32_t height)
 			updateDescriptorSet(pRenderer, i, pTerrainDescriptorSet[1], 3, ScParams);
 		}
 	}
-
-	return true;
-}
-
-void Terrain::Unload()
-{
-	removePipeline(pRenderer, pTerrainPipeline);
-	removePipeline(pRenderer, pGenTerrainNormalPipeline);
-	removePipeline(pRenderer, pRenderTerrainPipeline);
-	removePipeline(pRenderer, pLightingTerrainPipeline);
-
-	removeRenderTarget(pRenderer, pTerrainRT);
-	removeRenderTarget(pRenderer, pGBuffer_BasicRT);
-	removeRenderTarget(pRenderer, pGBuffer_NormalRT);
 }
 
 void Terrain::Draw(Cmd* cmd)
@@ -884,7 +907,7 @@ void Terrain::Draw(Cmd* cmd)
 
 		cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 4, barriersLighting);
 
-		loadActions.mLoadActionDepth = LOAD_ACTION_DONTCARE;
+		loadActions.mLoadActionDepth = LOAD_ACTION_LOAD;
 
 		cmdBindRenderTargets(cmd, 1, &pTerrainRT, NULL, &loadActions, NULL, NULL, -1, -1);
 		cmdSetViewport(cmd, 0.0f, 0.0f, (float)pTerrainRT->mWidth, (float)pTerrainRT->mHeight, 0.0f, 1.0f);

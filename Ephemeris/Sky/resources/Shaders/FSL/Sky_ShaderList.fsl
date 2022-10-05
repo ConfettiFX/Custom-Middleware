@@ -1,0 +1,16 @@
+
+#vert RenderSky.vert
+#include "RenderSky.vert.fsl"
+#end
+
+#frag RenderSky.frag
+#include "RenderSky.frag.fsl"
+#end
+
+#vert Space.vert
+#include "Space.vert.fsl"
+#end
+
+#frag Space.frag
+#include "Space.frag.fsl"
+#end

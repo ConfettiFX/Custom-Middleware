@@ -9,8 +9,8 @@
 
 #pragma once
 
-#include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/vector.h"
-#include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
+#include "../../../../The-Forge/Common_3/Utilities/ThirdParty/OpenSource/EASTL/vector.h"
+#include "../../../../The-Forge/Common_3/Graphics/Interfaces/IGraphics.h"
 
 #include "CloudsManager.h"
 //#include "Containers.h"

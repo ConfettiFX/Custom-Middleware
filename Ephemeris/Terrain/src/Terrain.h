@@ -13,13 +13,13 @@
 #include "../../src/Perlin.h"
 #include "../../VolumetricClouds/src/VolumetricClouds.h"
 
-#include "../../../../The-Forge/Common_3/OS/Interfaces/ICameraController.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IMiddleware.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IProfiler.h"
-#include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/string.h"
-#include "../../../../The-Forge/Common_3/ThirdParty/OpenSource/EASTL/unordered_map.h"
-#include "../../../../The-Forge/Common_3/OS/Interfaces/IUI.h"
-#include "../../../../The-Forge/Common_3/Renderer/IRenderer.h"
+#include "../../../../The-Forge/Common_3/Application/Interfaces/ICameraController.h"
+#include "../../../../The-Forge/Common_3/Application/Interfaces/IMiddleware.h"
+#include "../../../../The-Forge/Common_3/Application/Interfaces/IProfiler.h"
+#include "../../../../The-Forge/Common_3/Utilities/ThirdParty/OpenSource/EASTL/string.h"
+#include "../../../../The-Forge/Common_3/Utilities/ThirdParty/OpenSource/EASTL/unordered_map.h"
+#include "../../../../The-Forge/Common_3/Application/Interfaces/IUI.h"
+#include "../../../../The-Forge/Common_3/Graphics/Interfaces/IGraphics.h"
 
 #define GRID_SIZE 256
 #define TILE_CENTER 50
@@ -79,7 +79,6 @@ public:
 	virtual void Draw(Cmd* cmd) final;
 	virtual void Update(float deltaTime) final;
 
-
 	void InitializeWithLoad(RenderTarget* InDepthRenderTarget);
 
 	void Initialize(uint InImageCount,
@@ -89,6 +88,18 @@ public:
 	bool Load(int32_t width, int32_t height);
 	void GenerateTerrainFromHeightmap(float height, float radius);
 	bool GenerateNormalMap(Cmd* cmd);
+
+	virtual void addDescriptorSets();
+	virtual void removeDescriptorSets();
+	virtual void addRootSignatures();
+	virtual void removeRootSignatures();
+	virtual void addShaders();
+	virtual void removeShaders();
+	virtual void addPipelines();
+	virtual void removePipelines();
+	virtual void addRenderTargets();
+	virtual void removeRenderTargets();
+	virtual void prepareDescriptorSets();
 
 	// Below are passed from Previous stage via Initialize()
 	Renderer*                 pRenderer = NULL;
@@ -108,7 +119,6 @@ public:
 	Fence*                    pTransitionCompleteFences = NULL;
 
 	RenderTarget*             pDepthBuffer = NULL;
-	RenderTarget**            pFinalRT = NULL;
 
 	ICameraController*        pCameraController = NULL;
 

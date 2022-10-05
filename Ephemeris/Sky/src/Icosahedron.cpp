@@ -9,7 +9,7 @@
 
 #include "Icosahedron.h"
 
-#include "../../../../The-Forge/Common_3/OS/Math/MathTypes.h"
+#include "../../../../The-Forge/Common_3/Utilities/Math/MathTypes.h"
 
 void Icosahedron::GetBasicData(eastl::vector<TriangleVertex> &vertices, eastl::vector<TriangleIndex> &indicies)
 {

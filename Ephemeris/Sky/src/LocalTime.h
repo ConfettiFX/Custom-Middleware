@@ -10,7 +10,7 @@
 #ifndef __LOCALTIME_H_471C6858_07D7_43D6_89E6_F4BFC1B8749E_INCLUDED__
 #define __LOCALTIME_H_471C6858_07D7_43D6_89E6_F4BFC1B8749E_INCLUDED__
 
-#include "../../../../The-Forge/Common_3/OS/Core/Config.h"
+#include "../../../../The-Forge/Common_3/Application/Config.h"
 
 #if !defined(__APPLE__) && !defined(__linux__)
 

@@ -30,6 +30,8 @@ static const int QuadVertexCount = 6;
 
 namespace aura
 {
+	Aura* pAura = NULL;
+
 	float getCellSize(LightPropagationCascade* pCascade)
 	{
 		return pCascade->mGridSpan / GridRes;
@@ -125,32 +127,21 @@ namespace aura
 	/************************************************************************/
 	// Aura Implementation
 	/************************************************************************/
-	void initAura(Renderer* pRenderer, PipelineCache* pCache, uint32_t rtWidth, uint32_t rtHeight, LightPropagationVolumeParams params, uint32_t inFlightFrameCount, uint32_t options, TinyImageFormat visualizeFormat, TinyImageFormat visualizeDepthFormat, SampleCount sampleCount, uint32_t sampleQuality, uint32_t cascadeCount, LightPropagationCascadeDesc* pCascades, Aura** ppAura)
+	void initAura(Renderer* pRenderer, uint32_t rtWidth, uint32_t rtHeight, LightPropagationVolumeParams params, uint32_t inFlightFrameCount, uint32_t cascadeCount, Aura** ppAura)
 	{
-		Aura* pAura = (Aura*)aura::alloc(sizeof(*pAura));
+		pAura = (Aura*)aura::alloc(sizeof(*pAura));
 		memset(pAura, 0, sizeof(*pAura));
 
 		pAura->mParams = params;
+		pAura->pRenderer = pRenderer;
 
 #ifdef ENABLE_CPU_PROPAGATION
 		pAura->bUseCPUPropagationPreviousFrame = pAura->mParams.bUseCPUPropagation;
 		pAura->mInFlightFrameCount = inFlightFrameCount;
 #endif
 
-		pAura->mOptions = options;
 		pAura->mCascadeCount = cascadeCount;
 
-		/************************************************************************/
-		// Load render targets
-		/************************************************************************/
-		pAura->pCascades = (LightPropagationCascade**)aura::alloc(pAura->mCascadeCount * sizeof(*pAura->pCascades));
-		for (uint32_t i = 0; i < pAura->mCascadeCount; ++i)
-		{
-			addLightPropagationCascade(pRenderer, pCascades[i].mGridSpan, pCascades[i].mGridIntensity, pCascades[i].mFlags, &pAura->pCascades[i]);
-		}
-
-		for (uint32_t i = 0; i < 6; ++i)
-			addLightPropagationGrid(pRenderer, &pAura->pWorkingGrids[i], "LPV Working Grid RT");
 		/************************************************************************/
 		// CPU contexts
 		/************************************************************************/
@@ -174,253 +165,7 @@ namespace aura
 			ADDRESS_MODE_CLAMP_TO_BORDER, ADDRESS_MODE_CLAMP_TO_BORDER, ADDRESS_MODE_CLAMP_TO_BORDER
 		};
 		addSampler(pRenderer, &pointDesc, &pAura->pSamplerPointBorder);
-		/************************************************************************/
-		// Load Shaders
-		/************************************************************************/
-		ShaderMacro macros[5] = {};
-		uint32_t count = 0;
-		getShaderMacros(pAura, macros, &count);
 
-		ShaderLoadDesc injectRSMLightDesc = {};
-		ShaderLoadDesc lightPropagate1Desc = {};
-		ShaderLoadDesc lightPropagateNDesc = {};
-		ShaderLoadDesc lightCopyDesc = {};
-		
-		injectRSMLightDesc.mStages[0] = { "lpvInjectRSMLight.vert", macros, count };
-		injectRSMLightDesc.mStages[1] = { "lpvInjectRSMLight.frag", macros, count };
-
-#if USE_COMPUTE_SHADERS
-		lightPropagate1Desc.mStages[0] = { "lpvLightPropagate1.comp", macros, count };
-		lightPropagateNDesc.mStages[0] = { "lpvLightPropagateN.comp", macros, count };
-		lightCopyDesc.mStages[0] = { "lpvLightCopy.comp", macros, count };
-#else
-		lightPropagate1Desc.mStages[0] = { "lpvLightPropagate1.vert", macros, count };
-		lightPropagate1Desc.mStages[1] = { "lpvLightPropagate1.frag", macros, count };
-		
-		lightPropagateNDesc.mStages[0] = { "lpvLightPropagateN.vert", macros, count };
-		lightPropagateNDesc.mStages[1] = { "lpvLightPropagateN.frag", macros, count };
-
-		lightCopyDesc.mStages[0] = { "lpvLightCopy.vert", macros, count };
-		lightCopyDesc.mStages[1] = { "lpvLightCopy.frag", macros, count };
-#endif // USE_COMPUTE_SHADERS
-
-		addShader(pRenderer, &injectRSMLightDesc, &pAura->pShaderInjectRSMLight);
-		addShader(pRenderer, &lightPropagate1Desc, &pAura->pShaderLightPropagate1[0]);
-		addShader(pRenderer, &lightPropagateNDesc, &pAura->pShaderLightPropagateN[0]);
-		addShader(pRenderer, &lightCopyDesc, &pAura->pShaderLightCopy);
-
-		ShaderLoadDesc visualizeLPVDesc = {};
-		visualizeLPVDesc.mStages[0] = { "lpvVisualize.vert", macros, count };
-		visualizeLPVDesc.mStages[1] = { "lpvVisualize.frag", macros, count };
-		addShader(pRenderer, &visualizeLPVDesc, &pAura->pShaderLPVVisualize);
-
-		/************************************************************************/
-		// Add root signatures
-		/************************************************************************/
-		const char* pStaticSamplerNames[] = {
-			"pointBorder",
-		};
-		Sampler* pStaticSamplers[] = {
-			pAura->pSamplerPointBorder,
-		};
-
-		RootSignatureDesc injectRSMRootDesc = { &pAura->pShaderInjectRSMLight, 1 };
-		injectRSMRootDesc.mStaticSamplerCount = 1;
-		injectRSMRootDesc.mMaxBindlessTextures = 9;
-		injectRSMRootDesc.ppStaticSamplerNames = pStaticSamplerNames;
-		injectRSMRootDesc.ppStaticSamplers = pStaticSamplers;
-		addRootSignature(pRenderer, &injectRSMRootDesc, &pAura->pRootSignatureInjectRSMLight);
-
-		RootSignatureDesc propagate1RootDesc = { &pAura->pShaderLightPropagate1[0], 1 };
-		propagate1RootDesc.mStaticSamplerCount = 1;
-		propagate1RootDesc.mMaxBindlessTextures = 9;
-		propagate1RootDesc.ppStaticSamplerNames = pStaticSamplerNames;
-		propagate1RootDesc.ppStaticSamplers = pStaticSamplers;
-		addRootSignature(pRenderer, &propagate1RootDesc, &pAura->pRootSignatureLightPropagate1);
-		pAura->mPropagation1RootConstantIndex = getDescriptorIndexFromName(pAura->pRootSignatureLightPropagate1, "PropagationSetupRootConstant");
-
-		RootSignatureDesc propagateNRootDesc = { &pAura->pShaderLightPropagateN[0], 1 };
-		propagateNRootDesc.mStaticSamplerCount = 1;
-		propagateNRootDesc.mMaxBindlessTextures = 9;
-		propagateNRootDesc.ppStaticSamplerNames = pStaticSamplerNames;
-		propagateNRootDesc.ppStaticSamplers = pStaticSamplers;
-		addRootSignature(pRenderer, &propagateNRootDesc, &pAura->pRootSignatureLightPropagateN);
-		pAura->mPropagationNRootConstantIndex = getDescriptorIndexFromName(pAura->pRootSignatureLightPropagateN, "PropagationSetupRootConstant");
-
-		RootSignatureDesc copyRootDesc = { &pAura->pShaderLightCopy, 1 };
-		copyRootDesc.mStaticSamplerCount = 1;
-		copyRootDesc.mMaxBindlessTextures = 9;
-		copyRootDesc.ppStaticSamplerNames = pStaticSamplerNames;
-		copyRootDesc.ppStaticSamplers = pStaticSamplers;
-		addRootSignature(pRenderer, &copyRootDesc, &pAura->pRootSignatureLightCopy);
-
-		RootSignatureDesc visualizeLPVRootDesc = { &pAura->pShaderLPVVisualize, 1 };
-		visualizeLPVRootDesc.mStaticSamplerCount = 1;
-		visualizeLPVRootDesc.mMaxBindlessTextures = 9;
-		visualizeLPVRootDesc.ppStaticSamplerNames = pStaticSamplerNames;
-		visualizeLPVRootDesc.ppStaticSamplers = pStaticSamplers;
-		addRootSignature(pRenderer, &visualizeLPVRootDesc, &pAura->pRootSignatureVisualizeLPV);
-
-		/************************************************************************/
-		// Add Descriptor Sets
-		/************************************************************************/
-		DescriptorSetDesc setDesc = { pAura->pRootSignatureInjectRSMLight, DESCRIPTOR_UPDATE_FREQ_NONE, pAura->mCascadeCount * MAX_FRAMES };
-		addDescriptorSet(pRenderer, &setDesc, &pAura->pDescriptorSetInjectRSMLight);
-		setDesc = { pAura->pRootSignatureLightPropagate1, DESCRIPTOR_UPDATE_FREQ_NONE, pAura->mCascadeCount };
-		addDescriptorSet(pRenderer, &setDesc, &pAura->pDescriptorSetLightPropagate1);
-		setDesc = { pAura->pRootSignatureLightPropagateN, DESCRIPTOR_UPDATE_FREQ_NONE, pAura->mCascadeCount * 2 };
-		addDescriptorSet(pRenderer, &setDesc, &pAura->pDescriptorSetLightPropagateN);
-#if USE_COMPUTE_SHADERS
-		setDesc = { pAura->pRootSignatureLightCopy, DESCRIPTOR_UPDATE_FREQ_NONE, pAura->mCascadeCount };
-#else
-		setDesc = { pAura->pRootSignatureLightCopy, DESCRIPTOR_UPDATE_FREQ_NONE, pAura->mCascadeCount * 2 };
-#endif
-		addDescriptorSet(pRenderer, &setDesc, &pAura->pDescriptorSetLightCopy);
-
-		setDesc = { pAura->pRootSignatureVisualizeLPV, DESCRIPTOR_UPDATE_FREQ_NONE, MAX_FRAMES };
-		addDescriptorSet(pRenderer, &setDesc, &pAura->pDescriptorSetVisualizeLPV);
-		/************************************************************************/
-		// Add pipelines
-		/************************************************************************/
-		// States
-		BlendStateDesc blendStateAddDesc = {};
-		for (uint32_t i = 0; i < NUM_GRIDS_PER_CASCADE; ++i)
-		{
-			blendStateAddDesc.mSrcAlphaFactors[i] = BC_ONE;
-			blendStateAddDesc.mDstAlphaFactors[i] = BC_ONE;
-			blendStateAddDesc.mSrcFactors[i] = BC_ONE;
-			blendStateAddDesc.mDstFactors[i] = BC_ONE;
-			blendStateAddDesc.mMasks[i] = ALL;
-		}
-		blendStateAddDesc.mRenderTargetMask = BLEND_STATE_TARGET_0 | BLEND_STATE_TARGET_1 | BLEND_STATE_TARGET_2;
-		blendStateAddDesc.mIndependentBlend = false;
-
-		BlendStateDesc blendStateAlphaDesc = {};
-		for (uint32_t i = 0; i < NUM_GRIDS_PER_CASCADE; ++i)
-		{
-			blendStateAlphaDesc.mSrcAlphaFactors[i] = BC_SRC_ALPHA;
-			blendStateAlphaDesc.mDstAlphaFactors[i] = BC_DST_ALPHA;
-			blendStateAlphaDesc.mSrcFactors[i] = BC_SRC_ALPHA;
-			blendStateAlphaDesc.mDstFactors[i] = BC_ONE_MINUS_SRC_ALPHA;
-			blendStateAlphaDesc.mMasks[i] = ALL;
-			blendStateAlphaDesc.mBlendAlphaModes[i] = BM_MAX;
-			blendStateAlphaDesc.mBlendModes[i] = BM_ADD;
-		}
-		blendStateAlphaDesc.mRenderTargetMask = BLEND_STATE_TARGET_0 | BLEND_STATE_TARGET_1 | BLEND_STATE_TARGET_2;
-		blendStateAlphaDesc.mIndependentBlend = false;
-
-#ifdef	PROPAGATE_ACCUMULATE_ONE_PASS
-		BlendStateDesc blendStateAdd345Desc = {};
-		blendStateAdd345Desc.mRenderTargetMask = BLEND_STATE_TARGET_3 | BLEND_STATE_TARGET_4 | BLEND_STATE_TARGET_5;
-#else	//	PROPAGATE_ACCUMULATE_ONE_PASS
-#endif	//	PROPAGATE_ACCUMULATE_ONE_PASS
-
-		RasterizerStateDesc rasterizerStateDesc = {};
-		rasterizerStateDesc.mCullMode = CULL_MODE_NONE;
-
-		DepthStateDesc depthStateDisableDesc = {};
-
-		// TODO - This should be informed from the engine side. At least the compare function. 
-		DepthStateDesc depthStateDesc = {};
-		depthStateDesc.mDepthTest = true;
-		depthStateDesc.mDepthWrite = true;
-		depthStateDesc.mDepthFunc = CMP_LEQUAL;
-
-
-		TinyImageFormat gridRTDesc[NUM_GRIDS_PER_CASCADE] = {};
-		for (uint32_t i = 0; i < NUM_GRIDS_PER_CASCADE; ++i)
-		{
-			gridRTDesc[i] = TinyImageFormat_R16G16B16A16_SFLOAT;
-		}
-
-		PipelineDesc graphicsPipelineDesc = {};
-		graphicsPipelineDesc.pCache = pCache;
-		graphicsPipelineDesc.mType = PIPELINE_TYPE_GRAPHICS;
-
-		GraphicsPipelineDesc injectRSMPipelineDesc = {};
-		injectRSMPipelineDesc.mPrimitiveTopo = PRIMITIVE_TOPO_POINT_LIST;
-		injectRSMPipelineDesc.mRenderTargetCount = NUM_GRIDS_PER_CASCADE;
-		injectRSMPipelineDesc.pBlendState = &blendStateAddDesc;
-		injectRSMPipelineDesc.pDepthState = &depthStateDisableDesc;
-		injectRSMPipelineDesc.pColorFormats = gridRTDesc;
-		injectRSMPipelineDesc.mSampleCount = SAMPLE_COUNT_1;
-		injectRSMPipelineDesc.mSampleQuality = 0;
-		injectRSMPipelineDesc.pRasterizerState = &rasterizerStateDesc;
-		injectRSMPipelineDesc.pRootSignature = pAura->pRootSignatureInjectRSMLight;
-		injectRSMPipelineDesc.pShaderProgram = pAura->pShaderInjectRSMLight;
-		graphicsPipelineDesc.mGraphicsDesc = injectRSMPipelineDesc;
-		addPipeline(pRenderer, &graphicsPipelineDesc, &pAura->pPipelineInjectRSMLight);
-
-#if USE_COMPUTE_SHADERS
-		PipelineDesc computePipelineDesc = {};
-		computePipelineDesc.pCache = pCache;
-		computePipelineDesc.mType = PIPELINE_TYPE_COMPUTE;
-        
-		ComputePipelineDesc propagatePipelineDesc = {};
-		propagatePipelineDesc.pRootSignature = pAura->pRootSignatureLightPropagate1;
-		propagatePipelineDesc.pShaderProgram = pAura->pShaderLightPropagate1[0];
-		computePipelineDesc.mComputeDesc = propagatePipelineDesc;
-		addPipeline(pRenderer, &computePipelineDesc, &pAura->pPipelineLightPropagate1[0]);
-
-		propagatePipelineDesc.pRootSignature = pAura->pRootSignatureLightPropagateN;
-		propagatePipelineDesc.pShaderProgram = pAura->pShaderLightPropagateN[0];
-		computePipelineDesc.mComputeDesc = propagatePipelineDesc;
-		addPipeline(pRenderer, &computePipelineDesc, &pAura->pPipelineLightPropagateN[0]);
-
-		ComputePipelineDesc lightCopyPipelineDesc = {};
-		lightCopyPipelineDesc.pRootSignature = pAura->pRootSignatureLightCopy;
-		lightCopyPipelineDesc.pShaderProgram = pAura->pShaderLightCopy;
-		computePipelineDesc.mComputeDesc = lightCopyPipelineDesc;
-		addPipeline(pRenderer, &computePipelineDesc, &pAura->pPipelineLightCopy);
-#else
-		GraphicsPipelineDesc propagatePipelineDesc = {};
-		propagatePipelineDesc.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
-		propagatePipelineDesc.mRenderTargetCount = NUM_GRIDS_PER_CASCADE;
-		propagatePipelineDesc.pDepthState = &depthStateDisableDesc;
-		propagatePipelineDesc.pColorFormats = gridRTDesc;
-		propagatePipelineDesc.mSampleCount = SAMPLE_COUNT_1;
-		propagatePipelineDesc.mSampleQuality = 0;
-		propagatePipelineDesc.pRasterizerState = &rasterizerStateDesc;
-		propagatePipelineDesc.pRootSignature = pAura->pRootSignatureLightPropagate1;
-		propagatePipelineDesc.pShaderProgram = pAura->pShaderLightPropagate1[0];
-		graphicsPipelineDesc.mGraphicsDesc = propagatePipelineDesc;
-		addPipeline(pRenderer, &graphicsPipelineDesc, &pAura->pPipelineLightPropagate1[0]);
-
-		propagatePipelineDesc.pRootSignature = pAura->pRootSignatureLightPropagateN;
-		propagatePipelineDesc.pShaderProgram = pAura->pShaderLightPropagateN[0];
-		graphicsPipelineDesc.mGraphicsDesc = propagatePipelineDesc;
-		addPipeline(pRenderer, &graphicsPipelineDesc, &pAura->pPipelineLightPropagateN[0]);
-
-		GraphicsPipelineDesc lightCopyPipelineDesc = {};
-		lightCopyPipelineDesc.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
-		lightCopyPipelineDesc.mRenderTargetCount = NUM_GRIDS_PER_CASCADE;
-		lightCopyPipelineDesc.pBlendState = &blendStateAddDesc;
-		lightCopyPipelineDesc.pDepthState = &depthStateDisableDesc;
-		lightCopyPipelineDesc.pColorFormats = gridRTDesc;
-		lightCopyPipelineDesc.mSampleCount = SAMPLE_COUNT_1;
-		lightCopyPipelineDesc.mSampleQuality = 0;
-		lightCopyPipelineDesc.pRasterizerState = &rasterizerStateDesc;
-		lightCopyPipelineDesc.pRootSignature = pAura->pRootSignatureLightCopy;
-		lightCopyPipelineDesc.pShaderProgram = pAura->pShaderLightCopy;
-		graphicsPipelineDesc.mGraphicsDesc = lightCopyPipelineDesc;
-		addPipeline(pRenderer, &graphicsPipelineDesc, &pAura->pPipelineLightCopy);
-#endif // USE_COMPUTE_SHADERS
-
-		TinyImageFormat visualizeFormats[1] = { visualizeFormat };
-		GraphicsPipelineDesc visualizeLPVPipelineDesc = {};
-		visualizeLPVPipelineDesc.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
-		visualizeLPVPipelineDesc.mRenderTargetCount = 1;
-		visualizeLPVPipelineDesc.pBlendState = &blendStateAlphaDesc;
-		visualizeLPVPipelineDesc.pDepthState = &depthStateDesc;
-		visualizeLPVPipelineDesc.mDepthStencilFormat = visualizeDepthFormat;
-		visualizeLPVPipelineDesc.pColorFormats = visualizeFormats;
-		visualizeLPVPipelineDesc.mSampleCount = sampleCount;
-		visualizeLPVPipelineDesc.mSampleQuality = sampleQuality;
-		visualizeLPVPipelineDesc.pRasterizerState = &rasterizerStateDesc;
-		visualizeLPVPipelineDesc.pRootSignature = pAura->pRootSignatureVisualizeLPV;
-		visualizeLPVPipelineDesc.pShaderProgram = pAura->pShaderLPVVisualize;
-		graphicsPipelineDesc.mGraphicsDesc = visualizeLPVPipelineDesc;
-		addPipeline(pRenderer, &graphicsPipelineDesc, &pAura->pPipelineVisualizeLPV);
 		/************************************************************************/
 		// Add uniform buffers
 		/************************************************************************/
@@ -434,100 +179,6 @@ namespace aura
 			}
 
 			addUniformBuffer(pRenderer, sizeof(VisualizationData), &pAura->pUniformBufferVisualizationData[i]);
-		}
-		/************************************************************************/
-		/************************************************************************/
-		for (uint32_t cascade = 0; cascade < pAura->mCascadeCount; ++cascade)
-		{
-			Texture* pTex[NUM_GRIDS_PER_CASCADE] = {};
-			Texture* pWorkingTex[NUM_GRIDS_PER_CASCADE * 2] = {};
-
-			for (uint32_t i = 0; i < NUM_GRIDS_PER_CASCADE; ++i)
-				getTextureFromRenderTarget(pAura->pCascades[cascade]->pLightGrids[i], &pTex[i]);
-			for (uint32_t i = 0; i < NUM_GRIDS_PER_CASCADE * 2; ++i)
-				getTextureFromRenderTarget(pAura->pWorkingGrids[i], &pWorkingTex[i]);
-
-			// Light propagate 1
-			{
-#if USE_COMPUTE_SHADERS
-				DescriptorData params[4] = {};
-				params[0].pName = "LPVGrid";
-				params[0].ppTextures = &pTex[0];
-				params[0].mCount = pAura->mCascadeCount;
-				params[1].pName = "workCoeffs0";
-				params[1].ppTextures = &pWorkingTex[0];
-				params[2].pName = "workCoeffs1";
-				params[2].ppTextures = &pWorkingTex[1];
-				params[3].pName = "workCoeffs2";
-				params[3].ppTextures = &pWorkingTex[2];
-				updateDescriptorSet(pRenderer, cascade, pAura->pDescriptorSetLightPropagate1, 4, params);
-#else
-				DescriptorData params[1] = {};
-				params[0].pName = "LPVGrid";
-				params[0].ppTextures = &pTex[0];
-				params[0].mCount = pAura->mCascadeCount;
-				updateDescriptorSet(pRenderer, cascade, pAura->pDescriptorSetLightPropagate1, 1, params);
-#endif
-			}
-			// Light copy
-			{
-#if USE_COMPUTE_SHADERS
-				DescriptorData params[6] = {};
-				params[0].pName = "workCoeffs0";
-				params[0].ppTextures = &pWorkingTex[0];
-				params[1].pName = "workCoeffs1";
-				params[1].ppTextures = &pWorkingTex[1];
-				params[2].pName = "workCoeffs2";
-				params[2].ppTextures = &pWorkingTex[2];
-				params[3].pName = "RWGrid0";
-				params[3].ppTextures = &pTex[0];
-				params[4].pName = "RWGrid1";
-				params[4].ppTextures = &pTex[1];
-				params[5].pName = "RWGrid2";
-				params[5].ppTextures = &pTex[2];
-				updateDescriptorSet(pRenderer, cascade, pAura->pDescriptorSetLightCopy, 6, params);
-#else
-				DescriptorData params[3] = {};
-				params[0].pName = "LPVGrid";
-				params[0].ppTextures = &pWorkingTex[0];
-				params[0].mCount = pAura->mCascadeCount;
-				updateDescriptorSet(pRenderer, cascade * 2 + 0, pAura->pDescriptorSetLightCopy, 1, params);
-
-				params[0].ppTextures = &pWorkingTex[3];
-				params[1].ppTextures = &pWorkingTex[4];
-				params[2].ppTextures = &pWorkingTex[5];
-				updateDescriptorSet(pRenderer, cascade * 2 + 1, pAura->pDescriptorSetLightCopy, 1, params);
-#endif
-			}
-			// Light propagate N
-			for (uint32_t i = 0; i < 2; ++i)
-			{
-#if USE_COMPUTE_SHADERS
-				DescriptorData params[7] = {};
-				params[0].pName = "LPVGrid";
-				params[0].ppTextures = pWorkingTex + 3 * ((i & 0x1)) + 0;
-				params[0].mCount = pAura->mCascadeCount;
-				params[1].pName = "workCoeffs0";
-				params[1].ppTextures = pWorkingTex + 3 * !(i & 0x1) + 0;
-				params[2].pName = "workCoeffs1";
-				params[2].ppTextures = pWorkingTex + 3 * !(i & 0x1) + 1;
-				params[3].pName = "workCoeffs2";
-				params[3].ppTextures = pWorkingTex + 3 * !(i & 0x1) + 2;
-				params[4].pName = "RWGrid0";
-				params[4].ppTextures = &pTex[0];
-				params[5].pName = "RWGrid1";
-				params[5].ppTextures = &pTex[1];
-				params[6].pName = "RWGrid2";
-				params[6].ppTextures = &pTex[2];
-				updateDescriptorSet(pRenderer, cascade * 2 + i, pAura->pDescriptorSetLightPropagateN, 7, params);
-#else
-				DescriptorData params[1] = {};
-				params[0].pName = "LPVGrid";
-				params[0].ppTextures = pWorkingTex + 3 * ((i & 0x1)) + 0;
-				params[0].mCount = pAura->mCascadeCount;
-				updateDescriptorSet(pRenderer, cascade * 2 + i, pAura->pDescriptorSetLightPropagateN, 1, params);
-#endif
-			}
 		}
 
 		*ppAura = pAura;
@@ -565,13 +216,8 @@ namespace aura
 #endif
 	}
 
-	void removeAura(Renderer* pRenderer, ITaskManager* pTaskManager, Aura* pAura)
+	void exitAura(Renderer* pRenderer, ITaskManager* pTaskManager, Aura* pAura)
 	{
-		removeDescriptorSet(pRenderer, pAura->pDescriptorSetInjectRSMLight);
-		removeDescriptorSet(pRenderer, pAura->pDescriptorSetLightPropagate1);
-		removeDescriptorSet(pRenderer, pAura->pDescriptorSetLightPropagateN);
-		removeDescriptorSet(pRenderer, pAura->pDescriptorSetLightCopy);
-		removeDescriptorSet(pRenderer, pAura->pDescriptorSetVisualizeLPV);
 		/************************************************************************/
 		// Remove uniform buffers
 		/************************************************************************/
@@ -586,73 +232,23 @@ namespace aura
 
 			removeBuffer(pRenderer, pAura->pUniformBufferVisualizationData[i]);
 		}
-		/************************************************************************/
-		// Remove pipelines
-		/************************************************************************/
-		removePipeline(pRenderer, pAura->pPipelineInjectRSMLight);
-		removePipeline(pRenderer, pAura->pPipelineLightPropagate1[0]);
-		removePipeline(pRenderer, pAura->pPipelineLightPropagateN[0]);
-		removePipeline(pRenderer, pAura->pPipelineLightCopy);
-		removePipeline(pRenderer, pAura->pPipelineVisualizeLPV);
 
-		/************************************************************************/
-		// Remove root signatures
-		/************************************************************************/
-		removeRootSignature(pRenderer, pAura->pRootSignatureInjectRSMLight);
-		removeRootSignature(pRenderer, pAura->pRootSignatureLightPropagate1);
-		removeRootSignature(pRenderer, pAura->pRootSignatureLightPropagateN);
-		removeRootSignature(pRenderer, pAura->pRootSignatureLightCopy);
-		removeRootSignature(pRenderer, pAura->pRootSignatureVisualizeLPV);
-		/************************************************************************/
-		// Unload Shaders
-		/************************************************************************/
-		removeShader(pRenderer, pAura->pShaderInjectRSMLight);
-		removeShader(pRenderer, pAura->pShaderLightPropagate1[0]);
-		removeShader(pRenderer, pAura->pShaderLightPropagateN[0]);
-		removeShader(pRenderer, pAura->pShaderLightCopy);
-		removeShader(pRenderer, pAura->pShaderLPVVisualize);
 		/************************************************************************/
 		// Remove Samplers
 		/************************************************************************/
 		removeSampler(pRenderer, pAura->pSamplerPointBorder);
+
 		/************************************************************************/
 		// CPU contexts
 		/************************************************************************/
 		unloadCPUPropagationResources(pRenderer, pTaskManager, pAura);
 
 		/************************************************************************/
-		// Remove render targets
-		/************************************************************************/
-		for (uint32_t i = 0; i < pAura->mCascadeCount; ++i)
-		{
-			removeLightPropagationCascade(pRenderer, pAura->pCascades[i]);
-		}
-
-		for (uint32_t i = 0; i < 6; ++i)
-			removeLightPropagationGrid(pRenderer, pAura->pWorkingGrids[i]);
-
-		aura::dealloc(pAura->pCascades);
-		/************************************************************************/
 		/************************************************************************/
 
 		removeAsynchronousResources();
 
 		aura::dealloc(pAura);
-	}
-
-	void getShaderMacros(Aura* pAura, ShaderMacro pMacros[4], uint32_t* pCount)
-	{
-		if (pAura->mOptions & LPV_NO_FRESNEL)
-			pMacros[(*pCount)++] = { "NO_FRESNEL", "1" };
-
-		if (pAura->mOptions & LPV_ALLOW_OCCLUSION)
-			pMacros[(*pCount)++] = { "ALLOW_OCCLUSION", "1" };
-
-		if (pAura->mOptions&LPV_UNPACK_NORMAL)
-			pMacros[(*pCount)++] = { "UNPACK_NORMAL", "1" };
-
-		if (pAura->mOptions&LPV_SCALAR_SPECULAR)
-			pMacros[(*pCount)++] = { "SCALAR_SPECULAR", "1" };
 	}
 
 	bool doAlternateGPUUpdates(Aura* pAura)
@@ -796,7 +392,7 @@ namespace aura
 		// in case we use occlusion volumes ...
 		// 
 		//	TODO: Igor: control this a different way
-		if (!(pAura->mOptions & LPV_ALLOW_OCCLUSION)
+		if (!ALLOW_OCCLUSION
 #ifdef ENABLE_CPU_PROPAGATION
 			|| pAura->mParams.bUseCPUPropagation
 #endif
@@ -858,7 +454,13 @@ namespace aura
 		/************************************************************************/
 		// 1st propagation step
 		/************************************************************************/
-		cmdBindRenderTargets(pCmd, NUM_GRIDS_PER_CASCADE, pAura->pWorkingGrids, NULL, NULL, NULL, NULL, -1, -1);
+		LoadActionsDesc loadActions = {};
+		for (uint32_t i = 0; i < NUM_GRIDS_PER_CASCADE; ++i)
+		{
+			loadActions.mClearColorValues[i] = { {{0, 0, 0, 0}} };
+			loadActions.mLoadActionsColor[i] = LOAD_ACTION_CLEAR;
+		}
+		cmdBindRenderTargets(pCmd, NUM_GRIDS_PER_CASCADE, pAura->pWorkingGrids, NULL, &loadActions, NULL, NULL, -1, -1);
 		cmdSetViewport(pCmd, 0.0f, 0.0f, (float)GridRes, (float)GridRes, 0.0f, 1.0f);
 		cmdSetScissor(pCmd, 0, 0, GridRes, GridRes);
 		cmdBindPipeline(pCmd, pPipelinePropagate1);
@@ -879,7 +481,11 @@ namespace aura
 		/************************************************************************/
 		//	Add propagated light to the final grid
 		/************************************************************************/
-		cmdBindRenderTargets(pCmd, NUM_GRIDS_PER_CASCADE, pCascade->pLightGrids, NULL, NULL, NULL, NULL, -1, -1);
+		for (uint32_t i = 0; i < NUM_GRIDS_PER_CASCADE; ++i)
+		{
+			loadActions.mLoadActionsColor[i] = LOAD_ACTION_LOAD;
+		}
+		cmdBindRenderTargets(pCmd, NUM_GRIDS_PER_CASCADE, pCascade->pLightGrids, NULL, &loadActions, NULL, NULL, -1, -1);
 		cmdBindPipeline(pCmd, pAura->pPipelineLightCopy);
 		cmdBindDescriptorSet(pCmd, cascade * 2 + 0, pAura->pDescriptorSetLightCopy);
 		cmdDrawInstanced(pCmd, 3, 0, GridRes, 0);
@@ -918,7 +524,7 @@ namespace aura
 			pRenderer->changeRenderTargets(bufferRTs, elementsOf(bufferRTs), TEXTURE_NONE);
 
 #else	// PROPAGATE_ACCUMULATE_ONE_PASS
-			cmdBindRenderTargets(pCmd, NUM_GRIDS_PER_CASCADE, pAura->pWorkingGrids + 3 * bPhase, NULL, NULL, NULL, NULL, -1, -1);
+			cmdBindRenderTargets(pCmd, NUM_GRIDS_PER_CASCADE, pAura->pWorkingGrids + 3 * bPhase, NULL, &loadActions, NULL, NULL, -1, -1);
 #endif	// PROPAGATE_ACCUMULATE_ONE_PASS
 
 			cmdBindPipeline(pCmd, pPipelinePropagateN);
@@ -942,7 +548,7 @@ namespace aura
 			cmdResourceBarrier(pCmd, 0, NULL, NUM_GRIDS_PER_CASCADE * 2, barriers, 0, NULL);
 
 			//	Add propagated light to the final grid
-			cmdBindRenderTargets(pCmd, NUM_GRIDS_PER_CASCADE, pCascade->pLightGrids, NULL, NULL, NULL, NULL, -1, -1);
+			cmdBindRenderTargets(pCmd, NUM_GRIDS_PER_CASCADE, pCascade->pLightGrids, NULL, &loadActions, NULL, NULL, -1, -1);
 			cmdBindPipeline(pCmd, pAura->pPipelineLightCopy);
 			cmdBindDescriptorSet(pCmd, cascade * 2 + (i & 0x1), pAura->pDescriptorSetLightCopy);
 			cmdDrawInstanced(pCmd, 3, 0, GridRes, 0);
@@ -1221,4 +827,417 @@ namespace aura
 	////m_Cascades.push_back(LightPropagationCascade(1760.0f, 320.0f));
 
 	//m_Cascades.push_back(LightPropagationCascade(3520.0f, 1280.0f));
+
+	void addRenderTargets(LightPropagationCascadeDesc* pCascades)
+	{
+		pAura->pCascades = (LightPropagationCascade**)aura::alloc(pAura->mCascadeCount * sizeof(*pAura->pCascades));
+		for (uint32_t i = 0; i < pAura->mCascadeCount; ++i)
+		{
+			addLightPropagationCascade(pAura->pRenderer,pCascades[i].mGridSpan, pCascades[i].mGridIntensity, pCascades[i].mFlags, &pAura->pCascades[i]);
+		}
+
+		for (uint32_t i = 0; i < 6; ++i)
+			addLightPropagationGrid(pAura->pRenderer, &pAura->pWorkingGrids[i], "LPV Working Grid RT");
+	}
+
+	void removeRenderTargets()
+	{
+		for (uint32_t i = 0; i < pAura->mCascadeCount; ++i)
+		{
+			removeLightPropagationCascade(pAura->pRenderer, pAura->pCascades[i]);
+		}
+
+		for (uint32_t i = 0; i < 6; ++i)
+			removeLightPropagationGrid(pAura->pRenderer, pAura->pWorkingGrids[i]);
+
+		aura::dealloc(pAura->pCascades);
+	}
+
+	void addDescriptorSets()
+	{
+		DescriptorSetDesc setDesc = { pAura->pRootSignatureInjectRSMLight, DESCRIPTOR_UPDATE_FREQ_NONE, pAura->mCascadeCount * MAX_FRAMES };
+		addDescriptorSet(pAura->pRenderer, &setDesc, &pAura->pDescriptorSetInjectRSMLight);
+		setDesc = { pAura->pRootSignatureLightPropagate1, DESCRIPTOR_UPDATE_FREQ_NONE, pAura->mCascadeCount };
+		addDescriptorSet(pAura->pRenderer, &setDesc, &pAura->pDescriptorSetLightPropagate1);
+		setDesc = { pAura->pRootSignatureLightPropagateN, DESCRIPTOR_UPDATE_FREQ_NONE, pAura->mCascadeCount * 2 };
+		addDescriptorSet(pAura->pRenderer, &setDesc, &pAura->pDescriptorSetLightPropagateN);
+#if USE_COMPUTE_SHADERS
+		setDesc = { pAura->pRootSignatureLightCopy, DESCRIPTOR_UPDATE_FREQ_NONE, pAura->mCascadeCount };
+#else
+		setDesc = { pAura->pRootSignatureLightCopy, DESCRIPTOR_UPDATE_FREQ_NONE, pAura->mCascadeCount * 2 };
+#endif
+		addDescriptorSet(pAura->pRenderer, &setDesc, &pAura->pDescriptorSetLightCopy);
+
+		setDesc = { pAura->pRootSignatureVisualizeLPV, DESCRIPTOR_UPDATE_FREQ_NONE, MAX_FRAMES };
+		addDescriptorSet(pAura->pRenderer, &setDesc, &pAura->pDescriptorSetVisualizeLPV);
+	}
+
+	void removeDescriptorSets()
+	{
+		removeDescriptorSet(pAura->pRenderer, pAura->pDescriptorSetInjectRSMLight);
+		removeDescriptorSet(pAura->pRenderer, pAura->pDescriptorSetLightPropagate1);
+		removeDescriptorSet(pAura->pRenderer, pAura->pDescriptorSetLightPropagateN);
+		removeDescriptorSet(pAura->pRenderer, pAura->pDescriptorSetLightCopy);
+		removeDescriptorSet(pAura->pRenderer, pAura->pDescriptorSetVisualizeLPV);
+	}
+
+	void addRootSignatures()
+	{
+		const char* pStaticSamplerNames[] = {
+			"pointBorder",
+		};
+		Sampler* pStaticSamplers[] = {
+			pAura->pSamplerPointBorder,
+		};
+
+		RootSignatureDesc injectRSMRootDesc = { &pAura->pShaderInjectRSMLight, 1 };
+		injectRSMRootDesc.mStaticSamplerCount = 1;
+		injectRSMRootDesc.mMaxBindlessTextures = 9;
+		injectRSMRootDesc.ppStaticSamplerNames = pStaticSamplerNames;
+		injectRSMRootDesc.ppStaticSamplers = pStaticSamplers;
+		addRootSignature(pAura->pRenderer, &injectRSMRootDesc, &pAura->pRootSignatureInjectRSMLight);
+
+		RootSignatureDesc propagate1RootDesc = { &pAura->pShaderLightPropagate1[0], 1 };
+		propagate1RootDesc.mStaticSamplerCount = 1;
+		propagate1RootDesc.mMaxBindlessTextures = 9;
+		propagate1RootDesc.ppStaticSamplerNames = pStaticSamplerNames;
+		propagate1RootDesc.ppStaticSamplers = pStaticSamplers;
+		addRootSignature(pAura->pRenderer, &propagate1RootDesc, &pAura->pRootSignatureLightPropagate1);
+		pAura->mPropagation1RootConstantIndex = getDescriptorIndexFromName(pAura->pRootSignatureLightPropagate1, "PropagationSetupRootConstant");
+
+		RootSignatureDesc propagateNRootDesc = { &pAura->pShaderLightPropagateN[0], 1 };
+		propagateNRootDesc.mStaticSamplerCount = 1;
+		propagateNRootDesc.mMaxBindlessTextures = 9;
+		propagateNRootDesc.ppStaticSamplerNames = pStaticSamplerNames;
+		propagateNRootDesc.ppStaticSamplers = pStaticSamplers;
+		addRootSignature(pAura->pRenderer, &propagateNRootDesc, &pAura->pRootSignatureLightPropagateN);
+		pAura->mPropagationNRootConstantIndex = getDescriptorIndexFromName(pAura->pRootSignatureLightPropagateN, "PropagationSetupRootConstant");
+
+		RootSignatureDesc copyRootDesc = { &pAura->pShaderLightCopy, 1 };
+		copyRootDesc.mStaticSamplerCount = 1;
+		copyRootDesc.mMaxBindlessTextures = 9;
+		copyRootDesc.ppStaticSamplerNames = pStaticSamplerNames;
+		copyRootDesc.ppStaticSamplers = pStaticSamplers;
+		addRootSignature(pAura->pRenderer, &copyRootDesc, &pAura->pRootSignatureLightCopy);
+
+		RootSignatureDesc visualizeLPVRootDesc = { &pAura->pShaderLPVVisualize, 1 };
+		visualizeLPVRootDesc.mStaticSamplerCount = 1;
+		visualizeLPVRootDesc.mMaxBindlessTextures = 9;
+		visualizeLPVRootDesc.ppStaticSamplerNames = pStaticSamplerNames;
+		visualizeLPVRootDesc.ppStaticSamplers = pStaticSamplers;
+		addRootSignature(pAura->pRenderer, &visualizeLPVRootDesc, &pAura->pRootSignatureVisualizeLPV);
+	}
+
+	void removeRootSignatures()
+	{
+		removeRootSignature(pAura->pRenderer, pAura->pRootSignatureInjectRSMLight);
+		removeRootSignature(pAura->pRenderer, pAura->pRootSignatureLightPropagate1);
+		removeRootSignature(pAura->pRenderer, pAura->pRootSignatureLightPropagateN);
+		removeRootSignature(pAura->pRenderer, pAura->pRootSignatureLightCopy);
+		removeRootSignature(pAura->pRenderer, pAura->pRootSignatureVisualizeLPV);
+	}
+
+	void addShaders()
+	{
+		ShaderLoadDesc injectRSMLightDesc = {};
+		ShaderLoadDesc lightPropagate1Desc = {};
+		ShaderLoadDesc lightPropagateNDesc = {};
+		ShaderLoadDesc lightCopyDesc = {};
+
+		injectRSMLightDesc.mStages[0] = { "lpvInjectRSMLight.vert" };
+		injectRSMLightDesc.mStages[1] = { "lpvInjectRSMLight.frag" };
+
+#if USE_COMPUTE_SHADERS
+		lightPropagate1Desc.mStages[0] = { "lpvLightPropagate1.comp" };
+		lightPropagateNDesc.mStages[0] = { "lpvLightPropagateN.comp" };
+		lightCopyDesc.mStages[0] = { "lpvLightCopy.comp" };
+#else
+		lightPropagate1Desc.mStages[0] = { "lpvLightPropagate1.vert" };
+		lightPropagate1Desc.mStages[1] = { "lpvLightPropagate1.frag" };
+
+		lightPropagateNDesc.mStages[0] = { "lpvLightPropagateN.vert" };
+		lightPropagateNDesc.mStages[1] = { "lpvLightPropagateN.frag" };
+
+		lightCopyDesc.mStages[0] = { "lpvLightCopy.vert" };
+		lightCopyDesc.mStages[1] = { "lpvLightCopy.frag" };
+#endif // USE_COMPUTE_SHADERS
+
+		addShader(pAura->pRenderer, &injectRSMLightDesc, &pAura->pShaderInjectRSMLight);
+		addShader(pAura->pRenderer, &lightPropagate1Desc, &pAura->pShaderLightPropagate1[0]);
+		addShader(pAura->pRenderer, &lightPropagateNDesc, &pAura->pShaderLightPropagateN[0]);
+		addShader(pAura->pRenderer, &lightCopyDesc, &pAura->pShaderLightCopy);
+
+		ShaderLoadDesc visualizeLPVDesc = {};
+		visualizeLPVDesc.mStages[0] = { "lpvVisualize.vert" };
+		visualizeLPVDesc.mStages[1] = { "lpvVisualize.frag" };
+		addShader(pAura->pRenderer, &visualizeLPVDesc, &pAura->pShaderLPVVisualize);
+	}
+
+	void removeShaders()
+	{
+		removeShader(pAura->pRenderer, pAura->pShaderInjectRSMLight);
+		removeShader(pAura->pRenderer, pAura->pShaderLightPropagate1[0]);
+		removeShader(pAura->pRenderer, pAura->pShaderLightPropagateN[0]);
+		removeShader(pAura->pRenderer, pAura->pShaderLightCopy);
+		removeShader(pAura->pRenderer, pAura->pShaderLPVVisualize);
+	}
+
+	void addPipelines(PipelineCache* pCache, TinyImageFormat visualizeFormat, TinyImageFormat visualizeDepthFormat, SampleCount sampleCount, uint32_t sampleQuality)
+	{
+		/************************************************************************/
+		// Add pipelines
+		/************************************************************************/
+		// States
+		BlendStateDesc blendStateAddDesc = {};
+		for (uint32_t i = 0; i < NUM_GRIDS_PER_CASCADE; ++i)
+		{
+			blendStateAddDesc.mSrcAlphaFactors[i] = BC_ONE;
+			blendStateAddDesc.mDstAlphaFactors[i] = BC_ONE;
+			blendStateAddDesc.mSrcFactors[i] = BC_ONE;
+			blendStateAddDesc.mDstFactors[i] = BC_ONE;
+			blendStateAddDesc.mMasks[i] = ALL;
+		}
+		blendStateAddDesc.mRenderTargetMask = BLEND_STATE_TARGET_0 | BLEND_STATE_TARGET_1 | BLEND_STATE_TARGET_2;
+		blendStateAddDesc.mIndependentBlend = false;
+
+		BlendStateDesc blendStateAlphaDesc = {};
+		for (uint32_t i = 0; i < NUM_GRIDS_PER_CASCADE; ++i)
+		{
+			blendStateAlphaDesc.mSrcAlphaFactors[i] = BC_SRC_ALPHA;
+			blendStateAlphaDesc.mDstAlphaFactors[i] = BC_DST_ALPHA;
+			blendStateAlphaDesc.mSrcFactors[i] = BC_SRC_ALPHA;
+			blendStateAlphaDesc.mDstFactors[i] = BC_ONE_MINUS_SRC_ALPHA;
+			blendStateAlphaDesc.mMasks[i] = ALL;
+			blendStateAlphaDesc.mBlendAlphaModes[i] = BM_MAX;
+			blendStateAlphaDesc.mBlendModes[i] = BM_ADD;
+		}
+		blendStateAlphaDesc.mRenderTargetMask = BLEND_STATE_TARGET_0 | BLEND_STATE_TARGET_1 | BLEND_STATE_TARGET_2;
+		blendStateAlphaDesc.mIndependentBlend = false;
+
+#ifdef	PROPAGATE_ACCUMULATE_ONE_PASS
+		BlendStateDesc blendStateAdd345Desc = {};
+		blendStateAdd345Desc.mRenderTargetMask = BLEND_STATE_TARGET_3 | BLEND_STATE_TARGET_4 | BLEND_STATE_TARGET_5;
+#else	//	PROPAGATE_ACCUMULATE_ONE_PASS
+#endif	//	PROPAGATE_ACCUMULATE_ONE_PASS
+
+		RasterizerStateDesc rasterizerStateDesc = {};
+		rasterizerStateDesc.mCullMode = CULL_MODE_NONE;
+
+		DepthStateDesc depthStateDisableDesc = {};
+
+		// TODO - This should be informed from the engine side. At least the compare function. 
+		DepthStateDesc depthStateDesc = {};
+		depthStateDesc.mDepthTest = true;
+		depthStateDesc.mDepthWrite = true;
+		depthStateDesc.mDepthFunc = CMP_LEQUAL;
+
+
+		TinyImageFormat gridRTDesc[NUM_GRIDS_PER_CASCADE] = {};
+		for (uint32_t i = 0; i < NUM_GRIDS_PER_CASCADE; ++i)
+		{
+			gridRTDesc[i] = TinyImageFormat_R16G16B16A16_SFLOAT;
+		}
+
+		PipelineDesc graphicsPipelineDesc = {};
+		graphicsPipelineDesc.pCache = pCache;
+		graphicsPipelineDesc.mType = PIPELINE_TYPE_GRAPHICS;
+
+		GraphicsPipelineDesc injectRSMPipelineDesc = {};
+		injectRSMPipelineDesc.mPrimitiveTopo = PRIMITIVE_TOPO_POINT_LIST;
+		injectRSMPipelineDesc.mRenderTargetCount = NUM_GRIDS_PER_CASCADE;
+		injectRSMPipelineDesc.pBlendState = &blendStateAddDesc;
+		injectRSMPipelineDesc.pDepthState = &depthStateDisableDesc;
+		injectRSMPipelineDesc.pColorFormats = gridRTDesc;
+		injectRSMPipelineDesc.mSampleCount = SAMPLE_COUNT_1;
+		injectRSMPipelineDesc.mSampleQuality = 0;
+		injectRSMPipelineDesc.pRasterizerState = &rasterizerStateDesc;
+		injectRSMPipelineDesc.pRootSignature = pAura->pRootSignatureInjectRSMLight;
+		injectRSMPipelineDesc.pShaderProgram = pAura->pShaderInjectRSMLight;
+		graphicsPipelineDesc.mGraphicsDesc = injectRSMPipelineDesc;
+		graphicsPipelineDesc.pName = "Inject RSM Light";
+		addPipeline(pAura->pRenderer, &graphicsPipelineDesc, &pAura->pPipelineInjectRSMLight);
+
+#if USE_COMPUTE_SHADERS
+		PipelineDesc computePipelineDesc = {};
+		computePipelineDesc.pCache = pCache;
+		computePipelineDesc.mType = PIPELINE_TYPE_COMPUTE;
+
+		ComputePipelineDesc propagatePipelineDesc = {};
+		propagatePipelineDesc.pRootSignature = pAura->pRootSignatureLightPropagate1;
+		propagatePipelineDesc.pShaderProgram = pAura->pShaderLightPropagate1[0];
+		computePipelineDesc.mComputeDesc = propagatePipelineDesc;
+		computePipelineDesc.pName = "Propagate Light 1";
+		addPipeline(pAura->pRenderer, &computePipelineDesc, &pAura->pPipelineLightPropagate1[0]);
+
+		propagatePipelineDesc.pRootSignature = pAura->pRootSignatureLightPropagateN;
+		propagatePipelineDesc.pShaderProgram = pAura->pShaderLightPropagateN[0];
+		computePipelineDesc.mComputeDesc = propagatePipelineDesc;
+		computePipelineDesc.pName = "Propagate Light N";
+		addPipeline(pAura->pRenderer, &computePipelineDesc, &pAura->pPipelineLightPropagateN[0]);
+
+		ComputePipelineDesc lightCopyPipelineDesc = {};
+		lightCopyPipelineDesc.pRootSignature = pAura->pRootSignatureLightCopy;
+		lightCopyPipelineDesc.pShaderProgram = pAura->pShaderLightCopy;
+		computePipelineDesc.mComputeDesc = lightCopyPipelineDesc;
+		computePipelineDesc.pName = "Propagate Light Copy";
+		addPipeline(pAura->pRenderer, &computePipelineDesc, &pAura->pPipelineLightCopy);
+#else
+		GraphicsPipelineDesc propagatePipelineDesc = {};
+		propagatePipelineDesc.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
+		propagatePipelineDesc.mRenderTargetCount = NUM_GRIDS_PER_CASCADE;
+		propagatePipelineDesc.pDepthState = &depthStateDisableDesc;
+		propagatePipelineDesc.pColorFormats = gridRTDesc;
+		propagatePipelineDesc.mSampleCount = SAMPLE_COUNT_1;
+		propagatePipelineDesc.mSampleQuality = 0;
+		propagatePipelineDesc.pRasterizerState = &rasterizerStateDesc;
+		propagatePipelineDesc.pRootSignature = pAura->pRootSignatureLightPropagate1;
+		propagatePipelineDesc.pShaderProgram = pAura->pShaderLightPropagate1[0];
+		graphicsPipelineDesc.mGraphicsDesc = propagatePipelineDesc;
+		graphicsPipelineDesc.pName = "Propagate Light 1";
+		addPipeline(pAura->pRenderer, &graphicsPipelineDesc, &pAura->pPipelineLightPropagate1[0]);
+
+		propagatePipelineDesc.pRootSignature = pAura->pRootSignatureLightPropagateN;
+		propagatePipelineDesc.pShaderProgram = pAura->pShaderLightPropagateN[0];
+		graphicsPipelineDesc.mGraphicsDesc = propagatePipelineDesc;
+		graphicsPipelineDesc.pName = "Propagate Light N";
+		addPipeline(pAura->pRenderer, &graphicsPipelineDesc, &pAura->pPipelineLightPropagateN[0]);
+
+		GraphicsPipelineDesc lightCopyPipelineDesc = {};
+		lightCopyPipelineDesc.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
+		lightCopyPipelineDesc.mRenderTargetCount = NUM_GRIDS_PER_CASCADE;
+		lightCopyPipelineDesc.pBlendState = &blendStateAddDesc;
+		lightCopyPipelineDesc.pDepthState = &depthStateDisableDesc;
+		lightCopyPipelineDesc.pColorFormats = gridRTDesc;
+		lightCopyPipelineDesc.mSampleCount = SAMPLE_COUNT_1;
+		lightCopyPipelineDesc.mSampleQuality = 0;
+		lightCopyPipelineDesc.pRasterizerState = &rasterizerStateDesc;
+		lightCopyPipelineDesc.pRootSignature = pAura->pRootSignatureLightCopy;
+		lightCopyPipelineDesc.pShaderProgram = pAura->pShaderLightCopy;
+		graphicsPipelineDesc.mGraphicsDesc = lightCopyPipelineDesc;
+		graphicsPipelineDesc.pName = "Propagate Light Copy";
+		addPipeline(pAura->pRenderer, &graphicsPipelineDesc, &pAura->pPipelineLightCopy);
+#endif // USE_COMPUTE_SHADERS
+
+		TinyImageFormat visualizeFormats[1] = { visualizeFormat };
+		GraphicsPipelineDesc visualizeLPVPipelineDesc = {};
+		visualizeLPVPipelineDesc.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
+		visualizeLPVPipelineDesc.mRenderTargetCount = 1;
+		visualizeLPVPipelineDesc.pBlendState = &blendStateAlphaDesc;
+		visualizeLPVPipelineDesc.pDepthState = &depthStateDesc;
+		visualizeLPVPipelineDesc.mDepthStencilFormat = visualizeDepthFormat;
+		visualizeLPVPipelineDesc.pColorFormats = visualizeFormats;
+		visualizeLPVPipelineDesc.mSampleCount = sampleCount;
+		visualizeLPVPipelineDesc.mSampleQuality = sampleQuality;
+		visualizeLPVPipelineDesc.pRasterizerState = &rasterizerStateDesc;
+		visualizeLPVPipelineDesc.pRootSignature = pAura->pRootSignatureVisualizeLPV;
+		visualizeLPVPipelineDesc.pShaderProgram = pAura->pShaderLPVVisualize;
+		graphicsPipelineDesc.mGraphicsDesc = visualizeLPVPipelineDesc;
+		graphicsPipelineDesc.pName = "Visualize LPV";
+		addPipeline(pAura->pRenderer, &graphicsPipelineDesc, &pAura->pPipelineVisualizeLPV);
+	}
+
+	void removePipelines()
+	{
+		removePipeline(pAura->pRenderer, pAura->pPipelineInjectRSMLight);
+		removePipeline(pAura->pRenderer, pAura->pPipelineLightPropagate1[0]);
+		removePipeline(pAura->pRenderer, pAura->pPipelineLightPropagateN[0]);
+		removePipeline(pAura->pRenderer, pAura->pPipelineLightCopy);
+		removePipeline(pAura->pRenderer, pAura->pPipelineVisualizeLPV);
+	}
+
+	void prepareDescriptorSets()
+	{
+		for (uint32_t cascade = 0; cascade < pAura->mCascadeCount; ++cascade)
+		{
+			Texture* pTex[NUM_GRIDS_PER_CASCADE] = {};
+			Texture* pWorkingTex[NUM_GRIDS_PER_CASCADE * 2] = {};
+
+			for (uint32_t i = 0; i < NUM_GRIDS_PER_CASCADE; ++i)
+				getTextureFromRenderTarget(pAura->pCascades[cascade]->pLightGrids[i], &pTex[i]);
+			for (uint32_t i = 0; i < NUM_GRIDS_PER_CASCADE * 2; ++i)
+				getTextureFromRenderTarget(pAura->pWorkingGrids[i], &pWorkingTex[i]);
+
+			// Light propagate 1
+			{
+#if USE_COMPUTE_SHADERS
+				DescriptorData params[4] = {};
+				params[0].pName = "LPVGrid";
+				params[0].ppTextures = &pTex[0];
+				params[0].mCount = pAura->mCascadeCount;
+				params[1].pName = "workCoeffs0";
+				params[1].ppTextures = &pWorkingTex[0];
+				params[2].pName = "workCoeffs1";
+				params[2].ppTextures = &pWorkingTex[1];
+				params[3].pName = "workCoeffs2";
+				params[3].ppTextures = &pWorkingTex[2];
+				updateDescriptorSet(pAura->pRenderer, cascade, pAura->pDescriptorSetLightPropagate1, 4, params);
+#else
+				DescriptorData params[1] = {};
+				params[0].pName = "LPVGrid";
+				params[0].ppTextures = &pTex[0];
+				params[0].mCount = pAura->mCascadeCount;
+				updateDescriptorSet(pAura->pRenderer, cascade, pAura->pDescriptorSetLightPropagate1, 1, params);
+#endif
+			}
+			// Light copy
+			{
+#if USE_COMPUTE_SHADERS
+				DescriptorData params[6] = {};
+				params[0].pName = "workCoeffs0";
+				params[0].ppTextures = &pWorkingTex[0];
+				params[1].pName = "workCoeffs1";
+				params[1].ppTextures = &pWorkingTex[1];
+				params[2].pName = "workCoeffs2";
+				params[2].ppTextures = &pWorkingTex[2];
+				params[3].pName = "RWGrid0";
+				params[3].ppTextures = &pTex[0];
+				params[4].pName = "RWGrid1";
+				params[4].ppTextures = &pTex[1];
+				params[5].pName = "RWGrid2";
+				params[5].ppTextures = &pTex[2];
+				updateDescriptorSet(pAura->pRenderer, cascade, pAura->pDescriptorSetLightCopy, 6, params);
+#else
+				DescriptorData params[3] = {};
+				params[0].pName = "LPVGrid";
+				params[0].ppTextures = &pWorkingTex[0];
+				params[0].mCount = pAura->mCascadeCount;
+				updateDescriptorSet(pAura->pRenderer, cascade * 2 + 0, pAura->pDescriptorSetLightCopy, 1, params);
+
+				params[0].ppTextures = &pWorkingTex[3];
+				params[1].ppTextures = &pWorkingTex[4];
+				params[2].ppTextures = &pWorkingTex[5];
+				updateDescriptorSet(pAura->pRenderer, cascade * 2 + 1, pAura->pDescriptorSetLightCopy, 1, params);
+#endif
+			}
+			// Light propagate N
+			for (uint32_t i = 0; i < 2; ++i)
+			{
+#if USE_COMPUTE_SHADERS
+				DescriptorData params[7] = {};
+				params[0].pName = "LPVGrid";
+				params[0].ppTextures = pWorkingTex + 3 * ((i & 0x1)) + 0;
+				params[0].mCount = pAura->mCascadeCount;
+				params[1].pName = "workCoeffs0";
+				params[1].ppTextures = pWorkingTex + 3 * !(i & 0x1) + 0;
+				params[2].pName = "workCoeffs1";
+				params[2].ppTextures = pWorkingTex + 3 * !(i & 0x1) + 1;
+				params[3].pName = "workCoeffs2";
+				params[3].ppTextures = pWorkingTex + 3 * !(i & 0x1) + 2;
+				params[4].pName = "RWGrid0";
+				params[4].ppTextures = &pTex[0];
+				params[5].pName = "RWGrid1";
+				params[5].ppTextures = &pTex[1];
+				params[6].pName = "RWGrid2";
+				params[6].ppTextures = &pTex[2];
+				updateDescriptorSet(pAura->pRenderer, cascade * 2 + i, pAura->pDescriptorSetLightPropagateN, 7, params);
+#else
+				DescriptorData params[1] = {};
+				params[0].pName = "LPVGrid";
+				params[0].ppTextures = pWorkingTex + 3 * ((i & 0x1)) + 0;
+				params[0].mCount = pAura->mCascadeCount;
+				updateDescriptorSet(pAura->pRenderer, cascade * 2 + i, pAura->pDescriptorSetLightPropagateN, 1, params);
+#endif
+			}
+		}
+	}
 }
