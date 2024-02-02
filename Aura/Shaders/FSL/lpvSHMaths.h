@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017-2022 The Forge Interactive Inc.
+* Copyright (c) 2017-2024 The Forge Interactive Inc.
 *
 * This is a part of Aura.
 * This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
@@ -17,7 +17,7 @@
 #ifdef NO_FSL_DEFINITIONS
 //	Correct ones?
 static const float  SHBand1 = SQRT_3 / (2.0f * SQRT_PI);
-static const float4 SHBasis = float4(1.0f / (2.0f * SQRT_PI), -SHBand1, SHBand1, -SHBand1);
+#define SHBasis aura::float4(1.0f / (2.0f * SQRT_PI), -SHBand1, SHBand1, -SHBand1)
 static const float  SHProjectionScale = SQRT_PI;
 #endif
 
@@ -43,8 +43,6 @@ RES(Tex3D(float4), LPVGrid[3],             UPDATE_FREQ_NONE, t100, binding = 80)
 RES(Tex3D(float4), LPVGridCascades[3 * 3], UPDATE_FREQ_NONE, t103, binding = 83);
 RES(Tex3D(float4), GridOccluder,           UPDATE_FREQ_NONE, t112, binding = 92);
 RES(Tex3D(float4), GridOccluderSecondary,  UPDATE_FREQ_NONE, t113, binding = 93);
-
-DECLARE_RESOURCES()
 
 #ifdef VULKAN
 
@@ -164,7 +162,7 @@ float4 SHRotate(float3 vcDir, const float2 vZHCoeffs)
 	return vResult;
 }
 
-float4 SHProjectCone(const float3 vcDir, const float angle)
+float4 SHProjectCone_angle(const float3 vcDir, const float angle)
 {
 	const float2 vZHCoeffs = SHProjectionScale * float2(0.5f * (1.0f - cos(angle)), 0.75f * sin(angle) * sin(angle));
 
@@ -188,11 +186,11 @@ float4 SHProjectCone(const float3 vcDir)
 
 SHCoeffs Cone90Degree(const float3 vcDir)
 {
-	return SHProjectCone(vcDir, float(PI / 4.0f));
+	return SHProjectCone_angle(vcDir, float(PI / 4.0f));
 }
 
 //	Calculate data
-float SHEvaluateFunction(const float3 vcDir, const float4 data)
+float SHEvaluateFunction_float4(const float3 vcDir, const float4 data)
 {
 	return dot(data, float4(1.0f, vcDir.yzx) * SHBasis);
 }

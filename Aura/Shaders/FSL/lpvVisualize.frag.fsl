@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017-2022 The Forge Interactive Inc.
+* Copyright (c) 2017-2024 The Forge Interactive Inc.
 *
 * This is a part of Aura.
 * This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
@@ -24,7 +24,7 @@ STRUCT(PsOut)
 	DATA(float,  depth, SV_Depth);
 };
 
-PsOut PS_MAIN(PsIn In) 
+PsOut PS_MAIN(PsIn In)
 {
 	INIT_MAIN;
 
@@ -32,13 +32,13 @@ PsOut PS_MAIN(PsIn In)
     N.xy = In.texCoord;
 
     float r2 = dot(N.xy, N.xy);
-    if (r2 > 1.0f) 
+    if (r2 > 1.0f)
         discard;
 
     N.z = -sqrt(1.0f - r2);
 
     // Evaluate spherical harmonics in LPV grid
-    float3 worldSpaceN = mul(Get(invView), float4(N, 0.0f)).xyz;    
+    float3 worldSpaceN = mul(Get(invView), float4(N, 0.0f)).xyz;
 	SHCoeffs shCosineLobe = SHProjectCone(-worldSpaceN);
     SHSpectralCoeffs spCoeffs0 = SHSampleGrid(Get(linearBorder), In.gridPosition, i3(0));
     float3 incidentLuminance = max(f3(0.0f), SHDot(spCoeffs0, shCosineLobe));
@@ -49,11 +49,9 @@ PsOut PS_MAIN(PsIn In)
     float clipZ = getElem(projection_, 2, 2) * pixelPosition.z + getElem(projection_, 3, 2);
     float clipW = getElem(projection_, 2, 3) * pixelPosition.z + getElem(projection_, 3, 3);
 
-    float probeAlpha = any(incidentLuminance) ? 1.0f : 0.5f;
-
     PsOut Out;
     Out.depth = clipZ / clipW;
-    Out.color = float4(incidentLuminance * Get(lightScale), probeAlpha);
-    
+    Out.color = float4(incidentLuminance * Get(lightScale), 1.0f);
+
     RETURN(Out);
 }

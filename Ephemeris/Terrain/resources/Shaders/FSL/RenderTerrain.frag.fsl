@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017-2022 The Forge Interactive Inc.
+* Copyright (c) 2017-2024 The Forge Interactive Inc.
 *
 * This is a part of Ephemeris.
 * This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
@@ -52,7 +52,7 @@ float MipLevel(float2 uv)
 	return 0.75f * log2(d);
 }
 
-PsOut PS_MAIN(PsIn In)
+PsOut PS_MAIN(PsIn In, SV_ISFRONTFACE(bool) frontFace)
 {
 	INIT_MAIN;
 
@@ -121,6 +121,12 @@ PsOut PS_MAIN(PsIn In)
 	f3TerrainBitangent = normalize(cross(f3TerrainTangent, f3TerrainNormal));
 
 	f3TerrainNormal = normalize(mul(surfaceNrm.xzy, f3x3(f3TerrainTangent, f3TerrainNormal, -f3TerrainBitangent)));
+	// darkened faces when view from below
+	if(!frontFace)
+	{
+		result = float3(0.04f, 0.023f, 0.01f);
+		f3TerrainNormal = -EarthNormal;
+	}
   
 	Out.Albedo = float4(result, 1.0f);
 	Out.Normal = float4(f3TerrainNormal, 1.0f);

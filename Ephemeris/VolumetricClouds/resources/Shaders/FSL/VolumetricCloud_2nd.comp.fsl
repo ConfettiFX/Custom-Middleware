@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017-2022 The Forge Interactive Inc.
+* Copyright (c) 2017-2024 The Forge Interactive Inc.
 *
 * This is a part of Ephemeris.
 * This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
@@ -25,18 +25,18 @@ void CS_MAIN(SV_DispatchThreadID(uint3) DTid)
 	ScreenNDC.y = (1.0 - ScreenUV.y) * 2.0f - 1.0f; 
 
 	float3 projectedPosition = float3(ScreenNDC.xy, 0.0f);
-	float4 worldPos = mul(Get(m_DataPerEye)[0].m_ProjToWorldMat, float4(projectedPosition, 1.0f));
+	float4 eyePos = mul(Get(m_DataPerEye)[0].m_ProjToRelativeToEye, float4(projectedPosition, 1.0f));
 	float4 CameraPosition = Get(m_DataPerEye)[0].cameraPosition;
-	worldPos /= worldPos.w;
+	eyePos /= eyePos.w;
 
-	float3 viewDir = normalize(worldPos.xyz - CameraPosition.xyz);
+	float3 viewDir = normalize(eyePos.xyz);
 
 	float intensity;
 	float atmosphereBlendFactor;
 	float depth;
 
 	float randomSeed = lerp(frac(randomFromScreenUV(db_uvs * Get(TimeAndScreenSize).zw)), Get(Random00), Get(m_UseRandomSeed));
-	float density    = GetDensity_Double_Layers(CameraPosition.xyz, worldPos.xyz, viewDir, randomSeed, intensity, atmosphereBlendFactor, depth, db_uvs);
+	float density    = GetDensity_Double_Layers(CameraPosition.xyz, viewDir, randomSeed, intensity, atmosphereBlendFactor, depth, db_uvs);
 
 	Write2D(Get(volumetricCloudsDstTexture), DTid.xy, float4(intensity, atmosphereBlendFactor, depth, density));
 

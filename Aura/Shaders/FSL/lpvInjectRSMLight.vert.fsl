@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017-2022 The Forge Interactive Inc.
+* Copyright (c) 2017-2024 The Forge Interactive Inc.
 *
 * This is a part of Aura.
 * This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
@@ -92,7 +92,7 @@ VsOut VS_MAIN(SV_VertexID(uint) VertexID)
 	// Quantity of light recieved by the surfel is equivalent to 
 	// float	dotFactor = 1;//max(0.001f, abs(dot(-camDir, wNormal)));
 
-	Out.coeffs = SHProjectCone(wNormal);
+	Out.coeffs = (dot(wNormal, wNormal) < 0.000001f) ? f4(0.0f) : SHProjectCone(wNormal);
 	// Igor: comment this for the point/spot light. vDepth doesn't matter for orthogonal projection.
 	vDepth = 1;
 

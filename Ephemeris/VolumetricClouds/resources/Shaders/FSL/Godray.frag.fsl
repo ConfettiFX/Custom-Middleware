@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017-2022 The Forge Interactive Inc.
+* Copyright (c) 2017-2024 The Forge Interactive Inc.
 *
 * This is a part of Ephemeris.
 * This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
@@ -27,11 +27,11 @@ float4 PS_MAIN(PsIn In)
 	float2 ScreenNDC = float2(In.TexCoord.x * 2.0f - 1.0f, (1.0f - In.TexCoord.y) * 2.0f - 1.0f);
 	float3 projectedPosition = float3(ScreenNDC.xy, 0.0f);
 
-	float4 worldPos = mul(Get(m_DataPerEye)[0].m_ProjToWorldMat, float4(projectedPosition, 1.0f));
-	worldPos /= worldPos.w;
+	float4 eyePos = mul(Get(m_DataPerEye)[0].m_ProjToRelativeToEye, float4(projectedPosition, 1.0f));
+	eyePos /= eyePos.w;
 	
 	float4 CameraPosition = Get(m_DataPerEye)[0].cameraPosition;
-	float3 viewDir  = normalize(worldPos.xyz - CameraPosition.xyz);
+	float3 viewDir  = normalize(eyePos.xyz);
 	float  cosTheta = saturate(dot(viewDir, Get(lightDirection).xyz));
 
 	if (cosTheta <= 0.0f || sunPos.z < 0.0f)

@@ -1,147 +1,133 @@
 /*
-* Copyright (c) 2017-2022 The Forge Interactive Inc.
-*
-* This is a part of Ephemeris.
-* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
-* You can not use this code for commercial purposes.
-*
-*/
+ * Copyright (c) 2017-2024 The Forge Interactive Inc.
+ *
+ * This is a part of Ephemeris.
+ * This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
+ * (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge. You can not use
+ * this code for commercial purposes.
+ *
+ */
 
 #include "Icosahedron.h"
 
-#include "../../../../The-Forge/Common_3/Utilities/Math/MathTypes.h"
+#include "../../../../The-Forge/Common_3/Utilities/Interfaces/ILog.h"
 
-void Icosahedron::GetBasicData(eastl::vector<TriangleVertex> &vertices, eastl::vector<TriangleIndex> &indicies)
+static const float icosahedronA = 0.85065080835204f;   // sqrt(2.0f / (5.0f - sqrt(5.0f)))
+static const float icosahedronB = 0.5257311121191336f; // sqrt(2.0f / (5.0f + sqrt(5.0f)))
+
+static const uint32_t icosahedronVertexCount = 12;
+
+static const VertexF3 icosahedronVertices[icosahedronVertexCount] = {
+    { { -icosahedronB, icosahedronA, 0 } },  { { icosahedronB, icosahedronA, 0 } },   { { -icosahedronB, -icosahedronA, 0 } },
+    { { icosahedronB, -icosahedronA, 0 } },  { { 0, -icosahedronB, icosahedronA } },  { { 0, icosahedronB, icosahedronA } },
+    { { 0, -icosahedronB, -icosahedronA } }, { { 0, icosahedronB, -icosahedronA } },  { { icosahedronA, 0, -icosahedronB } },
+    { { icosahedronA, 0, icosahedronB } },   { { -icosahedronA, 0, -icosahedronB } }, { { -icosahedronA, 0, icosahedronB } },
+};
+
+static const uint32_t icosahedronTriangleCount = 20;
+static const uint32_t icosahedronIndices[icosahedronTriangleCount * 3] = {
+    0, 5, 11, 0, 1, 5, 0, 7, 1, 0, 10, 7, 0, 11, 10, 1, 9, 5, 5, 4,  11, 11, 2,  10, 10, 6, 7, 7, 8, 1,
+    3, 4, 9,  3, 2, 4, 3, 6, 2, 3, 8,  6, 3, 9,  8,  4, 5, 9, 2, 11, 4,  6,  10, 2,  8,  7, 6, 9, 1, 8,
+};
+
+struct EdgeNode
 {
-  const float X = .525731112119133606f;
-  const float Z = .850650808352039932f;
-  const float N = 0.f;
+    uint64_t key;
+    uint32_t value;
+};
 
-  /*
-  {-X, N, Z}, { X,N,Z }, { -X,N,-Z }, { X,N,-Z },
-  { N,Z,X }, { N,Z,-X }, { N,-Z,X }, { N,-Z,-X },
-  { Z,X,N }, { -Z,X, N }, { Z,-X,N }, { -Z,-X, N }
-  */
+typedef EdgeNode* EdgeMapStbDs;
 
-  vertices.push_back(TriangleVertex (-X, -N, Z));
-  vertices.push_back(TriangleVertex(X, N, Z));
-  vertices.push_back(TriangleVertex(-X, N, -Z));
-  vertices.push_back(TriangleVertex(X, N, -Z));
+static uint32_t insertOrGetMidpoint(EdgeMapStbDs* midPointMap, VertexStbDsArray* vertices, uint32_t lIndex, uint32_t rIndex)
+{
+    ASSERT(midPointMap);
+    ASSERT(vertices && *vertices);
 
-  vertices.push_back(TriangleVertex(N, Z, X));
-  vertices.push_back(TriangleVertex(N, Z, -X));
-  vertices.push_back(TriangleVertex(N, -Z, X));
-  vertices.push_back(TriangleVertex(N, -Z, -X));
+    uint64_t li = lIndex;
+    uint64_t ri = rIndex;
 
-  vertices.push_back(TriangleVertex(Z, X, N));
-  vertices.push_back(TriangleVertex(-Z, X, N));
-  vertices.push_back(TriangleVertex(Z, -X, N));
-  vertices.push_back(TriangleVertex(-Z, -X, N));
+    if (lIndex > rIndex)
+        ri <<= 32;
+    else
+        li <<= 32;
 
-  /*
-  {0, 4, 1}, { 0,9,4 }, { 9,5,4 }, { 4,5,8 }, { 4,8,1 },
-  { 8,10,1 }, { 8,3,10 }, { 5,3,8 }, { 5,2,3 }, { 2,7,3 },
-  { 7,10,3 }, { 7,6,10 }, { 7,11,6 }, { 11,0,6 }, { 0,1,6 },
-  { 6,1,10 }, { 9,0,11 }, { 9,11,2 }, { 9,2,5 }, { 7,2,11 }
-  */
+    uint64_t key = ri | li;
 
-  indicies.push_back(TriangleIndex(0, 4, 1));
-  indicies.push_back(TriangleIndex(0, 9, 4));
-  indicies.push_back(TriangleIndex(9, 5, 4));
-  indicies.push_back(TriangleIndex(4, 5, 8));
-  indicies.push_back(TriangleIndex(4, 8, 1));
+    EdgeNode* point = hmgetp_null(*midPointMap, key);
+    if (point)
+        return point->value;
 
-  indicies.push_back(TriangleIndex(8, 10, 1));
-  indicies.push_back(TriangleIndex(8, 3, 10));
-  indicies.push_back(TriangleIndex(5, 3, 8));
-  indicies.push_back(TriangleIndex(5, 2, 3));
-  indicies.push_back(TriangleIndex(2, 7, 3));
+    VertexF3& a = (*vertices)[lIndex]; //-V595
+    VertexF3& b = (*vertices)[rIndex]; //-V595
 
-  indicies.push_back(TriangleIndex(7, 10, 3));
-  indicies.push_back(TriangleIndex(7, 6, 10));
-  indicies.push_back(TriangleIndex(7, 11, 6));
-  indicies.push_back(TriangleIndex(11, 0, 6));
-  indicies.push_back(TriangleIndex(0, 1, 6));
+    VertexF3 c{ {
+        (a.pos[0] + b.pos[0]) / 2,
+        (a.pos[1] + b.pos[1]) / 2,
+        (a.pos[2] + b.pos[2]) / 2,
+    } };
 
-  indicies.push_back(TriangleIndex(6, 1, 10));
-  indicies.push_back(TriangleIndex(9, 0, 11));
-  indicies.push_back(TriangleIndex(9, 11, 2));
-  indicies.push_back(TriangleIndex(9, 2, 5));
-  indicies.push_back(TriangleIndex(7, 2, 11));
+    uint32_t index = (uint32_t)arrlen(*vertices);
+    hmput(*midPointMap, key, index);
+    arrpush(*vertices, c);
+    return index;
 }
 
-uint32_t Icosahedron::vertex_for_edge(eastl::map<eastl::pair<uint32_t, uint32_t>, uint32_t>& lookup, eastl::vector<TriangleVertex>& vertices, uint32_t first, uint32_t second)
+static void Subdivide(VertexStbDsArray* outVertices, IndexStbDsArray* outIndices)
 {
-  eastl::map<eastl::pair<uint32_t, uint32_t>, uint32_t>::key_type key(first, second);
-  if (key.first > key.second)
-    eastl::swap(key.first, key.second);
+    EdgeMapStbDs midPointMap = NULL;
 
-  auto inserted = lookup.insert({ key, (uint32_t)vertices.size() }); 
-  // if it is new
-  if (inserted.second)
-  {
-    TriangleVertex edge0 = vertices[first];
-    TriangleVertex edge1 = vertices[second];
-    vec3 newPoint = normalize(vec3(edge0.vertex[0], edge0.vertex[1], edge0.vertex[2]) + vec3(edge1.vertex[0], edge1.vertex[1], edge1.vertex[2]));
-    TriangleVertex point = TriangleVertex(newPoint[0], newPoint[1], newPoint[2]);
-    vertices.push_back(point);
-  }
+    uint32_t* oldIndices = *outIndices;
 
-  return inserted.first->second;
-}
+    uint32_t        numTriangles = (uint32_t)arrlen(*outIndices) / 3;
+    IndexStbDsArray newIndices = NULL;
+    arrsetlen(newIndices, numTriangles * 12);
+    ASSERT(newIndices);
 
-eastl::vector<TriangleIndex> Icosahedron::Subdivide(eastl::vector<TriangleVertex>& vertices, const eastl::vector<TriangleIndex>& triangles)
-{
-  eastl::map<eastl::pair<uint32_t, uint32_t>, uint32_t> lookup;
-  eastl::vector<TriangleIndex> result;
+    for (uint32_t i = 0; i < numTriangles; ++i)
+    {
+        uint32_t t0 = oldIndices[i * 3 + 0];
+        uint32_t t1 = oldIndices[i * 3 + 1];
+        uint32_t t2 = oldIndices[i * 3 + 2];
 
-  uint32_t triangle_count = (uint32_t)triangles.size();
+        uint32_t m0 = insertOrGetMidpoint(&midPointMap, outVertices, t0, t1);
+        uint32_t m1 = insertOrGetMidpoint(&midPointMap, outVertices, t1, t2);
+        uint32_t m2 = insertOrGetMidpoint(&midPointMap, outVertices, t2, t0);
 
-  for (uint32_t i=0; i< triangle_count; i++)
-  {
-    TriangleIndex curTriangle = triangles[i];
-    TriangleIndex mid = TriangleIndex(0, 0, 0);
-    for (int edge = 0; edge < 3; ++edge)
-    {      
-      mid.index[edge] = vertex_for_edge(lookup, vertices, curTriangle.index[edge], curTriangle.index[(edge + 1) % 3]);
+        uint32_t* ind = newIndices + i * 12;
+
+        *(ind++) = t0; //-V769
+        *(ind++) = m0;
+        *(ind++) = m2;
+        *(ind++) = m0;
+        *(ind++) = t1;
+        *(ind++) = m1;
+        *(ind++) = m0;
+        *(ind++) = m1;
+        *(ind++) = m2;
+        *(ind++) = m2;
+        *(ind++) = m1;
+        *(ind++) = t2;
     }
 
-    result.push_back({ curTriangle.index[0], mid.index[0], mid.index[2] });
-    result.push_back({ curTriangle.index[1], mid.index[1], mid.index[0] });
-    result.push_back({ curTriangle.index[2], mid.index[2], mid.index[1] });
-    result.push_back({ mid.index[0], mid.index[1], mid.index[2] });
-  }
-
-  return result;
+    hmfree(midPointMap);
+    arrfree(*outIndices);
+    *outIndices = newIndices;
 }
 
-
-
-void Icosahedron::CreateIcosphere(int subdivisions, eastl::vector<float> &vertices, eastl::vector<uint32_t> &indices)
+void CreateIcosphere(uint32_t subdivisions, VertexStbDsArray* outVertices, IndexStbDsArray* outIndices)
 {
-	eastl::vector<TriangleVertex> triangleVertices;
-	eastl::vector<TriangleIndex> triangleIndices;
+    VertexStbDsArray vertices = NULL;
+    IndexStbDsArray  indices = NULL;
+    arrsetlen(vertices, icosahedronVertexCount);
+    arrsetlen(indices, icosahedronTriangleCount * 3);
+    memcpy((VertexF3*)vertices, icosahedronVertices, icosahedronVertexCount * sizeof(*vertices));
+    memcpy(indices, icosahedronIndices, icosahedronTriangleCount * 3 * sizeof(*indices));
 
-  GetBasicData(triangleVertices, triangleIndices);
+    for (uint32_t i = 0; i < subdivisions; ++i)
+    {
+        Subdivide(&vertices, &indices);
+    }
 
-  for (int i = 0; i < subdivisions; ++i)
-  {
-    triangleIndices = Subdivide(triangleVertices, triangleIndices);
-  }
-
-  for (int i = 0; i < (int)triangleVertices.size(); ++i)
-  {
-    vertices.push_back(triangleVertices[i].vertex[0]);
-    vertices.push_back(triangleVertices[i].vertex[1]);
-    vertices.push_back(triangleVertices[i].vertex[2]);
-  }
-
-  for (int i = 0; i < (int)triangleIndices.size(); ++i)
-  {
-    indices.push_back(triangleIndices[i].index[0]);
-    indices.push_back(triangleIndices[i].index[1]);
-    indices.push_back(triangleIndices[i].index[2]);
-  }
-
-	IndexCount = (uint)indices.size();
+    *outVertices = vertices;
+    *outIndices = indices;
 }
