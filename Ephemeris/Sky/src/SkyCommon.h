@@ -1,16 +1,17 @@
 /*
-* Copyright (c) 2017-2022 The Forge Interactive Inc.
-*
-* This is a part of Ephemeris.
-* This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
-* You can not use this code for commercial purposes.
-*
-*/
+ * Copyright (c) 2017-2024 The Forge Interactive Inc.
+ *
+ * This is a part of Ephemeris.
+ * This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License
+ * (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge. You can not use
+ * this code for commercial purposes.
+ *
+ */
 
-#ifndef	SKY_COMMON_H
-#define	SKY_COMMON_H
+#ifndef SKY_COMMON_H
+#define SKY_COMMON_H
 
-#if !defined(VULKAN) || defined(__linux__) 
+#if !defined(VULKAN) || defined(__linux__)
 static const int TRANSMITTANCE_INTEGRAL_SAMPLES = 500;
 static const int INSCATTER_INTEGRAL_SAMPLES = 50;
 static const int IRRADIANCE_INTEGRAL_SAMPLES = 32;

@@ -269,9 +269,9 @@ uint hash(uint x)
 }
 
 // Compound versions of the hashing algorithm I whipped together.
-uint hash(uint2 v) { return hash(v.x ^ hash(v.y)                        ); }
-uint hash(uint3 v) { return hash(v.x ^ hash(v.y) ^ hash(v.z)            ); }
-uint hash(uint4 v) { return hash(v.x ^ hash(v.y) ^ hash(v.z) ^ hash(v.w)); }
+uint hash_uint2(uint2 v) { return hash(v.x ^ hash(v.y)                        ); }
+uint hash_uint3(uint3 v) { return hash(v.x ^ hash(v.y) ^ hash(v.z)            ); }
+uint hash_uint4(uint4 v) { return hash(v.x ^ hash(v.y) ^ hash(v.z) ^ hash(v.w)); }
 
 // Construct a float with half-open range [0:1] using low 23 bits.
 // All zeroes yields 0.0, all ones yields the next smallest representable value below 1.0.
@@ -291,15 +291,15 @@ float floatConstruct(uint m)
 // Pseudo-random value in half-open range [0:1].
 // NL because of >>8 mantissa returns in range [0:1/256] which is perfect for quantising
 float random(float  x) { return floatConstruct(hash(asuint(x))); }
-float random(float2 v) { return floatConstruct(hash(asuint(v))); }
-float random(float3 v) { return floatConstruct(hash(asuint(v))); }
-float random(float4 v) { return floatConstruct(hash(asuint(v))); }
+float random_float2(float2 v) { return floatConstruct(hash_uint2(asuint(v))); }
+float random_float3(float3 v) { return floatConstruct(hash_uint3(asuint(v))); }
+float random_float4(float4 v) { return floatConstruct(hash_uint4(asuint(v))); }
 
 /* stuff by nomadic lizard */
 
 float3 quantise(float3 fragColor, float2 fragCoord)
 {
-    return fragColor + random(float3(fragCoord, Get(Time)));
+    return fragColor + random_float3(float3(fragCoord, Get(Time)));
 }
 
 float4 PS_MAIN(PsIn In)

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017-2022 The Forge Interactive Inc.
+* Copyright (c) 2017-2024 The Forge Interactive Inc.
 *
 * This is a part of Ephemeris.
 * This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
@@ -26,11 +26,16 @@
 STRUCT(DataPerEye)
 {
 	DATA(f4x4,   m_WorldToProjMat,     None); // Matrix for converting World to Projected Space for the first eye
-	DATA(f4x4,   m_ProjToWorldMat,     None); // Matrix for converting Projected Space to World Matrix for the first eye
 	DATA(f4x4,   m_ViewToWorldMat,     None); // Matrix for converting View Space to World for the first eye
-	DATA(f4x4,   m_PrevWorldToProjMat, None); // Matrix for converting Previous Projected Space to World for the first eye. It is used for reprojection
 	DATA(f4x4,   m_LightToProjMat,     None); // Matrix for converting Light to Projected Space Matrix for the first eye
-	DATA(float4, cameraPosition,       None);
+	// we want to remove precision issue when the eye position is big:
+	// - everything we draw is computed from its screen position or the view direction
+	// - the floating point error got inserted to every member of viewMat * proj and inv(viewMat * proj) multiple times
+	// - we convert screen space coordinate (NDC) to world space relative to the eye (world axis but the origin(0,0,0) becomes the eye)
+	// - finally when sampling the cloud texture using world position we can add the eye position again, the offset is no more baked inside mvp and the likes
+	DATA(f4x4,   m_ProjToRelativeToEye, None); // Matrix for converting projected Space to world coordinate relative to the eye (inViewMatrix without translation part)
+	DATA(f4x4,   m_RelativeToEyetoPreviousProj, None); // Matrix for converting current relative to eye coodinate to previous projected space (ViewMat + deltaBetween2Eyes) * Proj
+	DATA(float4, cameraPosition, None);
 };
 
 STRUCT(DataPerLayer)
@@ -115,6 +120,11 @@ CBUFFER(VolumetricCloudsCBuffer, UPDATE_FREQ_PER_FRAME, b4, binding = 110)
 	DATA(float,        Test01,                 None);
 	DATA(float,        Test02,                 None);
 	DATA(float,        Test03,                 None);
+	// Reprojection
+	DATA(float,        ReprojPrevFrameUnavail, None); // 1 when previous frame data is unavailable, 0 otherwise
+	DATA(float,        PadA,                   None);
+	DATA(float,        PadB,                   None);
+	DATA(float,        PadC,                   None);
 };
 
 RES(Tex3D(float4),    highFreqNoiseTexture,         UPDATE_FREQ_NONE, t0,  binding = 0); //for detail
@@ -133,11 +143,11 @@ RES(Tex2D(float4),    g_SkyBackgroudTexture,        UPDATE_FREQ_NONE, t12, bindi
 RES(Tex2D(float4),    g_BlurTexture,                UPDATE_FREQ_NONE, t13, binding = 13);
 RES(Tex2D(float4),    InputTex,                     UPDATE_FREQ_NONE, t14, binding = 14);
 RES(Tex2D(float4),    SrcTexture,                   UPDATE_FREQ_NONE, t15, binding = 15);
-RES(RWTex2D(float4),  volumetricCloudsDstTexture,   UPDATE_FREQ_NONE, u0,  binding = 16);
-RES(RWTex2D(float4),  OutputTex,                    UPDATE_FREQ_NONE, u1,  binding = 17);
-RES(RWTex2D(float4),  SavePrevTexture,              UPDATE_FREQ_NONE, u2,  binding = 18);
-RES(RWTex2D(float),   DstTexture,                   UPDATE_FREQ_NONE, u3,  binding = 19);
-RES(RWBuffer(float4), TransmittanceColor,           UPDATE_FREQ_NONE, u4,  binding = 20);
+RES(Buffer(float4),   TransmittanceColor,           UPDATE_FREQ_NONE, t16, binding = 16);
+RES(RWTex2D(float4),  volumetricCloudsDstTexture,   UPDATE_FREQ_NONE, u0,  binding = 17);
+RES(RWTex2D(float4),  OutputTex,                    UPDATE_FREQ_NONE, u1,  binding = 18);
+RES(RWTex2D(float4),  SavePrevTexture,              UPDATE_FREQ_NONE, u2,  binding = 19);
+RES(RWTex2D(float),   DstTexture,                   UPDATE_FREQ_NONE, u3,  binding = 20);
 RES(SamplerState,     g_LinearClampSampler,         UPDATE_FREQ_NONE, s0,  binding = 21);
 RES(SamplerState,     g_LinearWrapSampler,          UPDATE_FREQ_NONE, s1,  binding = 22);
 RES(SamplerState,     g_PointClampSampler,          UPDATE_FREQ_NONE, s2,  binding = 23);
@@ -442,7 +452,7 @@ float SampleEnergy(float3 rayPos, float3 magLightDirection, float height_fractio
 }
 
 // Get the final density, light intensirt, atmophereBlendFactor, and distance between hit points against clouds and view position
-float GetDensity(float3 startPos, float3 worldPos, float3 dir, float raymarchOffset, out(float) intensity, out(float) atmosphericBlendFactor, out(float) depth, float2 uv)
+float GetDensity(float3 startPos, float3 dir, float raymarchOffset, out(float) intensity, out(float) atmosphericBlendFactor, out(float) depth, float2 uv)
 {
 	float3 sampleStart, sampleEnd;
 
@@ -637,7 +647,7 @@ float GetDensity(float3 startPos, float3 worldPos, float3 dir, float raymarchOff
 }
 
 // Get the final density, light intensirt, atmophereBlendFactor, and distance between hit points against clouds and view position
-float GetDensityWithComparingDepth(float3 startPos, float3 worldPos, float3 dir, float raymarchOffset, out(float) intensity, out(float) atmosphericBlendFactor, out(float) depth, float2 uv)
+float GetDensityWithComparingDepth(float3 startPos, float3 dir, float raymarchOffset, out(float) intensity, out(float) atmosphericBlendFactor, out(float) depth, float2 uv)
 {
 	float3 sampleStart, sampleEnd;
 
@@ -832,7 +842,7 @@ float GetDensityWithComparingDepth(float3 startPos, float3 worldPos, float3 dir,
 
 
 // Get the final density, light intensirt, atmophereBlendFactor, and distance between hit points against clouds and view position
-float GetDensity_Double_Layers(float3 startPos, float3 worldPos, float3 dir, float raymarchOffset, out(float) intensity, out(float) atmosphericBlendFactor, out(float) depth, float2 uv)
+float GetDensity_Double_Layers(float3 startPos, float3 dir, float raymarchOffset, out(float) intensity, out(float) atmosphericBlendFactor, out(float) depth, float2 uv)
 {
 	float3 sampleStart, sampleEnd;
 
@@ -1099,7 +1109,7 @@ float GetDensity_Double_Layers(float3 startPos, float3 worldPos, float3 dir, flo
 }
 
 // Get the final density, light intensirt, atmophereBlendFactor, and distance between hit points against clouds and view position
-float GetDensity_Double_Layers_WithComparingDepth(float3 startPos, float3 worldPos, float3 dir, float raymarchOffset, out(float) intensity, out(float) atmosphericBlendFactor, out(float) depth, float2 uv)
+float GetDensity_Double_Layers_WithComparingDepth(float3 startPos, float3 dir, float raymarchOffset, out(float) intensity, out(float) atmosphericBlendFactor, out(float) depth, float2 uv)
 {
 	float3 sampleStart, sampleEnd;
 

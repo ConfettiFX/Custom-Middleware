@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017-2022 The Forge Interactive Inc.
+* Copyright (c) 2017-2024 The Forge Interactive Inc.
 *
 * This is a part of Ephemeris.
 * This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
@@ -9,35 +9,38 @@
 
 PUSH_CONSTANT(RootConstant, b0)
 {
-	DATA(uint, mip, None);
+	DATA(uint, mipSize, None);
 };
 
-RES(Tex3D(float4),   SrcTexture, UPDATE_FREQ_NONE, t0, binding = 0);
-RES(RWTex3D(float4), DstTexture, UPDATE_FREQ_NONE, u0, binding = 1);
+RES(RTex3D(float4),  SrcTexture, UPDATE_FREQ_NONE, u0, binding = 0);
+RES(WTex3D(float4), DstTexture, UPDATE_FREQ_NONE, u1, binding = 1);
 
-NUM_THREADS(1, 1, 1)
-void CS_MAIN(SV_GroupThreadID(uint3) GTid, SV_GroupID(uint3) Gid)
+NUM_THREADS(8, 8, 4)
+void CS_MAIN(SV_DispatchThreadID(uint3) DTid)
 {
 	INIT_MAIN;
 
+	if (DTid.x >= Get(mipSize) || DTid.y >= Get(mipSize) || DTid.z >= Get(mipSize))
+	{
+		RETURN();
+	}
+
 	float4 result = f4(0.0f);
 
-	uint iteration = uint(pow(2.0f, float(Get(mip))));
-
-	for (uint x = 0; x < iteration; ++x)
+	for (uint x = 0; x < 2; ++x)
 	{
-		for (uint y = 0; y < iteration; ++y)
+		for (uint y = 0; y < 2; ++y)
 		{
-			for (uint z = 0; z < iteration; ++z)
+			for (uint z = 0; z < 2; ++z)
 			{
-				result += LoadTex3D(Get(SrcTexture), NO_SAMPLER, Gid * iteration + uint3(x, y, z), 0);
+				uint3 coord = DTid * 2 + uint3(x, y, z);
+				result += LoadRWTex3D(Get(SrcTexture), coord);
 			}
 		}
 	}
 
-	result /= (iteration * iteration * iteration);
-
-	Write3D(Get(DstTexture), Gid, result);
+	result /= (2 * 2 * 2);
+	Write3D(Get(DstTexture), DTid, result);
 
 	RETURN();
 }

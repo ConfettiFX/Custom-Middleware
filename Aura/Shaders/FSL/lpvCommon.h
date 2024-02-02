@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017-2022 The Forge Interactive Inc.
+* Copyright (c) 2017-2024 The Forge Interactive Inc.
 *
 * This is a part of Aura.
 * This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
@@ -59,7 +59,7 @@ STRUCT(LightApplyData)
 };
 #endif
 
-#ifdef ORBIS
+#if defined(ORBIS) || defined(PROSPERO)
 #define PAD(n)
 #else
 #define PAD(n) uint _pad##n

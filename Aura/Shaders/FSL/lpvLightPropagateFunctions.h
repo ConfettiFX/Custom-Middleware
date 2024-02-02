@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017-2022 The Forge Interactive Inc.
+* Copyright (c) 2017-2024 The Forge Interactive Inc.
 *
 * This is a part of Aura.
 * This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
@@ -111,9 +111,9 @@ SHSpectralCoeffs IVPropagateVirtualDir(const float3 texCoord,
 \
 		if (useOcclusion) \
 		{ \
-			occlusion = saturate(1.0f - SHEvaluateFunction(nOffset, occluderCoeffs)); \
+			occlusion = saturate(1.0f - SHEvaluateFunction_float4(nOffset, occluderCoeffs)); \
 			/* Igor: is used to allow surfel to block in either direction the same way. */ \
-			occlusion = min(occlusion, saturate(1.0f - SHEvaluateFunction(-nOffset, occluderCoeffs))); \
+			occlusion = min(occlusion, saturate(1.0f - SHEvaluateFunction_float4(-nOffset, occluderCoeffs))); \
 		} \
 \
 		incidentLuminance *= occlusion; \
@@ -123,8 +123,8 @@ SHSpectralCoeffs IVPropagateVirtualDir(const float3 texCoord,
 		{ \
 			SHCoeffs occluderReflectorCoeffs = SHSampleOccluder(Get(pointBorder), LPVtoOccluders(texCoord) + 1.5f * nOffset * hpCellSize, i3(0)); \
 			float3 sourceLuminance = max(SHEvaluateFunction(nOffset, selfSpectralCoeffs), f3(0.0f)); \
-			float  sourceOcclusion = saturate(1.0f - SHEvaluateFunction(-nOffset, occluderCoeffs)); \
-			float  reflectedLuminance = max(SHEvaluateFunction(-nOffset, occluderReflectorCoeffs), 0.0f); \
+			float  sourceOcclusion = saturate(1.0f - SHEvaluateFunction_float4(-nOffset, occluderCoeffs)); \
+			float  reflectedLuminance = max(SHEvaluateFunction_float4(-nOffset, occluderReflectorCoeffs), 0.0f); \
 			reflectedLuminance = (reflectedLuminance > 1.0f) ? 1.0f / reflectedLuminance : reflectedLuminance; \
 \
 			/* sourceLuminance *= sourceOcclusion * reflectedLuminance * occlusion * 5.0f; */ \
@@ -210,9 +210,9 @@ void IVPropagateDirN(inout(SHSpectralCoeffs) pixelCoeffs,
 
 		if (useOcclusion)
 		{
-			occlusion = saturate(1.0f - SHEvaluateFunction(nOffset, occluderCoeffs));
+			occlusion = saturate(1.0f - SHEvaluateFunction_float4(nOffset, occluderCoeffs));
 			//	Igor: is used to allow surfel to block in either direction the same way.
-			occlusion = min(occlusion, saturate(1.0f - SHEvaluateFunction(-nOffset, occluderCoeffs)));
+			occlusion = min(occlusion, saturate(1.0f - SHEvaluateFunction_float4(-nOffset, occluderCoeffs)));
 		}
 
 		incidentLuminance *= occlusion;
@@ -222,8 +222,8 @@ void IVPropagateDirN(inout(SHSpectralCoeffs) pixelCoeffs,
 		{
 			SHCoeffs occluderReflectorCoeffs = SHSampleOccluder(Get(pointBorder), LPVtoOccluders(texCoord) + 1.5f * nOffset * hpCellSize, i3(0));
 			float3 sourceLuminance    = max(SHEvaluateFunction(nOffset, selfSpectralCoeffs), f3(0.0f));
-			float  sourceOcclusion    = saturate(1.0f - SHEvaluateFunction(-nOffset, occluderCoeffs));
-			float  reflectedLuminance = max(SHEvaluateFunction(-nOffset, occluderReflectorCoeffs), 0.0f);
+			float  sourceOcclusion    = saturate(1.0f - SHEvaluateFunction_float4(-nOffset, occluderCoeffs));
+			float  reflectedLuminance = max(SHEvaluateFunction_float4(-nOffset, occluderReflectorCoeffs), 0.0f);
 			reflectedLuminance = (reflectedLuminance > 1.0f) ? 1.0f / reflectedLuminance : reflectedLuminance;
 
 			//sourceLuminance *= sourceOcclusion * reflectedLuminance * occlusion * 5.0f;

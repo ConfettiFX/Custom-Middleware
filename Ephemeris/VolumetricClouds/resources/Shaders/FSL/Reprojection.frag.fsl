@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2017-2022 The Forge Interactive Inc.
+* Copyright (c) 2017-2024 The Forge Interactive Inc.
 *
 * This is a part of Ephemeris.
 * This file(code) is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License (https://creativecommons.org/licenses/by-nc/4.0/legalcode) Based on a work at https://github.com/ConfettiFX/The-Forge.
@@ -28,23 +28,26 @@ float4 PS_MAIN(PsIn In)
 	float  depth = UnPackFloat16(currSample.z);
 	
 	float2 NDC = float2(In.TexCoord.x * 2.0f - 1.0f, (1.0f - In.TexCoord.y) * 2.0f - 1.0f);
-	float4 worldPos = mul(Get(m_DataPerEye)[0].m_ProjToWorldMat, float4(NDC, 0.0f, 1.0f));
-	worldPos /= worldPos.w;
+	float4 eyePos = mul(Get(m_DataPerEye)[0].m_ProjToRelativeToEye, float4(NDC, 0.0f, 1.0f));
+	eyePos /= eyePos.w;
+	float3 viewDir = normalize(eyePos.xyz);
 
-	float3 viewDir = normalize(worldPos.xyz - Get(m_DataPerEye)[0].cameraPosition.xyz);
-
-	float3 firstHitRayPos = (viewDir * depth) + Get(m_DataPerEye)[0].cameraPosition.xyz;
-	float4 prevUV = mul(Get(m_DataPerEye)[0].m_PrevWorldToProjMat, float4(firstHitRayPos, 1.0f));
+	//float3 firstHitRayPos = (viewDir * depth) + Get(m_DataPerEye)[0].cameraPosition.xyz;
+	float3 firstHitEyeRayPos = (viewDir * depth);
+	float4 prevUV = mul(Get(m_DataPerEye)[0].m_RelativeToEyetoPreviousProj, float4(firstHitEyeRayPos, 1.0f));
 	
 	prevUV /= prevUV.w;
 	prevUV.xy = float2((prevUV.x + 1.0f) * 0.5f, (1.0f - prevUV.y) * 0.5f);
 
-	//Check that projected texture coordinates are out bounded or not
+	// Check whether the projected texture coordinates are out bounds
 	float outOfBound = step(0.0f, max(max(-prevUV.x, -prevUV.y), max(prevUV.x, prevUV.y) - 1.0f));	
 
 	float4 prevSample = SampleTex2D(Get(g_PrevFrameTexture), Get(g_LinearClampSampler), prevUV.xy);
 
 	float blend = max(ShouldbeUpdated(In.TexCoord, _Jitter), outOfBound);
+
+	// Only use the new frame when there's no valid previous frame
+	blend = max(blend, Get(ReprojPrevFrameUnavail));
 
 	float4 result = lerp(prevSample, currSample, blend);
 
