@@ -15,7 +15,7 @@
 class HeightData
 {
 public:
-    HeightData(const char* fileName, float heightScale);
+    HeightData(const char* fileName);
     virtual ~HeightData(void);
 
     float getInterpolatedHeight(float col, float row, int step = 1) const;

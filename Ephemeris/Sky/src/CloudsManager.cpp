@@ -1097,7 +1097,7 @@ void CloudsManager::prepareImpostors(Cmd* cmd, const vec3& camPos, const mat4& v
 
             cmdDraw(cmd, (uint32_t)m_CumulusClouds[cumulusID].getParticlesCount(), 0);
 
-            cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
+            cmdBindRenderTargets(cmd, NULL);
 
             //	Igor: since it's not generic apply be very careful with what you set in this loop
             // pRenderer->applyTextures();
@@ -1342,7 +1342,10 @@ void CloudsManager::renderDistantCloud(Cmd* cmd, Texture* Transmittance, Texture
     //	Have to be here since we change rt in m_Impostors[cumulusID].setupRenderer
     // pRenderer->setTexture("base", m_CumulusClouds[cumulusID].Texture(), linearClamp);
 
-    cmdBindRenderTargets(cmd, 1, &pSkyRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
+    BindRenderTargetsDesc bindRenderTargets = {};
+    bindRenderTargets.mRenderTargetCount = 1;
+    bindRenderTargets.ppRenderTargets = &pSkyRenderTarget;
+    cmdBindRenderTargets(cmd, &bindRenderTargets);
     cmdSetViewport(cmd, 0.0f, 0.0f, (float)pSkyRenderTarget->mWidth, (float)pSkyRenderTarget->mHeight, 0.0f, 1.0f);
     cmdSetScissor(cmd, 0, 0, pSkyRenderTarget->mWidth, pSkyRenderTarget->mHeight);
 
@@ -1366,7 +1369,7 @@ void CloudsManager::renderDistantCloud(Cmd* cmd, Texture* Transmittance, Texture
 
     cmdDraw(cmd, 4, 0);
 
-    cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
+    cmdBindRenderTargets(cmd, NULL);
 }
 
 void CloudsManager::renderCumulusCloud(Cmd* cmd, Texture* Transmittance, Texture* Irradiance, Texture* Inscatter, Texture* shaftsMask,
@@ -1461,7 +1464,10 @@ void CloudsManager::renderCumulusCloud(Cmd* cmd, Texture* Transmittance, Texture
     loadActions.mClearColorValues[0].a = 0.0f;
     // loadActions.mClearDepth = pDepthBuffer->mClearValue;
 
-    cmdBindRenderTargets(cmd, 1, &pSkyRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
+    BindRenderTargetsDesc bindRenderTargets = {};
+    bindRenderTargets.mRenderTargetCount = 1;
+    bindRenderTargets.ppRenderTargets = &pSkyRenderTarget;
+    cmdBindRenderTargets(cmd, &bindRenderTargets);
     cmdSetViewport(cmd, 0.0f, 0.0f, (float)pSkyRenderTarget->mWidth, (float)pSkyRenderTarget->mHeight, 0.0f, 1.0f);
     cmdSetScissor(cmd, 0, 0, pSkyRenderTarget->mWidth, pSkyRenderTarget->mHeight);
 
@@ -1510,7 +1516,7 @@ void CloudsManager::renderCumulusCloud(Cmd* cmd, Texture* Transmittance, Texture
 
     cmdDraw(cmd, 4, 0);
 
-    cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
+    cmdBindRenderTargets(cmd, NULL);
 }
 
 void CloudsManager::setParams(const CloudsParams& params) { m_Params = params; }

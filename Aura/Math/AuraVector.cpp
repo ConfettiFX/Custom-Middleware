@@ -14,7 +14,6 @@
 //	TODO: convert this into include file: want maths to be inlined :).
 namespace aura
 {
-
 half::half(const float x)
 {
     union

@@ -14,5 +14,6 @@ RES(Tex2D(float4), depthTexture,            UPDATE_FREQ_NONE, t0, binding = 0);
 RES(Tex2D(float4), volumetricCloudsTexture, UPDATE_FREQ_NONE, t1, binding = 1);
 RES(SamplerState,  g_LinearClamp,           UPDATE_FREQ_NONE, s0, binding = 2);
 RES(SamplerState,  g_LinearBorder,          UPDATE_FREQ_NONE, s1, binding = 3);
+RES(SamplerState,  g_NearestClamp,          UPDATE_FREQ_NONE, s2, binding = 5);
 
 #endif // SPACE_OBJECTS_COMMON_H

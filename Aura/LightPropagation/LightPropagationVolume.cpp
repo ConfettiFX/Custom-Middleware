@@ -362,14 +362,13 @@ void injectRSM(Cmd* pCmd, Renderer* pRenderer, Aura* pAura, uint32_t iVolume, co
     data.WorldToGridTranslate = pCascade->mInjectState.mWorldToGridTranslate;
     memcpy(pAura->pUniformBufferInjectRSM[pAura->mFrameIdx][iVolume]->pCpuMappedAddress, &data, sizeof(LightInjectionData));
 
-    LoadActionsDesc loadActions = {};
+    BindRenderTargetsDesc bindRenderTargets = {};
+    bindRenderTargets.mRenderTargetCount = NUM_GRIDS_PER_CASCADE;
     for (uint32_t i = 0; i < NUM_GRIDS_PER_CASCADE; ++i)
     {
-        loadActions.mClearColorValues[i] = {};
-        loadActions.mLoadActionsColor[i] = LOAD_ACTION_CLEAR;
+        bindRenderTargets.mRenderTargets[i] = { pCascade->pLightGrids[i], LOAD_ACTION_CLEAR };
     }
-
-    cmdBindRenderTargets(pCmd, NUM_GRIDS_PER_CASCADE, pCascade->pLightGrids, NULL, &loadActions, NULL, NULL, -1, -1);
+    cmdBindRenderTargets(pCmd, &bindRenderTargets);
     cmdSetViewport(pCmd, 0.0f, 0.0f, (float)GridRes, (float)GridRes, 0.0f, 1.0f);
     cmdSetScissor(pCmd, 0, 0, GridRes, GridRes);
     cmdBindPipeline(pCmd, pAura->pPipelineInjectRSMLight);
@@ -386,7 +385,7 @@ void injectRSM(Cmd* pCmd, Renderer* pRenderer, Aura* pAura, uint32_t iVolume, co
     cmdBindDescriptorSet(pCmd, pAura->mFrameIdx * pAura->mCascadeCount + iVolume, pAura->pDescriptorSetInjectRSMLight);
     cmdDraw(pCmd, RSMRes[0] * RSMRes[1], 0);
 
-    cmdBindRenderTargets(pCmd, 0, NULL, NULL, NULL, NULL, NULL, -1, -1);
+    cmdBindRenderTargets(pCmd, NULL);
 
     //	Igor: It's pretty odd, but I need this scaler in order to make solid wall
     //	occluder take the whole cell. Pretty odd.
@@ -452,13 +451,13 @@ void propagateLight(Cmd* pCmd, Renderer* pRenderer, Aura* pAura, uint32_t cascad
     /************************************************************************/
     // 1st propagation step
     /************************************************************************/
-    LoadActionsDesc loadActions = {};
+    BindRenderTargetsDesc bindRenderTargets = {};
+    bindRenderTargets.mRenderTargetCount = NUM_GRIDS_PER_CASCADE;
     for (uint32_t i = 0; i < NUM_GRIDS_PER_CASCADE; ++i)
     {
-        loadActions.mClearColorValues[i] = {};
-        loadActions.mLoadActionsColor[i] = LOAD_ACTION_CLEAR;
+        bindRenderTargets.mRenderTargets[i] = { pAura->pWorkingGrids[i], LOAD_ACTION_CLEAR };
     }
-    cmdBindRenderTargets(pCmd, NUM_GRIDS_PER_CASCADE, pAura->pWorkingGrids, NULL, &loadActions, NULL, NULL, -1, -1);
+    cmdBindRenderTargets(pCmd, &bindRenderTargets);
     cmdSetViewport(pCmd, 0.0f, 0.0f, (float)GridRes, (float)GridRes, 0.0f, 1.0f);
     cmdSetScissor(pCmd, 0, 0, GridRes, GridRes);
     cmdBindPipeline(pCmd, pPipelinePropagate1);
@@ -466,7 +465,7 @@ void propagateLight(Cmd* pCmd, Renderer* pRenderer, Aura* pAura, uint32_t cascad
     cmdBindPushConstants(pCmd, pAura->pRootSignatureLightPropagate1, pAura->mPropagation1RootConstantIndex,
                          &pAura->mParams.fPropagationScale);
     cmdDrawInstanced(pCmd, 3, 0, GridRes, 0);
-    cmdBindRenderTargets(pCmd, 0, NULL, NULL, NULL, NULL, NULL, -1, -1);
+    cmdBindRenderTargets(pCmd, NULL);
     /************************************************************************/
     // Barriers
     /************************************************************************/
@@ -480,15 +479,17 @@ void propagateLight(Cmd* pCmd, Renderer* pRenderer, Aura* pAura, uint32_t cascad
     /************************************************************************/
     //	Add propagated light to the final grid
     /************************************************************************/
+    bindRenderTargets = {};
+    bindRenderTargets.mRenderTargetCount = NUM_GRIDS_PER_CASCADE;
     for (uint32_t i = 0; i < NUM_GRIDS_PER_CASCADE; ++i)
     {
-        loadActions.mLoadActionsColor[i] = LOAD_ACTION_LOAD;
+        bindRenderTargets.mRenderTargets[i] = { pCascade->pLightGrids[i], LOAD_ACTION_LOAD };
     }
-    cmdBindRenderTargets(pCmd, NUM_GRIDS_PER_CASCADE, pCascade->pLightGrids, NULL, &loadActions, NULL, NULL, -1, -1);
+    cmdBindRenderTargets(pCmd, &bindRenderTargets);
     cmdBindPipeline(pCmd, pAura->pPipelineLightCopy);
     cmdBindDescriptorSet(pCmd, cascade * 2 + 0, pAura->pDescriptorSetLightCopy);
     cmdDrawInstanced(pCmd, 3, 0, GridRes, 0);
-    cmdBindRenderTargets(pCmd, 0, NULL, NULL, NULL, NULL, NULL, -1, -1);
+    cmdBindRenderTargets(pCmd, NULL);
     /************************************************************************/
     /************************************************************************/
 #endif
@@ -530,7 +531,13 @@ void propagateLight(Cmd* pCmd, Renderer* pRenderer, Aura* pAura, uint32_t cascad
         pRenderer->changeRenderTargets(bufferRTs, elementsOf(bufferRTs), TEXTURE_NONE);
 
 #else  // PROPAGATE_ACCUMULATE_ONE_PASS
-        cmdBindRenderTargets(pCmd, NUM_GRIDS_PER_CASCADE, pAura->pWorkingGrids + 3 * bPhase, NULL, &loadActions, NULL, NULL, -1, -1);
+        BindRenderTargetsDesc bindRenderTargets = {};
+        bindRenderTargets.mRenderTargetCount = NUM_GRIDS_PER_CASCADE;
+        for (uint32_t i = 0; i < NUM_GRIDS_PER_CASCADE; ++i)
+        {
+            bindRenderTargets.mRenderTargets[i] = { pAura->pWorkingGrids[3 * bPhase + i], LOAD_ACTION_LOAD };
+        }
+        cmdBindRenderTargets(pCmd, &bindRenderTargets);
 #endif // PROPAGATE_ACCUMULATE_ONE_PASS
 
         cmdBindPipeline(pCmd, pPipelinePropagateN);
@@ -541,7 +548,7 @@ void propagateLight(Cmd* pCmd, Renderer* pRenderer, Aura* pAura, uint32_t cascad
 
 #ifdef PROPOGATE_ACCUMULATE_ONE_PASS
 #else
-        cmdBindRenderTargets(pCmd, 0, NULL, NULL, NULL, NULL, NULL, -1, -1);
+        cmdBindRenderTargets(pCmd, NULL);
 #endif
 
 #endif //	USE_COMPUTE_SHADERS
@@ -555,11 +562,17 @@ void propagateLight(Cmd* pCmd, Renderer* pRenderer, Aura* pAura, uint32_t cascad
         cmdResourceBarrier(pCmd, 0, NULL, 0, NULL, NUM_GRIDS_PER_CASCADE * 2, barriers);
 
         //	Add propagated light to the final grid
-        cmdBindRenderTargets(pCmd, NUM_GRIDS_PER_CASCADE, pCascade->pLightGrids, NULL, &loadActions, NULL, NULL, -1, -1);
+        bindRenderTargets = {};
+        bindRenderTargets.mRenderTargetCount = NUM_GRIDS_PER_CASCADE;
+        for (uint32_t i = 0; i < NUM_GRIDS_PER_CASCADE; ++i)
+        {
+            bindRenderTargets.mRenderTargets[i] = { pCascade->pLightGrids[i], LOAD_ACTION_LOAD };
+        }
+        cmdBindRenderTargets(pCmd, &bindRenderTargets);
         cmdBindPipeline(pCmd, pAura->pPipelineLightCopy);
         cmdBindDescriptorSet(pCmd, cascade * 2 + (i & 0x1), pAura->pDescriptorSetLightCopy);
         cmdDrawInstanced(pCmd, 3, 0, GridRes, 0);
-        cmdBindRenderTargets(pCmd, 0, NULL, NULL, NULL, NULL, NULL, -1, -1);
+        cmdBindRenderTargets(pCmd, NULL);
 #endif // PROPAGATE_ACCUMULATE_ONE_PASS
 
         //	flip rt and source
@@ -698,10 +711,6 @@ void drawLpvVisualization(Cmd* cmd, Renderer* pRenderer, Aura* pAura, RenderTarg
 {
     Pipeline* pPipeline = pAura->pPipelineVisualizeLPV;
 
-    LoadActionsDesc loadActions = {};
-    loadActions.mLoadActionsColor[0] = LOAD_ACTION_LOAD;
-    loadActions.mLoadActionDepth = LOAD_ACTION_LOAD;
-
     Texture**            ppTextures = (Texture**)alloca(NUM_GRIDS_PER_CASCADE * pAura->mCascadeCount * sizeof(Texture*));
     int                  renderTargetBarrierCount = NUM_GRIDS_PER_CASCADE * pAura->mCascadeCount + 1;
     RenderTargetBarrier* pRenderTargetBarriers = (RenderTargetBarrier*)alloca(renderTargetBarrierCount * sizeof(RenderTargetBarrier));
@@ -718,7 +727,11 @@ void drawLpvVisualization(Cmd* cmd, Renderer* pRenderer, Aura* pAura, RenderTarg
     pRenderTargetBarriers[renderTargetBarrierCount - 1] = { depthRenderTarget, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_DEPTH_WRITE };
     cmdResourceBarrier(cmd, 0, NULL, 0, NULL, renderTargetBarrierCount, pRenderTargetBarriers);
 
-    cmdBindRenderTargets(cmd, 1, &renderTarget, depthRenderTarget, &loadActions, NULL, NULL, -1, -1);
+    BindRenderTargetsDesc bindRenderTargets = {};
+    bindRenderTargets.mRenderTargetCount = 1;
+    bindRenderTargets.mRenderTargets[0] = { renderTarget, LOAD_ACTION_LOAD };
+    bindRenderTargets.mDepthStencil = { depthRenderTarget, LOAD_ACTION_LOAD };
+    cmdBindRenderTargets(cmd, &bindRenderTargets);
     cmdBindPipeline(cmd, pPipeline);
 
     aura::LightPropagationCascade* cascade = pAura->pCascades[cascadeIndex];
@@ -742,7 +755,7 @@ void drawLpvVisualization(Cmd* cmd, Renderer* pRenderer, Aura* pAura, RenderTarg
 
     cmdDraw(cmd, QuadVertexCount * GridRes * GridRes * GridRes, 0);
 
-    cmdBindRenderTargets(cmd, 0, NULL, NULL, NULL, NULL, NULL, -1, -1);
+    cmdBindRenderTargets(cmd, NULL);
 
     // Reset barrier states.
     for (uint32_t i = 0; i < pAura->mCascadeCount; ++i)
@@ -999,7 +1012,7 @@ void addPipelines(PipelineCache* pCache, TinyImageFormat visualizeFormat, TinyIm
     DepthStateDesc depthStateDesc = {};
     depthStateDesc.mDepthTest = true;
     depthStateDesc.mDepthWrite = true;
-    depthStateDesc.mDepthFunc = CMP_LEQUAL;
+    depthStateDesc.mDepthFunc = CMP_GEQUAL;
 
     TinyImageFormat gridRTDesc[NUM_GRIDS_PER_CASCADE] = {};
     for (uint32_t i = 0; i < NUM_GRIDS_PER_CASCADE; ++i)

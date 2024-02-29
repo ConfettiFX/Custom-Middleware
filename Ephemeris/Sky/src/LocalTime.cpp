@@ -11,14 +11,13 @@
 #include "LocalTime.h"
 
 #include <time.h>
-#if !defined(ORBIS) && !defined(PROSPERO)
+#if !defined(ORBIS) && !defined(PROSPERO) && !defined(__linux__)
 #include <sys/timeb.h>
 #endif //	SN_TARGET_PS3
 #include <math.h>
 
 namespace confetti
 {
-
 const int FirstMonth = 1;
 const int FirstDay = 1;
 

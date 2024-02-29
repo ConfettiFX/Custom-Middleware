@@ -67,9 +67,10 @@ typedef eastl::unordered_map<uint32_t, Zone*> ZoneMap;
 
 struct VolumetricCloudsShadowCB
 {
-    vec4 SettingInfo00;    // x : EnableCastShadow, y : CloudCoverage, z : WeatherTextureTiling, w : Time
-    vec4 StandardPosition; // xyz : The current center location for applying wind, w : ShadowBrightness
-    vec4 ShadowInfo;       // vec4(gAppSettings.m_ShadowBrightness, gAppSettings.m_ShadowSpeed, gAppSettings.m_ShadowTiling, 0.0);
+    vec4 SettingInfo00;       // x : EnableCastShadow, y : CloudCoverage, z : WeatherTextureTiling, w : Time
+    vec4 StandardPosition;    // xyz : The current center location for applying wind, w : ShadowBrightness
+    vec4 ShadowInfo;          // vec4(gAppSettings.m_ShadowBrightness, gAppSettings.m_ShadowSpeed, gAppSettings.m_ShadowTiling, 0.0);
+    vec4 WeatherDisplacement; // WeatherTextureOffsetX, WeatherTextureOffsetZ, 0.0, 0.0
 };
 
 class Terrain: public IMiddleware
@@ -87,7 +88,7 @@ public:
     void Initialize(ICameraController* InCameraController, ProfileToken InGraphicsGpuProfiler);
 
     bool Load(int32_t width, int32_t height);
-    void GenerateTerrainFromHeightmap(float height, float radius);
+    void GenerateTerrainFromHeightmap(float radius);
     bool GenerateNormalMap(Cmd* cmd);
 
     virtual void addDescriptorSets();
@@ -160,7 +161,7 @@ public:
 
     Sampler* pLinearMirrorSampler = NULL;
     Sampler* pLinearWrapSampler = NULL;
-    Sampler* pLinearBorderSampler = NULL;
+    Sampler* pNearestClampSampler = NULL;
 
     RenderTarget* pGBuffer_BasicRT = NULL;
     RenderTarget* pGBuffer_NormalRT = NULL;

@@ -20,7 +20,6 @@
 
 namespace aura
 {
-
 struct TextureFootprint
 {
     uint64_t mTotalByteCount;

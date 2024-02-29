@@ -21,11 +21,12 @@ float4 PS_MAIN(PsIn In)
 	INIT_MAIN;
 
 	float4 volumetricCloudsResult = SampleTex2D(Get(g_PostProcessedTexture), Get(g_LinearClampSampler), In.TexCoord);
-	float  sceneDepth = SampleLvlTex2D(Get(depthTexture), Get(g_LinearClampSampler), In.TexCoord, 0).r;
-	float  atmosphericBlendFactor = SampleLvlTex2D(Get(g_PrevVolumetricCloudTexture), Get(g_LinearClampSampler), In.TexCoord, 0).g;
+	float  atmosphericBlendFactor = SampleLvlTex2D(Get(g_HighResolutionCloudTexture), Get(g_LinearClampSampler), In.TexCoord, 0).g;
 
-	if(Get(EnabledDepthCulling) > 0.5f)
-		RETURN(float4(volumetricCloudsResult.rgb, sceneDepth >= 1.0f ? 1.0f - getAtmosphereBlendForComposite(atmosphericBlendFactor) : 0.0f));
-	else
-		RETURN(float4(volumetricCloudsResult.rgb, 1.0f - getAtmosphereBlendForComposite(atmosphericBlendFactor)));
+	float  sceneLinearDepth = SampleLvlTex2D(Get(depthTexture), Get(g_NearestClampSampler), In.TexCoord, 0).r;
+	sceneLinearDepth = lerp(Get(CameraNear), Get(CameraFar), sceneLinearDepth);
+	float  cloudDepth = SampleLvlTex2D(Get(g_HighResolutionCloudTexture), Get(g_NearestClampSampler), In.TexCoord, 0).b;
+	cloudDepth = UnPackFloat16(cloudDepth);
+
+	RETURN(float4(volumetricCloudsResult.rgb, cloudDepth < sceneLinearDepth ? 1.0f - getAtmosphereBlendForComposite(atmosphericBlendFactor) : 0.0f));
 }

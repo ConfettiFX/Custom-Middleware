@@ -25,7 +25,7 @@ float PS_MAIN(PsIn In)
 {
 	INIT_MAIN;
 
-	float Out = DepthLinearization(SampleTex2D(Get(SrcTexture), Get(g_LinearClamp), In.TexCoord).r);
+	float Out = DepthLinearization(SampleTex2D(Get(SrcTexture), Get(g_NearestClamp), In.TexCoord).r);
 
 	RETURN(Out);
 }

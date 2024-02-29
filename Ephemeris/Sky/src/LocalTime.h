@@ -15,7 +15,6 @@
 
 namespace confetti
 {
-
 class LocalTime
 {
 public:

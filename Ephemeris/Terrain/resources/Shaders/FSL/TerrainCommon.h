@@ -29,9 +29,10 @@ CBUFFER(LightingTerrainUniformBuffer, UPDATE_FREQ_PER_FRAME, b1, binding = 1)
 
 CBUFFER(VolumetricCloudsShadowCB, UPDATE_FREQ_PER_FRAME, b2, binding = 2)
 {
-	DATA(float4, SettingInfo00,    None); // x : EnableCastShadow, y : CloudCoverage, z : WeatherTextureTiling, w : Time
-	DATA(float4, StandardPosition, None); // xyz : The current center location for applying wind, w : ShadowBrightness
-	DATA(float4, ShadowInfo,       None);
+	DATA(float4, SettingInfo00,    None);    // x : EnableCastShadow, y : CloudCoverage, z : WeatherTextureTiling, w : Time
+	DATA(float4, StandardPosition, None);    // xyz : The current center location for applying wind, w : ShadowBrightness
+	DATA(float4, ShadowInfo,       None);    // EnableShadow, ShadowIntensity, WeatherTextureSize, 0.0;
+	DATA(float4, WeatherDisplacement, None); // WeatherTextureOffsetX, WeatherTextureOffsetZ, 0.0, 0.0
 };
 
 RES(Tex2D(float4), NormalMap,          UPDATE_FREQ_NONE, t0,  binding = 0);
@@ -44,5 +45,6 @@ RES(Tex2D(float4), weatherTexture,     UPDATE_FREQ_NONE, t14, binding = 14);
 RES(Tex2D(float4), depthTexture,       UPDATE_FREQ_NONE, t15, binding = 15);
 RES(SamplerState,  g_LinearMirror,     UPDATE_FREQ_NONE, s0,  binding = 16);
 RES(SamplerState,  g_LinearWrap,       UPDATE_FREQ_NONE, s1,  binding = 17);
+RES(SamplerState,  g_NearestClamp,     UPDATE_FREQ_NONE, s2,  binding = 18);
 
 #endif // TERRAIN_COMMON_H

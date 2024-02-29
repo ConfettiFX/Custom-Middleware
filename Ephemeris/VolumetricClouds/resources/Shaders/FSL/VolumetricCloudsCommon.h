@@ -11,7 +11,7 @@
 #define VOLUMETRIC_CLOUDS_COMMON_H
 
 #define TRANSMITTANCE_SAMPLE_STEP_COUNT 5         // Number of energy sample
-#define MAX_SAMPLE_STEP_DISTANCE        200000.0f // When the ray-marching distance exceeds this number, it stops.
+#define DEFAULT_MAX_DISTANCE            200000.0f // default maximum draw cloud distance 
 #define PI                              3.1415926535897932384626433832795f
 #define PI2                             6.283185307179586476925286766559f
 #define ONE_OVER_FOURPI                 0.07957747154594767f
@@ -58,9 +58,9 @@ STRUCT(DataPerLayer)
 	DATA(float,  CurlTextureTiling,               None); // Control the curl size of the clouds. Using bigger value makes smaller curl shapes.
 	DATA(float,  CurlStrenth,                     None); // Intensify the curl effect.
 	DATA(float,  AnvilBias,                       None); // Using lower value makes anvil shape.
-	DATA(float,  PadA,                            None);
-	DATA(float,  PadB,                            None);
-	DATA(float,  PadC,                            None);
+	DATA(float,  Contrast,                        None); // Contrast of the clouds' color 
+	DATA(float,  Precipitation,                   None);
+	DATA(float,  RisingVaporIntensity,            None);
 	DATA(float4, WindDirection,                   None);
 	DATA(float4, StandardPosition,                None); // The current center location for applying wind
 	DATA(float,  WeatherTextureSize,              None); // Control the size of Weather map, bigger value makes the world to be covered by larger clouds pattern.
@@ -71,10 +71,6 @@ STRUCT(DataPerLayer)
 	DATA(float,  RotationAngle,                   None);
 	DATA(float,  RisingVaporScale,                None);
 	DATA(float,  RisingVaporUpDirection,          None);
-	DATA(float,  RisingVaporIntensity,            None);
-	DATA(float,  PadD,                            None);
-	DATA(float,  PadE,                            None);
-	DATA(float,  PadF,                            None);
 };
 
 CBUFFER(VolumetricCloudsCBuffer, UPDATE_FREQ_PER_FRAME, b4, binding = 110)
@@ -96,18 +92,14 @@ CBUFFER(VolumetricCloudsCBuffer, UPDATE_FREQ_PER_FRAME, b4, binding = 110)
 	DATA(float,        m_CorrectV,             None); // m_JitterX / FullHeight			
 	//Lighting
 	DATA(float,        BackgroundBlendFactor,  None); // Blend clouds with the background, more background will be shown if this value is close to 0.0
-	DATA(float,        Contrast,               None); // Contrast of the clouds' color 
 	DATA(float,        Eccentricity,           None); // The bright highlights around the sun that the user needs at sunset
 	DATA(float,        CloudBrightness,        None); // The brightness for clouds
-	DATA(float,        Precipitation,          None);
 	DATA(float,        SilverliningIntensity,  None); // Intensity of silver-lining
 	DATA(float,        SilverliningSpread,     None); // Using bigger value spreads more silver-lining, but the intesity of it
 	DATA(float,        Random00,               None); // Random seed for the first ray-marching offset
-	DATA(float,        CameraFarClip,          None);
 	DATA(uint,         EnabledDepthCulling,    None);
-	DATA(uint,         EnabledLodDepthCulling, None);
-	DATA(uint,         DepthMapWidth,          None);
-	DATA(uint,         DepthMapHeight,         None);
+	DATA(uint,         HiZDepthMapWidth,       None);
+	DATA(uint,         HiZDepthMapHeight,      None);
 	// VolumetricClouds' Light shaft
 	DATA(uint,         GodNumSamples,          None); // Number of godray samples
 	DATA(float,        GodrayMaxBrightness,    None);
@@ -122,9 +114,10 @@ CBUFFER(VolumetricCloudsCBuffer, UPDATE_FREQ_PER_FRAME, b4, binding = 110)
 	DATA(float,        Test03,                 None);
 	// Reprojection
 	DATA(float,        ReprojPrevFrameUnavail, None); // 1 when previous frame data is unavailable, 0 otherwise
+	DATA(float,        CameraNear,             None);
+	DATA(float,        CameraFar,              None);
 	DATA(float,        PadA,                   None);
 	DATA(float,        PadB,                   None);
-	DATA(float,        PadC,                   None);
 };
 
 RES(Tex3D(float4),    highFreqNoiseTexture,         UPDATE_FREQ_NONE, t0,  binding = 0); //for detail
@@ -136,7 +129,7 @@ RES(Tex2D(float4),    LowResCloudTexture,           UPDATE_FREQ_NONE, t5,  bindi
 RES(Tex2D(float4),    g_PrevFrameTexture,           UPDATE_FREQ_NONE, t6,  binding = 6);
 RES(Tex2D(float4),    g_LinearDepthTexture,         UPDATE_FREQ_NONE, t7,  binding = 7);
 RES(Tex2D(float4),    g_PostProcessedTexture,       UPDATE_FREQ_NONE, t8,  binding = 8);
-RES(Tex2D(float4),    g_PrevVolumetricCloudTexture, UPDATE_FREQ_NONE, t9,  binding = 9);
+RES(Tex2D(float4),    g_HighResolutionCloudTexture, UPDATE_FREQ_NONE, t9,  binding = 9);
 RES(Tex2D(float4),    g_GodrayTexture,              UPDATE_FREQ_NONE, t10, binding = 10);
 RES(Tex2D(float4),    g_SrcTexture2D,               UPDATE_FREQ_NONE, t11, binding = 11);
 RES(Tex2D(float4),    g_SkyBackgroudTexture,        UPDATE_FREQ_NONE, t12, binding = 12);
@@ -146,12 +139,13 @@ RES(Tex2D(float4),    SrcTexture,                   UPDATE_FREQ_NONE, t15, bindi
 RES(Buffer(float4),   TransmittanceColor,           UPDATE_FREQ_NONE, t16, binding = 16);
 RES(RWTex2D(float4),  volumetricCloudsDstTexture,   UPDATE_FREQ_NONE, u0,  binding = 17);
 RES(RWTex2D(float4),  OutputTex,                    UPDATE_FREQ_NONE, u1,  binding = 18);
-RES(RWTex2D(float4),  SavePrevTexture,              UPDATE_FREQ_NONE, u2,  binding = 19);
+RES(RWTex2D(float4),  FullResCloudTexture,          UPDATE_FREQ_NONE, u2,  binding = 19);
 RES(RWTex2D(float),   DstTexture,                   UPDATE_FREQ_NONE, u3,  binding = 20);
 RES(SamplerState,     g_LinearClampSampler,         UPDATE_FREQ_NONE, s0,  binding = 21);
 RES(SamplerState,     g_LinearWrapSampler,          UPDATE_FREQ_NONE, s1,  binding = 22);
 RES(SamplerState,     g_PointClampSampler,          UPDATE_FREQ_NONE, s2,  binding = 23);
 RES(SamplerState,     g_LinearBorderSampler,        UPDATE_FREQ_NONE, s3,  binding = 24);
+RES(SamplerState,     g_NearestClampSampler,        UPDATE_FREQ_NONE, s4,  binding = 25);
 
 STATIC const float3 rand[TRANSMITTANCE_SAMPLE_STEP_COUNT + 1] = {
 	{  0.0f,       0.0f,       0.0f      },
@@ -276,18 +270,11 @@ float UnPackFloat16(float value)
 
 float getAtmosphereBlendForComposite(float distance)
 {
-	float rate = lerp(0.75f, 0.4f, saturate(Get(m_MaxSampleDistance) / MAX_SAMPLE_STEP_DISTANCE));
+	float rate = lerp(0.75f, 0.4f, saturate(Get(m_MaxSampleDistance) / DEFAULT_MAX_DISTANCE));
 	float Threshold = Get(m_MaxSampleDistance) * rate;
 	float InvThreshold = Get(m_MaxSampleDistance) - Threshold;
 
-	return saturate(max(distance * MAX_SAMPLE_STEP_DISTANCE - Threshold, 0.0f) / InvThreshold);
-}
-
-float GetLODBias(float distance)
-{
-	float factor = 50000.0f;
-
-	return saturate(max(distance - factor, 0.0f) / (MAX_SAMPLE_STEP_DISTANCE - factor));
+	return saturate(max(distance * DEFAULT_MAX_DISTANCE - Threshold, 0.0f) / InvThreshold);
 }
 
 float2 Rotation(float2 pos, float theta)
@@ -298,18 +285,41 @@ float2 Rotation(float2 pos, float theta)
 	return float2(pos.x * cosTheta - pos.y * sinTheta, pos.x * sinTheta + pos.y * cosTheta);
 }
 
-// Determine which type of clouds is going to be used
+float easingOutQuad(float x)
+{
+	// return 1.0f - pow(1.0f - x, Get(Test02));
+	return 1.0f - pow(1.0f - x, 2.0f);
+}
+
+float easingOutStratus(float x)
+{
+	return 1.0f - pow(1.0f - x, 1.4f);
+}
+
+// Determine the width of your cloud layer
+// we use the relative height inside the cloud layer and the cloud type to define different width
+// chaining 2 remap function on the height can determine for a cloud type its density function [0-1] -> [1-1] -> [0-1]
+// Adding easing function to have a better transition between the different "cut", note: it increases the overall height of the cloud
 float GetDensityHeightGradientForPoint(float relativeHeight, float cloudType)
 {
-	float cumulus = max(0.0f, RemapClamped(relativeHeight, 0.01f, 0.15f, 0.0f, 1.0f) * RemapClamped(relativeHeight, 0.9f, 0.95f, 1.0f, 0.0f));
-	float stratocumulus = max(0.0f, RemapClamped(relativeHeight, 0.0f, 0.15f, 0.0f, 1.0f) * RemapClamped(relativeHeight, 0.3f, 0.65f, 1.0f, 0.0f));
-	float stratus = max(0.0f, RemapClamped(relativeHeight, 0.0f, 0.1f, 0.0f, 1.0f) * RemapClamped(relativeHeight, 0.2f, 0.3f, 1.0f, 0.0f));
-	float cloudType2 = cloudType * 2.0f;
+	// This gives the height limit
+	// Low Cloud, thin layer
+	float stratus = max(0.0f,
+		easingOutStratus(RemapClamped(relativeHeight, 0.08f, 0.28f, 0.0f, 1.0f)) *
+		easingOutStratus(RemapClamped(relativeHeight, 0.42f, 0.62f, 1.0f, 0.0f))
+	);
 
-	float a = lerp(stratus, stratocumulus, saturate(cloudType2));
-	float b = lerp(stratocumulus, cumulus, saturate(cloudType2 - 1.0f));
+	// High Cloud, more thick
+	float stratocumulus = max(0.0f,
+		easingOutQuad(RemapClamped(relativeHeight, 0.18f, 0.41f, 0.0f, 1.0f)) *
+		easingOutQuad(RemapClamped(relativeHeight, 0.65f, 0.98f, 1.0f, 0.0f))
+	);
 
-	return lerp(a, b, round(cloudType));
+	// increase contrast in cloudType texture
+	float cloudType2 = cloudType * cloudType;
+	cloudType2 = cloudType2 * 2.0f;
+
+	return lerp(stratus, stratocumulus, saturate(cloudType2));
 }
 
 // Get the density of clouds from current ray-marched position
@@ -321,7 +331,7 @@ float SampleDensity(float3 worldPos, float lod, float height_fraction, float3 cu
 	float WeatherTextureOffsetZ, float WeatherTextureSize, float RotationPivotOffsetX, float RotationPivotOffsetZ,
 	float RotationAngle, bool cheap)
 {
-	// Skew in wind direction	
+	// Skew in wind direfction	
 	// Unwind position only for weatherData
 	float3 unwindWorldPos = worldPos;
 
@@ -353,7 +363,7 @@ float SampleDensity(float3 worldPos, float lod, float height_fraction, float3 cu
 	// Apply the height function to the base cloud shape
 	base_cloud *= density_height_gradient;
 
-	float cloud_coverage = saturate(weatherData.r);
+	float cloud_coverage = saturate(weatherData.b);
 	cloud_coverage = pow(cloud_coverage, RemapClamped(height_fraction, 0.2f, 0.8f, 1.0f, lerp(1.0f, 0.5f, AnvilBias)));
 
 	float base_cloud_coverage = RemapClamped(base_cloud, cloud_coverage, 1.0f, 0.0f, 1.0f);
@@ -412,7 +422,7 @@ float SampleEnergy(float3 rayPos, float3 magLightDirection, float height_fractio
 	float RisingVaporIntensity, float3 cloudTopOffsetWithWindDir, float4 windWithVelocity, float3 biasedCloudPos, 
 	float DetailShapeTilingDivCloudSize, float WeatherTextureOffsetX, float WeatherTextureOffsetZ, float WeatherTextureSize,
 	float RotationPivotOffsetX, float RotationPivotOffsetZ, float RotationAngle, float ds_loded, 
-	float stepSize, float cosTheta, float mipBias)
+	float stepSize, float cosTheta, float mipBias, float constrast, float precipitation)
 {
 	float totalSample  = 0.0f;
 	float mipmapOffset = mipBias;
@@ -443,10 +453,10 @@ float SampleEnergy(float3 rayPos, float3 magLightDirection, float height_fractio
 	}
 
 	float hg = max(HenryGreenstein(Get(Eccentricity), cosTheta), saturate(HenryGreenstein(0.99f - Get(SilverliningSpread), cosTheta))) * Get(SilverliningIntensity);
-	float dl = totalSample * Get(Precipitation);
+	float dl = totalSample * precipitation;
 	hg /= max(dl, 0.05f);
 
-	float energy = GetLightEnergy(height_fraction, dl, ds_loded, hg, cosTheta, stepSize, Get(Contrast));
+	float energy = GetLightEnergy(height_fraction, dl, ds_loded, hg, cosTheta, stepSize, constrast);
 
 	return energy;
 }
@@ -456,64 +466,51 @@ float GetDensity(float3 startPos, float3 dir, float raymarchOffset, out(float) i
 {
 	float3 sampleStart, sampleEnd;
 
-	depth = 0.0f;
+	// use default far when nothing is hit, this preserve temporal reprojection
+	depth = Get(CameraFar);
 	intensity = 0.0f;
 	atmosphericBlendFactor = 0.0f;
 
 	// If the current view direction is not intersected with cloud's layers
 	if (!GetStartEndPointForRayMarching(startPos, dir, Get(EarthCenter).xyz, Get(m_DataPerLayer)[0].EarthRadiusAddCloudsLayerStart2, Get(m_DataPerLayer)[0].EarthRadiusAddCloudsLayerEnd2, sampleStart, sampleEnd))
-		return 0.0f;
+		return 1.0f;
 
 	// Determine the sample count and its step size along the cosTheta of view direction with Up vector 
-	float horizon = abs(dir.y);
+	float3 upVector = normalize(startPos - Get(EarthCenter).xyz);
+	float horizon = abs(dot(dir, upVector));
 	uint  sample_count = uint(lerp(float(Get(MAX_ITERATION_COUNT)), float(Get(MIN_ITERATION_COUNT)), horizon));
 	float sample_step  = lerp(Get(m_StepSize).y, Get(m_StepSize).x, horizon);
 
-	// Update the distance between hit points against clouds and view position
-	depth = distance(sampleEnd, startPos);
-
 	float distCameraToStart = distance(sampleStart, startPos);
-	atmosphericBlendFactor  = distCameraToStart / MAX_SAMPLE_STEP_DISTANCE;
+	atmosphericBlendFactor  = distCameraToStart / DEFAULT_MAX_DISTANCE;
 
-	// Atmosphere Culling		
-	// we don't need to render the clouds where the background should be shown 100%
-	// How the clouds should be blended depends on the user 
-	if (distCameraToStart >= Get(m_MaxSampleDistance))
+	float it1, it2;
+	ray_trace_sphere(startPos, dir, Get(EarthCenter).xyz, Get(EarthRadius) * Get(EarthRadius), it1, it2);
+	float distanceToEarthShell = it1 > 0.0f ? it1 : it2;
+	float maxSamplingDistance = distanceToEarthShell > 0.0f ? min(distanceToEarthShell, Get(m_MaxSampleDistance)) : Get(m_MaxSampleDistance);
+
+	float innerShellIntersection, outerShellIntersection;
+	ray_trace_sphere(startPos, dir, Get(EarthCenter).xyz, Get(m_DataPerLayer)[0].EarthRadiusAddCloudsLayerStart2, it1, it2);
+	innerShellIntersection = max(it1, it2);
+	ray_trace_sphere(startPos, dir, Get(EarthCenter).xyz, Get(m_DataPerLayer)[0].EarthRadiusAddCloudsLayerEnd2, it1, it2);
+	outerShellIntersection = max(it1, it2);
+	maxSamplingDistance = min(maxSamplingDistance, max(innerShellIntersection, outerShellIntersection));
+	
+	// Horizontal Culling, discard rays if intersect earth before the atmosphere
+	if (distCameraToStart >= maxSamplingDistance)
 	{
-		return 1.0f;
+		return 0.0f;
 	}
 
-	// Horizontal Culling		
-	// The most of cases, we don't need to render the clouds below the horizon
-	if (sampleStart.y < 0.0f)
-	{
-		return 1.0f;
-	}
-
-	float transStepSize = Get(lightDirection).a;
-
-	// Depth Culling
-	// Get texel coordinates for Depth culling
-	uint2 texels = uint2(float2(Get(DepthMapWidth), Get(DepthMapHeight)) * uv);
-
-	// Get the lodded depth, if it is not using, use far distance instead to pass the culling
-	float sceneDepth;
-
-	if (float(Get(EnabledLodDepthCulling)) > 0.5f)
-	{
-		sceneDepth = LoadTex2D(Get(depthTexture), NO_SAMPLER, texels, 0).r;
-
-		if (sceneDepth < 1.0f)
-		{
-			return 1.0f;
-		}
-	}
+	// Default value used for reprojection
+	depth = sample_count * sample_step;
 
 	// Prepare to do raymarching
 	float alpha = 0.0f;
 	bool detailedSample = false; // start with cheap raymarching
 	int missedStepCount = 0;
 
+	float transStepSize = Get(lightDirection).a;
 	float bigStep = sample_step * 2.0f; // lerp(2.0f, 2.0f, horizon); // pow(2.0f, cheapLOD);
 
 	float3 smallStepMarching = sample_step * dir;
@@ -532,203 +529,13 @@ float GetDensity(float3 startPos, float3 dir, float raymarchOffset, out(float) i
 	float4 windWithVelocity = Get(m_DataPerLayer)[0].StandardPosition;
 	float3 biasedCloudPos = 4.5f * (Get(m_DataPerLayer)[0].WindDirection.xyz + float3(0.0f, 0.1f, 0.0f));
 	float3 cloudTopOffsetWithWindDir = Get(m_DataPerLayer)[0].CloudTopOffset * Get(m_DataPerLayer)[0].WindDirection.xyz;
-
 	float DetailShapeTilingDivCloudSize = Get(m_DataPerLayer)[0].DetailShapeTiling / Get(m_DataPerLayer)[0].CloudSize;
 
 	LOOP
 	for (uint j = 0; j < sample_count; ++j)
 	{
 		rayPos += raymarchingDistance;
-
-		float3 currentProj = getProjectedShellPoint(Get(m_DataPerLayer)[0].EarthRadiusAddCloudsLayerStart, rayPos, Get(EarthCenter).xyz);
-		float height_fraction = getRelativeHeightAccurate(Get(EarthCenter).xyz, Get(m_DataPerLayer)[0].EarthRadiusAddCloudsLayerStart, rayPos, currentProj, Get(m_DataPerLayer)[0].LayerThickness);
-
-		if (!detailedSample)
-		{
-			// Get the density from current rayPos
-			float sampleResult = SampleDensity(rayPos, LOW_FREQ_LOD, height_fraction, currentProj, Get(m_DataPerLayer)[0].LayerThickness,
-				Get(m_DataPerLayer)[0].CloudSize, Get(m_DataPerLayer)[0].BaseShapeTiling, Get(m_DataPerLayer)[0].CloudCoverage, Get(m_DataPerLayer)[0].CloudType, Get(m_DataPerLayer)[0].AnvilBias,
-				Get(m_DataPerLayer)[0].CurlStrenth, Get(m_DataPerLayer)[0].CurlTextureTiling,
-				Get(m_DataPerLayer)[0].DetailStrenth,
-				Get(m_DataPerLayer)[0].RisingVaporUpDirection, Get(m_DataPerLayer)[0].RisingVaporScale, Get(m_DataPerLayer)[0].RisingVaporIntensity,
-				cloudTopOffsetWithWindDir, windWithVelocity,
-				biasedCloudPos, DetailShapeTilingDivCloudSize,
-				Get(m_DataPerLayer)[0].WeatherTextureOffsetX, Get(m_DataPerLayer)[0].WeatherTextureOffsetZ, Get(m_DataPerLayer)[0].WeatherTextureSize,
-				Get(m_DataPerLayer)[0].RotationPivotOffsetX, Get(m_DataPerLayer)[0].RotationPivotOffsetZ,
-				Get(m_DataPerLayer)[0].RotationAngle,
-				true);
-
-			if (sampleResult > 0.0f)
-			{
-				// If it hit the clouds, change to the expensive raymarching
-				detailedSample = true;
-				raymarchingDistance = -bigStepMarching;
-				missedStepCount = 0;
-				continue;
-			}
-			else
-			{
-				raymarchingDistance = bigStepMarching;
-			}
-		}
-		else
-		{
-			// Get the density from current rayPos
-			float sampleResult = SampleDensity(rayPos, LOW_FREQ_LOD, height_fraction, currentProj, Get(m_DataPerLayer)[0].LayerThickness,
-				Get(m_DataPerLayer)[0].CloudSize, Get(m_DataPerLayer)[0].BaseShapeTiling, Get(m_DataPerLayer)[0].CloudCoverage, Get(m_DataPerLayer)[0].CloudType, Get(m_DataPerLayer)[0].AnvilBias,
-				Get(m_DataPerLayer)[0].CurlStrenth, Get(m_DataPerLayer)[0].CurlTextureTiling,
-				Get(m_DataPerLayer)[0].DetailStrenth,
-				Get(m_DataPerLayer)[0].RisingVaporUpDirection, Get(m_DataPerLayer)[0].RisingVaporScale, Get(m_DataPerLayer)[0].RisingVaporIntensity,
-				cloudTopOffsetWithWindDir, windWithVelocity,
-				biasedCloudPos, DetailShapeTilingDivCloudSize,
-				Get(m_DataPerLayer)[0].WeatherTextureOffsetX, Get(m_DataPerLayer)[0].WeatherTextureOffsetZ, Get(m_DataPerLayer)[0].WeatherTextureSize,
-				Get(m_DataPerLayer)[0].RotationPivotOffsetX, Get(m_DataPerLayer)[0].RotationPivotOffsetZ,
-				Get(m_DataPerLayer)[0].RotationAngle,
-				false);
-
-			if (sampleResult == 0.0f)
-			{
-				missedStepCount++;
-
-				// If expensive raymarching failed more 10 times, go back to cheap raymarching
-				if (missedStepCount > 10)
-				{
-					detailedSample = false;
-				}
-			}
-			else
-			{
-				// Get the first hit position against clouds to use it for reprojection
-				if (!pickedFirstHit)
-				{
-					depth = distance(rayPos, startPos);
-					pickedFirstHit = true;
-				}
-
-				// If it hit the clouds, get the light enery from current rayPos and accumulate it
-				float sampledAlpha = sampleResult * Get(m_DataPerLayer)[0].CloudDensity;
-				float sampledEnergy = SampleEnergy(rayPos, magLightDirection, height_fraction, currentProj,
-					Get(EarthCenter).xyz,
-					Get(m_DataPerLayer)[0].EarthRadiusAddCloudsLayerStart,
-					Get(m_DataPerLayer)[0].LayerThickness,
-					Get(m_DataPerLayer)[0].CloudSize, Get(m_DataPerLayer)[0].BaseShapeTiling, Get(m_DataPerLayer)[0].CloudCoverage, Get(m_DataPerLayer)[0].CloudType, Get(m_DataPerLayer)[0].AnvilBias,
-					Get(m_DataPerLayer)[0].CurlStrenth, Get(m_DataPerLayer)[0].CurlTextureTiling,
-					Get(m_DataPerLayer)[0].DetailStrenth,
-					Get(m_DataPerLayer)[0].RisingVaporUpDirection, Get(m_DataPerLayer)[0].RisingVaporScale, Get(m_DataPerLayer)[0].RisingVaporIntensity,
-					cloudTopOffsetWithWindDir, windWithVelocity,
-					biasedCloudPos, DetailShapeTilingDivCloudSize,
-					Get(m_DataPerLayer)[0].WeatherTextureOffsetX, Get(m_DataPerLayer)[0].WeatherTextureOffsetZ, Get(m_DataPerLayer)[0].WeatherTextureSize,
-					Get(m_DataPerLayer)[0].RotationPivotOffsetX, Get(m_DataPerLayer)[0].RotationPivotOffsetZ,
-					Get(m_DataPerLayer)[0].RotationAngle,
-					sampleResult, transStepSize, cosTheta, LOW_FREQ_LOD);
-
-				float oneMinusAlpha = 1.0f - alpha;
-				sampledAlpha *= oneMinusAlpha;
-
-				intensity += sampledAlpha * sampledEnergy;
-				alpha += sampledAlpha;
-
-				if (alpha >= 1.0f)
-				{
-					intensity /= alpha;
-					depth = PackFloat16(depth);
-
-					return 1.0f;
-				}
-			}
-
-			raymarchingDistance = smallStepMarching;
-		}
-	}
-
-	depth = PackFloat16(depth);
-
-	return alpha;
-}
-
-// Get the final density, light intensirt, atmophereBlendFactor, and distance between hit points against clouds and view position
-float GetDensityWithComparingDepth(float3 startPos, float3 dir, float raymarchOffset, out(float) intensity, out(float) atmosphericBlendFactor, out(float) depth, float2 uv)
-{
-	float3 sampleStart, sampleEnd;
-
-	depth = 0.0f;
-	intensity = 0.0f;
-	atmosphericBlendFactor = 0.0f;
-
-	// If the current view direction is not intersected with cloud's layers	
-	if (!GetStartEndPointForRayMarching(startPos, dir, Get(EarthCenter).xyz, Get(m_DataPerLayer)[0].EarthRadiusAddCloudsLayerStart2, Get(m_DataPerLayer)[0].EarthRadiusAddCloudsLayerEnd2, sampleStart, sampleEnd))
-		return 0.0f;
-
-	// Determine the sample count and its step size along the cosTheta of view direction with Up vector 
-	float horizon = abs(dir.y);
-
-	uint sample_count = uint(lerp(float(Get(MAX_ITERATION_COUNT)), float(Get(MIN_ITERATION_COUNT)), horizon));
-	float sample_step = lerp(Get(m_StepSize).y, Get(m_StepSize).x, horizon);
-
-	// Update the distance between hit points against clouds and view position
-	depth = distance(sampleEnd, startPos);
-	float distCameraToStart = distance(sampleStart, startPos);
-
-	atmosphericBlendFactor = distCameraToStart / MAX_SAMPLE_STEP_DISTANCE;
-
-	//atmosphericBlendFactor = PackFloat16(distCameraToStart);
-	float sceneDepth = SampleLvlTex2D(Get(depthTexture), Get(g_LinearClampSampler), uv, 0).r;
-
-	if (sceneDepth < 1.0f)
-	{
-		atmosphericBlendFactor = 1.0f;
-	}
-
-	float linearDepth = lerp(50.0f, 100000000.0f, sceneDepth);
-
-	// Horizontal Culling		
-	// The most of cases, we don't need to render the clouds below the horizon
-	if (sampleStart.y < 0.0f)
-	{
-		return 1.0f;
-	}
-
-	// Atmosphere Culling		
-	// we don't need to render the clouds where the background should be shown 100%
-	// How the clouds should be blended depends on the user 
-	if (distCameraToStart >= Get(m_MaxSampleDistance))
-	{
-		return 1.0f;
-	}
-
-	float transStepSize = Get(lightDirection).a;
-
-	// Prepare to do raymarching
-	float alpha = 0.0f;
-	bool detailedSample = false; // start with cheap raymarching
-	int missedStepCount = 0;
-
-	float bigStep = sample_step * 2.0f; //pow(2.0f, cheapLOD);
-
-	float3 smallStepMarching = sample_step * dir;
-	float3 bigStepMarching   = bigStep * dir;
-
-	// To prevent raymarching artifact, use a random value
-	float3 raymarchingDistance = smallStepMarching * raymarchOffset;
-
-	float3 magLightDirection = 2.0f * Get(lightDirection).xyz;
-
-	bool pickedFirstHit = false;
-
-	float cosTheta = dot(dir, Get(lightDirection).xyz);
-	float3 rayPos = sampleStart;
-
-	float4 windWithVelocity = Get(m_DataPerLayer)[0].StandardPosition;
-	float3 biasedCloudPos = 4.5f * (Get(m_DataPerLayer)[0].WindDirection.xyz + float3(0.0f, 0.1f, 0.0f));
-	float3 cloudTopOffsetWithWindDir = Get(m_DataPerLayer)[0].CloudTopOffset * Get(m_DataPerLayer)[0].WindDirection.xyz;
-
-	float DetailShapeTilingDivCloudSize = Get(m_DataPerLayer)[0].DetailShapeTiling / Get(m_DataPerLayer)[0].CloudSize;
-
-	LOOP
-	for (uint j = 0; j < sample_count; ++j)
-	{
-		rayPos += raymarchingDistance;
-		if (linearDepth < distance(startPos, rayPos))
+		if (distance(startPos, rayPos) > maxSamplingDistance)
 		{
 			break;
 		}
@@ -798,8 +605,201 @@ float GetDensityWithComparingDepth(float3 startPos, float3 dir, float raymarchOf
 					pickedFirstHit = true;
 				}
 
+				// Add a smooth gradient using depth, this should mock atmospheric scaterring on the cloud itself
+				float depthAttenuation = 1.0 - min(distance(rayPos, startPos) / (Get(m_MaxSampleDistance)), 1.0f);
+				depthAttenuation = depthAttenuation * depthAttenuation;
+				//float fallOff = exp(-distance(rayPos, startPos) * Get(Test01) * 0.001);
 				// If it hit the clouds, get the light enery from current rayPos and accumulate it
-				float sampledAlpha = sampleResult * Get(m_DataPerLayer)[0].CloudDensity;
+				float sampledAlpha = sampleResult * Get(m_DataPerLayer)[0].CloudDensity * depthAttenuation;
+				float sampledEnergy = SampleEnergy(rayPos, magLightDirection, height_fraction, currentProj,
+					Get(EarthCenter).xyz,
+					Get(m_DataPerLayer)[0].EarthRadiusAddCloudsLayerStart,
+					Get(m_DataPerLayer)[0].LayerThickness,
+					Get(m_DataPerLayer)[0].CloudSize, Get(m_DataPerLayer)[0].BaseShapeTiling, Get(m_DataPerLayer)[0].CloudCoverage, Get(m_DataPerLayer)[0].CloudType, Get(m_DataPerLayer)[0].AnvilBias,
+					Get(m_DataPerLayer)[0].CurlStrenth, Get(m_DataPerLayer)[0].CurlTextureTiling,
+					Get(m_DataPerLayer)[0].DetailStrenth,
+					Get(m_DataPerLayer)[0].RisingVaporUpDirection, Get(m_DataPerLayer)[0].RisingVaporScale, Get(m_DataPerLayer)[0].RisingVaporIntensity,
+					cloudTopOffsetWithWindDir, windWithVelocity,
+					biasedCloudPos, DetailShapeTilingDivCloudSize,
+					Get(m_DataPerLayer)[0].WeatherTextureOffsetX, Get(m_DataPerLayer)[0].WeatherTextureOffsetZ, Get(m_DataPerLayer)[0].WeatherTextureSize,
+					Get(m_DataPerLayer)[0].RotationPivotOffsetX, Get(m_DataPerLayer)[0].RotationPivotOffsetZ,
+					Get(m_DataPerLayer)[0].RotationAngle,
+					sampleResult, transStepSize, cosTheta, LOW_FREQ_LOD, Get(m_DataPerLayer)[0].Contrast, Get(m_DataPerLayer)[0].Precipitation);
+
+				float oneMinusAlpha = 1.0f - alpha;
+				sampledAlpha *= oneMinusAlpha;
+
+				intensity += sampledAlpha * sampledEnergy;
+				alpha += sampledAlpha;
+
+				if (alpha >= 1.0f)
+				{
+					intensity /= alpha;
+					depth = PackFloat16(depth);
+
+					return 1.0f;
+				}
+			}
+
+			raymarchingDistance = smallStepMarching;
+		}
+	}
+
+	depth = PackFloat16(depth);
+
+	return alpha;
+}
+
+// Get the final density, light intensirt, atmophereBlendFactor, and distance between hit points against clouds and view position
+float GetDensityWithComparingDepth(float3 startPos, float3 dir, float raymarchOffset, out(float) intensity, out(float) atmosphericBlendFactor, out(float) depth, float2 uv)
+{
+	float3 sampleStart, sampleEnd;
+
+	// use default far when nothing is hit, this preserve temporal reprojection
+	depth = Get(CameraFar);
+	intensity = 0.0f;
+	atmosphericBlendFactor = 0.0f;
+
+	// If the current view direction is not intersected with cloud's layers	
+	if (!GetStartEndPointForRayMarching(startPos, dir, Get(EarthCenter).xyz, Get(m_DataPerLayer)[0].EarthRadiusAddCloudsLayerStart2, Get(m_DataPerLayer)[0].EarthRadiusAddCloudsLayerEnd2, sampleStart, sampleEnd))
+		return 0.0f;
+
+	// Determine the sample count and its step size along the cosTheta of view direction with Up vector 
+	float3 upVector = normalize(startPos - Get(EarthCenter).xyz);
+	float horizon = abs(dot(dir, upVector));
+
+	uint sample_count = uint(lerp(float(Get(MAX_ITERATION_COUNT)), float(Get(MIN_ITERATION_COUNT)), horizon));
+	float sample_step = lerp(Get(m_StepSize).y, Get(m_StepSize).x, horizon);
+	float distCameraToStart = distance(sampleStart, startPos);
+
+	atmosphericBlendFactor = distCameraToStart / DEFAULT_MAX_DISTANCE;
+	float sceneDepth = SampleLvlTex2D(Get(depthTexture), Get(g_NearestClampSampler), uv, 0).r;
+
+	// Depth Culling
+	float maxSamplingDistance = min(lerp(Get(CameraNear), Get(CameraFar), sceneDepth), Get(m_MaxSampleDistance));
+	float it1, it2, innerShellIntersection, outerShellIntersection;
+	ray_trace_sphere(startPos, dir, Get(EarthCenter).xyz, Get(m_DataPerLayer)[0].EarthRadiusAddCloudsLayerStart2, it1, it2);
+	innerShellIntersection = max(it1, it2);
+	ray_trace_sphere(startPos, dir, Get(EarthCenter).xyz, Get(m_DataPerLayer)[0].EarthRadiusAddCloudsLayerEnd2, it1, it2);
+	outerShellIntersection = max(it1, it2);
+	maxSamplingDistance = min(maxSamplingDistance, max(innerShellIntersection, outerShellIntersection));
+
+	if (distCameraToStart > maxSamplingDistance)
+	{
+		return 0.0f;
+	}
+
+	// Default value used for reprojection
+	depth = sample_count * sample_step;
+
+	float transStepSize = Get(lightDirection).a;
+
+	// Prepare to do raymarching
+	float alpha = 0.0f;
+	bool detailedSample = false; // start with cheap raymarching
+	int missedStepCount = 0;
+
+	float bigStep = sample_step * 2.0f; //pow(2.0f, cheapLOD);
+
+	float3 smallStepMarching = sample_step * dir;
+	float3 bigStepMarching   = bigStep * dir;
+
+	// To prevent raymarching artifact, use a random value
+	float3 raymarchingDistance = smallStepMarching * raymarchOffset;
+
+	float3 magLightDirection = 2.0f * Get(lightDirection).xyz;
+
+	bool pickedFirstHit = false;
+
+	float cosTheta = dot(dir, Get(lightDirection).xyz);
+	float3 rayPos = sampleStart;
+
+	float4 windWithVelocity = Get(m_DataPerLayer)[0].StandardPosition;
+	float3 biasedCloudPos = 4.5f * (Get(m_DataPerLayer)[0].WindDirection.xyz + float3(0.0f, 0.1f, 0.0f));
+	float3 cloudTopOffsetWithWindDir = Get(m_DataPerLayer)[0].CloudTopOffset * Get(m_DataPerLayer)[0].WindDirection.xyz;
+
+	float DetailShapeTilingDivCloudSize = Get(m_DataPerLayer)[0].DetailShapeTiling / Get(m_DataPerLayer)[0].CloudSize;
+
+	LOOP
+	for (uint j = 0; j < sample_count; ++j)
+	{
+		rayPos += raymarchingDistance;
+		if (distance(startPos, rayPos) > maxSamplingDistance)
+		{
+			break;
+		}
+
+		float3 currentProj = getProjectedShellPoint(Get(m_DataPerLayer)[0].EarthRadiusAddCloudsLayerStart, rayPos, Get(EarthCenter).xyz);
+		float height_fraction = getRelativeHeightAccurate(Get(EarthCenter).xyz, Get(m_DataPerLayer)[0].EarthRadiusAddCloudsLayerStart, rayPos, currentProj, Get(m_DataPerLayer)[0].LayerThickness);
+
+		if (!detailedSample)
+		{
+			// Get the density from current rayPos
+			float sampleResult = SampleDensity(rayPos, LOW_FREQ_LOD, height_fraction, currentProj, Get(m_DataPerLayer)[0].LayerThickness,
+				Get(m_DataPerLayer)[0].CloudSize, Get(m_DataPerLayer)[0].BaseShapeTiling, Get(m_DataPerLayer)[0].CloudCoverage, Get(m_DataPerLayer)[0].CloudType, Get(m_DataPerLayer)[0].AnvilBias,
+				Get(m_DataPerLayer)[0].CurlStrenth, Get(m_DataPerLayer)[0].CurlTextureTiling,
+				Get(m_DataPerLayer)[0].DetailStrenth,
+				Get(m_DataPerLayer)[0].RisingVaporUpDirection, Get(m_DataPerLayer)[0].RisingVaporScale, Get(m_DataPerLayer)[0].RisingVaporIntensity,
+				cloudTopOffsetWithWindDir, windWithVelocity,
+				biasedCloudPos, DetailShapeTilingDivCloudSize,
+				Get(m_DataPerLayer)[0].WeatherTextureOffsetX, Get(m_DataPerLayer)[0].WeatherTextureOffsetZ, Get(m_DataPerLayer)[0].WeatherTextureSize,
+				Get(m_DataPerLayer)[0].RotationPivotOffsetX, Get(m_DataPerLayer)[0].RotationPivotOffsetZ,
+				Get(m_DataPerLayer)[0].RotationAngle,
+				true);
+
+			if (sampleResult > 0.0f)
+			{
+				// If it hit the clouds, change to the expensive raymarching
+				detailedSample = true;
+				raymarchingDistance = -bigStepMarching;
+				missedStepCount = 0;
+				continue;
+			}
+			else
+			{
+				raymarchingDistance = bigStepMarching;
+			}
+		}
+		else
+		{
+			// Get the density from current rayPos
+			float sampleResult = SampleDensity(rayPos, LOW_FREQ_LOD, height_fraction, currentProj, Get(m_DataPerLayer)[0].LayerThickness,
+				Get(m_DataPerLayer)[0].CloudSize, Get(m_DataPerLayer)[0].BaseShapeTiling, Get(m_DataPerLayer)[0].CloudCoverage, Get(m_DataPerLayer)[0].CloudType, Get(m_DataPerLayer)[0].AnvilBias,
+				Get(m_DataPerLayer)[0].CurlStrenth, Get(m_DataPerLayer)[0].CurlTextureTiling,
+				Get(m_DataPerLayer)[0].DetailStrenth,
+				Get(m_DataPerLayer)[0].RisingVaporUpDirection, Get(m_DataPerLayer)[0].RisingVaporScale, Get(m_DataPerLayer)[0].RisingVaporIntensity,
+				cloudTopOffsetWithWindDir, windWithVelocity,
+				biasedCloudPos, DetailShapeTilingDivCloudSize,
+				Get(m_DataPerLayer)[0].WeatherTextureOffsetX, Get(m_DataPerLayer)[0].WeatherTextureOffsetZ, Get(m_DataPerLayer)[0].WeatherTextureSize,
+				Get(m_DataPerLayer)[0].RotationPivotOffsetX, Get(m_DataPerLayer)[0].RotationPivotOffsetZ,
+				Get(m_DataPerLayer)[0].RotationAngle,
+				false);
+
+			if (sampleResult == 0.0f)
+			{
+				missedStepCount++;
+
+				// If expensive raymarching failed more 10 times, go back to cheap raymarching
+				if (missedStepCount > 10)
+				{
+					detailedSample = false;
+				}
+			}
+			else
+			{
+				// Get the first hit position against clouds to use it for reprojection
+				if (!pickedFirstHit)
+				{
+					depth = distance(rayPos, startPos);
+					pickedFirstHit = true;
+				}
+
+				// Add a smooth gradient using depth, this should mock atmospheric scaterring on the cloud itself
+				float depthAttenuation = 1.0 - min(distance(rayPos, startPos) / (Get(m_MaxSampleDistance)), 1.0f);
+				depthAttenuation = depthAttenuation * depthAttenuation;
+				//float fallOff = exp(-distance(rayPos, startPos) * Get(Test01) * 0.001);
+				// If it hit the clouds, get the light enery from current rayPos and accumulate it
+				float sampledAlpha = sampleResult * Get(m_DataPerLayer)[0].CloudDensity * depthAttenuation;
 				float sampledEnergy = SampleEnergy(
 					rayPos, magLightDirection, height_fraction, currentProj,
 					Get(EarthCenter).xyz,
@@ -814,7 +814,7 @@ float GetDensityWithComparingDepth(float3 startPos, float3 dir, float raymarchOf
 					Get(m_DataPerLayer)[0].WeatherTextureOffsetX, Get(m_DataPerLayer)[0].WeatherTextureOffsetZ, Get(m_DataPerLayer)[0].WeatherTextureSize,
 					Get(m_DataPerLayer)[0].RotationPivotOffsetX, Get(m_DataPerLayer)[0].RotationPivotOffsetZ,
 					Get(m_DataPerLayer)[0].RotationAngle,
-					sampleResult, transStepSize, cosTheta, LOW_FREQ_LOD);
+					sampleResult, transStepSize, cosTheta, LOW_FREQ_LOD, Get(m_DataPerLayer)[0].Contrast, Get(m_DataPerLayer)[0].Precipitation);
 
 				float oneMinusAlpha = 1.0f - alpha;
 				sampledAlpha *= oneMinusAlpha;
@@ -846,7 +846,8 @@ float GetDensity_Double_Layers(float3 startPos, float3 dir, float raymarchOffset
 {
 	float3 sampleStart, sampleEnd;
 
-	depth = 0.0f;
+	// use default far when nothing is hit, this preserve temporal reprojection
+	depth = Get(CameraFar);
 	intensity = 0.0f;
 	atmosphericBlendFactor = 0.0f;
 
@@ -857,51 +858,38 @@ float GetDensity_Double_Layers(float3 startPos, float3 dir, float raymarchOffset
 		return 0.0f;
 
 	// Determine the sample count and its step size along the cosTheta of view direction with Up vector 
-	float horizon = abs(dir.y);
+	float3 upVector = normalize(startPos - Get(EarthCenter).xyz);
+	float horizon = abs(dot(dir, upVector));
 
 	uint sample_count = uint(lerp(float(Get(MAX_ITERATION_COUNT)), float(Get(MIN_ITERATION_COUNT)), horizon));
 	//float sample_step = min(length(sampleEnd - sampleStart) / float(sample_count) * 0.43f, lerp(Get(m_StepSize).y, Get(m_StepSize).x, pow(horizon, 0.33f)));
 	float sample_step = lerp(Get(m_StepSize).y, Get(m_StepSize).x, horizon);
 
-	// Update the distance between hit points against clouds and view position
-	depth = distance(startPos, sampleEnd);
-
 	float distCameraToStart = distance(sampleStart, startPos);
-	atmosphericBlendFactor  = distCameraToStart / MAX_SAMPLE_STEP_DISTANCE;
+	atmosphericBlendFactor  = distCameraToStart / DEFAULT_MAX_DISTANCE;
 
-	// Horizontal Culling		
-	// The most of cases, we don't need to render the clouds below the horizon
-	if (sampleStart.y < 0.0f)
-	{
-		return 1.0f;
-	}
+	float it1, it2;
+	ray_trace_sphere(startPos, dir, Get(EarthCenter).xyz, Get(EarthRadius) * Get(EarthRadius), it1, it2);
+	float distanceToEarthShell = it1 > 0.0f ? it1 : it2;
+	float maxSamplingDistance = distanceToEarthShell > 0.0f ? min(distanceToEarthShell, Get(m_MaxSampleDistance)) : Get(m_MaxSampleDistance);
 
-	// Atmosphere Culling		
-	// we don't need to render the clouds where the background should be shown 100%
-	// How the clouds should be blended depends on the user 
-	if (distCameraToStart >= Get(m_MaxSampleDistance))
+	float innerShellIntersection, outerShellIntersection;
+	ray_trace_sphere(startPos, dir, Get(EarthCenter).xyz, Get(m_DataPerLayer)[0].EarthRadiusAddCloudsLayerStart2, it1, it2);
+	innerShellIntersection = max(it1, it2);
+	ray_trace_sphere(startPos, dir, Get(EarthCenter).xyz, Get(m_DataPerLayer)[1].EarthRadiusAddCloudsLayerEnd2, it1, it2);
+	outerShellIntersection = max(it1, it2);
+	maxSamplingDistance = min(maxSamplingDistance, max(innerShellIntersection, outerShellIntersection));
+
+	// Horizontal Culling, discard rays if intersect earth before the atmosphere
+	if (distCameraToStart >= maxSamplingDistance)
 	{
-		return 1.0f;
+		return 0.0f;
 	}
 
 	float transStepSize = Get(lightDirection).a;
 
-	// Depth Culling
-	// Get texel coordinates for Depth culling
-	uint2 texels = uint2(float2(Get(DepthMapWidth), Get(DepthMapHeight)) * uv);
-
-	//Get the lodded depth, if it is not using, use far distance instead to pass the culling
-	float sceneDepth;
-
-	if (float(Get(EnabledLodDepthCulling)) > 0.5f)
-	{
-		sceneDepth = LoadTex2D(Get(depthTexture), NO_SAMPLER, texels, 0).r;
-
-		if (sceneDepth < 1.0f)
-		{
-			return 1.0f;
-		}
-	}
+	// Default value used for reprojection
+	depth = sample_count * sample_step;
 
 	// Prepare to do raymarching
 	float alpha = 0.0f;
@@ -934,11 +922,17 @@ float GetDensity_Double_Layers(float3 startPos, float3 dir, float raymarchOffset
 
 	float DetailShapeTilingDivCloudSize     = Get(m_DataPerLayer)[0].DetailShapeTiling / Get(m_DataPerLayer)[0].CloudSize;
 	float DetailShapeTilingDivCloudSize_2nd = Get(m_DataPerLayer)[1].DetailShapeTiling / Get(m_DataPerLayer)[1].CloudSize;
+	float3 earthCenter = float3(0.0f, -Get(EarthRadius), 0.0f);
 
 	LOOP
 	for (uint j = 0; j < sample_count; ++j)
 	{
+		// reduce sampling step once reach second layer, second layer should be thinner
 		rayPos += raymarchingDistance;
+		if (distance(startPos, rayPos) > maxSamplingDistance)
+		{
+			break;
+		}
 
 		float3 currentProj    = getProjectedShellPoint(Get(m_DataPerLayer)[0].EarthRadiusAddCloudsLayerStart, rayPos, Get(EarthCenter).xyz);
 		float height_fraction = getRelativeHeightAccurate(Get(EarthCenter).xyz, Get(m_DataPerLayer)[0].EarthRadiusAddCloudsLayerStart, rayPos, currentProj, Get(m_DataPerLayer)[0].LayerThickness);
@@ -1036,10 +1030,13 @@ float GetDensity_Double_Layers(float3 startPos, float3 dir, float raymarchOffset
 					pickedFirstHit = true;
 				}
 
+				// Add a smooth gradient using depth, this should mock atmospheric scaterring on the cloud itself
+				float depthAttenuation = 1.0 - min(distance(rayPos, startPos) / (Get(m_MaxSampleDistance)), 1.0f);
+				depthAttenuation = depthAttenuation * depthAttenuation;
 				if (sampleResult > 0.0f)
 				{
 					// If it hit the clouds, get the light enery from current rayPos and accumulate it
-					float sampledAlpha = sampleResult * Get(m_DataPerLayer)[0].CloudDensity;
+					float sampledAlpha = sampleResult * Get(m_DataPerLayer)[0].CloudDensity * depthAttenuation;
 					float sampledEnergy = SampleEnergy(
 						rayPos, magLightDirection, height_fraction, currentProj,
 						Get(EarthCenter).xyz,
@@ -1054,7 +1051,7 @@ float GetDensity_Double_Layers(float3 startPos, float3 dir, float raymarchOffset
 						Get(m_DataPerLayer)[0].WeatherTextureOffsetX, Get(m_DataPerLayer)[0].WeatherTextureOffsetZ, Get(m_DataPerLayer)[0].WeatherTextureSize,
 						Get(m_DataPerLayer)[0].RotationPivotOffsetX, Get(m_DataPerLayer)[0].RotationPivotOffsetZ,
 						Get(m_DataPerLayer)[0].RotationAngle,
-						sampleResult, transStepSize, cosTheta, LOW_FREQ_LOD);
+						sampleResult, transStepSize, cosTheta, LOW_FREQ_LOD, Get(m_DataPerLayer)[0].Contrast, Get(m_DataPerLayer)[0].Precipitation);
 
 					float oneMinusAlpha = 1.0f - alpha;
 					sampledAlpha *= oneMinusAlpha;
@@ -1066,7 +1063,7 @@ float GetDensity_Double_Layers(float3 startPos, float3 dir, float raymarchOffset
 				if (sampleResult_2nd > 0.0f)
 				{
 					// If it hit the clouds, get the light enery from current rayPos and accumulate it
-					float sampledAlpha = sampleResult_2nd * Get(m_DataPerLayer)[1].CloudDensity;
+					float sampledAlpha = sampleResult_2nd * Get(m_DataPerLayer)[1].CloudDensity * depthAttenuation;
 					float sampledEnergy = SampleEnergy(
 						rayPos, magLightDirection, height_fraction_2nd, currentProj_2nd,
 						Get(EarthCenter).xyz,
@@ -1081,7 +1078,7 @@ float GetDensity_Double_Layers(float3 startPos, float3 dir, float raymarchOffset
 						Get(m_DataPerLayer)[1].WeatherTextureOffsetX, Get(m_DataPerLayer)[1].WeatherTextureOffsetZ, Get(m_DataPerLayer)[1].WeatherTextureSize,
 						Get(m_DataPerLayer)[1].RotationPivotOffsetX, Get(m_DataPerLayer)[1].RotationPivotOffsetZ,
 						Get(m_DataPerLayer)[1].RotationAngle,
-						sampleResult_2nd, transStepSize, cosTheta, LOW_FREQ_LOD);
+						sampleResult_2nd, transStepSize, cosTheta, LOW_FREQ_LOD, Get(m_DataPerLayer)[1].Contrast, Get(m_DataPerLayer)[1].Precipitation);
 
 					float oneMinusAlpha = 1.0f - alpha;
 					sampledAlpha *= oneMinusAlpha;
@@ -1113,7 +1110,8 @@ float GetDensity_Double_Layers_WithComparingDepth(float3 startPos, float3 dir, f
 {
 	float3 sampleStart, sampleEnd;
 
-	depth = 0.0f;
+	// use default far when nothing is hit, this preserve temporal reprojection
+	depth = Get(CameraFar);
 	intensity = 0.0f;
 	atmosphericBlendFactor = 0.0f;
 
@@ -1124,41 +1122,33 @@ float GetDensity_Double_Layers_WithComparingDepth(float3 startPos, float3 dir, f
 		return 0.0f;
 
 	// Determine the sample count and its step size along the cosTheta of view direction with Up vector 
-	float horizon = abs(dir.y);
+	float3 upVector = normalize(startPos - Get(EarthCenter).xyz);
+	float horizon = abs(dot(dir, upVector));
 
 	uint sample_count = uint(lerp(float(Get(MAX_ITERATION_COUNT)), float(Get(MIN_ITERATION_COUNT)), horizon));
 	//float sample_step = min(length(sampleEnd - sampleStart) / (float)sample_count * 0.43f, lerp(Get(m_StepSize).y, Get(m_StepSize).x, pow(horizon, 0.33f)));
 	float sample_step = lerp(Get(m_StepSize).y, Get(m_StepSize).x, horizon);
 
-	// Update the distance between hit points against clouds and view position
-	depth = distance(startPos, sampleEnd);
-
 	float distCameraToStart = distance(sampleStart, startPos);
-	atmosphericBlendFactor  = distCameraToStart / MAX_SAMPLE_STEP_DISTANCE;
+	atmosphericBlendFactor  = distCameraToStart / DEFAULT_MAX_DISTANCE;
+	float sceneDepth = SampleLvlTex2D(Get(depthTexture), Get(g_NearestClampSampler), uv, 0).r;
 
-	float sceneDepth = SampleLvlTex2D(Get(depthTexture), Get(g_LinearClampSampler), uv, 0).r;
+	// Depth Culling
+	float maxSamplingDistance = min(lerp(Get(CameraNear), Get(CameraFar), sceneDepth), Get(m_MaxSampleDistance));
+	float it1, it2, innerShellIntersection, outerShellIntersection;
+	ray_trace_sphere(startPos, dir, Get(EarthCenter).xyz, Get(m_DataPerLayer)[0].EarthRadiusAddCloudsLayerStart2, it1, it2);
+	innerShellIntersection = max(it1, it2);
+	ray_trace_sphere(startPos, dir, Get(EarthCenter).xyz, Get(m_DataPerLayer)[1].EarthRadiusAddCloudsLayerEnd2, it1, it2);
+	outerShellIntersection = max(it1, it2);
+	maxSamplingDistance = min(maxSamplingDistance, max(innerShellIntersection, outerShellIntersection));
 
-	if (sceneDepth < 1.0f)
+	if (distCameraToStart > maxSamplingDistance)
 	{
-		atmosphericBlendFactor = 1.0f;
+		return 0.0f;
 	}
 
-	float linearDepth = lerp(50.0f, 100000000.0f, sceneDepth);
-
-	// Horizontal Culling		
-	// The most of cases, we don't need to render the clouds below the horizon
-	if (sampleStart.y < 0.0f)
-	{
-		return 1.0f;
-	}
-
-	// Atmosphere Culling		
-	// we don't need to render the clouds where the background should be shown 100%
-	// How the clouds should be blended depends on the user 
-	if (distCameraToStart >= Get(m_MaxSampleDistance))
-	{
-		return 1.0f;
-	}
+	// Default value used for reprojection
+	depth = sample_count * sample_step;
 
 	float transStepSize = Get(lightDirection).a;
 
@@ -1193,13 +1183,13 @@ float GetDensity_Double_Layers_WithComparingDepth(float3 startPos, float3 dir, f
 
 	float DetailShapeTilingDivCloudSize     = Get(m_DataPerLayer)[0].DetailShapeTiling / Get(m_DataPerLayer)[0].CloudSize;
 	float DetailShapeTilingDivCloudSize_2nd = Get(m_DataPerLayer)[1].DetailShapeTiling / Get(m_DataPerLayer)[1].CloudSize;
+	float3 earthCenter = float3(0.0f, -Get(EarthRadius), 0.0f);
 
 	LOOP
 	for (uint j = 0; j < sample_count; ++j)
 	{
 		rayPos += raymarchingDistance;
-
-		if (linearDepth < distance(startPos, rayPos))
+		if (distance(startPos, rayPos) > maxSamplingDistance)
 		{
 			break;
 		}
@@ -1300,10 +1290,13 @@ float GetDensity_Double_Layers_WithComparingDepth(float3 startPos, float3 dir, f
 					pickedFirstHit = true;
 				}
 
+				// Add a smooth gradient using depth, this should mock atmospheric scaterring on the cloud itself
+				float depthAttenuation = 1.0 - min(distance(rayPos, startPos) / (Get(m_MaxSampleDistance)), 1.0f);
+				depthAttenuation = depthAttenuation * depthAttenuation;
 				if (sampleResult > 0.0f)
 				{
 					// If it hit the clouds, get the light enery from current rayPos and accumulate it
-					float sampledAlpha = sampleResult * Get(m_DataPerLayer)[0].CloudDensity;
+					float sampledAlpha = sampleResult * Get(m_DataPerLayer)[0].CloudDensity * depthAttenuation;
 					float sampledEnergy = SampleEnergy(
 						rayPos, magLightDirection, height_fraction, currentProj,
 						Get(EarthCenter).xyz,
@@ -1318,7 +1311,7 @@ float GetDensity_Double_Layers_WithComparingDepth(float3 startPos, float3 dir, f
 						Get(m_DataPerLayer)[0].WeatherTextureOffsetX, Get(m_DataPerLayer)[0].WeatherTextureOffsetZ, Get(m_DataPerLayer)[0].WeatherTextureSize,
 						Get(m_DataPerLayer)[0].RotationPivotOffsetX, Get(m_DataPerLayer)[0].RotationPivotOffsetZ,
 						Get(m_DataPerLayer)[0].RotationAngle,
-						sampleResult, transStepSize, cosTheta, LOW_FREQ_LOD);
+						sampleResult, transStepSize, cosTheta, LOW_FREQ_LOD, Get(m_DataPerLayer)[0].Contrast, Get(m_DataPerLayer)[0].Precipitation);
 
 					float oneMinusAlpha = 1.0f - alpha;
 					sampledAlpha *= oneMinusAlpha;
@@ -1330,7 +1323,7 @@ float GetDensity_Double_Layers_WithComparingDepth(float3 startPos, float3 dir, f
 				if (sampleResult_2nd > 0.0f)
 				{
 					// If it hit the clouds, get the light enery from current rayPos and accumulate it
-					float sampledAlpha = sampleResult_2nd * Get(m_DataPerLayer)[1].CloudDensity;
+					float sampledAlpha = sampleResult_2nd * Get(m_DataPerLayer)[1].CloudDensity * depthAttenuation;;
 					float sampledEnergy = SampleEnergy(
 						rayPos, magLightDirection, height_fraction_2nd, currentProj_2nd,
 						Get(EarthCenter).xyz,
@@ -1345,7 +1338,7 @@ float GetDensity_Double_Layers_WithComparingDepth(float3 startPos, float3 dir, f
 						Get(m_DataPerLayer)[1].WeatherTextureOffsetX, Get(m_DataPerLayer)[1].WeatherTextureOffsetZ, Get(m_DataPerLayer)[1].WeatherTextureSize,
 						Get(m_DataPerLayer)[1].RotationPivotOffsetX, Get(m_DataPerLayer)[1].RotationPivotOffsetZ,
 						Get(m_DataPerLayer)[1].RotationAngle,
-						sampleResult_2nd, transStepSize, cosTheta, LOW_FREQ_LOD);
+						sampleResult_2nd, transStepSize, cosTheta, LOW_FREQ_LOD, Get(m_DataPerLayer)[1].Contrast, Get(m_DataPerLayer)[1].Precipitation);
 
 					float oneMinusAlpha = 1.0f - alpha;
 					sampledAlpha *= oneMinusAlpha;

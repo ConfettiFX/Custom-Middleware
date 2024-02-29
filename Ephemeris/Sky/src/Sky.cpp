@@ -10,20 +10,18 @@
 
 #include "Sky.h"
 
+#include "../../../../The-Forge/Common_3/Application/Interfaces/IUI.h"
 #include "../../../../The-Forge/Common_3/Game/Interfaces/IScripting.h"
 #include "../../../../The-Forge/Common_3/Resources/ResourceLoader/Interfaces/IResourceLoader.h"
 #include "../../../../The-Forge/Common_3/Utilities/Interfaces/IFileSystem.h"
 #include "../../../../The-Forge/Common_3/Utilities/Interfaces/ILog.h"
 
+#include "../../src/AppSettings.h"
+
 #include "../../../../The-Forge/Common_3/Utilities/Interfaces/IMemory.h"
 
-#define SKY_NEAR     50.0f
-#define SKY_FAR      100000000.0f
-
-#define SPACE_NEAR   100000.0f
-#define SPACE_FAR    2000000000.0f
-
-#define EARTH_RADIUS 6360000.0f
+extern AppSettings  gAppSettings;
+extern UIComponent* pGuiSkyWindow;
 
 int gNumberOfSpherePoints;
 int gNumberOfSphereIndices;
@@ -58,23 +56,12 @@ uint32_t sphereIndexCount;
 float*   pSpherePoints;
 // Aurora                gAurora;
 
-typedef struct SkySettings
-{
-    float4 SkyInfo; // x: fExposure, y: fInscatterIntencity, z: fInscatterContrast, w: fUnitsToM
-    float4 OriginLocation;
-} SkySettings;
-
-SkySettings gSkySettings;
-
-// static float      SunSize = 20000000.0f;
-
-static float SpaceScale = EARTH_RADIUS * 100.0f;
-static float NebulaScale = 9.453f;
+static float SpaceScale = PLANET_RADIUS * 10.0f;
+static float NebulaScale = 1.453f;
 static float StarIntensity = 1.5f;
 static float StarDensity = 10.0f;
 static float StarDistribution = 20000000.0f;
-// static float ParticleScale = 100.0f;
-static float ParticleSize = 1000000.0f;
+static float ParticleSize = 100000.0f;
 
 float4 NebulaHighColor = unpackR8G8B8A8_SRGB(0x412C1D78);
 float4 NebulaMidColor = unpackR8G8B8A8_SRGB(0x041D22FF);
@@ -141,7 +128,7 @@ bool Sky::Load(int32_t width, int32_t height)
     float horizontal_fov = PI / 3.0f;
     // float vertical_fov = 2.0f * atan(tan(horizontal_fov*0.5f) * aspectInverse);
 
-    SkyProjectionMatrix = mat4::perspectiveLH(horizontal_fov, aspectInverse, SKY_NEAR, SKY_FAR);
+    SkyProjectionMatrix = mat4::perspectiveLH(horizontal_fov, aspectInverse, CAMERA_NEAR, CAMERA_FAR);
     SpaceProjectionMatrix = mat4::perspectiveLH(horizontal_fov, aspectInverse, SPACE_NEAR, SPACE_FAR);
 
     return false;
@@ -169,8 +156,8 @@ void Sky::CalculateLookupData()
     waitForToken(&token);
 }
 
-//	<https://www.shadertoy.com/view/4dS3Wd>
-//	By Morgan McGuire @morgan3d, http://graphicscodex.com
+//    <https://www.shadertoy.com/view/4dS3Wd>
+//    By Morgan McGuire @morgan3d, http://graphicscodex.com
 //
 
 float hash(float n) { return fmod(sin(n) * 10000.0f, 1.0f); }
@@ -264,7 +251,7 @@ void Sky::GenerateIcosahedron(float** ppPoints, VertexStbDsArray& vertices, Inde
     {
         vec3 tempPosition = vec3(position[i * 3], position[i * 3 + 1], position[i * 3 + 2]);
         pPoints[vertexCounter] = v3ToF3(tempPosition) * SpaceScale;
-        pPoints[vertexCounter].setY(pPoints[vertexCounter].getY() - EARTH_RADIUS * 10.0f);
+        pPoints[vertexCounter].setY(pPoints[vertexCounter].getY() - PLANET_RADIUS);
         vertexCounter++;
         vec3 normalizedPosition = normalize(tempPosition);
         pPoints[vertexCounter++] = v3ToF3(normalizedPosition);
@@ -322,7 +309,7 @@ void Sky::GenerateIcosahedron(float** ppPoints, VertexStbDsArray& vertices, Inde
                           vec3(1.0f, 1.0f, 1.0f)) *
                          StarDistribution;
             Positions = normalize(Positions) * SpaceScale;
-            Positions.setY(Positions.getY() - EARTH_RADIUS * 10.0f);
+            Positions.setY(Positions.getY() - PLANET_RADIUS);
 
             float temperature = ((float)rand() / (float)RAND_MAX) * 30000.0f + 3700.0f;
             vec3  StarColor = f3Tov3(ColorTemperatureToRGB(temperature));
@@ -454,19 +441,19 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
     float          dpiScale[2];
     const uint32_t monitorIdx = getActiveMonitorIdx();
     getMonitorDpiScale(monitorIdx, dpiScale);
-    UIComponentDesc.mStartPosition = vec2(1280.0f / dpiScale[0], 700.0f / dpiScale[1]);
+    UIComponentDesc.mStartPosition = vec2(1080.0f / dpiScale[0], 580.0f / dpiScale[1]);
     UIComponentDesc.mStartSize = vec2(300.0f / dpiScale[0], 250.0f / dpiScale[1]);
-    uiCreateComponent("Sky", &UIComponentDesc, &pGuiWindow);
+    uiCreateComponent("Sky", &UIComponentDesc, &pGuiSkyWindow);
 
-    gSkySettings.SkyInfo.x = 0.12f;
-    gSkySettings.SkyInfo.y = 3.0f;
-    gSkySettings.SkyInfo.z = 1.0f;
-    gSkySettings.SkyInfo.w = 0.1f;
+    gAppSettings.SkyInfo.x = 0.15f;
+    gAppSettings.SkyInfo.y = 0.26f;
+    gAppSettings.SkyInfo.z = 0.25f;
+    gAppSettings.SkyInfo.w = 1.0f; // 0.1f;
 
-    gSkySettings.OriginLocation.x = -167.0f;
-    gSkySettings.OriginLocation.y = -532.0f;
-    gSkySettings.OriginLocation.z = 788.0f;
-    gSkySettings.OriginLocation.w = 1.0f;
+    gAppSettings.OriginLocation.x = -16.70f;
+    gAppSettings.OriginLocation.y = -53.20f;
+    gAppSettings.OriginLocation.z = 78.80f;
+    gAppSettings.OriginLocation.w = 1.0f;
 
     enum
     {
@@ -486,8 +473,18 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
 
         NEBULA_WIDGET_COUNT
     };
+    enum
+    {
+        SUN_WIDGET_AZIMUTH,
+        SUN_WIDGET_ELEVATION,
+        SUN_WIDGET_COLOR,
+        SUN_WIDGET_MOVING_SPEED,
+        SUN_WIDGET_IS_MOVING,
 
-    static const uint32_t maxWidgetCount = max((uint32_t)PAS_WIDGET_COUNT, (uint32_t)NEBULA_WIDGET_COUNT);
+        SUN_WIDGET_COUNT
+    };
+
+    static const uint32_t maxWidgetCount = max(max((uint32_t)PAS_WIDGET_COUNT, (uint32_t)NEBULA_WIDGET_COUNT), (uint32_t)SUN_WIDGET_COUNT);
 
     UIWidget  widgetBases[maxWidgetCount] = {};
     UIWidget* widgets[maxWidgetCount];
@@ -496,10 +493,10 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
 
     CollapsingHeaderWidget collapsingPAS;
     collapsingPAS.pGroupedWidgets = widgets;
-    collapsingPAS.mWidgetsCount = maxWidgetCount;
+    collapsingPAS.mWidgetsCount = PAS_WIDGET_COUNT;
 
     SliderFloatWidget exposure;
-    exposure.pData = &gSkySettings.SkyInfo.x;
+    exposure.pData = &gAppSettings.SkyInfo.x;
     exposure.mMin = 0.0f;
     exposure.mMax = 1.0f;
     exposure.mStep = 0.001f;
@@ -508,7 +505,7 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
     widgets[PAS_WIDGET_EXPOSURE]->pWidget = &exposure;
 
     SliderFloatWidget inscatterIntensity;
-    inscatterIntensity.pData = &gSkySettings.SkyInfo.y;
+    inscatterIntensity.pData = &gAppSettings.SkyInfo.y;
     inscatterIntensity.mMin = 0.0f;
     inscatterIntensity.mMax = 3.0f;
     inscatterIntensity.mStep = 0.001f;
@@ -516,26 +513,26 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
     strcpy(widgets[PAS_WIDGET_INSCATTER_INTENSITY]->mLabel, "InscatterIntensity");
     widgets[PAS_WIDGET_INSCATTER_INTENSITY]->pWidget = &inscatterIntensity;
 
-    SliderFloatWidget inscatterContrast;
-    inscatterContrast.pData = &gSkySettings.SkyInfo.z;
-    inscatterContrast.mMin = 0.0f;
-    inscatterContrast.mMax = 2.0f;
-    inscatterContrast.mStep = 0.001f;
+    SliderFloatWidget inscatterDepthFallOff;
+    inscatterDepthFallOff.pData = &gAppSettings.SkyInfo.z;
+    inscatterDepthFallOff.mMin = 0.005f;
+    inscatterDepthFallOff.mMax = 1.0f;
+    inscatterDepthFallOff.mStep = 0.001f;
     widgets[PAS_WIDGET_INSCATTER_CONTRAST]->mType = WIDGET_TYPE_SLIDER_FLOAT;
-    strcpy(widgets[PAS_WIDGET_INSCATTER_CONTRAST]->mLabel, "InscatterContrast");
-    widgets[PAS_WIDGET_INSCATTER_CONTRAST]->pWidget = &inscatterContrast;
+    strcpy(widgets[PAS_WIDGET_INSCATTER_CONTRAST]->mLabel, "InScatterDepthFallOff");
+    widgets[PAS_WIDGET_INSCATTER_CONTRAST]->pWidget = &inscatterDepthFallOff;
 
     SliderFloatWidget unitsToM;
-    unitsToM.pData = &gSkySettings.SkyInfo.w;
+    unitsToM.pData = &gAppSettings.SkyInfo.w;
     unitsToM.mMin = 0.0f;
-    unitsToM.mMax = 2.0f;
+    unitsToM.mMax = 1.0f;
     unitsToM.mStep = 0.001f;
     widgets[PAS_WIDGET_UNITS_TO_M]->mType = WIDGET_TYPE_SLIDER_FLOAT;
     strcpy(widgets[PAS_WIDGET_UNITS_TO_M]->mLabel, "UnitsToM");
     widgets[PAS_WIDGET_UNITS_TO_M]->pWidget = &unitsToM;
 
     luaRegisterWidget(
-        uiCreateComponentWidget(pGuiWindow, "Precomputed Atmosphere Scattering", &collapsingPAS, WIDGET_TYPE_COLLAPSING_HEADER));
+        uiCreateComponentWidget(pGuiSkyWindow, "Precomputed Atmosphere Scattering", &collapsingPAS, WIDGET_TYPE_COLLAPSING_HEADER));
 
     CollapsingHeaderWidget collapsingNebula;
     collapsingNebula.pGroupedWidgets = widgets;
@@ -568,7 +565,55 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
     strcpy(widgets[NEBULA_WIDGET_LOW_COLOR]->mLabel, "Nebula Low Color");
     widgets[NEBULA_WIDGET_LOW_COLOR]->pWidget = &lowColor;
 
-    luaRegisterWidget(uiCreateComponentWidget(pGuiWindow, "Nebula", &collapsingNebula, WIDGET_TYPE_COLLAPSING_HEADER));
+    luaRegisterWidget(uiCreateComponentWidget(pGuiSkyWindow, "Nebula", &collapsingNebula, WIDGET_TYPE_COLLAPSING_HEADER));
+
+    CollapsingHeaderWidget collapsingSun;
+    collapsingSun.pGroupedWidgets = widgets;
+    collapsingSun.mWidgetsCount = SUN_WIDGET_COUNT;
+
+    SliderFloatWidget AzimuthSliderFloat;
+    AzimuthSliderFloat.pData = &gAppSettings.SunDirection.x;
+    AzimuthSliderFloat.mMin = -180.0f;
+    AzimuthSliderFloat.mMax = 180.0f;
+    AzimuthSliderFloat.mStep = 0.001f;
+    widgets[SUN_WIDGET_AZIMUTH]->mType = WIDGET_TYPE_SLIDER_FLOAT;
+    strcpy(widgets[SUN_WIDGET_AZIMUTH]->mLabel, "Light Azimuth");
+    widgets[SUN_WIDGET_AZIMUTH]->pWidget = &AzimuthSliderFloat;
+
+    SliderFloatWidget ElevationSliderFloat;
+    ElevationSliderFloat.pData = &gAppSettings.SunDirection.y;
+    ElevationSliderFloat.mMin = 0.0f;
+    ElevationSliderFloat.mMax = 360.0f;
+    ElevationSliderFloat.mStep = 0.001f;
+    widgets[SUN_WIDGET_ELEVATION]->mType = WIDGET_TYPE_SLIDER_FLOAT;
+    strcpy(widgets[SUN_WIDGET_ELEVATION]->mLabel, "Light Elevation");
+    widgets[SUN_WIDGET_ELEVATION]->pWidget = &ElevationSliderFloat;
+
+    SliderFloat4Widget sliderFloat4;
+    sliderFloat4.pData = &gAppSettings.SunColorAndIntensity;
+    sliderFloat4.mMin = float4(0.0f);
+    sliderFloat4.mMax = float4(10.0f);
+    sliderFloat4.mStep = float4(0.01f);
+    widgets[SUN_WIDGET_COLOR]->mType = WIDGET_TYPE_SLIDER_FLOAT4;
+    strcpy(widgets[SUN_WIDGET_COLOR]->mLabel, "Light Color & Intensity");
+    widgets[SUN_WIDGET_COLOR]->pWidget = &sliderFloat4;
+
+    SliderFloatWidget sliderFloat;
+    sliderFloat.pData = &gAppSettings.sunMovingSpeed;
+    sliderFloat.mMin = -100.0f;
+    sliderFloat.mMax = 100.0f;
+    sliderFloat.mStep = 0.01f;
+    widgets[SUN_WIDGET_MOVING_SPEED]->mType = WIDGET_TYPE_SLIDER_FLOAT;
+    strcpy(widgets[SUN_WIDGET_MOVING_SPEED]->mLabel, "Sun Moving Speed");
+    widgets[SUN_WIDGET_MOVING_SPEED]->pWidget = &sliderFloat;
+
+    CheckboxWidget sunMoveCheckbox;
+    sunMoveCheckbox.pData = &gAppSettings.bSunMove;
+    widgets[SUN_WIDGET_IS_MOVING]->mType = WIDGET_TYPE_CHECKBOX;
+    strcpy(widgets[SUN_WIDGET_IS_MOVING]->mLabel, "Automatic Sun Moving");
+    widgets[SUN_WIDGET_IS_MOVING]->pWidget = &sunMoveCheckbox;
+
+    luaRegisterWidget(uiCreateComponentWidget(pGuiSkyWindow, "Sun", &collapsingSun, WIDGET_TYPE_COLLAPSING_HEADER));
 
     waitForToken(&token);
 
@@ -613,8 +658,8 @@ void Sky::Update(float deltaTime)
 {
     g_ElapsedTime += deltaTime;
 
-    rotMat = mat4::translation(vec3(0.0f, -EARTH_RADIUS * 10.0f, 0.0f)) * (mat4::rotationY(-Azimuth) * mat4::rotationZ(Elevation)) *
-             mat4::translation(vec3(0.0f, EARTH_RADIUS * 10.0f, 0.0f));
+    rotMat = mat4::translation(vec3(0.0f, -PLANET_RADIUS, 0.0f)) * (mat4::rotationY(-Azimuth) * mat4::rotationZ(Elevation)) *
+             mat4::translation(vec3(0.0f, PLANET_RADIUS, 0.0f));
     rotMatStarField = (mat4::rotationY(-Azimuth) * mat4::rotationZ(Elevation));
 }
 
@@ -823,14 +868,10 @@ void Sky::Draw(Cmd* cmd)
         BufferBarrier bufferBarriers[] = { { pTransmittanceBuffer, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_UNORDERED_ACCESS } };
         cmdResourceBarrier(cmd, TF_ARRAY_COUNT(bufferBarriers), bufferBarriers, 0, NULL, TF_ARRAY_COUNT(rtBarriersSky), rtBarriersSky);
 
-        LoadActionsDesc loadActions = {};
-        loadActions.mLoadActionsColor[0] = LOAD_ACTION_CLEAR;
-        loadActions.mClearColorValues[0].r = 0.0f;
-        loadActions.mClearColorValues[0].g = 0.0f;
-        loadActions.mClearColorValues[0].b = 0.0f;
-        loadActions.mClearColorValues[0].a = 0.0f;
-
-        cmdBindRenderTargets(cmd, 1, &pSkyRenderTarget, NULL, &loadActions, NULL, NULL, -1, -1);
+        BindRenderTargetsDesc bindRenderTargets = {};
+        bindRenderTargets.mRenderTargetCount = 1;
+        bindRenderTargets.mRenderTargets[0] = { pSkyRenderTarget, LOAD_ACTION_CLEAR };
+        cmdBindRenderTargets(cmd, &bindRenderTargets);
         cmdSetViewport(cmd, 0.0f, 0.0f, (float)pSkyRenderTarget->mWidth, (float)pSkyRenderTarget->mHeight, 0.0f, 1.0f);
         cmdSetScissor(cmd, 0, 0, pSkyRenderTarget->mWidth, pSkyRenderTarget->mHeight);
 
@@ -842,31 +883,30 @@ void Sky::Draw(Cmd* cmd)
 
         _cbRootConstantStruct.InvViewMat = inverse(pCameraController->getViewMatrix());
         _cbRootConstantStruct.InvProjMat = inverse(SkyProjectionMatrix);
-        _cbRootConstantStruct.LightDirection = float4(lightDir.getX(), lightDir.getY(), lightDir.getZ(), gSkySettings.SkyInfo.x);
+        _cbRootConstantStruct.LightDirection = float4(lightDir.getX(), lightDir.getY(), lightDir.getZ(), gAppSettings.SkyInfo.x);
 
         ///////////////////////////////////////////////////////////////////////////////////////////////
 
-        //	Update params
-        float fUnitsToKM = gSkySettings.SkyInfo.w * 0.001f;
+        //    Update params
+        float fUnitsToKM = gAppSettings.SkyInfo.w * 0.001f;
 
-        float4 offsetScaleToLocalKM = -gSkySettings.OriginLocation * fUnitsToKM;
+        float4 offsetScaleToLocalKM = -gAppSettings.OriginLocation * fUnitsToKM;
         offsetScaleToLocalKM.setW(fUnitsToKM);
 
         offsetScaleToLocalKM.y += Rg + 0.001f;
 
-        float2 inscatterParams =
-            float2(gSkySettings.SkyInfo.y * (1.0f - gSkySettings.SkyInfo.z), gSkySettings.SkyInfo.y * gSkySettings.SkyInfo.z);
+        float2 inscatterParams = float2(gAppSettings.SkyInfo.y, gAppSettings.SkyInfo.z);
         float3 localCamPosKM = (v3ToF3(pCameraController->getViewPosition()) * offsetScaleToLocalKM.w) + offsetScaleToLocalKM.getXYZ();
 
-        float  Q = (float)(SKY_FAR / (SKY_FAR - SKY_NEAR));
-        float4 QNNear = float4(Q, SKY_NEAR * fUnitsToKM, SKY_NEAR, SKY_FAR);
+        float  Q = (float)(CAMERA_FAR / (CAMERA_FAR - CAMERA_NEAR));
+        float4 QNNear = float4(Q, CAMERA_NEAR * fUnitsToKM, CAMERA_NEAR, CAMERA_FAR);
 
         //////////////////////////////////////////////////////////////////////////////////////////////
 
         _cbRootConstantStruct.CameraPosition = float4(localCamPosKM.getX(), localCamPosKM.getY(), localCamPosKM.getZ(), 1.0f);
         _cbRootConstantStruct.QNNear = QNNear;
         _cbRootConstantStruct.InScatterParams = float4(inscatterParams.x, inscatterParams.y, 0.0f, 0.0f);
-        _cbRootConstantStruct.LightIntensity = LightColorAndIntensity;
+        _cbRootConstantStruct.LightIntensity = gAppSettings.SunColorAndIntensity;
 
         BufferUpdateDesc BufferUniformSettingDesc = { pRenderSkyUniformBuffer[gFrameIndex] };
         beginUpdateResource(&BufferUniformSettingDesc);
@@ -928,7 +968,7 @@ void Sky::Draw(Cmd* cmd)
         cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
     }
 
-    cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
+    cmdBindRenderTargets(cmd, NULL);
 
     ////////////////////////////////////////////////////////////////////////
 
@@ -972,7 +1012,10 @@ void Sky::Draw(Cmd* cmd)
 
         cmdBeginGpuTimestampQuery(cmd, pGraphicsGpuProfiler, "Draw Aurora", true);
 
-        cmdBindRenderTargets(cmd, 1, &pSkyRenderTarget, NULL, NULL, NULL, NULL, -1, -1);
+        BindRenderTargetsDesc bindRenderTargets = {};
+        bindRenderTargets.mRenderTargetCount= 1;
+        bindRenderTargets.ppRenderTargets= &pSkyRenderTarget;
+        cmdBindRenderTargets(cmd, &bindRenderTargets);
         cmdSetViewport(cmd, 0.0f, 0.0f, (float)pSkyRenderTarget->mWidth, (float)pSkyRenderTarget->mHeight, 0.0f, 1.0f);
         cmdSetScissor(cmd, 0, 0, pSkyRenderTarget->mWidth, pSkyRenderTarget->mHeight);
 
@@ -991,7 +1034,7 @@ void Sky::Draw(Cmd* cmd)
 
         cmdBindVertexBuffer(cmd, 1, &pAuroraVertexBuffer, NULL);
         cmdDraw(cmd, (uint32_t)AuroraParticleNum, 0);
-        cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
+        cmdBindRenderTargets(cmd, NULL);
 
         cmdEndGpuTimestampQuery(cmd, pGraphicsGpuProfiler);
       }
@@ -1045,13 +1088,13 @@ static const vec3  betaMEx = betaMSca / 0.9f;
 float limit(float r, float mu)
 {
     float dout = -r * mu + sqrt(r * r * (mu * mu - 1.0f) + RL * RL);
-    // 	float delta2 = r * r * (mu * mu - 1.0) + Rg * Rg;
-    // 	if (delta2 >= 0.0) {
-    // 		float din = -r * mu - sqrt(delta2);
-    // 		if (din >= 0.0) {
-    // 			dout = min(dout, din);
-    // 		}
-    // 	}
+    //     float delta2 = r * r * (mu * mu - 1.0) + Rg * Rg;
+    //     if (delta2 >= 0.0) {
+    //         float din = -r * mu - sqrt(delta2);
+    //         if (din >= 0.0) {
+    //             dout = min(dout, din);
+    //         }
+    //     }
     return dout;
 }
 
@@ -1103,8 +1146,8 @@ float SmoothStep(float edge0, float edge1, float x)
 // (mu=cos(view zenith angle)), or zero if ray intersects ground
 vec3 transmittanceWithShadowSmooth(float r, float mu)
 {
-    //	TODO: check if it is reasonably fast
-    //	TODO: check if it is mathematically correct
+    //    TODO: check if it is reasonably fast
+    //    TODO: check if it is mathematically correct
     //    return mu < -sqrt(1.0 - (Rg / r) * (Rg / r)) ? (0.0).xxx : transmittance(r, mu);
 
     float eps = 0.5f * PI / 180.0f;
@@ -1122,18 +1165,18 @@ vec3 transmittanceWithShadowSmooth(float r, float mu)
 
 float3 Sky::GetSunColor()
 {
-    // float4		SkyInfo; // x: fExposure, y: fInscatterIntencity, z: fInscatterContrast, w: fUnitsToM
-    // float4		OriginLocation;
+    // float4        SkyInfo; // x: fExposure, y: fInscatterIntencity, z: fInscatterContrast, w: fUnitsToM
+    // float4        OriginLocation;
 
-    const float fUnitsToKM = gSkySettings.SkyInfo.w * 0.001f;
-    float4      offsetScaleToLocalKM = float4(-gSkySettings.OriginLocation.getXYZ() * fUnitsToKM, fUnitsToKM);
+    const float fUnitsToKM = gAppSettings.SkyInfo.w * 0.001f;
+    float4      offsetScaleToLocalKM = float4(-gAppSettings.OriginLocation.getXYZ() * fUnitsToKM, fUnitsToKM);
     offsetScaleToLocalKM.y += Rg + 0.001f;
 
-    // float2	inscatterParams = float2(gSkySettings.SkyInfo.y*(1 - gSkySettings.SkyInfo.z),
+    // float2    inscatterParams = float2(gSkySettings.SkyInfo.y*(1 - gSkySettings.SkyInfo.z),
     // gSkySettings.SkyInfo.y*gSkySettings.SkyInfo.z);
     float3 localCamPosKM = (float3(0.0f, 0.0f, 0.0f) * offsetScaleToLocalKM.w) + offsetScaleToLocalKM.getXYZ();
 
-    //	TODO: Igor: Simplify
+    //    TODO: Igor: Simplify
 
     vec3 ray = f3Tov3(LightDirection);
     vec3 x = f3Tov3(localCamPosKM);

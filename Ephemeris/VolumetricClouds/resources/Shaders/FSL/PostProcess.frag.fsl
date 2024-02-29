@@ -30,7 +30,7 @@ float4 PS_MAIN(PsIn In)
 
 	float intensity = volumetricCloudsResult.r;
 	float density   = volumetricCloudsResult.a;
-	float atmosphereBlendFactor = min(volumetricCloudsResult.g, 1.0f);
+	//float atmosphereBlendFactor = min(volumetricCloudsResult.g, 1.0f);
 
 	float3 BackgroudColor = SampleTex2D(Get(g_SkyBackgroudTexture), Get(g_LinearClampSampler), In.TexCoord).rgb;
 
@@ -40,7 +40,6 @@ float4 PS_MAIN(PsIn In)
 	PostProcessedResult.a   = density;
 	PostProcessedResult.rgb = (intensity / max(density, 0.000001f)) * lerp(TransmittanceRGB , lerp(Get(lightColorAndIntensity).rgb, TransmittanceRGB, pow(saturate(1.0f - Get(lightDirection).y), 0.5f)), Get(Test00)) * Get(lightColorAndIntensity).a * Get(CloudBrightness);
 	PostProcessedResult.rgb = lerp(BackgroudColor, PostProcessedResult.rgb, PostProcessedResult.a * Get(BackgroundBlendFactor));
-	PostProcessedResult.rgb = lerp(PostProcessedResult.rgb, BackgroudColor, pow(atmosphereBlendFactor, 1.4f));
 
 	RETURN(float4(PostProcessedResult.rgb, 1.0f));
 }

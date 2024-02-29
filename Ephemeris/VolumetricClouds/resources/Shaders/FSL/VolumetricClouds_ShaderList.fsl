@@ -103,3 +103,19 @@
 #include "VolumetricCloud_2ndWithDepth.comp.fsl"
 #end
 
+#comp RealTimeVolumetricCloud.comp
+#include "RealTimeVolumetricCloud.comp.fsl"
+#end
+
+#comp RealTimeVolumetricCloudWithDepth.comp
+#include "RealTimeVolumetricCloudWithDepth.comp.fsl"
+#end
+
+#frag RealTimeVolumetricCloud.frag
+#include "RealTimeVolumetricCloud.frag.fsl"
+#end
+
+#frag RealTimeVolumetricCloudWithDepth.frag
+#include "RealTimeVolumetricCloudWithDepth.frag.fsl"
+#end
+

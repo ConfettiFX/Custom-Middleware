@@ -14,7 +14,7 @@ void CS_MAIN(SV_DispatchThreadID(uint3) DTid)
 {
 	INIT_MAIN;
 
-	Write2D(Get(SavePrevTexture), DTid.xy, LoadTex2D(Get(SrcTexture), NO_SAMPLER, DTid.xy, 0));
+	Write2D(Get(FullResCloudTexture), DTid.xy, LoadTex2D(Get(SrcTexture), NO_SAMPLER, DTid.xy, 0));
 
 	RETURN();
 }

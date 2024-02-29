@@ -16,6 +16,9 @@
 #include "HeightData.h"
 #include "Visibility.h"
 
+// Everest
+const float MaxMountainHeight = 8849.0f;
+
 inline float3 operator-(const float3& lhs, const float3& rhs) { return float3(lhs.x - rhs.x, lhs.y - rhs.y, lhs.z - rhs.z); }
 inline float3 operator+(const float3& lhs, const float3& rhs) { return float3(lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z); }
 inline float3 operator/(const float3& lhs, const float rhs) { return float3(lhs.x / rhs, lhs.y / rhs, lhs.z / rhs); }
@@ -288,7 +291,11 @@ private:
 
         float3 sphereNormal;
         sphereNormal = v3ToF3(normalize(f3Tov3(posWs)));
-        posWs = v3ToF3(f3Tov3(posWs) + f3Tov3(sphereNormal) * displacement * sampleScale);
+        // easing, add more steepness to the moutain
+        // displacement must be positive we use some culling to discard clouds below ground level
+        displacement = displacement * displacement * displacement;
+        displacement *= 1.5f;
+        posWs = v3ToF3(f3Tov3(posWs) + f3Tov3(sphereNormal) * displacement * sampleScale * MaxMountainHeight);
     }
 
     TerrainVertex createTerrainVertex(uint32_t col, uint32_t row, float gridScale)

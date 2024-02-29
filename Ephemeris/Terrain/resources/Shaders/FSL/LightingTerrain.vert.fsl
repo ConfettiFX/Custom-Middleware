@@ -22,7 +22,7 @@ VsOut VS_MAIN(SV_VertexID(uint) VertexID)
 	Out.Position.y  = (VertexID == 0) ? -3.0f :  1.0f;
 	Out.Position.zw = f2(1.0f);
 
-	Out.ScreenPos = Out.Position.xy;
+	Out.ScreenPos = Out.Position.xy * float2(0.5f, -0.5f) + 0.5f;
 
 	RETURN(Out);
 }
