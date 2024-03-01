@@ -19,7 +19,7 @@ float4 PS_MAIN(PsIn In)
 {
 	INIT_MAIN;
 
-	float3 sunWorldPos = Get(lightDirection).xyz * 63600000.0f;
+	float3 sunWorldPos = Get(lightDirection).xyz * Get(EarthRadius) * 10.0f;
 	float4 sunPos      = mul(Get(m_DataPerEye)[0].m_WorldToProjMat, float4(sunWorldPos, 1.0f));
 	sunPos.xy /= sunPos.w;
 
@@ -62,7 +62,7 @@ float4 PS_MAIN(PsIn In)
 	{
 		texCoord -= deltaTexCoord;
 			   
-		float localDensity = 1.0f - SampleTex2D(Get(g_PrevFrameTexture), Get(g_LinearBorderSampler), texCoord).a;
+		float localDensity = 1.0f - SampleTex2D(Get(g_HighResolutionCloudTexture), Get(g_LinearBorderSampler), texCoord).a;
 		localDensity      *= illuminationDecay * Get(GodrayWeight);
 
 		finalIntensity    += localDensity;

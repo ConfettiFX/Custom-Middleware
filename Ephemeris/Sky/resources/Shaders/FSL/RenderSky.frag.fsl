@@ -70,7 +70,12 @@ float4 PS_MAIN(PsIn In)
 		_groundColor = ReduceOriginalImage.xyz * ISun / M_PI;
 	}
 	
-	inscatterColor *= Get(InScatterParams).x + Get(InScatterParams).y;
+	inscatterColor *= Get(InScatterParams).x;
+	// increase constrat near the camera
+	float linearDepth = DepthLinearization(depth) * Get(QNNear).w;
+	float coef = min(linearDepth / 200000.0f, 1.0f);
+	coef = pow(coef, 2.5);
+	inscatterColor *= lerp(Get(InScatterParams).y, 1.0, coef);
 
 	Out = float4(HDR_NORM(_groundColor) + HDR(_spaceColor + inscatterColor) + OriginalImage.rgb, 0.0f);
 

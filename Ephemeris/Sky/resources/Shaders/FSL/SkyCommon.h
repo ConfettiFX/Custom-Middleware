@@ -16,8 +16,8 @@ CBUFFER(RenderSkyUniformBuffer, UPDATE_FREQ_PER_FRAME, b0, binding = 0)
 	DATA(f4x4,   invProj,         None);
 	DATA(float4, lightDirection,  None);
 	DATA(float4, CameraPosition,  None);
-	DATA(float4, QNNear,          None);
-	DATA(float4, InScatterParams, None);
+	DATA(float4, QNNear,          None); // InvPerspective, NEARkm, NEAR, FAR
+	DATA(float4, InScatterParams, None); // Exposure, Scattering intensity, Depth FallOff
 	DATA(float4, LightIntensity,  None);
 };
 

@@ -14,7 +14,11 @@
 #include "../../../../The-Forge/Common_3/Utilities/Interfaces/IFileSystem.h"
 #include "../../../../The-Forge/Common_3/Utilities/Interfaces/ILog.h"
 
+#include "../../src/AppSettings.h"
+
 #include "../../../../The-Forge/Common_3/Utilities/Interfaces/IMemory.h"
+
+extern AppSettings gAppSettings;
 
 char TextureTileFilePaths[5][255] = { "Terrain/Tiles/grass_DM.tex", "Terrain/Tiles/cliff_DM.tex", "Terrain/Tiles/snow_DM.tex",
                                       "Terrain/Tiles/grassDark_DM.tex", "Terrain/Tiles/gravel_DM.tex" };
@@ -43,11 +47,6 @@ RootSignature* pTerrainRootSignature = NULL;
 DescriptorSet* pTerrainDescriptorSet[2] = { NULL };
 
 static vec4 g_StandardPosition;
-
-#define TERRAIN_NEAR 50.0f
-#define TERRAIN_FAR  100000000.0f
-#define EARTH_RADIUS 6360000.0f
-#define HEIGHT_SCALE 2.0f
 
 struct RenderTerrainUniformBuffer
 {
@@ -145,13 +144,13 @@ bool Terrain::Init(Renderer* renderer, PipelineCache* pCache)
     samplerClampDesc = { FILTER_LINEAR, FILTER_LINEAR, MIPMAP_MODE_LINEAR, ADDRESS_MODE_REPEAT, ADDRESS_MODE_REPEAT, ADDRESS_MODE_REPEAT };
     addSampler(pRenderer, &samplerClampDesc, &pLinearWrapSampler);
 
-    samplerClampDesc = { FILTER_LINEAR,
-                         FILTER_LINEAR,
-                         MIPMAP_MODE_LINEAR,
+    samplerClampDesc = { FILTER_NEAREST,
+                         FILTER_NEAREST,
+                         MIPMAP_MODE_NEAREST,
                          ADDRESS_MODE_CLAMP_TO_BORDER,
                          ADDRESS_MODE_CLAMP_TO_BORDER,
                          ADDRESS_MODE_CLAMP_TO_BORDER };
-    addSampler(pRenderer, &samplerClampDesc, &pLinearBorderSampler);
+    addSampler(pRenderer, &samplerClampDesc, &pNearestClampSampler);
 
     SyncToken token = {};
 
@@ -238,7 +237,7 @@ bool Terrain::Init(Renderer* renderer, PipelineCache* pCache)
 
     waitForToken(&token);
 
-    GenerateTerrainFromHeightmap(HEIGHT_SCALE, EARTH_RADIUS);
+    GenerateTerrainFromHeightmap(PLANET_RADIUS);
 
     return true;
 }
@@ -247,7 +246,7 @@ void Terrain::Exit()
 {
     removeSampler(pRenderer, pLinearMirrorSampler);
     removeSampler(pRenderer, pLinearWrapSampler);
-    removeSampler(pRenderer, pLinearBorderSampler);
+    removeSampler(pRenderer, pNearestClampSampler);
 
 #if USE_PROCEDUAL_TERRAIN
     removeResource(pGlobalZoneIndexBuffer);
@@ -297,7 +296,7 @@ void Terrain::Exit()
     meshSegmentCount = 0;
 }
 
-void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
+void Terrain::GenerateTerrainFromHeightmap(float radius)
 {
     // float terrainConstructionTime = getCurrentTime();
 
@@ -305,12 +304,12 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
     meshSegments = NULL;
     meshSegmentCount = 0;
 
-    HeightData dataSource("Terrain/HeightMap.r32", height);
+    HeightData dataSource("Terrain/HeightMap.r32");
 
     TerrainVertex* vertices;
     {
         HemisphereBuilder hemisphereBuilder;
-        hemisphereBuilder.build(pRenderer, &dataSource, radius * 10.0f - 720000.0f, 0.15f, 64, 15,
+        hemisphereBuilder.build(pRenderer, &dataSource, radius, 1.0f, 64, 15,
 #ifdef _DEBUG
                                 33,
 #else
@@ -377,7 +376,10 @@ void Terrain::GenerateTerrainFromHeightmap(float height, float radius)
 
 bool Terrain::GenerateNormalMap(Cmd* cmd)
 {
-    cmdBindRenderTargets(cmd, 1, &pNormalMapFromHeightmapRT, NULL, NULL, NULL, NULL, -1, -1);
+    BindRenderTargetsDesc bindRenderTargets = {};
+    bindRenderTargets.mRenderTargetCount = 1;
+    bindRenderTargets.mRenderTargets[0] = { pNormalMapFromHeightmapRT, LOAD_ACTION_DONTCARE };
+    cmdBindRenderTargets(cmd, &bindRenderTargets);
     cmdSetViewport(cmd, 0.0f, 0.0f, (float)pNormalMapFromHeightmapRT->mWidth, (float)pNormalMapFromHeightmapRT->mHeight, 0.0f, 1.0f);
     cmdSetScissor(cmd, 0, 0, pNormalMapFromHeightmapRT->mWidth, pNormalMapFromHeightmapRT->mHeight);
     cmdBindPipeline(cmd, pGenTerrainNormalPipeline);
@@ -386,12 +388,12 @@ bool Terrain::GenerateNormalMap(Cmd* cmd)
     {
         float heightScale;
     } cbTempRootConstantStruct;
-    cbTempRootConstantStruct.heightScale = HEIGHT_SCALE;
+    cbTempRootConstantStruct.heightScale = 1.0f;
     cmdBindPushConstants(cmd, pGenTerrainNormalRootSignature, gTerrainRootConstantIndex, &cbTempRootConstantStruct);
     cmdBindDescriptorSet(cmd, 0, pGenTerrainNormalDescriptorSet);
     cmdDraw(cmd, 3, 0);
 
-    cmdBindRenderTargets(cmd, 0, NULL, NULL, NULL, NULL, NULL, -1, -1);
+    cmdBindRenderTargets(cmd, NULL);
 
     return true;
 }
@@ -410,7 +412,7 @@ bool Terrain::Load(int32_t width, int32_t height)
     float horizontal_fov = PI / 3.0f;
     // float vertical_fov = 2.0f * atan(tan(horizontal_fov*0.5f) * aspectInverse);
 
-    TerrainProjectionMatrix = mat4::perspectiveLH(horizontal_fov, aspectInverse, TERRAIN_NEAR, TERRAIN_FAR);
+    TerrainProjectionMatrix = mat4::perspectiveLH(horizontal_fov, aspectInverse, CAMERA_NEAR, CAMERA_FAR);
 
     return true;
 }
@@ -434,13 +436,13 @@ void Terrain::removeDescriptorSets()
 
 void Terrain::addRootSignatures()
 {
-    const char* pStaticSamplerNames[] = { "g_LinearMirror", "g_LinearWrap" };
-    Sampler*    pStaticSamplers[] = { pLinearMirrorSampler, pLinearWrapSampler };
+    const char* pStaticSamplerNames[] = { "g_LinearMirror", "g_LinearWrap", "g_NearestClamp" };
+    Sampler*    pStaticSamplers[] = { pLinearMirrorSampler, pLinearWrapSampler, pNearestClampSampler };
 
     RootSignatureDesc rootDesc = {};
     rootDesc.mShaderCount = 1;
     rootDesc.ppShaders = &pGenTerrainNormalShader;
-    rootDesc.mStaticSamplerCount = 2;
+    rootDesc.mStaticSamplerCount = 3;
     rootDesc.ppStaticSamplerNames = pStaticSamplerNames;
     rootDesc.ppStaticSamplers = pStaticSamplers;
     addRootSignature(pRenderer, &rootDesc, &pGenTerrainNormalRootSignature);
@@ -450,7 +452,7 @@ void Terrain::addRootSignatures()
     rootDesc = {};
     rootDesc.mShaderCount = 3;
     rootDesc.ppShaders = shaders;
-    rootDesc.mStaticSamplerCount = 2;
+    rootDesc.mStaticSamplerCount = 3;
     rootDesc.ppStaticSamplerNames = pStaticSamplerNames;
     rootDesc.ppStaticSamplers = pStaticSamplers;
     rootDesc.mMaxBindlessTextures = 5;
@@ -759,16 +761,11 @@ void Terrain::Draw(Cmd* cmd)
                                              { pDepthBuffer, RESOURCE_STATE_SHADER_RESOURCE, RESOURCE_STATE_DEPTH_WRITE } };
         cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 2, barriers20);
 
-        LoadActionsDesc loadActions = {};
-        loadActions.mLoadActionsColor[0] = LOAD_ACTION_CLEAR;
-        loadActions.mLoadActionDepth = LOAD_ACTION_CLEAR;
-        loadActions.mClearColorValues[0].r = 0.0f;
-        loadActions.mClearColorValues[0].g = 0.0f;
-        loadActions.mClearColorValues[0].b = 0.0f;
-        loadActions.mClearColorValues[0].a = 0.0f;
-        loadActions.mClearDepth = pDepthBuffer->mClearValue;
-
-        cmdBindRenderTargets(cmd, 1, &pRenderTarget, pDepthBuffer, &loadActions, NULL, NULL, -1, -1);
+        BindRenderTargetsDesc bindRenderTargets = {};
+        bindRenderTargets.mRenderTargetCount = 1;
+        bindRenderTargets.mRenderTargets[0] = { pRenderTarget, LOAD_ACTION_CLEAR };
+        bindRenderTargets.mDepthStencil = { pDepthBuffer, LOAD_ACTION_CLEAR };
+        cmdBindRenderTargets(cmd, &bindRenderTargets);
         cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 0.0f, 1.0f);
         cmdSetScissor(cmd, 0, 0, pRenderTarget->mWidth, pRenderTarget->mHeight);
 
@@ -821,23 +818,6 @@ void Terrain::Draw(Cmd* cmd)
         }
         */
 
-        LoadActionsDesc loadActions = {};
-        loadActions.mLoadActionsColor[0] = LOAD_ACTION_CLEAR;
-        loadActions.mLoadActionsColor[1] = LOAD_ACTION_CLEAR;
-
-        loadActions.mLoadActionDepth = LOAD_ACTION_CLEAR;
-
-        loadActions.mClearColorValues[0].r = 0.0f;
-        loadActions.mClearColorValues[0].g = 0.0f;
-        loadActions.mClearColorValues[0].b = 0.0f;
-        loadActions.mClearColorValues[0].a = 0.0f;
-
-        loadActions.mClearColorValues[1].r = 0.0f;
-        loadActions.mClearColorValues[1].g = 0.0f;
-        loadActions.mClearColorValues[1].b = 0.0f;
-        loadActions.mClearColorValues[1].a = 0.0f;
-        loadActions.mClearDepth = pDepthBuffer->mClearValue;
-
         getFrustumFromMatrix(TerrainProjectionMatrix * pCameraController->getViewMatrix(), terrainFrustum);
 
         RenderTargetBarrier barriersTerrainLighting[] = {
@@ -848,9 +828,12 @@ void Terrain::Draw(Cmd* cmd)
 
         cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 3, barriersTerrainLighting);
 
-        RenderTarget* RTs[2] = { pGBuffer_BasicRT, pGBuffer_NormalRT };
-
-        cmdBindRenderTargets(cmd, sizeof(RTs) / sizeof(RTs[0]), RTs, pDepthBuffer, &loadActions, NULL, NULL, -1, -1);
+        BindRenderTargetsDesc bindRenderTargets = {};
+        bindRenderTargets.mRenderTargetCount = 2;
+        bindRenderTargets.mRenderTargets[0] = { pGBuffer_BasicRT, LOAD_ACTION_CLEAR };
+        bindRenderTargets.mRenderTargets[1] = { pGBuffer_NormalRT, LOAD_ACTION_CLEAR };
+        bindRenderTargets.mDepthStencil = { pDepthBuffer, LOAD_ACTION_CLEAR };
+        cmdBindRenderTargets(cmd, &bindRenderTargets);
         cmdSetViewport(cmd, 0.0f, 0.0f, (float)pGBuffer_BasicRT->mWidth, (float)pGBuffer_BasicRT->mHeight, 0.0f, 1.0f);
         cmdSetScissor(cmd, 0, 0, pGBuffer_BasicRT->mWidth, pGBuffer_BasicRT->mHeight);
 
@@ -861,8 +844,8 @@ void Terrain::Draw(Cmd* cmd)
             beginUpdateResource(&BufferUpdateDescDesc);
             RenderTerrainUniformBuffer renderTerrainUniformBuffer = {};
             renderTerrainUniformBuffer.projView = TerrainProjectionMatrix * pCameraController->getViewMatrix();
-            renderTerrainUniformBuffer.TerrainInfo = float4(EARTH_RADIUS, 1.0f, HEIGHT_SCALE, 0.0f);
-            renderTerrainUniformBuffer.CameraInfo = float4(TERRAIN_NEAR, TERRAIN_FAR, TERRAIN_NEAR, TERRAIN_FAR);
+            renderTerrainUniformBuffer.TerrainInfo = float4(PLANET_RADIUS, 1.0f, 1.0f, 0.0f);
+            renderTerrainUniformBuffer.CameraInfo = float4(CAMERA_NEAR, CAMERA_FAR, CAMERA_NEAR, CAMERA_FAR);
             memcpy(BufferUpdateDescDesc.pMappedData, &renderTerrainUniformBuffer, sizeof(renderTerrainUniformBuffer));
             endUpdateResource(&BufferUpdateDescDesc);
         }
@@ -882,7 +865,7 @@ void Terrain::Draw(Cmd* cmd)
             cmdDrawIndexed(cmd, (uint32_t)mesh->indexCount, 0, 0);
         }
 
-        cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
+        cmdBindRenderTargets(cmd, NULL);
 
         cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
 
@@ -897,9 +880,10 @@ void Terrain::Draw(Cmd* cmd)
 
         cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 4, barriersLighting);
 
-        loadActions.mLoadActionDepth = LOAD_ACTION_LOAD;
-
-        cmdBindRenderTargets(cmd, 1, &pTerrainRT, NULL, &loadActions, NULL, NULL, -1, -1);
+        bindRenderTargets = {};
+        bindRenderTargets.mRenderTargetCount = 1;
+        bindRenderTargets.mRenderTargets[0] = { pTerrainRT, LOAD_ACTION_CLEAR };
+        cmdBindRenderTargets(cmd, &bindRenderTargets);
         cmdSetViewport(cmd, 0.0f, 0.0f, (float)pTerrainRT->mWidth, (float)pTerrainRT->mHeight, 0.0f, 1.0f);
         cmdSetScissor(cmd, 0, 0, pTerrainRT->mWidth, pTerrainRT->mHeight);
 
@@ -914,7 +898,7 @@ void Terrain::Draw(Cmd* cmd)
             cbTempRootConstantStruct.ShadowViewProjMat = mat4::identity();
             cbTempRootConstantStruct.ShadowSpheres = float4(1.0f, 1.0f, 1.0f, 1.0f);
             cbTempRootConstantStruct.SunColor = float4(SunColor, 1.0f);
-            cbTempRootConstantStruct.LightColor = LightColorAndIntensity;
+            cbTempRootConstantStruct.LightColor = gAppSettings.SunColorAndIntensity;
 
             vec4 lightDir = vec4(f3Tov3(LightDirection));
 
@@ -936,7 +920,7 @@ void Terrain::Draw(Cmd* cmd)
         cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
 
 #endif
-        cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
+        cmdBindRenderTargets(cmd, NULL);
 
         RenderTargetBarrier barriers21[] = { { pRenderTarget, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_SHADER_RESOURCE } };
 

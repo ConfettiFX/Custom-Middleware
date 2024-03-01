@@ -24,8 +24,9 @@ PUSH_CONSTANT(ExampleRootConstant, b0)
 #endif
 };
 
-RES(Tex2D(float4),   SrcTexture,    UPDATE_FREQ_NONE, t0, binding = 0);
-RES(RWTex2D(float4), DstTexture,    UPDATE_FREQ_NONE, u0, binding = 1);
-RES(SamplerState,    g_LinearClamp, UPDATE_FREQ_NONE, s0, binding = 2);
+RES(Tex2D(float4),   SrcTexture,     UPDATE_FREQ_NONE, t0, binding = 0);
+RES(RWTex2D(float4), DstTexture,     UPDATE_FREQ_NONE, u0, binding = 1);
+RES(SamplerState,    g_LinearClamp,  UPDATE_FREQ_NONE, s0, binding = 2);
+RES(SamplerState,    g_NearestClamp, UPDATE_FREQ_NONE, s1, binding = 3);
 
 #endif // EXAMPLE_COMMON_H

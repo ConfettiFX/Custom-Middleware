@@ -37,7 +37,6 @@ T max(const T& x, const T& y)
 
 namespace aura
 {
-
 //	TODO: replace this define with static const int???
 #define PI 3.14159265358979323846f
 

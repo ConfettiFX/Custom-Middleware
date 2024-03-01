@@ -10,9 +10,9 @@
 
 #pragma once
 
-// #include "../../src/Perlin.h"
-// #include "B_Spline.h"
-// #include "Aurora.h"
+//#include "../../src/Perlin.h"
+//#include "B_Spline.h"
+//#include "Aurora.h"
 
 #include "../../../../The-Forge/Common_3/Application/Interfaces/ICameraController.h"
 #include "../../../../The-Forge/Common_3/Application/Interfaces/IMiddleware.h"
@@ -67,12 +67,13 @@ public:
 
     Texture* pMoonTexture = NULL;
 
-    Texture* pSavePrevTexture = NULL;
+    Texture* pHighResCloudTexture = NULL;
 
     Buffer* pGlobalTriangularVertexBuffer = NULL;
 
     Sampler* pLinearClampSampler = NULL;
     Sampler* pLinearBorderSampler = NULL;
+    Sampler* pNearestClampSampler = NULL;
 
     RenderTarget* pPreStageRenderTarget = NULL;
     // RenderTarget*         pSkyRenderTarget;

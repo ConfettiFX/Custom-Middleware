@@ -52,7 +52,6 @@ misrepresented as being the original software.
 
 namespace aura
 {
-
 //	Replace define with const inte
 #define POSITIVE_X 0
 #define NEGATIVE_X 1

@@ -12,7 +12,6 @@
 
 namespace confetti
 {
-
 //	TODO: C: vheck all signs here
 
 mat4 rotateX(const float angle)

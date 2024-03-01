@@ -13,7 +13,6 @@
 #include "../../../../The-Forge/Common_3/Application/Interfaces/ICameraController.h"
 #include "../../../../The-Forge/Common_3/Application/Interfaces/IMiddleware.h"
 #include "../../../../The-Forge/Common_3/Application/Interfaces/IProfiler.h"
-#include "../../../../The-Forge/Common_3/Application/Interfaces/IUI.h"
 #include "../../../../The-Forge/Common_3/Graphics/Interfaces/IGraphics.h"
 
 #include "../../src/Perlin.h"
@@ -84,8 +83,6 @@ public:
     uint mWidth = 0;
     uint mHeight = 0;
 
-    UIComponent* pGuiWindow = NULL;
-
     Texture* pTransmittanceTexture = NULL;
     Texture* pIrradianceTexture = NULL; // unsigned int irradianceTexture;//unit 2, E table
     Texture* pInscatterTexture = NULL;  // unsigned int inscatterTexture;//unit 3, S table
@@ -102,7 +99,6 @@ public:
     float  Azimuth = 0.0f;
     float  Elevation = 0.0f;
     float3 LightDirection;
-    float4 LightColorAndIntensity;
 
     mat4 SkyProjectionMatrix;
     mat4 SpaceProjectionMatrix;

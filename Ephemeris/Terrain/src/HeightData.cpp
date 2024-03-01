@@ -16,7 +16,7 @@
 #include "../../../../The-Forge/Common_3/Utilities/Interfaces/ILog.h"
 
 // Creates data source from the specified raw data file
-HeightData::HeightData(const char* fileName, float heightScale):
+HeightData::HeightData(const char* fileName):
     colCount(0), rowCount(0), colOffset(1356), rowOffset(924), levels(0), patchSize(128), data(nullptr)
 {
     // open file
@@ -79,11 +79,6 @@ HeightData::HeightData(const char* fileName, float heightScale):
         for (uint32_t r = height; r < rowCount; r++)
             data[c + r * colCount] = data[c + (height - 1) * colCount];
 
-    for (uint32_t i = 0; i < colCount * rowCount; ++i)
-    {
-        data[i] *= heightScale;
-    }
-
     tf_free(heightMap);
 }
 
@@ -121,9 +116,9 @@ float HeightData::getInterpolatedHeight(float col, float row, int step) const
     float H10 = data[col1 + row0 * colCount];
     float H01 = data[col0 + row1 * colCount];
     float H11 = data[col1 + row1 * colCount];
-    // float interpolatedHeight = (H00 * (1 - weights.mX) + H10 * weights.mX) * (1 - weights.mY) +	(H01 * (1 - weights.mX) + H11 *
+    // float interpolatedHeight = (H00 * (1 - weights.mX) + H10 * weights.mX) * (1 - weights.mY) +    (H01 * (1 - weights.mX) + H11 *
     // weights.mX) * weights.mY;
     float interpolatedHeight =
         (H00 * (1 - weights.x) + H10 * weights.x) * (1 - weights.y) + (H01 * (1 - weights.x) + H11 * weights.x) * weights.y;
-    return interpolatedHeight * USHRT_MAX;
+    return interpolatedHeight;
 }

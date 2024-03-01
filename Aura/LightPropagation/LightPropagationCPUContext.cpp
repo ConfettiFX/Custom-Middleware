@@ -53,7 +53,6 @@ extern PlatformParameters gPlatformParameters;
 
 namespace aura
 {
-
 static void cmdCopyResource(Cmd* pCmd, const TextureDesc* pDesc, Texture* pSrc, Buffer* pDst);
 static void queryTextureFootprint(const Renderer* pRenderer, const RenderTarget* pRT, TextureFootprint* pFootprint);
 

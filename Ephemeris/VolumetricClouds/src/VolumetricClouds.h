@@ -13,8 +13,9 @@
 #include "../../../../The-Forge/Common_3/Application/Interfaces/ICameraController.h"
 #include "../../../../The-Forge/Common_3/Application/Interfaces/IMiddleware.h"
 #include "../../../../The-Forge/Common_3/Application/Interfaces/IProfiler.h"
-#include "../../../../The-Forge/Common_3/Application/Interfaces/IUI.h"
 #include "../../../../The-Forge/Common_3/Graphics/Interfaces/IGraphics.h"
+
+#include "../../src/AppSettings.h"
 
 struct DataPerEye
 {
@@ -72,9 +73,9 @@ struct DataPerLayer
     //======================================================
 
     float AnvilBias; // Using lower value makes anvil shape.
-    float PadA;
-    float PadB;
-    float PadC;
+    float Contrast;
+    float Precipitation;
+    float RisingVaporIntensity;
     //======================================================
 
     vec4 WindDirection;
@@ -92,13 +93,6 @@ struct DataPerLayer
 
     float RisingVaporScale;
     float RisingVaporUpDirection;
-    //======================================================
-
-    float RisingVaporIntensity;
-    float PadD;
-    float PadE;
-    float PadF;
-    //======================================================
 };
 
 struct VolumetricCloudsCB
@@ -127,21 +121,16 @@ struct VolumetricCloudsCB
 
     // Lighting
     float BackgroundBlendFactor; // Blend clouds with the background, more background will be shown if this value is close to 0.0
-    float Contrast;              // Contrast of the clouds' color
     float Eccentricity;          // The bright highlights around the sun that the user needs at sunset
     float CloudBrightness;       // The brightness for clouds
 
-    float Precipitation;
     float SilverliningIntensity; // Intensity of silver-lining
     float SilverliningSpread;    // Using bigger value spreads more silver-lining, but the intesity of it
     float Random00;              // Random seed for the first ray-marching offset
 
-    float CameraFarClip;
-
     uint EnabledDepthCulling;
-    uint EnabledLodDepthCulling;
-    uint DepthMapWidth;
-    uint DepthMapHeight;
+    uint m_HiZDepthMapWidth;
+    uint m_HiZDepthMapHeight;
 
     // VolumetricClouds' Light shaft
     uint GodNumSamples; // Number of godray samples
@@ -162,9 +151,10 @@ struct VolumetricCloudsCB
     float Test03;
 
     float ReprojPrevFrameUnavail; // 1 when previous frame data is unavailable, 0 otherwise
+    float CameraNear;
+    float CameraFar;
     float PadA;
     float PadB;
-    float PadC;
 
     VolumetricCloudsCB()
     {
@@ -231,21 +221,16 @@ struct VolumetricCloudsCB
 
         // Lighting
         BackgroundBlendFactor = 0.0f;
-        Contrast = 0.0f;
         Eccentricity = 0.0f;
         CloudBrightness = 0.0f;
 
-        Precipitation = 0.0f;
         SilverliningIntensity = 0.0f;
         SilverliningSpread = 0.0f;
         Random00 = 0.0f;
 
-        CameraFarClip = 0.0f;
-
         EnabledDepthCulling = 0;
-        EnabledLodDepthCulling = 0;
-        DepthMapWidth = 0;
-        DepthMapHeight = 0;
+        m_HiZDepthMapWidth = 0;
+        m_HiZDepthMapHeight = 0;
 
         // VolumetricClouds' Light shaft
         GodNumSamples = 0;
@@ -264,9 +249,10 @@ struct VolumetricCloudsCB
         Test03 = 0.0f;
 
         ReprojPrevFrameUnavail = 0.0f;
+        CameraNear = CAMERA_NEAR;
+        CameraFar = CAMERA_FAR;
         PadA = 0.0f;
         PadB = 0.0f;
-        PadC = 0.0f;
     }
 };
 
@@ -310,11 +296,6 @@ public:
     bool   AfterSubmit(uint currentFrameIndex);
     float4 GetProjectionExtents(float fov, float aspect, float width, float height, float texelOffsetX, float texelOffsetY);
 
-    static void UseLowQualitySettings(void* pUserData);
-    static void UseMiddleQualitySettings(void* pUserData);
-    static void UseHighQualitySettings(void* pUserData);
-    static void UseUltraQualitySettings(void* pUserData);
-
     Texture* GetWeatherMap();
 
     // Below are passed from Previous stage via Initialize()
@@ -337,13 +318,10 @@ public:
 
     ProfileToken gGpuProfileToken = {};
 
-    UIComponent*  pGuiWindow = NULL;
     RenderTarget* pCastShadowRT = NULL;
     RenderTarget* pFinalRT = NULL;
 
-    float3 LightDirection;
-    float4 LightColorAndIntensity;
-
+    float3  LightDirection;
     Buffer* pTransmittanceBuffer = NULL;
 
     VolumetricCloudsCB volumetricCloudsCB;
@@ -352,11 +330,9 @@ public:
     vec4               g_ShadowInfo;
     RenderTarget*      pDepthTexture = NULL;
 
-    Texture* pSavePrevTexture = NULL;
+    Texture* pHighResCloudTexture = NULL;
 
     uint32_t gDownsampledCloudSize = 0;
-
-    bool mFirstFrame = true; // when true, no previous frame data is available
 
 private:
     void GenerateCloudTextures();

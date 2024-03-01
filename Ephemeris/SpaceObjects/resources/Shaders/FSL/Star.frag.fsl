@@ -32,7 +32,7 @@ float4 PS_MAIN(PsIn In)
 
 	float2 screenUV = In.ScreenCoord;
 
-	float sceneDepth = SampleLvlTex2D(Get(depthTexture), Get(g_LinearClamp), screenUV, 0).r;
+	float sceneDepth = SampleLvlTex2D(Get(depthTexture), Get(g_NearestClamp), screenUV, 0).r;
 
 	if(sceneDepth < 1.0f)
 		discard;

@@ -20,13 +20,9 @@ float4 PS_MAIN(PsIn In)
 {
 	INIT_MAIN;
 
-	float2 ScreenUV = In.TexCoord;
-	ScreenUV.x     += Get(m_CorrectU);
-	ScreenUV.y     += Get(m_CorrectV);
-
 	float3 ScreenNDC;
-	ScreenNDC.x = ScreenUV.x * 2.0f - 1.0f;
-	ScreenNDC.y = (1.0f - ScreenUV.y) * 2.0f - 1.0f;
+	ScreenNDC.x = In.TexCoord.x * 2.0f - 1.0f;
+	ScreenNDC.y = (1.0f - In.TexCoord.y) * 2.0f - 1.0f;
 
 	float3 projectedPosition = float3(ScreenNDC.xy, 0.0f);
 	float4 eyePos = mul(Get(m_DataPerEye)[0].m_ProjToRelativeToEye, float4(projectedPosition, 1.0f));

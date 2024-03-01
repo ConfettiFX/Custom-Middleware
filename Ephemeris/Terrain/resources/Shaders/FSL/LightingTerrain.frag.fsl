@@ -9,9 +9,9 @@
 
 #include "TerrainCommon.h"
 
-#define USE_PROJECTED_SHADOW                 1
-#define _EARTH_RADIUS				         5000000.0f                         // Currently, follow the g_EarthRadius in Sky.cpp
-#define _EARTH_RADIUS_ADD_CLOUDS_LAYER_START 5015000.0f                         // EARTH_RADIUS + _CLOUDS_LAYER_START
+#define USE_PROJECTED_SHADOW                   1
+#define _EARTH_RADIUS                          6360000.0f                         // Currently, follow the g_EarthRadius in Sky.cpp
+#define _EARTH_RADIUS_ADD_CLOUDS_LAYER_START   6375000.0f                       // EARTH_RADIUS + _CLOUDS_LAYER_START
 
 STRUCT(PsIn)
 {
@@ -19,7 +19,7 @@ STRUCT(PsIn)
 	DATA(float2, ScreenPos, TEXCOORD0);
 };
 
-//Code from https://area.autodesk.com/blogs/game-dev-blog/volumetric-clouds/.
+// Reference from https://area.autodesk.com/blogs/game-dev-blog/volumetric-clouds/.
 bool ray_trace_sphere(float3 center, float3 rd, float3 offset, float radius2, out(float) t1, out(float) t2)
 {
 	t1 = 0.0f;
@@ -29,7 +29,7 @@ bool ray_trace_sphere(float3 center, float3 rd, float3 offset, float radius2, ou
 	float  b = dot(p, rd);
 	float  c = dot(p, p) - radius2;
 	float  f = b * b - c;
-	
+
 	if (f >= 0.0f)
 	{
 		float sqrtF = sqrt(f);
@@ -43,50 +43,42 @@ bool ray_trace_sphere(float3 center, float3 rd, float3 offset, float radius2, ou
 float EvaluateCloudShadow(float3 ws_pos, float3 lightDir)
 {
 	float2 uv;
+	float weatherData;
 
 #if USE_PROJECTED_SHADOW
 	float it1, it2;
 	float3 earthCenter = float3(0.0f, -_EARTH_RADIUS, 0.0f);
-
-	ray_trace_sphere(ws_pos.xyz, lightDir, earthCenter, _EARTH_RADIUS_ADD_CLOUDS_LAYER_START, it1, it2);
-
+	ray_trace_sphere(ws_pos.xyz, lightDir, earthCenter, _EARTH_RADIUS_ADD_CLOUDS_LAYER_START * _EARTH_RADIUS_ADD_CLOUDS_LAYER_START, it1, it2);
 	float3 CloudPos = ws_pos.xyz + lightDir * it2;
-	
-	uv = (CloudPos.xz + Get(StandardPosition).xz) / Get(SettingInfo00).z;
-	float3 weatherData = SampleLvlTex2D(Get(weatherTexture), Get(g_LinearWrap), uv, 0).rgb;
-	
-	float result  = saturate(saturate(weatherData.b - Get(SettingInfo00).y) + Get(StandardPosition).w);
-	float result2 = result * result;
-
-	return result2 * result2;
+	float2 weatherDisplacement = float2(Get(WeatherDisplacement).x, Get(WeatherDisplacement).y);
+	uv = (CloudPos.xz + weatherDisplacement) / Get(ShadowInfo).z;
 #else
-	uv = (ws_pos.xz + Get(StandardPosition).xz) / Get(SettingInfo00).z;
-	float3 weatherData = SampleLvlTex2D(Get(weatherTexture), Get(g_LinearWrap), uv, 0).rgb;
-	
-	return saturate(weatherData.g + Get(StandardPosition).w);
+	uv = (ws_pos.xz + weatherDisplacement) / Get(ShadowInfo).z;
 #endif
+	float shadowIntensity = lerp(1.0f, 4.0f, Get(ShadowInfo).y);
+	weatherData = SampleLvlTex2D(Get(weatherTexture), Get(g_LinearWrap), uv, 0).r;
+	weatherData = pow(weatherData, shadowIntensity);
+	// enable shadow
+	weatherData = max(weatherData, (1.0f - Get(ShadowInfo).x));
+	return weatherData;
 }
 
 float4 PS_MAIN(PsIn In)
 {
 	INIT_MAIN;
 
-	float2 texCoord = In.ScreenPos * 0.5f - 0.5f;
-	texCoord.x = 1.0f - texCoord.x;
+	float2 NDC = float2(In.ScreenPos.x * 2.0f - 1.0f, (1.0f - In.ScreenPos.y) * 2.0f - 1.0f);
+	float3 lightDir = Get(LightDirection).xyz;
+	lightDir = lightDir.y < 0.0f ? -lightDir : lightDir;
+	float4 ws_pos = mul(Get(InvViewProjMat), float4(NDC.xy, SampleTex2D(Get(depthTexture), Get(g_NearestClamp), In.ScreenPos).r, 1.0f));
+	ws_pos /= ws_pos.w;
 
-	float3 albedo = SampleTex2D(Get(BasicTexture),  Get(g_LinearMirror), texCoord).rgb;
-	float3 normal = SampleTex2D(Get(NormalTexture), Get(g_LinearMirror), texCoord).xyz;
-  
+	float3 albedo = SampleTex2D(Get(BasicTexture),  Get(g_LinearMirror), In.ScreenPos).rgb;
+	float3 normal = SampleTex2D(Get(NormalTexture), Get(g_LinearMirror), In.ScreenPos).xyz;
 	float lighting = saturate(dot(normal, Get(LightDirection).xyz));
-
-	float2 texCoord2 = float2((In.ScreenPos.x + 1.0f) * 0.5f, (1.0f - In.ScreenPos.y) * 0.5f);
-
-	float4 ws_pos = mul(Get(InvViewProjMat), float4(In.ScreenPos.xy, SampleTex2D(Get(depthTexture), Get(g_LinearWrap), texCoord2).r, 1.0f));
- 
-	float shadow_atten_from_clouds = EvaluateCloudShadow(ws_pos.xyz, Get(LightDirection).xyz);
-	//return float4(shadow_atten_from_clouds, shadow_atten_from_clouds, shadow_atten_from_clouds, shadow_atten_from_clouds);
-
-	float4 Out = float4(lighting * albedo * Get(SunColor).rgb * Get(LightColor).rgb * Get(LightColor).a * shadow_atten_from_clouds + albedo * 0.1f, 1.0f);
+	float shadow_atten_from_clouds = abs(EvaluateCloudShadow(ws_pos.xyz, lightDir));
 	
+	float4 Out = float4(lighting * albedo * Get(SunColor).rgb * Get(LightColor).rgb * Get(LightColor).a * shadow_atten_from_clouds + albedo * 0.1f, 1.0f);
+
 	RETURN(Out); 
 }

@@ -304,7 +304,11 @@ void CloudImpostor::setupRenderer(Cmd* cmd, CumulusCloud* pCloud, const vec3& ca
     loadActions.mClearColorValues[0].a = 0.0f;
     // loadActions.mClearDepth = pDepthBuffer->mClearValue;
 
-    cmdBindRenderTargets(cmd, 1, &m_tImpostor, NULL, &loadActions, NULL, NULL, -1, -1);
+    BindRenderTargetsDesc bindRenderTargets = {};
+    bindRenderTargets.mRenderTargetCount = 1;
+    bindRenderTargets.ppRenderTargets = &m_tImpostor;
+    bindRenderTargets.pLoadActions = &loadActions;
+    cmdBindRenderTargets(cmd, &bindRenderTargets);
     cmdSetViewport(cmd, 0.0f, 0.0f, (float)m_tImpostor->mWidth, (float)m_tImpostor->mHeight, 0.0f, 1.0f);
     cmdSetScissor(cmd, 0, 0, m_tImpostor->mWidth, m_tImpostor->mHeight);
 

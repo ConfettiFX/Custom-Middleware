@@ -13,6 +13,7 @@
 #include "../../SpaceObjects/src/SpaceObjects.h"
 #include "../../Terrain/src/Terrain.h"
 #include "../../VolumetricClouds/src/VolumetricClouds.h"
+#include "../../src/AppSettings.h"
 // Ephemeris END
 
 // Interfaces
@@ -40,7 +41,9 @@
 // Memory
 #include "../../../../The-Forge/Common_3/Utilities/Interfaces/IMemory.h"
 
-#define FOREACH_SETTING(X)    X(InsufficientBindlessEntries, 0)
+#define FOREACH_SETTING(X)            \
+    X(InsufficientBindlessEntries, 0) \
+    X(QualitySettings, 2)
 
 #define GENERATE_ENUM(x, y)   x,
 #define GENERATE_STRING(x, y) #x,
@@ -59,11 +62,12 @@ struct ConfigSettings
     FOREACH_SETTING(GENERATE_STRUCT)
 } gGpuSettings;
 
+extern AppSettings  gAppSettings;
+extern UIComponent* pGuiSkyWindow;
+extern UIComponent* pGuiCloudWindow;
+
 // #NOTE: Two sets of resources (one in flight and one being used on CPU)
 const uint32_t gDataBufferCount = 2;
-
-static bool gTogglePerformance = true;
-static bool gToggleFXAA = true;
 
 Renderer* pRenderer = NULL;
 
@@ -93,6 +97,7 @@ RootSignature* pExampleRootSignature = NULL;
 uint32_t       gExampleRootConstantIndex = 0;
 
 Sampler* pBilinearClampSampler = NULL;
+Sampler* pNearestClampSampler = NULL;
 
 Semaphore* pImageAcquiredSemaphore = NULL;
 
@@ -101,18 +106,7 @@ UIComponent* pMainGuiWindow = NULL;
 
 Buffer* pTransmittanceBuffer = NULL;
 
-static float2 LightDirection = float2(0.0f, 270.0f);
-static float4 LightColorAndIntensity = float4(1.0f, 1.0f, 1.0f, 1.0f);
-
-#define NEAR_CAMERA 50.0f
-#define FAR_CAMERA  100000000.0f
-
-static uint  gPrevFrameIndex = 0;
-static bool  bSunMove = true;
-static float SunMovingSpeed = 5.0f;
-
-float mChildIndent = 25.0f;
-float mHeightOffset = 20.0f;
+static uint gPrevFrameIndex = 0;
 
 //--------------------------------------------------------------------------------------------
 // MESHES
@@ -138,6 +132,9 @@ struct FXAAINFO
     float Time;
 };
 
+LuaManager gLuaManager;
+bool       gLuaUpdateScriptRunning = false;
+
 FXAAINFO gFXAAinfo;
 
 uint32_t gFrameIndex = 0;
@@ -158,6 +155,17 @@ PipelineCache* pPipelineCache = NULL;
 
 static HiresTimer gTimer;
 
+void setDefaultQualitySettings();
+void useLowQualitySettings(void* pUserData);
+void useMediumQualitySettings(void* pUserData);
+void useHighQualitySettings(void* pUserData);
+void useUltraQualitySettings(void* pUserData);
+void setGroundCamera(void* pUserData);
+void setSpaceCamera(void* pUserData);
+void runUpdateScript(void* pUserData);
+void toggleAdvancedUI(void* pUserData);
+Quat computeQuaternionFromLookAt(vec3 lookDir);
+
 class RenderEphemeris: public IApp
 {
 public:
@@ -176,7 +184,7 @@ public:
         fsSetPathForResourceDir(pSystemFileIO, RM_DEBUG, RD_SCREENSHOTS, "Screenshots");
         fsSetPathForResourceDir(pSystemFileIO, RM_DEBUG, RD_DEBUG, "Debug");
 
-        CameraMotionParameters cmp{ 32000.0f, 120000.0f, 40000.0f };
+        CameraMotionParameters cmp{ 16000.0f, 60000.0f, 20000.0f };
 
         float h = 6000.0f;
 
@@ -195,6 +203,9 @@ public:
         memset(&settings, 0, sizeof(settings));
         settings.pExtendedSettings = &extendedSettings;
         initRenderer(GetName(), &settings, &pRenderer);
+
+        setDefaultQualitySettings();
+
         // check for init success
         if (!pRenderer)
             return false;
@@ -204,6 +215,9 @@ public:
             ShowUnsupportedMessage("Ephemeris does not run on this device. GPU does not support enough bindless texture entries");
             return false;
         }
+
+        // set lua functions and capture cameraController
+        initLuaManager();
 
         QueueDesc queueDesc = {};
         queueDesc.mType = QUEUE_TYPE_GRAPHICS;
@@ -251,7 +265,7 @@ public:
         const uint32_t  monitorIdx = getActiveMonitorIdx();
         getMonitorDpiScale(monitorIdx, dpiScale);
 
-        UIComponentDesc.mStartPosition = vec2(960.0f / dpiScale[0], 700.0f / dpiScale[1]);
+        UIComponentDesc.mStartPosition = vec2(260.0f / dpiScale[0], 80.0f / dpiScale[1]);
         UIComponentDesc.mStartSize = vec2(300.0f / dpiScale[0], 250.0f / dpiScale[1]);
         UIComponentDesc.mFontID = 0;
         UIComponentDesc.mFontSize = 16.0f;
@@ -310,45 +324,214 @@ public:
                                          ADDRESS_MODE_CLAMP_TO_EDGE };
         addSampler(pRenderer, &samplerClampDesc, &pBilinearClampSampler);
 
-        CheckboxWidget checkbox;
-        checkbox.pData = &gToggleFXAA;
-        luaRegisterWidget(uiCreateComponentWidget(pMainGuiWindow, "Enable FXAA", &checkbox, WIDGET_TYPE_CHECKBOX));
+        samplerClampDesc = { FILTER_NEAREST,
+                             FILTER_NEAREST,
+                             MIPMAP_MODE_NEAREST,
+                             ADDRESS_MODE_CLAMP_TO_EDGE,
+                             ADDRESS_MODE_CLAMP_TO_EDGE,
+                             ADDRESS_MODE_CLAMP_TO_EDGE };
+        addSampler(pRenderer, &samplerClampDesc, &pNearestClampSampler);
+
+        SliderUintWidget downsampling;
+        downsampling.pData = &gAppSettings.DownSampling;
+        downsampling.mMin = 1;
+        downsampling.mMax = 3;
+        downsampling.mStep = 1;
+
+        static const uint32_t maxWidgets = 64;
+        uint32_t              widgetsCount = 0;
+        UIWidget              collapseWidgets[maxWidgets] = {};
+        UIWidget*             pCollapseWidgets[maxWidgets];
+        for (uint32_t i = 0; i < maxWidgets; ++i)
+            pCollapseWidgets[i] = &collapseWidgets[i];
+
+        // -------------- Quality Settings
+        LabelWidget presetTitle;
+        UIWidget*   pPresetTitle = uiCreateComponentWidget(pMainGuiWindow, "Presets:", &presetTitle, WIDGET_TYPE_LABEL);
+        luaRegisterWidget(pPresetTitle);
+
+        ButtonWidget UseLowQuality;
+        UIWidget*    pUseLowQuality = uiCreateComponentWidget(pMainGuiWindow, "Low", &UseLowQuality, WIDGET_TYPE_BUTTON);
+        uiSetWidgetOnEditedCallback(pUseLowQuality, nullptr, useLowQualitySettings);
+        luaRegisterWidget(pUseLowQuality);
+
+        ButtonWidget UseMiddleQuality;
+        UIWidget*    pUseMiddleQuality = uiCreateComponentWidget(pMainGuiWindow, "Medium", &UseMiddleQuality, WIDGET_TYPE_BUTTON);
+        uiSetWidgetOnEditedCallback(pUseMiddleQuality, nullptr, useMediumQualitySettings);
+        uiSetSameLine(pUseMiddleQuality, true);
+        luaRegisterWidget(pUseMiddleQuality);
+
+        ButtonWidget UseHighQuality;
+        UIWidget*    pUseHighQuality = uiCreateComponentWidget(pMainGuiWindow, "High", &UseHighQuality, WIDGET_TYPE_BUTTON);
+        uiSetWidgetOnEditedCallback(pUseHighQuality, nullptr, useHighQualitySettings);
+        uiSetSameLine(pUseHighQuality, true);
+        luaRegisterWidget(pUseHighQuality);
+
+        ButtonWidget UseUltraQuality;
+        UIWidget*    pUseUltraQuality = uiCreateComponentWidget(pMainGuiWindow, "Ultra", &UseUltraQuality, WIDGET_TYPE_BUTTON);
+        uiSetWidgetOnEditedCallback(pUseUltraQuality, nullptr, useUltraQualitySettings);
+        uiSetSameLine(pUseUltraQuality, true);
+        luaRegisterWidget(pUseUltraQuality);
+
+        ButtonWidget CameraGround;
+        UIWidget*    pCameraGroundWidget = uiCreateComponentWidget(pMainGuiWindow, "Ground", &CameraGround, WIDGET_TYPE_BUTTON);
+        uiSetWidgetOnEditedCallback(pCameraGroundWidget, nullptr, setGroundCamera);
+        luaRegisterWidget(pCameraGroundWidget);
+
+        ButtonWidget CameraSpace;
+        UIWidget*    pCameraSpace = uiCreateComponentWidget(pMainGuiWindow, "Space", &CameraSpace, WIDGET_TYPE_BUTTON);
+        uiSetWidgetOnEditedCallback(pCameraSpace, nullptr, setSpaceCamera);
+        uiSetSameLine(pCameraSpace, true);
+        luaRegisterWidget(pCameraSpace);
+
+        DropdownWidget ddCameraScripts;
+        ddCameraScripts.pData = &gAppSettings.gCurrentScriptIndex;
+        ddCameraScripts.pNames = gCameraScripts;
+        ddCameraScripts.mCount = CAMERA_SCRIPT_COUNTS;
+
+        luaRegisterWidget(uiCreateComponentWidget(pMainGuiWindow, "Test Scripts", &ddCameraScripts, WIDGET_TYPE_DROPDOWN));
+
+        ButtonWidget bRunScript;
+        UIWidget*    pRunScript = uiCreateComponentWidget(pMainGuiWindow, "Run", &bRunScript, WIDGET_TYPE_BUTTON);
+        uiSetWidgetOnEditedCallback(pRunScript, nullptr, runUpdateScript);
+        luaRegisterWidget(pRunScript);
+
+        // -------------- Light Settings
+        widgetsCount = 0;
+        SliderFloatWidget AzimuthSliderFloat;
+        AzimuthSliderFloat.pData = &gAppSettings.SunDirection.x;
+        AzimuthSliderFloat.mMin = -180.0f;
+        AzimuthSliderFloat.mMax = 180.0f;
+        AzimuthSliderFloat.mStep = 0.001f;
+        pCollapseWidgets[widgetsCount]->mType = WIDGET_TYPE_SLIDER_FLOAT;
+        strcpy(pCollapseWidgets[widgetsCount]->mLabel, "Light Azimuth");
+        pCollapseWidgets[widgetsCount]->pWidget = &AzimuthSliderFloat;
+        ++widgetsCount;
+
+        SliderFloatWidget ElevationSliderFloat;
+        ElevationSliderFloat.pData = &gAppSettings.SunDirection.y;
+        ElevationSliderFloat.mMin = 0.0f;
+        ElevationSliderFloat.mMax = 360.0f;
+        ElevationSliderFloat.mStep = 0.001f;
+        pCollapseWidgets[widgetsCount]->mType = WIDGET_TYPE_SLIDER_FLOAT;
+        strcpy(pCollapseWidgets[widgetsCount]->mLabel, "Light Elevation");
+        pCollapseWidgets[widgetsCount]->pWidget = &ElevationSliderFloat;
+        ++widgetsCount;
+
+        CheckboxWidget sunMoveCheckbox;
+        sunMoveCheckbox.pData = &gAppSettings.bSunMove;
+        pCollapseWidgets[widgetsCount]->mType = WIDGET_TYPE_CHECKBOX;
+        strcpy(pCollapseWidgets[widgetsCount]->mLabel, "Automatic Sun Moving");
+        pCollapseWidgets[widgetsCount]->pWidget = &sunMoveCheckbox;
+        ++widgetsCount;
+
+        CollapsingHeaderWidget collapsingLight;
+        collapsingLight.pGroupedWidgets = pCollapseWidgets;
+        collapsingLight.mWidgetsCount = widgetsCount;
+        collapsingLight.mCollapsed = true;
+
+        luaRegisterWidget(uiCreateComponentWidget(pMainGuiWindow, "Sun settings", &collapsingLight, WIDGET_TYPE_COLLAPSING_HEADER));
+
+        // -------------- Atmospheric Scattering Settings
+        widgetsCount = 0;
+        SliderFloatWidget inscatterIntensity;
+        inscatterIntensity.pData = &gAppSettings.SkyInfo.y;
+        inscatterIntensity.mMin = 0.0f;
+        inscatterIntensity.mMax = 3.0f;
+        inscatterIntensity.mStep = 0.001f;
+        pCollapseWidgets[widgetsCount]->mType = WIDGET_TYPE_SLIDER_FLOAT;
+        strcpy(pCollapseWidgets[widgetsCount]->mLabel, "InscatterIntensity");
+        pCollapseWidgets[widgetsCount]->pWidget = &inscatterIntensity;
+        ++widgetsCount;
+
+        SliderFloatWidget inscatterDepthFallOff;
+        inscatterDepthFallOff.pData = &gAppSettings.SkyInfo.z;
+        inscatterDepthFallOff.mMin = 0.005f;
+        inscatterDepthFallOff.mMax = 1.0f;
+        inscatterDepthFallOff.mStep = 0.001f;
+        pCollapseWidgets[widgetsCount]->mType = WIDGET_TYPE_SLIDER_FLOAT;
+        strcpy(pCollapseWidgets[widgetsCount]->mLabel, "InScatterDepthFallOff");
+        pCollapseWidgets[widgetsCount]->pWidget = &inscatterDepthFallOff;
+        ++widgetsCount;
+
+        CollapsingHeaderWidget collapsingAtmo;
+        collapsingAtmo.pGroupedWidgets = pCollapseWidgets;
+        collapsingAtmo.mWidgetsCount = widgetsCount;
+        collapsingAtmo.mCollapsed = false;
+
+        luaRegisterWidget(
+            uiCreateComponentWidget(pMainGuiWindow, "Atmosphere scattering setting", &collapsingAtmo, WIDGET_TYPE_COLLAPSING_HEADER));
+
+        // -------------- Cloud Settings
+        widgetsCount = 0;
+        SliderFloatWidget weatherTextDistance;
+        weatherTextDistance.pData = &gAppSettings.WeatherTextureDistance;
+        weatherTextDistance.mMin = -300000.0f;
+        weatherTextDistance.mMax = 300000.0f;
+        weatherTextDistance.mStep = 0.01f;
+        pCollapseWidgets[widgetsCount]->mType = WIDGET_TYPE_SLIDER_FLOAT;
+        strcpy(pCollapseWidgets[widgetsCount]->mLabel, "Weather Texture Distance");
+        pCollapseWidgets[widgetsCount]->pWidget = &weatherTextDistance;
+        ++widgetsCount;
+
+        SliderFloatWidget cloudCoverageModifier;
+        cloudCoverageModifier.pData = &gAppSettings.m_CloudCoverageModifier_2nd;
+        cloudCoverageModifier.mMin = -1.0f;
+        cloudCoverageModifier.mMax = 1.0f;
+        cloudCoverageModifier.mStep = 0.001f;
+        pCollapseWidgets[widgetsCount]->mType = WIDGET_TYPE_SLIDER_FLOAT;
+        strcpy(pCollapseWidgets[widgetsCount]->mLabel, "Cloud Coverage Modifier");
+        pCollapseWidgets[widgetsCount]->pWidget = &cloudCoverageModifier;
+        ++widgetsCount;
+
+        SliderFloatWidget maxSampleDistance;
+        maxSampleDistance.pData = &gAppSettings.m_DefaultMaxSampleDistance;
+        maxSampleDistance.mMin = 200000.0f;
+        maxSampleDistance.mMax = 2000000.0f;
+        maxSampleDistance.mStep = 32.0f;
+        pCollapseWidgets[widgetsCount]->mType = WIDGET_TYPE_SLIDER_FLOAT;
+        strcpy(pCollapseWidgets[widgetsCount]->mLabel, "Cutt off distance");
+        pCollapseWidgets[widgetsCount]->pWidget = &maxSampleDistance;
+        ++widgetsCount;
+
+        CheckboxWidget enableBlur;
+        enableBlur.pData = &gAppSettings.m_EnableBlur;
+        pCollapseWidgets[widgetsCount]->mType = WIDGET_TYPE_CHECKBOX;
+        strcpy(pCollapseWidgets[widgetsCount]->mLabel, "Enabled Edge Blur");
+        pCollapseWidgets[widgetsCount]->pWidget = &enableBlur;
+        ++widgetsCount;
+
+        CollapsingHeaderWidget collapsingCloud;
+        collapsingCloud.pGroupedWidgets = pCollapseWidgets;
+        collapsingCloud.mWidgetsCount = widgetsCount;
+        ;
+        collapsingCloud.mCollapsed = false;
+
+        luaRegisterWidget(uiCreateComponentWidget(pMainGuiWindow, "Cloud setting", &collapsingCloud, WIDGET_TYPE_COLLAPSING_HEADER));
+
+        // -------------- Advanced
 
         SeparatorWidget separator;
         luaRegisterWidget(uiCreateComponentWidget(pMainGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
 
-        SliderFloatWidget sliderFloat;
-        sliderFloat.pData = &LightDirection.x;
-        sliderFloat.mMin = -180.0f;
-        sliderFloat.mMax = 180.0f;
-        sliderFloat.mStep = 0.001f;
-        luaRegisterWidget(uiCreateComponentWidget(pMainGuiWindow, "Light Azimuth", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT));
+        CheckboxWidget advancedWindowCheckbox;
+        advancedWindowCheckbox.pData = &gAppSettings.gShowAdvancedWindows;
+        UIWidget* advancedWindowWidget =
+            uiCreateComponentWidget(pMainGuiWindow, "Toggle advanced windows", &advancedWindowCheckbox, WIDGET_TYPE_CHECKBOX);
+        uiSetWidgetOnEditedCallback(advancedWindowWidget, nullptr, toggleAdvancedUI);
+        luaRegisterWidget(advancedWindowWidget);
 
-        sliderFloat.pData = &LightDirection.y;
-        sliderFloat.mMin = 0.0f;
-        sliderFloat.mMax = 360.0f;
-        sliderFloat.mStep = 0.001f;
-        luaRegisterWidget(uiCreateComponentWidget(pMainGuiWindow, "Light Elevation", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT));
+        CheckboxWidget realTimeCheckBox;
+        realTimeCheckBox.pData = &gAppSettings.TemporalFilteringEnabled;
+        luaRegisterWidget(uiCreateComponentWidget(pMainGuiWindow, "Enable temporal filtering", &realTimeCheckBox, WIDGET_TYPE_CHECKBOX));
 
-        luaRegisterWidget(uiCreateComponentWidget(pMainGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
+        CheckboxWidget enableFXAACheckbox;
+        enableFXAACheckbox.pData = &gAppSettings.gToggleFXAA;
+        luaRegisterWidget(uiCreateComponentWidget(pMainGuiWindow, "Enable FXAA", &enableFXAACheckbox, WIDGET_TYPE_CHECKBOX));
 
-        SliderFloat4Widget sliderFloat4;
-        sliderFloat4.pData = &LightColorAndIntensity;
-        sliderFloat4.mMin = float4(0.0f);
-        sliderFloat4.mMax = float4(10.0f);
-        sliderFloat4.mStep = float4(0.01f);
-        luaRegisterWidget(uiCreateComponentWidget(pMainGuiWindow, "Light Color & Intensity", &sliderFloat4, WIDGET_TYPE_SLIDER_FLOAT4));
-
-        luaRegisterWidget(uiCreateComponentWidget(pMainGuiWindow, "", &separator, WIDGET_TYPE_SEPARATOR));
-
-        checkbox.pData = &bSunMove;
-        luaRegisterWidget(uiCreateComponentWidget(pMainGuiWindow, "Automatic Sun Moving", &checkbox, WIDGET_TYPE_CHECKBOX));
-
-        sliderFloat.pData = &SunMovingSpeed;
-        sliderFloat.mMin = -100.0f;
-        sliderFloat.mMax = 100.0f;
-        sliderFloat.mStep = 0.01f;
-        luaRegisterWidget(uiCreateComponentWidget(pMainGuiWindow, "Sun Moving Speed", &sliderFloat, WIDGET_TYPE_SLIDER_FLOAT));
+        CheckboxWidget showInterfaceCheckbox;
+        showInterfaceCheckbox.pData = &gAppSettings.gShowInterface;
+        luaRegisterWidget(uiCreateComponentWidget(pMainGuiWindow, "Show Interface (F2)", &showInterfaceCheckbox, WIDGET_TYPE_CHECKBOX));
 
         // App Actions
         InputActionDesc actionDesc = { DefaultInputActions::DUMP_PROFILE_DATA,
@@ -373,6 +556,14 @@ public:
                        },
                        this };
         addInputAction(&actionDesc);
+        actionDesc = { DefaultInputActions::UI_KEY_F2,
+                       [](InputActionContext* ctx)
+                       {
+                           gAppSettings.gShowInterface = !gAppSettings.gShowInterface;
+                           return true;
+                       },
+                       this };
+        addInputAction(&actionDesc);
         actionDesc = { DefaultInputActions::EXIT, [](InputActionContext* ctx)
                        {
                            requestShutdown();
@@ -388,26 +579,13 @@ public:
             return true;
         };
 
-        typedef bool (*CameraInputHandler)(InputActionContext* ctx, DefaultInputActions::DefaultInputAction action);
-        static CameraInputHandler onCameraInput = [](InputActionContext* ctx, DefaultInputActions::DefaultInputAction action)
+        typedef bool (*CameraInputHandler)(InputActionContext * ctx, uint32_t index);
+        static CameraInputHandler onCameraInput = [](InputActionContext* ctx, uint32_t index)
         {
             if (*(ctx->pCaptured))
             {
                 float2 delta = uiIsFocused() ? float2(0.f, 0.f) : ctx->mFloat2;
-                switch (action)
-                {
-                case DefaultInputActions::ROTATE_CAMERA:
-                    pCameraController->onRotate(delta);
-                    break;
-                case DefaultInputActions::TRANSLATE_CAMERA:
-                    pCameraController->onMove(delta);
-                    break;
-                case DefaultInputActions::TRANSLATE_CAMERA_VERTICAL:
-                    pCameraController->onMoveY(delta[0]);
-                    break;
-                default:
-                    break;
-                }
+                index ? pCameraController->onRotate(delta) : pCameraController->onMove(delta);
             }
             return true;
         };
@@ -419,14 +597,9 @@ public:
                        },
                        NULL };
         addInputAction(&actionDesc);
-        actionDesc = { DefaultInputActions::ROTATE_CAMERA,
-                       [](InputActionContext* ctx) { return onCameraInput(ctx, DefaultInputActions::ROTATE_CAMERA); }, NULL };
+        actionDesc = { DefaultInputActions::ROTATE_CAMERA, [](InputActionContext* ctx) { return onCameraInput(ctx, 1); }, NULL };
         addInputAction(&actionDesc);
-        actionDesc = { DefaultInputActions::TRANSLATE_CAMERA,
-                       [](InputActionContext* ctx) { return onCameraInput(ctx, DefaultInputActions::TRANSLATE_CAMERA); }, NULL };
-        addInputAction(&actionDesc);
-        actionDesc = { DefaultInputActions::TRANSLATE_CAMERA_VERTICAL,
-                       [](InputActionContext* ctx) { return onCameraInput(ctx, DefaultInputActions::TRANSLATE_CAMERA_VERTICAL); }, NULL };
+        actionDesc = { DefaultInputActions::TRANSLATE_CAMERA, [](InputActionContext* ctx) { return onCameraInput(ctx, 0); }, NULL };
         addInputAction(&actionDesc);
         actionDesc = { DefaultInputActions::RESET_CAMERA, [](InputActionContext* ctx)
                        {
@@ -438,13 +611,118 @@ public:
         GlobalInputActionDesc globalInputActionDesc = { GlobalInputActionDesc::ANY_BUTTON_ACTION, onUIInput, this };
         setGlobalInputAction(&globalInputActionDesc);
 
+        toggleAdvancedUI(nullptr);
         gFrameIndex = 0;
 
         return true;
     }
 
+    void initLuaManager()
+    {
+        luaDestroyCurrentManager();
+        gLuaManager.Init();
+
+        ICameraController* cameraLocalPtr = pCameraController;
+        gLuaManager.SetFunction("GetCameraPosition",
+                                [cameraLocalPtr](ILuaStateWrap* state) -> int
+                                {
+                                    vec3 pos = cameraLocalPtr->getViewPosition();
+                                    state->PushResultNumber(pos.getX());
+                                    state->PushResultNumber(pos.getY());
+                                    state->PushResultNumber(pos.getZ());
+                                    return 3; // return amount of arguments
+                                });
+        gLuaManager.SetFunction("SetCameraPosition",
+                                [cameraLocalPtr](ILuaStateWrap* state) -> int
+                                {
+                                    float x = (float)state->GetNumberArg(1); // in Lua indexing starts from 1!
+                                    float y = (float)state->GetNumberArg(2);
+                                    float z = (float)state->GetNumberArg(3);
+                                    cameraLocalPtr->moveTo(vec3(x, y, z));
+                                    return 0; // return amount of arguments
+                                });
+        gLuaManager.SetFunction("SetCameraLookAt",
+                                [cameraLocalPtr](ILuaStateWrap* state) -> int
+                                {
+                                    float x = (float)state->GetNumberArg(1);
+                                    float y = (float)state->GetNumberArg(2);
+                                    float z = (float)state->GetNumberArg(3);
+                                    cameraLocalPtr->lookAt(vec3(x, y, z));
+                                    return 0; // return amount of arguments
+                                });
+        gLuaManager.SetFunction(
+            "AnimateCamera",
+            [cameraLocalPtr](ILuaStateWrap* state) -> int
+            {
+                vec3  cameraPos0 = vec3((float)state->GetNumberArg(1), (float)state->GetNumberArg(2), (float)state->GetNumberArg(3));
+                vec3  lookAt0 = vec3((float)state->GetNumberArg(4), (float)state->GetNumberArg(5), (float)state->GetNumberArg(6));
+                vec3  cameraPos1 = vec3((float)state->GetNumberArg(7), (float)state->GetNumberArg(8), (float)state->GetNumberArg(9));
+                vec3  lookAt1 = vec3((float)state->GetNumberArg(10), (float)state->GetNumberArg(11), (float)state->GetNumberArg(12));
+                float lerpCoef = (float)state->GetNumberArg(13);
+
+                // compute updated position
+                vec3 currentPosition = lerp(lerpCoef, cameraPos0, cameraPos1);
+                // compute updated rotation matrix
+                vec3 prevLookDir = normalize(lookAt0 - cameraPos0);
+                vec3 nextLookDir = normalize(lookAt1 - cameraPos1);
+
+                Quat startQuat = computeQuaternionFromLookAt(prevLookDir);
+                Quat endQuat = computeQuaternionFromLookAt(nextLookDir);
+                Quat deltaQuat = inverse(startQuat) * endQuat;
+
+                Quat identity = Quat::identity();
+                Quat currentQuat = startQuat * lerp(lerpCoef, identity, deltaQuat);
+                vec3 currentLookDir = rotate(currentQuat, vec3(0.0f, 0.0f, 1.0f));
+                vec3 currentlookAt = currentPosition + currentLookDir * 1000.0f;
+                cameraLocalPtr->moveTo(currentPosition);
+                cameraLocalPtr->lookAt(currentlookAt);
+                return 0;
+            });
+        gLuaManager.SetFunction("AnimateSun",
+                                [](ILuaStateWrap* state) -> int
+                                {
+                                    float prevAzimuth = (float)state->GetNumberArg(1);
+                                    float prevElevation = (float)state->GetNumberArg(2);
+                                    float nextAzimuth = (float)state->GetNumberArg(3);
+                                    float nextElevation = (float)state->GetNumberArg(4);
+                                    float lerpCoef = (float)state->GetNumberArg(5);
+
+                                    // compute updated position
+                                    gAppSettings.SunDirection.x = prevAzimuth + lerpCoef * (nextAzimuth - prevAzimuth);
+                                    gAppSettings.SunDirection.y = prevElevation + lerpCoef * (nextElevation - prevElevation);
+                                    return 0;
+                                });
+        gLuaManager.SetFunction("AnimateCloud",
+                                [](ILuaStateWrap* state) -> int
+                                {
+                                    float prevDistance = (float)state->GetNumberArg(1);
+                                    float nextDistance = (float)state->GetNumberArg(2);
+                                    float lerpCoef = (float)state->GetNumberArg(3);
+
+                                    // compute updated position
+                                    gAppSettings.WeatherTextureDistance = prevDistance + lerpCoef * (nextDistance - prevDistance);
+                                    return 0;
+                                });
+        gLuaManager.SetFunction("StopCurrentScript",
+                                [](ILuaStateWrap* state) -> int
+                                {
+                                    gLuaUpdateScriptRunning = false;
+                                    return 0;
+                                });
+        gLuaManager.SetFunction("ResetFirstFrame",
+                                [](ILuaStateWrap* state) -> int
+                                {
+                                    gAppSettings.m_FirstFrame = true;
+                                    return 0;
+                                });
+
+        luaAssignCustomManager(&gLuaManager);
+    }
+
     void Exit()
     {
+        gLuaManager.Exit();
+
         exitCameraController(pCameraController);
         exitInputSystem();
 
@@ -458,6 +736,7 @@ public:
 
         removeResource(pTransmittanceBuffer);
         removeSampler(pRenderer, pBilinearClampSampler);
+        removeSampler(pRenderer, pNearestClampSampler);
 
         exitUserInterface();
 
@@ -510,7 +789,7 @@ public:
             gTerrain.InitializeWithLoad(pDepthBuffer);
             gSky.InitializeWithLoad(pDepthBuffer, pLinearDepthBuffer);
             gVolumetricClouds.InitializeWithLoad(pLinearDepthBuffer, pDepthBuffer);
-            gSpaceObjects.InitializeWithLoad(pDepthBuffer, pLinearDepthBuffer, gVolumetricClouds.pSavePrevTexture,
+            gSpaceObjects.InitializeWithLoad(pDepthBuffer, pLinearDepthBuffer, gVolumetricClouds.pHighResCloudTexture,
                                              gSky.GetParticleVertexBuffer(), gSky.GetParticleInstanceBuffer(), gSky.GetParticleCount(),
                                              sizeof(float) * 6, sizeof(ParticleData));
 
@@ -579,6 +858,12 @@ public:
 
     void Update(float deltaTime)
     {
+        // Lua
+        if (gLuaUpdateScriptRunning)
+        {
+            gLuaManager.Update(deltaTime);
+        }
+
         updateInputSystem(deltaTime, mSettings.mWidth, mSettings.mHeight);
         /************************************************************************/
         // Input
@@ -591,29 +876,27 @@ public:
         static float currentTime = 0.0f;
         currentTime += deltaTime * 1000.0f;
 
-        if (bSunMove)
+        if (gAppSettings.bSunMove)
         {
-            LightDirection.y += deltaTime * SunMovingSpeed;
+            gAppSettings.SunDirection.y += deltaTime * gAppSettings.sunMovingSpeed;
 
-            if (LightDirection.y < 0.0f)
-                LightDirection.y += 360.0f;
+            if (gAppSettings.SunDirection.y < 0.0f)
+                gAppSettings.SunDirection.y += 360.0f;
 
-            LightDirection.y = fmodf(LightDirection.y, 360.0f);
+            gAppSettings.SunDirection.y = fmodf(gAppSettings.SunDirection.y, 360.0f);
         }
 
-        float Azimuth = (PI / 180.0f) * LightDirection.x;
-        float Elevation = (PI / 180.0f) * (LightDirection.y - 180.0f);
+        float Azimuth = (PI / 180.0f) * gAppSettings.SunDirection.x;
+        float Elevation = (PI / 180.0f) * (gAppSettings.SunDirection.y - 180.0f);
         float cosElevation = cosf(Elevation);
         vec3  sunDirection = normalize(vec3(cosf(Azimuth) * cosElevation, sinf(Elevation), sinf(Azimuth) * cosElevation));
 
         gSky.Azimuth = Azimuth;
         gSky.Elevation = Elevation;
         gSky.LightDirection = v3ToF3(sunDirection);
-        gSky.LightColorAndIntensity = LightColorAndIntensity;
         gSky.Update(deltaTime);
 
         gVolumetricClouds.LightDirection = v3ToF3(sunDirection);
-        gVolumetricClouds.LightColorAndIntensity = LightColorAndIntensity;
         gVolumetricClouds.Update(deltaTime);
 
         // after gVolumetricClouds.Update because we read back data it computes
@@ -623,19 +906,20 @@ public:
                  gVolumetricClouds.volumetricCloudsCB.m_DataPerLayer[0].WeatherTextureSize, 0.0);
         gTerrain.volumetricCloudsShadowCB.StandardPosition = gVolumetricClouds.volumetricCloudsCB.m_DataPerLayer[0].WindDirection;
         gTerrain.volumetricCloudsShadowCB.ShadowInfo = gVolumetricClouds.g_ShadowInfo;
+        gTerrain.volumetricCloudsShadowCB.WeatherDisplacement =
+            vec4(gVolumetricClouds.volumetricCloudsCB.m_DataPerLayer[0].WeatherTextureOffsetX,
+                 gVolumetricClouds.volumetricCloudsCB.m_DataPerLayer[0].WeatherTextureOffsetZ, 0.0f, 0.0f);
         gTerrain.LightDirection = v3ToF3(sunDirection);
-        gTerrain.LightColorAndIntensity = LightColorAndIntensity;
         gTerrain.SunColor = gSky.GetSunColor();
         gTerrain.Update(deltaTime);
 
         gSpaceObjects.Azimuth = Azimuth;
         gSpaceObjects.Elevation = Elevation;
         gSpaceObjects.LightDirection = v3ToF3(sunDirection);
-        gSpaceObjects.LightColorAndIntensity = LightColorAndIntensity;
         gSpaceObjects.Update(deltaTime);
 
         gFXAAinfo.ScreenSize = vec2((float)mSettings.mWidth, (float)mSettings.mHeight);
-        gFXAAinfo.Use = gToggleFXAA ? 1.0f : 0.0f;
+        gFXAAinfo.Use = gAppSettings.gToggleFXAA ? 1.0f : 0.0f;
         gFXAAinfo.Time = currentTime;
     }
 
@@ -683,8 +967,8 @@ public:
         };
 
         CameraInfo cameraInfo;
-        cameraInfo.nearPlane = NEAR_CAMERA;
-        cameraInfo.farPlane = FAR_CAMERA;
+        cameraInfo.nearPlane = CAMERA_NEAR;
+        cameraInfo.farPlane = CAMERA_FAR;
         ///////////////////////////////////////////////// Depth Linearization ////////////////////////////////////////////////////
         {
             cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Depth Linearization");
@@ -694,9 +978,11 @@ public:
 
             cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriersLinearDepth);
 
-            LoadActionsDesc loadActions = {};
-            loadActions.mLoadActionsColor[0] = LOAD_ACTION_CLEAR;
-            cmdBindRenderTargets(cmd, 1, &pLinearDepthBuffer, NULL, &loadActions, NULL, NULL, -1, -1);
+            BindRenderTargetsDesc bindRenderTargets = {};
+            bindRenderTargets.mRenderTargetCount = 1;
+            bindRenderTargets.mRenderTargets[0] = { pLinearDepthBuffer, LOAD_ACTION_CLEAR };
+            cmdBindRenderTargets(cmd, &bindRenderTargets);
+
             cmdSetViewport(cmd, 0.0f, 0.0f, (float)pLinearDepthBuffer->mWidth, (float)pLinearDepthBuffer->mHeight, 0.0f, 1.0f);
             cmdSetScissor(cmd, 0, 0, pLinearDepthBuffer->mWidth, pLinearDepthBuffer->mHeight);
 
@@ -705,7 +991,7 @@ public:
             cmdBindDescriptorSet(cmd, 0, pExampleDescriptorSet);
             cmdDraw(cmd, 3, 0);
 
-            cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
+            cmdBindRenderTargets(cmd, NULL);
 
             RenderTargetBarrier barriersLinearDepthEnd[] = { { pLinearDepthBuffer, RESOURCE_STATE_RENDER_TARGET,
                                                                RESOURCE_STATE_SHADER_RESOURCE } };
@@ -732,7 +1018,7 @@ public:
         ///////////////////////////////////////////////// FXAA ////////////////////////////////////////////////////////////////
 
         {
-            if (gToggleFXAA)
+            if (gAppSettings.gToggleFXAA)
                 cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "FXAA");
             else
                 cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "PresentPipeline");
@@ -745,15 +1031,10 @@ public:
 
             cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriers);
 
-            LoadActionsDesc loadActions = {};
-            loadActions.mLoadActionsColor[0] = LOAD_ACTION_CLEAR;
-            loadActions.mClearColorValues[0].r = 0.0f;
-            loadActions.mClearColorValues[0].g = 0.0f;
-            loadActions.mClearColorValues[0].b = 0.0f;
-            loadActions.mClearColorValues[0].a = 0.0f;
-            loadActions.mLoadActionDepth = LOAD_ACTION_DONTCARE;
-
-            cmdBindRenderTargets(cmd, 1, &pRenderTarget, NULL, &loadActions, NULL, NULL, -1, -1);
+            BindRenderTargetsDesc bindRenderTargets = {};
+            bindRenderTargets.mRenderTargetCount = 1;
+            bindRenderTargets.mRenderTargets[0] = { pRenderTarget, LOAD_ACTION_CLEAR };
+            cmdBindRenderTargets(cmd, &bindRenderTargets);
             cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 0.0f, 1.0f);
             cmdSetScissor(cmd, 0, 0, pRenderTarget->mWidth, pRenderTarget->mHeight);
 
@@ -764,7 +1045,7 @@ public:
 
             cmdDraw(cmd, 3, 0);
 
-            cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
+            // cmdBindRenderTargets(cmd, 0, NULL, 0, NULL, NULL, NULL, -1, -1);
 
             cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
         }
@@ -773,28 +1054,23 @@ public:
         {
             cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Draw UI");
 
-            pRenderTarget = pSwapChain->ppRenderTargets[presentIndex];
-
-            LoadActionsDesc loadActions = {};
-            loadActions.mLoadActionsColor[0] = LOAD_ACTION_LOAD;
-            cmdBindRenderTargets(cmd, 1, &pRenderTarget, NULL, &loadActions, NULL, NULL, -1, -1);
-            cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 0.0f, 1.0f);
-            cmdSetScissor(cmd, 0, 0, pRenderTarget->mWidth, pRenderTarget->mHeight);
-
             getHiresTimerUSec(&gTimer, true);
 
-            if (gTogglePerformance)
+            if (gAppSettings.gShowInterface)
             {
-                gFrameTimeDraw.mFontColor = 0xff00ffff;
-                gFrameTimeDraw.mFontSize = 18.0f;
-                gFrameTimeDraw.mFontID = gFontID;
-                cmdDrawCpuProfile(cmd, float2(8.0f, 15.0f), &gFrameTimeDraw);
-                cmdDrawGpuProfile(cmd, float2(8.0f, 100.0f), gGpuProfileToken, &gFrameTimeDraw);
+                if (gAppSettings.gTogglePerformance)
+                {
+                    gFrameTimeDraw.mFontColor = 0xff00ffff;
+                    gFrameTimeDraw.mFontSize = 18.0f;
+                    gFrameTimeDraw.mFontID = gFontID;
+                    cmdDrawCpuProfile(cmd, float2(8.0f, 15.0f), &gFrameTimeDraw);
+                    cmdDrawGpuProfile(cmd, float2(8.0f, 100.0f), gGpuProfileToken, &gFrameTimeDraw);
+                }
+
+                cmdDrawUserInterface(cmd);
             }
 
-            cmdDrawUserInterface(cmd);
-
-            cmdBindRenderTargets(cmd, 0, NULL, NULL, NULL, NULL, NULL, -1, -1);
+            cmdBindRenderTargets(cmd, NULL);
 
             RenderTargetBarrier barriers[] = { { pRenderTarget, RESOURCE_STATE_RENDER_TARGET, RESOURCE_STATE_PRESENT } };
             cmdResourceBarrier(cmd, 0, NULL, 0, NULL, 1, barriers);
@@ -845,7 +1121,7 @@ public:
             gVolumetricClouds.Load(mSettings.mWidth, mSettings.mHeight);
             gVolumetricClouds.addRenderTargets();
 
-            gSpaceObjects.InitializeWithLoad(pDepthBuffer, pLinearDepthBuffer, gVolumetricClouds.pSavePrevTexture,
+            gSpaceObjects.InitializeWithLoad(pDepthBuffer, pLinearDepthBuffer, gVolumetricClouds.pHighResCloudTexture,
                                              gSky.GetParticleVertexBuffer(), gSky.GetParticleInstanceBuffer(), gSky.GetParticleCount(),
                                              sizeof(float) * 6, sizeof(ParticleData));
             gSpaceObjects.Load(mSettings.mWidth, mSettings.mHeight);
@@ -915,15 +1191,15 @@ public:
         addRootSignature(pRenderer, &rootDesc, &pLinearDepthCompRootSignature);*/
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        const char* pStaticSamplerNames[] = { "g_LinearClamp" };
-        Sampler*    pStaticSamplers[] = { pBilinearClampSampler };
+        const char* pStaticSamplerNames[] = { "g_LinearClamp", "g_NearestClamp" };
+        Sampler*    pStaticSamplers[] = { pBilinearClampSampler, pNearestClampSampler };
         Shader*     shaders[] = { pFXAAShader, pLinearDepthResolveShader };
         rootDesc = {};
         rootDesc.mShaderCount = 2;
         rootDesc.ppStaticSamplerNames = pStaticSamplerNames;
         rootDesc.ppStaticSamplers = pStaticSamplers;
         rootDesc.ppShaders = shaders;
-        rootDesc.mStaticSamplerCount = 1;
+        rootDesc.mStaticSamplerCount = 2;
         addRootSignature(pRenderer, &rootDesc, &pExampleRootSignature);
         gExampleRootConstantIndex = getDescriptorIndexFromName(pExampleRootSignature, "ExampleRootConstant");
     }
@@ -1091,7 +1367,6 @@ public:
         addRenderTarget(pRenderer, &depthRT, &pDepthBuffer);
 
         // Add linear depth Texture
-        depthRT.mClearValue = {};
         depthRT.mFormat = TinyImageFormat_R16_SFLOAT;
         depthRT.mStartState = RESOURCE_STATE_SHADER_RESOURCE;
         depthRT.mWidth = mSettings.mWidth & (~63);
@@ -1149,5 +1424,199 @@ public:
         pCameraController->lookAt(lookAt);
     }
 };
+
+void setDefaultQualitySettings()
+{
+    if (gGpuSettings.mQualitySettings == 0)
+    {
+        useLowQualitySettings(nullptr);
+    }
+    else if (gGpuSettings.mQualitySettings == 1)
+    {
+        useMediumQualitySettings(nullptr);
+    }
+    else
+    {
+        useHighQualitySettings(nullptr);
+    }
+}
+
+void useLowQualitySettings(void* pUserData)
+{
+    gAppSettings.DownSampling = 2;
+    gAppSettings.m_MinSampleCount = 54;
+    gAppSettings.m_MaxSampleCount = 148;
+
+    gAppSettings.m_MinStepSize = 500.0f;
+    gAppSettings.m_MaxStepSize = 1800.0f;
+
+    gAppSettings.m_CloudSize = 103305.805f;
+    gAppSettings.m_DefaultMaxSampleDistance = 500000.0f;
+    gAppSettings.m_CloudsLayerStart = 15400.0f;
+    gAppSettings.m_LayerThickness = 30800.0f;
+    gAppSettings.m_DetailStrength = 0.4f;
+    gAppSettings.m_CloudDensity = 4.6f;
+    gAppSettings.m_CloudCoverageModifier = 0.42f;
+    gAppSettings.m_CloudTypeModifier = 0.3f;
+
+    gAppSettings.m_EnabledShadow = true;
+    gAppSettings.m_EnabledGodray = true;
+    gAppSettings.m_EnableBlur = true;
+    gAppSettings.m_Enabled2ndLayer = false;
+    gAppSettings.TemporalFilteringEnabled = true;
+
+    gAppSettings.gToggleFXAA = false;
+}
+
+void useMediumQualitySettings(void* pUserData)
+{
+    gAppSettings.DownSampling = 2;
+    gAppSettings.m_MinSampleCount = 64;
+    gAppSettings.m_MaxSampleCount = 256;
+
+    gAppSettings.m_MinStepSize = 700.0f;
+    gAppSettings.m_MaxStepSize = 1600.0f;
+
+    gAppSettings.m_CloudSize = 103305.805f;
+    gAppSettings.m_DefaultMaxSampleDistance = 750000.0f;
+    gAppSettings.m_CloudsLayerStart = 8800.0f;
+    gAppSettings.m_LayerThickness = 55000.0f;
+    gAppSettings.m_DetailStrength = 0.25f;
+    gAppSettings.m_CloudDensity = 3.4f;
+    gAppSettings.m_CloudCoverageModifier = 0.0f;
+    gAppSettings.m_CloudTypeModifier = 0.0f;
+
+    gAppSettings.m_EnabledShadow = true;
+    gAppSettings.m_EnabledGodray = true;
+    gAppSettings.m_EnableBlur = false;
+    gAppSettings.m_Enabled2ndLayer = false;
+    gAppSettings.TemporalFilteringEnabled = true;
+
+    gAppSettings.gToggleFXAA = false;
+}
+
+void useHighQualitySettings(void* pUserData)
+{
+    gAppSettings.DownSampling = 1;
+    gAppSettings.m_MinSampleCount = 96;
+    gAppSettings.m_MaxSampleCount = 384;
+
+    gAppSettings.m_MinStepSize = 700.0f;
+    gAppSettings.m_MaxStepSize = 1300.0f;
+
+    gAppSettings.m_CloudSize = 103305.805f;
+    gAppSettings.m_DefaultMaxSampleDistance = 1000000.0f;
+    gAppSettings.m_CloudsLayerStart = 8800.0f;
+    gAppSettings.m_LayerThickness = 55000.0f;
+    gAppSettings.m_DetailStrength = 0.25f;
+    gAppSettings.m_CloudDensity = 3.4f;
+    gAppSettings.m_CloudCoverageModifier = 0.0f;
+    gAppSettings.m_CloudTypeModifier = 0.0f;
+
+    gAppSettings.m_EnabledShadow = true;
+    gAppSettings.m_EnabledGodray = true;
+    gAppSettings.m_EnableBlur = false;
+    gAppSettings.m_Enabled2ndLayer = false;
+    gAppSettings.TemporalFilteringEnabled = true;
+
+    gAppSettings.gToggleFXAA = false;
+}
+
+void useUltraQualitySettings(void* pUserData)
+{
+    gAppSettings.DownSampling = 1;
+    gAppSettings.m_MinSampleCount = 96;
+    gAppSettings.m_MaxSampleCount = 384;
+
+    gAppSettings.m_MinStepSize = 700.0f;
+    gAppSettings.m_MaxStepSize = 1300.0f;
+
+    gAppSettings.m_CloudSize = 103305.805f;
+    gAppSettings.m_DefaultMaxSampleDistance = 1000000.0f;
+    gAppSettings.m_CloudsLayerStart = 8800.0f;
+    gAppSettings.m_LayerThickness = 55000.0f;
+    gAppSettings.m_DetailStrength = 0.25f;
+    gAppSettings.m_CloudDensity = 3.4f;
+    gAppSettings.m_CloudCoverageModifier = 0.0f;
+    gAppSettings.m_CloudTypeModifier = 0.0f;
+
+    gAppSettings.m_EnabledShadow = true;
+    gAppSettings.m_EnabledGodray = true;
+    gAppSettings.m_EnableBlur = false;
+    gAppSettings.m_Enabled2ndLayer = true;
+    gAppSettings.TemporalFilteringEnabled = false;
+
+    gAppSettings.gToggleFXAA = false;
+}
+
+void setGroundCamera(void* pUserData)
+{
+    LuaScriptDesc runDesc = {};
+    runDesc.pScriptFileName = "GroundCamera.lua";
+    luaQueueScriptToRun(&runDesc);
+}
+
+void setSpaceCamera(void* pUserData)
+{
+    LuaScriptDesc runDesc = {};
+    runDesc.pScriptFileName = "SpaceCamera.lua";
+    luaQueueScriptToRun(&runDesc);
+}
+
+void runUpdateScript(void* pUserData)
+{
+    gLuaUpdateScriptRunning = gLuaManager.SetUpdatableScript(gCameraScripts[gAppSettings.gCurrentScriptIndex], "Update", "Exit");
+}
+
+void toggleAdvancedUI(void* pUserData)
+{
+    if (pGuiCloudWindow)
+    {
+        pGuiCloudWindow->mActive = gAppSettings.gShowAdvancedWindows;
+        pGuiSkyWindow->mActive = gAppSettings.gShowAdvancedWindows;
+    }
+}
+
+Quat computeQuaternionFromLookAt(vec3 lookDir)
+{
+    float2 viewRotation;
+    float  y = lookDir.getY();
+    viewRotation.setX(asinf(y));
+
+    float x = lookDir.getX();
+    float z = lookDir.getZ();
+    float n = sqrtf((x * x) + (z * z));
+    // don't change the Y rotation if we're too close to vertical
+    if (n > 0.01f)
+    {
+        x /= n;
+        z /= n;
+        // by default we are looking at the z positive, this will change the atan2 order
+        // image looking from the top to your unit circle made with the default camera direction
+        //    z correspond to the default unit circle direction, the x of the arctan function
+        //    -x, "left side" of z axis equal the y axis of the arctan function
+        viewRotation.setY(atan2f(-x, z));
+    }
+
+    float roll = 0.0f;
+    float pitch = -viewRotation.getX();
+    float yaw = -viewRotation.getY();
+
+    float cr = cos(roll * 0.5f);
+    float sr = sin(roll * 0.5f);
+    float cp = cos(pitch * 0.5f);
+    float sp = sin(pitch * 0.5f);
+    float cy = cos(yaw * 0.5f);
+    float sy = sin(yaw * 0.5f);
+
+    // euler to quaternion
+    Quat result;
+    result.setW(cr * cp * cy + sr * sp * sy);
+    result.setX(cr * sp * cy + sr * cp * sy);
+    result.setY(cr * cp * sy - sr * sp * cy);
+    result.setZ(sr * cp * cy - cr * sp * sy);
+
+    return result;
+}
 
 DEFINE_APPLICATION_MAIN(RenderEphemeris)
