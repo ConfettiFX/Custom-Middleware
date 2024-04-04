@@ -184,7 +184,7 @@ public:
         fsSetPathForResourceDir(pSystemFileIO, RM_DEBUG, RD_SCREENSHOTS, "Screenshots");
         fsSetPathForResourceDir(pSystemFileIO, RM_DEBUG, RD_DEBUG, "Debug");
 
-        CameraMotionParameters cmp{ 16000.0f, 60000.0f, 20000.0f };
+        CameraMotionParameters cmp{ 48000.0f, 180000.0f, 60000.0f };
 
         float h = 6000.0f;
 
@@ -1017,12 +1017,12 @@ public:
 
         ///////////////////////////////////////////////// FXAA ////////////////////////////////////////////////////////////////
 
-        {
-            if (gAppSettings.gToggleFXAA)
-                cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "FXAA");
-            else
-                cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "PresentPipeline");
+        if (gAppSettings.gToggleFXAA)
+            cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "FXAA / Draw UI");
+        else
+            cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "PresentPipeline / Draw UI");
 
+        {
             pRenderTarget = pSwapChain->ppRenderTargets[presentIndex];
 
             RenderTargetBarrier barriers[] = {
@@ -1037,6 +1037,11 @@ public:
             cmdBindRenderTargets(cmd, &bindRenderTargets);
             cmdSetViewport(cmd, 0.0f, 0.0f, (float)pRenderTarget->mWidth, (float)pRenderTarget->mHeight, 0.0f, 1.0f);
             cmdSetScissor(cmd, 0, 0, pRenderTarget->mWidth, pRenderTarget->mHeight);
+
+            if (gAppSettings.gToggleFXAA)
+                cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "FXAA");
+            else
+                cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "PresentPipeline");
 
             cmdBindPipeline(cmd, pFXAAPipeline);
 
@@ -1077,6 +1082,7 @@ public:
 
             cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
         }
+        cmdEndGpuTimestampQuery(cmd, gGpuProfileToken);
 
         cmdEndGpuFrameProfile(cmd, gGpuProfileToken);
         endCmd(cmd);
@@ -1479,7 +1485,7 @@ void useMediumQualitySettings(void* pUserData)
 
     gAppSettings.m_CloudSize = 103305.805f;
     gAppSettings.m_DefaultMaxSampleDistance = 750000.0f;
-    gAppSettings.m_CloudsLayerStart = 8800.0f;
+    gAppSettings.m_CloudsLayerStart = 12500.0f;
     gAppSettings.m_LayerThickness = 55000.0f;
     gAppSettings.m_DetailStrength = 0.25f;
     gAppSettings.m_CloudDensity = 3.4f;
@@ -1506,7 +1512,7 @@ void useHighQualitySettings(void* pUserData)
 
     gAppSettings.m_CloudSize = 103305.805f;
     gAppSettings.m_DefaultMaxSampleDistance = 1000000.0f;
-    gAppSettings.m_CloudsLayerStart = 8800.0f;
+    gAppSettings.m_CloudsLayerStart = 12500.0f;
     gAppSettings.m_LayerThickness = 55000.0f;
     gAppSettings.m_DetailStrength = 0.25f;
     gAppSettings.m_CloudDensity = 3.4f;
@@ -1533,7 +1539,7 @@ void useUltraQualitySettings(void* pUserData)
 
     gAppSettings.m_CloudSize = 103305.805f;
     gAppSettings.m_DefaultMaxSampleDistance = 1000000.0f;
-    gAppSettings.m_CloudsLayerStart = 8800.0f;
+    gAppSettings.m_CloudsLayerStart = 12500.0f;
     gAppSettings.m_LayerThickness = 55000.0f;
     gAppSettings.m_DetailStrength = 0.25f;
     gAppSettings.m_CloudDensity = 3.4f;

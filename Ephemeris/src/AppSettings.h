@@ -24,7 +24,7 @@
 //  - in the end your whole planet should fit inside the atmospheric sphere (blue horizon line), if not you need to work on Skyp.cpp
 #define PLANET_RADIUS        6360000.0f
 
-#define CAMERA_SCRIPT_COUNTS 4
+#define CAMERA_SCRIPT_COUNTS 5
 
 extern const char* gCameraScripts[CAMERA_SCRIPT_COUNTS];
 
@@ -40,10 +40,11 @@ typedef struct AppSettings
     bool gShowInterface = true;
 
     // -------- Sky --------
-    float4 SkyInfo; // x: fExposure, y: fInscatterIntencity, z: fInscatterContrast, w: fUnitsToM
+    float4 SkyInfo; // x: fExposure, y: fInscatterIntencity, z: DepthFallOff, w: fUnitsToM
     float4 OriginLocation;
     float2 SunDirection = float2(-90.0f, 210.0f);
     float4 SunColorAndIntensity = float4(1.0f, 1.0f, 1.0f, 1.0f);
+    float  SunsetColorStrength = 0.92f;
     float  sunMovingSpeed = 2.0f;
     bool   bSunMove = false;
 
@@ -52,7 +53,7 @@ typedef struct AppSettings
     bool  m_FirstFrame = true; // when true, no previous frame data is available
     float m_DefaultMaxSampleDistance = 800000.0f;
 
-    float m_CloudsLayerStart = 8800.0f;
+    float m_CloudsLayerStart = 12500.0f;
     float m_CloudsLayerStart_2nd = 72000.0f;
 
     // raymarching
@@ -178,7 +179,7 @@ typedef struct AppSettings
     float    m_Weight = 0.85f;
 
     // test & debug
-    float m_Test00 = 0.5f;
+    float m_Test00 = 0.2f;
     float m_Test01 = 2.0f;
     float m_Test02 = 2.0f;
     float m_Test03 = 0.8f;

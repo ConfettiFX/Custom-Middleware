@@ -1220,8 +1220,8 @@ bool VolumetricClouds::Init(Renderer* renderer, PipelineCache* pCache)
 
     SliderFloatWidget test00;
     test00.pData = &gAppSettings.m_Test00;
-    test00.mMin = 0.0f;
-    test00.mMax = 150.0f;
+    test00.mMin = -1.0f;
+    test00.mMax = 4.0f;
     test00.mStep = 0.1f;
     widgets[widgetsCount]->mType = WIDGET_TYPE_SLIDER_FLOAT;
     strcpy(widgets[widgetsCount]->mLabel, "Test00");
@@ -1419,10 +1419,10 @@ void VolumetricClouds::Draw(Cmd* cmd)
 #if USE_DEPTH_CULLING
 
 #if USE_LOD_DEPTH
+            cmdBindPipeline(cmd, pGenHiZMipmapPRPipeline);
 
             cmdBeginGpuTimestampQuery(cmd, gGpuProfileToken, "Lodded Z DepthBuffer");
 
-            cmdBindPipeline(cmd, pGenHiZMipmapPRPipeline);
             cmdBindDescriptorSet(cmd, 0, pVolumetricCloudsDescriptorSetCompute[0]);
 #if !USE_VC_FRAGMENTSHADER
             cmdBindDescriptorSet(cmd, gFrameIndex, pVolumetricCloudsDescriptorSetCompute[1]);
@@ -2214,12 +2214,11 @@ void VolumetricClouds::Update(float deltaTime)
     volumetricCloudsCB.GodrayDensity = gAppSettings.m_Density;
     volumetricCloudsCB.GodrayWeight = gAppSettings.m_Weight;
 
-    /*
+    // Test00 used for choosing the atmosphere's transmittance color over the sun predefined one
     volumetricCloudsCB.Test00 = gAppSettings.m_Test00;
-    volumetricCloudsCB.Test01 = gAppSettings.m_Test01;
+    /*volumetricCloudsCB.Test01 = gAppSettings.m_Test01;
     volumetricCloudsCB.Test02 = gAppSettings.m_Test02;
-    volumetricCloudsCB.Test03 = gAppSettings.m_Test03;
-    */
+    volumetricCloudsCB.Test03 = gAppSettings.m_Test03;*/
 
     volumetricCloudsCB.ReprojPrevFrameUnavail = gAppSettings.m_FirstFrame ? 1.0f : 0.0f;
 

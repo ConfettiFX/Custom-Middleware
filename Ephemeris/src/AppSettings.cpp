@@ -12,7 +12,8 @@
 
 #include "../../../The-Forge/Common_3/Application/Interfaces/IUI.h"
 
-const char* gCameraScripts[CAMERA_SCRIPT_COUNTS] = { "MovingCloud.lua", "SurfaceToAtmosphere.lua", "FlyingSurface.lua", "TimeOfDay.lua" };
+const char* gCameraScripts[CAMERA_SCRIPT_COUNTS] = { "MovingCloud.lua", "SurfaceToAtmosphere.lua", "FlyingSurface.lua", "TimeOfDay.lua",
+                                                     "Sunset.lua" };
 
 AppSettings gAppSettings;
 

@@ -446,9 +446,14 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
     uiCreateComponent("Sky", &UIComponentDesc, &pGuiSkyWindow);
 
     gAppSettings.SkyInfo.x = 0.15f;
-    gAppSettings.SkyInfo.y = 0.26f;
-    gAppSettings.SkyInfo.z = 0.25f;
-    gAppSettings.SkyInfo.w = 1.0f; // 0.1f;
+    gAppSettings.SkyInfo.y = 0.57f;
+    gAppSettings.SkyInfo.z = 0.225f;
+    // lower value increase the size of the atmosphere region
+    // we use a lower value to increase the sunset effect this leads to higher chances of sampling the "reddish" tone of the low altitude
+    // sun
+    gAppSettings.SkyInfo.w = 1.0f;
+
+    gAppSettings.SunsetColorStrength = 0.92f;
 
     gAppSettings.OriginLocation.x = -16.70f;
     gAppSettings.OriginLocation.y = -53.20f;
@@ -461,6 +466,7 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
         PAS_WIDGET_INSCATTER_INTENSITY,
         PAS_WIDGET_INSCATTER_CONTRAST,
         PAS_WIDGET_UNITS_TO_M,
+        PAS_WIDGET_SUNSET,
 
         PAS_WIDGET_COUNT
     };
@@ -530,6 +536,15 @@ bool Sky::Init(Renderer* const renderer, PipelineCache* pCache)
     widgets[PAS_WIDGET_UNITS_TO_M]->mType = WIDGET_TYPE_SLIDER_FLOAT;
     strcpy(widgets[PAS_WIDGET_UNITS_TO_M]->mLabel, "UnitsToM");
     widgets[PAS_WIDGET_UNITS_TO_M]->pWidget = &unitsToM;
+
+    SliderFloatWidget sunsetEffect;
+    sunsetEffect.pData = &gAppSettings.SunsetColorStrength;
+    sunsetEffect.mMin = 0.0f;
+    sunsetEffect.mMax = 1.0f;
+    sunsetEffect.mStep = 0.001f;
+    widgets[PAS_WIDGET_SUNSET]->mType = WIDGET_TYPE_SLIDER_FLOAT;
+    strcpy(widgets[PAS_WIDGET_SUNSET]->mLabel, "SunsetColorStrength");
+    widgets[PAS_WIDGET_SUNSET]->pWidget = &sunsetEffect;
 
     luaRegisterWidget(
         uiCreateComponentWidget(pGuiSkyWindow, "Precomputed Atmosphere Scattering", &collapsingPAS, WIDGET_TYPE_COLLAPSING_HEADER));
@@ -905,7 +920,7 @@ void Sky::Draw(Cmd* cmd)
 
         _cbRootConstantStruct.CameraPosition = float4(localCamPosKM.getX(), localCamPosKM.getY(), localCamPosKM.getZ(), 1.0f);
         _cbRootConstantStruct.QNNear = QNNear;
-        _cbRootConstantStruct.InScatterParams = float4(inscatterParams.x, inscatterParams.y, 0.0f, 0.0f);
+        _cbRootConstantStruct.InScatterParams = float4(inscatterParams.x, inscatterParams.y, 1.0f - gAppSettings.SunsetColorStrength, 0.0f);
         _cbRootConstantStruct.LightIntensity = gAppSettings.SunColorAndIntensity;
 
         BufferUpdateDesc BufferUniformSettingDesc = { pRenderSkyUniformBuffer[gFrameIndex] };

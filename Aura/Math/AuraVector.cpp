@@ -31,7 +31,8 @@ half::half(const float x)
     if (e <= 0)
     {
         // Denorm
-        m = ((m | 0x00800000) >> (1 - e)) + 0x1000;
+        const int shifted = e < -30 ? 0 : ((m | 0x00800000) >> (1 - e));
+        m = shifted + 0x1000;
         sh |= (m >> 13);
     }
     else if (e == 143)

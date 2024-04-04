@@ -51,9 +51,10 @@ VsOut VS_MAIN(SV_VertexID(uint) VertexID)
 	float4 dayLight   = float4(transmittance(r, mu), 1.0f);
 	float4 nightLight = Get(LightIntensity) * 0.05f;
 
+	// use lookup transmittance color during sunset
 	Get(TransmittanceColor)[VertexID] = Get(lightDirection).y >= 0.2f
                                       ? dayLight 
-                                      : lerp(nightLight, dayLight, saturate(Get(lightDirection).y / 0.2f));
+                                      : lerp(nightLight, dayLight, saturate(Get(lightDirection).y / Get(InScatterParams).z));
 
 	RETURN(Out);
 }
