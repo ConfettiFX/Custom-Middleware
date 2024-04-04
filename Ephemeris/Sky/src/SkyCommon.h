@@ -45,8 +45,6 @@ const int INSCATTER_INTEGRAL_SAMPLES = 50;
 const int IRRADIANCE_INTEGRAL_SAMPLES = 32;
 const int INSCATTER_SPHERICAL_INTEGRAL_SAMPLES = 16;
 
-const float M_PI = 3.141592657f;
-
 const float Rg = 6360.0f; //-V707
 const float Rt = 6420.0f; //-V707
 const float RL = 6421.0f; //-V707

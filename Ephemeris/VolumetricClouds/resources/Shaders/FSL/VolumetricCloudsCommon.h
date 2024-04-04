@@ -499,6 +499,7 @@ float GetDensity(float3 startPos, float3 dir, float raymarchOffset, out(float) i
 	// Horizontal Culling, discard rays if intersect earth before the atmosphere
 	if (distCameraToStart >= maxSamplingDistance)
 	{
+		atmosphericBlendFactor = 1.0f;
 		return 0.0f;
 	}
 
@@ -686,6 +687,7 @@ float GetDensityWithComparingDepth(float3 startPos, float3 dir, float raymarchOf
 
 	if (distCameraToStart > maxSamplingDistance)
 	{
+		atmosphericBlendFactor = 1.0f;
 		return 0.0f;
 	}
 

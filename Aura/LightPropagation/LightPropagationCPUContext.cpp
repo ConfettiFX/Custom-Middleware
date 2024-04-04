@@ -859,22 +859,33 @@ void LightPropagationCPUContext::TaskDoPropagate(void* pvInfo, int32_t iContext,
     ((LightPropagationCPUContext*)pvInfo)->doPropagate();
 }
 
+// On Apple Arm64 light propagation causes heap overflows which trigger ASAN errors/crashes,
+// so it is disabled for the time being. Since there are still issues in the math on Apple Arm64,
+// the output is unaffected by disabling the propagation code (i.e. the outout is empty).
+#if defined(__APPLE__) && defined(__aarch64__)
+#define TEMP_DISABLE_CPU_PROPAGATION
+#endif
+
 void LightPropagationCPUContext::TaskStep1(void* pvInfo, int32_t iContext, uint32_t uTaskId, uint32_t uTaskCount)
 {
+#ifndef TEMP_DISABLE_CPU_PROPAGATION
     int iMinSlice = uTaskId * GridRes / uTaskCount;
     int iMaxSlice = (uTaskId + 1) * GridRes / uTaskCount;
 
     StepContext* pContext = (StepContext*)pvInfo;
     pContext->pContext->propagateStep<true>(pContext->src, pContext->targetStep, pContext->targetAccum, iMinSlice, iMaxSlice);
+#endif
 }
 
 void LightPropagationCPUContext::TaskStepN(void* pvInfo, int32_t iContext, uint32_t uTaskId, uint32_t uTaskCount)
 {
+#ifndef TEMP_DISABLE_CPU_PROPAGATION
     int iMinSlice = uTaskId * GridRes / uTaskCount;
     int iMaxSlice = (uTaskId + 1) * GridRes / uTaskCount;
 
     StepContext* pContext = (StepContext*)pvInfo;
     pContext->pContext->propagateStep<false>(pContext->src, pContext->targetStep, pContext->targetAccum, iMinSlice, iMaxSlice);
+#endif
 }
 
 static void queryTextureFootprint(const Renderer* pRenderer, const RenderTarget* pRT, TextureFootprint* pFootprint)

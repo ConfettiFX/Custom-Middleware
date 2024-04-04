@@ -48,7 +48,7 @@ LocalTime::LocalTime(bool bNow /*=false*/):
 {
     if (bNow)
     {
-#if defined(ORBIS) || defined(PROSPERO) || defined(__APPLE__) || defined(__linux__)
+#if defined(ORBIS) || defined(PROSPERO) || defined(__APPLE__) || defined(__linux__) || defined(NX64)
         time_t currentTime = time(NULL);
         tm     sysTime;
         sysTime = *localtime(&currentTime);
@@ -67,7 +67,7 @@ LocalTime::LocalTime(bool bNow /*=false*/):
         m_localMinutes = sysTime.tm_min;
         m_localSeconds = sysTime.tm_sec;
 
-#if defined(ORBIS) || defined(PROSPERO) || defined(__APPLE__) || defined(__linux__)
+#if defined(ORBIS) || defined(PROSPERO) || defined(__APPLE__) || defined(__linux__) || defined(NX64)
         tm utcTime;
         utcTime = *gmtime(&currentTime);
         time_t offsTime = mktime(&utcTime);

@@ -14,7 +14,7 @@
 #include "../../../The-Forge/Common_3/Graphics/GraphicsConfig.h"
 #include "../Shaders/Shared.h"
 
-#if defined(_WINDOWS) || defined(XBOX)
+#if defined(_WINDOWS) || defined(XBOX) || defined(__APPLE__) || defined(__linux__)
 #define ENABLE_CPU_PROPAGATION
 #elif defined(ORBIS)
 // orbis fibers and sanitizer don't work well together at the moment
