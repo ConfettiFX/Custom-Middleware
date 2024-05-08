@@ -416,8 +416,10 @@ void propagateLight(Cmd* pCmd, Renderer* pRenderer, Aura* pAura, uint32_t cascad
     sprintf(name, "Cascade #%u", cascade);
     cmdBeginDebugMarker(pCmd, 1.0f, 0.0f, 0.0f, name);
 
-    Pipeline*                pPipelinePropagate1 = pAura->pPipelineLightPropagate1[pAura->mParams.bUseMultipleReflections];
-    Pipeline*                pPipelinePropagateN = pAura->pPipelineLightPropagateN[pAura->mParams.bUseMultipleReflections];
+    Pipeline* pPipelinePropagate1 =
+        pAura->pPipelineLightPropagate1[pAura->mParams.bUseMultipleReflections][pAura->mParams.bUseAdvancedPropagation];
+    Pipeline* pPipelinePropagateN =
+        pAura->pPipelineLightPropagateN[pAura->mParams.bUseMultipleReflections][pAura->mParams.bUseAdvancedPropagation];
     LightPropagationCascade* pCascade = pAura->pCascades[cascade];
 
 #if USE_COMPUTE_SHADERS
@@ -461,9 +463,9 @@ void propagateLight(Cmd* pCmd, Renderer* pRenderer, Aura* pAura, uint32_t cascad
     cmdSetViewport(pCmd, 0.0f, 0.0f, (float)GridRes, (float)GridRes, 0.0f, 1.0f);
     cmdSetScissor(pCmd, 0, 0, GridRes, GridRes);
     cmdBindPipeline(pCmd, pPipelinePropagate1);
-    cmdBindDescriptorSet(pCmd, cascade, pAura->pDescriptorSetLightPropagate1);
-    cmdBindPushConstants(pCmd, pAura->pRootSignatureLightPropagate1, pAura->mPropagation1RootConstantIndex,
-                         &pAura->mParams.fPropagationScale);
+    cmdBindDescriptorSet(pCmd, cascade, pAura->pDescriptorSetLightPropagate1[pAura->mParams.bUseAdvancedPropagation]);
+    cmdBindPushConstants(pCmd, pAura->pRootSignatureLightPropagate1[pAura->mParams.bUseAdvancedPropagation],
+                         pAura->mPropagation1RootConstantIndex[pAura->mParams.bUseAdvancedPropagation], &pAura->mParams.fPropagationScale);
     cmdDrawInstanced(pCmd, 3, 0, GridRes, 0);
     cmdBindRenderTargets(pCmd, NULL);
     /************************************************************************/
@@ -541,8 +543,9 @@ void propagateLight(Cmd* pCmd, Renderer* pRenderer, Aura* pAura, uint32_t cascad
 #endif // PROPAGATE_ACCUMULATE_ONE_PASS
 
         cmdBindPipeline(pCmd, pPipelinePropagateN);
-        cmdBindDescriptorSet(pCmd, cascade * 2 + !(i & 0x1), pAura->pDescriptorSetLightPropagateN);
-        cmdBindPushConstants(pCmd, pAura->pRootSignatureLightPropagateN, pAura->mPropagationNRootConstantIndex,
+        cmdBindDescriptorSet(pCmd, cascade * 2 + !(i & 0x1), pAura->pDescriptorSetLightPropagateN[pAura->mParams.bUseAdvancedPropagation]);
+        cmdBindPushConstants(pCmd, pAura->pRootSignatureLightPropagateN[pAura->mParams.bUseAdvancedPropagation],
+                             pAura->mPropagationNRootConstantIndex[pAura->mParams.bUseAdvancedPropagation],
                              &pAura->mParams.fPropagationScale);
         cmdDrawInstanced(pCmd, 3, 0, GridRes, 0);
 
@@ -611,6 +614,7 @@ void propagateLight(Cmd* pCmd, Renderer* pRenderer, ITaskManager* pTaskManager, 
             pAura->m_CPUContexts[i][readIndex].readData(pCmd, pRenderer, pAura->pCascades[i]->pLightGrids, NUM_GRIDS_PER_CASCADE);
             pAura->m_CPUContexts[i][readIndex].setApplyState(pAura->pCascades[i]->mInjectState);
             pAura->m_CPUContexts[i][readIndex].eState = LightPropagationCPUContext::CAPTURED_LIGHT;
+            pAura->m_CPUContexts[i][readIndex].setAdvancedDirections(pAura->mCPUParams.bAdvancedDirections);
         }
 
         int propagateIndex = (pAura->mFrameIdx - pAura->mInFlightFrameCount) % pAura->mInFlightFrameCount;
@@ -851,10 +855,15 @@ void addDescriptorSets()
 {
     DescriptorSetDesc setDesc = { pAura->pRootSignatureInjectRSMLight, DESCRIPTOR_UPDATE_FREQ_NONE, pAura->mCascadeCount * MAX_FRAMES };
     addDescriptorSet(pAura->pRenderer, &setDesc, &pAura->pDescriptorSetInjectRSMLight);
-    setDesc = { pAura->pRootSignatureLightPropagate1, DESCRIPTOR_UPDATE_FREQ_NONE, pAura->mCascadeCount };
-    addDescriptorSet(pAura->pRenderer, &setDesc, &pAura->pDescriptorSetLightPropagate1);
-    setDesc = { pAura->pRootSignatureLightPropagateN, DESCRIPTOR_UPDATE_FREQ_NONE, pAura->mCascadeCount * 2 };
-    addDescriptorSet(pAura->pRenderer, &setDesc, &pAura->pDescriptorSetLightPropagateN);
+    setDesc = { pAura->pRootSignatureLightPropagate1[0], DESCRIPTOR_UPDATE_FREQ_NONE, pAura->mCascadeCount };
+    addDescriptorSet(pAura->pRenderer, &setDesc, &pAura->pDescriptorSetLightPropagate1[0]);
+    setDesc = { pAura->pRootSignatureLightPropagateN[0], DESCRIPTOR_UPDATE_FREQ_NONE, pAura->mCascadeCount * 2 };
+    addDescriptorSet(pAura->pRenderer, &setDesc, &pAura->pDescriptorSetLightPropagateN[0]);
+
+    setDesc = { pAura->pRootSignatureLightPropagate1[1], DESCRIPTOR_UPDATE_FREQ_NONE, pAura->mCascadeCount };
+    addDescriptorSet(pAura->pRenderer, &setDesc, &pAura->pDescriptorSetLightPropagate1[1]);
+    setDesc = { pAura->pRootSignatureLightPropagateN[1], DESCRIPTOR_UPDATE_FREQ_NONE, pAura->mCascadeCount * 2 };
+    addDescriptorSet(pAura->pRenderer, &setDesc, &pAura->pDescriptorSetLightPropagateN[1]);
 #if USE_COMPUTE_SHADERS
     setDesc = { pAura->pRootSignatureLightCopy, DESCRIPTOR_UPDATE_FREQ_NONE, pAura->mCascadeCount };
 #else
@@ -869,8 +878,10 @@ void addDescriptorSets()
 void removeDescriptorSets()
 {
     removeDescriptorSet(pAura->pRenderer, pAura->pDescriptorSetInjectRSMLight);
-    removeDescriptorSet(pAura->pRenderer, pAura->pDescriptorSetLightPropagate1);
-    removeDescriptorSet(pAura->pRenderer, pAura->pDescriptorSetLightPropagateN);
+    removeDescriptorSet(pAura->pRenderer, pAura->pDescriptorSetLightPropagate1[0]);
+    removeDescriptorSet(pAura->pRenderer, pAura->pDescriptorSetLightPropagateN[0]);
+    removeDescriptorSet(pAura->pRenderer, pAura->pDescriptorSetLightPropagate1[1]);
+    removeDescriptorSet(pAura->pRenderer, pAura->pDescriptorSetLightPropagateN[1]);
     removeDescriptorSet(pAura->pRenderer, pAura->pDescriptorSetLightCopy);
     removeDescriptorSet(pAura->pRenderer, pAura->pDescriptorSetVisualizeLPV);
 }
@@ -896,18 +907,36 @@ void addRootSignatures()
     propagate1RootDesc.mMaxBindlessTextures = 9;
     propagate1RootDesc.ppStaticSamplerNames = pStaticSamplerNames;
     propagate1RootDesc.ppStaticSamplers = pStaticSamplers;
-    addRootSignature(pAura->pRenderer, &propagate1RootDesc, &pAura->pRootSignatureLightPropagate1);
-    pAura->mPropagation1RootConstantIndex =
-        getDescriptorIndexFromName(pAura->pRootSignatureLightPropagate1, "PropagationSetupRootConstant");
+    addRootSignature(pAura->pRenderer, &propagate1RootDesc, &pAura->pRootSignatureLightPropagate1[0]);
+    pAura->mPropagation1RootConstantIndex[0] =
+        getDescriptorIndexFromName(pAura->pRootSignatureLightPropagate1[0], "PropagationSetupRootConstant");
+
+    propagate1RootDesc = { &pAura->pShaderLightPropagate1[1], 1 };
+    propagate1RootDesc.mStaticSamplerCount = 1;
+    propagate1RootDesc.mMaxBindlessTextures = 9;
+    propagate1RootDesc.ppStaticSamplerNames = pStaticSamplerNames;
+    propagate1RootDesc.ppStaticSamplers = pStaticSamplers;
+    addRootSignature(pAura->pRenderer, &propagate1RootDesc, &pAura->pRootSignatureLightPropagate1[1]);
+    pAura->mPropagation1RootConstantIndex[1] =
+        getDescriptorIndexFromName(pAura->pRootSignatureLightPropagate1[1], "PropagationSetupRootConstant");
 
     RootSignatureDesc propagateNRootDesc = { &pAura->pShaderLightPropagateN[0], 1 };
     propagateNRootDesc.mStaticSamplerCount = 1;
     propagateNRootDesc.mMaxBindlessTextures = 9;
     propagateNRootDesc.ppStaticSamplerNames = pStaticSamplerNames;
     propagateNRootDesc.ppStaticSamplers = pStaticSamplers;
-    addRootSignature(pAura->pRenderer, &propagateNRootDesc, &pAura->pRootSignatureLightPropagateN);
-    pAura->mPropagationNRootConstantIndex =
-        getDescriptorIndexFromName(pAura->pRootSignatureLightPropagateN, "PropagationSetupRootConstant");
+    addRootSignature(pAura->pRenderer, &propagateNRootDesc, &pAura->pRootSignatureLightPropagateN[0]);
+    pAura->mPropagationNRootConstantIndex[0] =
+        getDescriptorIndexFromName(pAura->pRootSignatureLightPropagateN[0], "PropagationSetupRootConstant");
+
+    propagateNRootDesc = { &pAura->pShaderLightPropagateN[1], 1 };
+    propagateNRootDesc.mStaticSamplerCount = 1;
+    propagateNRootDesc.mMaxBindlessTextures = 9;
+    propagateNRootDesc.ppStaticSamplerNames = pStaticSamplerNames;
+    propagateNRootDesc.ppStaticSamplers = pStaticSamplers;
+    addRootSignature(pAura->pRenderer, &propagateNRootDesc, &pAura->pRootSignatureLightPropagateN[1]);
+    pAura->mPropagationNRootConstantIndex[1] =
+        getDescriptorIndexFromName(pAura->pRootSignatureLightPropagateN[1], "PropagationSetupRootConstant");
 
     RootSignatureDesc copyRootDesc = { &pAura->pShaderLightCopy, 1 };
     copyRootDesc.mStaticSamplerCount = 1;
@@ -927,8 +956,10 @@ void addRootSignatures()
 void removeRootSignatures()
 {
     removeRootSignature(pAura->pRenderer, pAura->pRootSignatureInjectRSMLight);
-    removeRootSignature(pAura->pRenderer, pAura->pRootSignatureLightPropagate1);
-    removeRootSignature(pAura->pRenderer, pAura->pRootSignatureLightPropagateN);
+    removeRootSignature(pAura->pRenderer, pAura->pRootSignatureLightPropagate1[0]);
+    removeRootSignature(pAura->pRenderer, pAura->pRootSignatureLightPropagateN[0]);
+    removeRootSignature(pAura->pRenderer, pAura->pRootSignatureLightPropagate1[1]);
+    removeRootSignature(pAura->pRenderer, pAura->pRootSignatureLightPropagateN[1]);
     removeRootSignature(pAura->pRenderer, pAura->pRootSignatureLightCopy);
     removeRootSignature(pAura->pRenderer, pAura->pRootSignatureVisualizeLPV);
 }
@@ -937,7 +968,9 @@ void addShaders()
 {
     ShaderLoadDesc injectRSMLightDesc = {};
     ShaderLoadDesc lightPropagate1Desc = {};
+    ShaderLoadDesc lightPropagate1AdvancedDesc = {};
     ShaderLoadDesc lightPropagateNDesc = {};
+    ShaderLoadDesc lightPropagateNAdvancedDesc = {};
     ShaderLoadDesc lightCopyDesc = {};
 
     injectRSMLightDesc.mStages[0] = { "lpvInjectRSMLight.vert" };
@@ -954,6 +987,12 @@ void addShaders()
     lightPropagateNDesc.mStages[0] = { "lpvLightPropagateN.vert" };
     lightPropagateNDesc.mStages[1] = { "lpvLightPropagateN.frag" };
 
+    lightPropagate1AdvancedDesc.mStages[0] = { "lpvLightPropagate1.vert" };
+    lightPropagate1AdvancedDesc.mStages[1] = { "lpvLightPropagate1Advanced.frag" };
+
+    lightPropagateNAdvancedDesc.mStages[0] = { "lpvLightPropagateN.vert" };
+    lightPropagateNAdvancedDesc.mStages[1] = { "lpvLightPropagateNAdvanced.frag" };
+
     lightCopyDesc.mStages[0] = { "lpvLightCopy.vert" };
     lightCopyDesc.mStages[1] = { "lpvLightCopy.frag" };
 #endif // USE_COMPUTE_SHADERS
@@ -961,6 +1000,8 @@ void addShaders()
     addShader(pAura->pRenderer, &injectRSMLightDesc, &pAura->pShaderInjectRSMLight);
     addShader(pAura->pRenderer, &lightPropagate1Desc, &pAura->pShaderLightPropagate1[0]);
     addShader(pAura->pRenderer, &lightPropagateNDesc, &pAura->pShaderLightPropagateN[0]);
+    addShader(pAura->pRenderer, &lightPropagate1AdvancedDesc, &pAura->pShaderLightPropagate1[1]);
+    addShader(pAura->pRenderer, &lightPropagateNAdvancedDesc, &pAura->pShaderLightPropagateN[1]);
     addShader(pAura->pRenderer, &lightCopyDesc, &pAura->pShaderLightCopy);
 
     ShaderLoadDesc visualizeLPVDesc = {};
@@ -974,6 +1015,8 @@ void removeShaders()
     removeShader(pAura->pRenderer, pAura->pShaderInjectRSMLight);
     removeShader(pAura->pRenderer, pAura->pShaderLightPropagate1[0]);
     removeShader(pAura->pRenderer, pAura->pShaderLightPropagateN[0]);
+    removeShader(pAura->pRenderer, pAura->pShaderLightPropagate1[1]);
+    removeShader(pAura->pRenderer, pAura->pShaderLightPropagateN[1]);
     removeShader(pAura->pRenderer, pAura->pShaderLightCopy);
     removeShader(pAura->pRenderer, pAura->pShaderLPVVisualize);
 }
@@ -1072,17 +1115,29 @@ void addPipelines(PipelineCache* pCache, TinyImageFormat visualizeFormat, TinyIm
     propagatePipelineDesc.mSampleCount = SAMPLE_COUNT_1;
     propagatePipelineDesc.mSampleQuality = 0;
     propagatePipelineDesc.pRasterizerState = &rasterizerStateDesc;
-    propagatePipelineDesc.pRootSignature = pAura->pRootSignatureLightPropagate1;
+    propagatePipelineDesc.pRootSignature = pAura->pRootSignatureLightPropagate1[0];
     propagatePipelineDesc.pShaderProgram = pAura->pShaderLightPropagate1[0];
     graphicsPipelineDesc.mGraphicsDesc = propagatePipelineDesc;
     graphicsPipelineDesc.pName = "Propagate Light 1";
-    addPipeline(pAura->pRenderer, &graphicsPipelineDesc, &pAura->pPipelineLightPropagate1[0]);
+    addPipeline(pAura->pRenderer, &graphicsPipelineDesc, &pAura->pPipelineLightPropagate1[0][0]);
 
-    propagatePipelineDesc.pRootSignature = pAura->pRootSignatureLightPropagateN;
+    propagatePipelineDesc.pRootSignature = pAura->pRootSignatureLightPropagate1[1];
+    propagatePipelineDesc.pShaderProgram = pAura->pShaderLightPropagate1[1];
+    graphicsPipelineDesc.mGraphicsDesc = propagatePipelineDesc;
+    graphicsPipelineDesc.pName = "Propagate Light 1 Advanced";
+    addPipeline(pAura->pRenderer, &graphicsPipelineDesc, &pAura->pPipelineLightPropagate1[0][1]);
+
+    propagatePipelineDesc.pRootSignature = pAura->pRootSignatureLightPropagateN[0];
     propagatePipelineDesc.pShaderProgram = pAura->pShaderLightPropagateN[0];
     graphicsPipelineDesc.mGraphicsDesc = propagatePipelineDesc;
     graphicsPipelineDesc.pName = "Propagate Light N";
-    addPipeline(pAura->pRenderer, &graphicsPipelineDesc, &pAura->pPipelineLightPropagateN[0]);
+    addPipeline(pAura->pRenderer, &graphicsPipelineDesc, &pAura->pPipelineLightPropagateN[0][0]);
+
+    propagatePipelineDesc.pRootSignature = pAura->pRootSignatureLightPropagateN[1];
+    propagatePipelineDesc.pShaderProgram = pAura->pShaderLightPropagateN[1];
+    graphicsPipelineDesc.mGraphicsDesc = propagatePipelineDesc;
+    graphicsPipelineDesc.pName = "Propagate Light N Advanced";
+    addPipeline(pAura->pRenderer, &graphicsPipelineDesc, &pAura->pPipelineLightPropagateN[0][1]);
 
     GraphicsPipelineDesc lightCopyPipelineDesc = {};
     lightCopyPipelineDesc.mPrimitiveTopo = PRIMITIVE_TOPO_TRI_LIST;
@@ -1120,8 +1175,10 @@ void addPipelines(PipelineCache* pCache, TinyImageFormat visualizeFormat, TinyIm
 void removePipelines()
 {
     removePipeline(pAura->pRenderer, pAura->pPipelineInjectRSMLight);
-    removePipeline(pAura->pRenderer, pAura->pPipelineLightPropagate1[0]);
-    removePipeline(pAura->pRenderer, pAura->pPipelineLightPropagateN[0]);
+    removePipeline(pAura->pRenderer, pAura->pPipelineLightPropagate1[0][0]);
+    removePipeline(pAura->pRenderer, pAura->pPipelineLightPropagate1[0][1]);
+    removePipeline(pAura->pRenderer, pAura->pPipelineLightPropagateN[0][0]);
+    removePipeline(pAura->pRenderer, pAura->pPipelineLightPropagateN[0][1]);
     removePipeline(pAura->pRenderer, pAura->pPipelineLightCopy);
     removePipeline(pAura->pRenderer, pAura->pPipelineVisualizeLPV);
 }
@@ -1157,7 +1214,8 @@ void prepareDescriptorSets()
             params[0].pName = "LPVGrid";
             params[0].ppTextures = &pTex[0];
             params[0].mCount = pAura->mCascadeCount;
-            updateDescriptorSet(pAura->pRenderer, cascade, pAura->pDescriptorSetLightPropagate1, 1, params);
+            updateDescriptorSet(pAura->pRenderer, cascade, pAura->pDescriptorSetLightPropagate1[0], 1, params);
+            updateDescriptorSet(pAura->pRenderer, cascade, pAura->pDescriptorSetLightPropagate1[1], 1, params);
 #endif
         }
         // Light copy
@@ -1216,7 +1274,8 @@ void prepareDescriptorSets()
             params[0].pName = "LPVGrid";
             params[0].ppTextures = pWorkingTex + 3 * ((i & 0x1)) + 0;
             params[0].mCount = pAura->mCascadeCount;
-            updateDescriptorSet(pAura->pRenderer, cascade * 2 + i, pAura->pDescriptorSetLightPropagateN, 1, params);
+            updateDescriptorSet(pAura->pRenderer, cascade * 2 + i, pAura->pDescriptorSetLightPropagateN[0], 1, params);
+            updateDescriptorSet(pAura->pRenderer, cascade * 2 + i, pAura->pDescriptorSetLightPropagateN[1], 1, params);
 #endif
         }
     }

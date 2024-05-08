@@ -60,6 +60,7 @@ public:
 
     const LightPropagationCascade::State& getApplyState() const { return m_applyState; }
     void                                  setApplyState(const LightPropagationCascade::State& val) { m_applyState = val; }
+    void                                  setAdvancedDirections(bool advancedDirections) { m_UseAdvancedDirections = advancedDirections; }
 
 private:
     void convertGPUtoCPU(Renderer* pRenderer);
@@ -72,7 +73,7 @@ private:
 
     void SyncToLastTask(ITaskManager* pTaskManager);
 
-    template<bool bFirstStep>
+    template<bool bFirstStep, bool isAdvanced>
     void propagateStep(vec4* src, vec4* targetStep, vec4* targetAccum, int iMinSlice, int iMaxSlice);
 
     //	Task handlers
@@ -88,6 +89,7 @@ private:
     vec4*                          m_CPUGrids[9];
     ITASKSETHANDLE                 m_hLastTask;
     int                            m_nPropagationSteps;
+    bool                           m_UseAdvancedDirections;
     StepContext                    m_Contexts[m_nMaxPropagationSteps][3];
     LightPropagationCascade::State m_applyState;
 };
