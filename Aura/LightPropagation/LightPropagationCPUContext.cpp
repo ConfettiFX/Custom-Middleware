@@ -47,7 +47,7 @@
 extern void cmdCopyResourceOrbis(Cmd* p_cmd, const TextureDesc* pDesc, Texture* pSrc, Buffer* pDst);
 #endif
 
-// #define USE_VIRTUAL_DIRECTIONS
+#define USE_VIRTUAL_DIRECTIONS
 
 extern PlatformParameters gPlatformParameters;
 
@@ -322,7 +322,14 @@ void LightPropagationCPUContext::doPropagate()
 {
     for (int iChan = 0; iChan < 3; ++iChan)
     {
-        propagateStep<true>(m_CPUGrids[iChan], m_CPUGrids[3], m_CPUGrids[4], 0, GridRes);
+        if (m_UseAdvancedDirections)
+        {
+            propagateStep<true, true>(m_CPUGrids[iChan], m_CPUGrids[3], m_CPUGrids[4], 0, GridRes);
+        }
+        else
+        {
+            propagateStep<true, false>(m_CPUGrids[iChan], m_CPUGrids[3], m_CPUGrids[4], 0, GridRes);
+        }
 
         vec4* pTmp;
         pTmp = m_CPUGrids[iChan];
@@ -335,7 +342,14 @@ void LightPropagationCPUContext::doPropagate()
         //	Use ping-pong rt changes to propagate only previous step light
         for (int i = 1; i < nPropagationSteps; ++i)
         {
-            propagateStep<false>(m_CPUGrids[3], m_CPUGrids[4], m_CPUGrids[iChan], 0, GridRes);
+            if (m_UseAdvancedDirections)
+            {
+                propagateStep<false, true>(m_CPUGrids[3], m_CPUGrids[4], m_CPUGrids[iChan], 0, GridRes);
+            }
+            else
+            {
+                propagateStep<false, false>(m_CPUGrids[3], m_CPUGrids[4], m_CPUGrids[iChan], 0, GridRes);
+            }
 
             vec4* pTmp;
             pTmp = m_CPUGrids[3];
@@ -444,7 +458,7 @@ __declspec(noalias) __forceinline __m128 IVPropagateDirIntrin(const float4& src,
 
 #if defined(USE_VIRTUAL_DIRECTIONS)
 
-__declspec(noalias) inline float getSolidAngle(const __m128& dir, const __m128& faceDir)
+__declspec(noalias) inline float getSolidAngle(const __m128 dir, const __m128 faceDir)
 {
     //	4 faces of this kind
     const float faceASolidAngle = 0.42343134f;
@@ -465,7 +479,7 @@ __declspec(noalias) inline float getSolidAngle(const __m128& dir, const __m128& 
         return faceASolidAngle; //	Side face
 }
 
-__declspec(noalias) inline __m128 SHEvaluateFunction(const __m128& vcDir, const __m128& data)
+__declspec(noalias) inline __m128 SHEvaluateFunction(const __m128 vcDir, const __m128 data)
 {
     // return dot(data, float4(1.0f, vcDir.y, vcDir.z, vcDir.x)*SHBasis);
 
@@ -474,14 +488,14 @@ __declspec(noalias) inline __m128 SHEvaluateFunction(const __m128& vcDir, const 
     const __m128 shBasis = _mm_load_ps(SHBasis);
     const __m128 ones = _mm_load_ps1(&one);
 
-    __m128 permVcDir = _mm_permute_ps(vcDir, _MM_SHUFFLE(0, 2, 1, 3)); // [0 vcDir.y vcDir.z vcDir.x]
-    permVcDir = _mm_move_ss(permVcDir, ones);                          // [1 vcDir.y vcDir.z vcDir.x]
+    __m128 permVcDir = _mm_shuffle_ps(vcDir, vcDir, _MM_SHUFFLE(0, 2, 1, 3)); // [0 vcDir.y vcDir.z vcDir.x]
+    permVcDir = _mm_move_ss(permVcDir, ones);                                 // [1 vcDir.y vcDir.z vcDir.x]
 
     return _mm_dp_ps(data, _mm_mul_ps(permVcDir, shBasis), 0xFF);
 }
 
 // Cosine lobe
-__declspec(noalias) inline __m128 SHProjectCone(const __m128& vcDir)
+__declspec(noalias) inline __m128 SHProjectCone(const __m128 vcDir)
 {
     const float2 vZHCoeffs = SHProjectionScale * float2(0.25f, 0.5f);
 
@@ -490,7 +504,7 @@ __declspec(noalias) inline __m128 SHProjectCone(const __m128& vcDir)
     return _mm_load_ps(&rot.x);
 }
 
-__declspec(noalias) inline __m128 SSENormalize(const __m128& vec)
+__declspec(noalias) inline __m128 SSENormalize(const __m128 vec)
 {
     __m128 dp = _mm_dp_ps(vec, vec, 0x7F);
     dp = _mm_rsqrt_ps(dp);
@@ -548,62 +562,64 @@ __declspec(noalias) inline __m128 IVPropagateDirAdvancedIntrin(const float4& src
 
 #endif // USE_VIRTUAL_DIRECTIONS
 
-template<bool bFirstStep, bool isIMin, bool isIMax, bool isJMin, bool isJMax, bool isKMin, bool isKMax>
+template<bool bFirstStep, bool isAdvanced, bool isIMin, bool isIMax, bool isJMin, bool isJMax, bool isKMin, bool isKMax>
 __declspec(noalias) __forceinline void propagateCell(vec4* __restrict src, vec4* __restrict targetStep, vec4* __restrict targetAccum,
                                                      const int i, const int j, const int k, const int readOffset)
 {
     __m128 res = _mm_setzero_ps();
 
-#if defined(USE_VIRTUAL_DIRECTIONS)
-    // if (k<GridRes-1)
-    if (!isKMax)
-        res = _mm_add_ps(res, IVPropagateDirAdvancedIntrin(src[readOffset + inputOffset[0]], 0));
-    //	float3(-1, 0, 0),
-    // if (k>0)
-    if (!isKMin)
-        res = _mm_add_ps(res, IVPropagateDirAdvancedIntrin(src[readOffset + inputOffset[1]], 1));
-    // float3( 0, 1, 0),
-    // if (j<GridRes-1)
-    if (!isJMax)
-        res = _mm_add_ps(res, IVPropagateDirAdvancedIntrin(src[readOffset + inputOffset[2]], 2));
-    // float3( 0, -1, 0),
-    // if (j>0)
-    if (!isJMin)
-        res = _mm_add_ps(res, IVPropagateDirAdvancedIntrin(src[readOffset + inputOffset[3]], 3));
-    // float3( 0, 0, 1),
-    // if (i<GridRes-1)
-    if (!isIMax)
-        res = _mm_add_ps(res, IVPropagateDirAdvancedIntrin(src[readOffset + inputOffset[4]], 4));
-    // float3( 0, 0, -1),
-    // if (i>0)
-    if (!isIMin)
-        res = _mm_add_ps(res, IVPropagateDirAdvancedIntrin(src[readOffset + inputOffset[5]], 5));
-#endif
-#if !defined(USE_VIRTUAL_DIRECTIONS)
-    // if (k<GridRes-1)
-    if (!isKMax)
-        res = _mm_add_ps(res, IVPropagateDirIntrin(src[readOffset + inputOffset[0]], 0));
-    //	float3(-1, 0, 0),
-    // if (k>0)
-    if (!isKMin)
-        res = _mm_add_ps(res, IVPropagateDirIntrin(src[readOffset + inputOffset[1]], 1));
-    // float3( 0, 1, 0),
-    // if (j<GridRes-1)
-    if (!isJMax)
-        res = _mm_add_ps(res, IVPropagateDirIntrin(src[readOffset + inputOffset[2]], 2));
-    // float3( 0, -1, 0),
-    // if (j>0)
-    if (!isJMin)
-        res = _mm_add_ps(res, IVPropagateDirIntrin(src[readOffset + inputOffset[3]], 3));
-    // float3( 0, 0, 1),
-    // if (i<GridRes-1)
-    if (!isIMax)
-        res = _mm_add_ps(res, IVPropagateDirIntrin(src[readOffset + inputOffset[4]], 4));
-    // float3( 0, 0, -1),
-    // if (i>0)
-    if (!isIMin)
-        res = _mm_add_ps(res, IVPropagateDirIntrin(src[readOffset + inputOffset[5]], 5));
-#endif
+    if (isAdvanced)
+    {
+        // if (k<GridRes-1)
+        if (!isKMax)
+            res = _mm_add_ps(res, IVPropagateDirAdvancedIntrin(src[readOffset + inputOffset[0]], 0));
+        //	float3(-1, 0, 0),
+        // if (k>0)
+        if (!isKMin)
+            res = _mm_add_ps(res, IVPropagateDirAdvancedIntrin(src[readOffset + inputOffset[1]], 1));
+        // float3( 0, 1, 0),
+        // if (j<GridRes-1)
+        if (!isJMax)
+            res = _mm_add_ps(res, IVPropagateDirAdvancedIntrin(src[readOffset + inputOffset[2]], 2));
+        // float3( 0, -1, 0),
+        // if (j>0)
+        if (!isJMin)
+            res = _mm_add_ps(res, IVPropagateDirAdvancedIntrin(src[readOffset + inputOffset[3]], 3));
+        // float3( 0, 0, 1),
+        // if (i<GridRes-1)
+        if (!isIMax)
+            res = _mm_add_ps(res, IVPropagateDirAdvancedIntrin(src[readOffset + inputOffset[4]], 4));
+        // float3( 0, 0, -1),
+        // if (i>0)
+        if (!isIMin)
+            res = _mm_add_ps(res, IVPropagateDirAdvancedIntrin(src[readOffset + inputOffset[5]], 5));
+    }
+    else
+    {
+        // if (k<GridRes-1)
+        if (!isKMax)
+            res = _mm_add_ps(res, IVPropagateDirIntrin(src[readOffset + inputOffset[0]], 0));
+        //	float3(-1, 0, 0),
+        // if (k>0)
+        if (!isKMin)
+            res = _mm_add_ps(res, IVPropagateDirIntrin(src[readOffset + inputOffset[1]], 1));
+        // float3( 0, 1, 0),
+        // if (j<GridRes-1)
+        if (!isJMax)
+            res = _mm_add_ps(res, IVPropagateDirIntrin(src[readOffset + inputOffset[2]], 2));
+        // float3( 0, -1, 0),
+        // if (j>0)
+        if (!isJMin)
+            res = _mm_add_ps(res, IVPropagateDirIntrin(src[readOffset + inputOffset[3]], 3));
+        // float3( 0, 0, 1),
+        // if (i<GridRes-1)
+        if (!isIMax)
+            res = _mm_add_ps(res, IVPropagateDirIntrin(src[readOffset + inputOffset[4]], 4));
+        // float3( 0, 0, -1),
+        // if (i>0)
+        if (!isIMin)
+            res = _mm_add_ps(res, IVPropagateDirIntrin(src[readOffset + inputOffset[5]], 5));
+    }
 
     _mm_store_ps((float*)(targetStep + readOffset), res);
 
@@ -709,58 +725,59 @@ __forceinline float4 IVPropagateDirAdvanced(const float4& src, int dirIndex)
     return res;
 }
 
-template<bool bFirstStep, bool isIMin, bool isIMax, bool isJMin, bool isJMax, bool isKMin, bool isKMax>
+template<bool bFirstStep, bool isAdvanced, bool isIMin, bool isIMax, bool isJMin, bool isJMax, bool isKMin, bool isKMax>
 __declspec(noalias) __forceinline void propagateCell(vec4* __restrict src, vec4* __restrict targetStep, vec4* __restrict targetAccum,
                                                      const int i, const int j, const int k, const int readOffset)
 {
     float4 res = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
-#if defined(USE_VIRTUAL_DIRECTIONS)
-    // VIRTUAL DIRECTIONS
-    if (!isKMax)
-        res += IVPropagateDirAdvanced<isIMin, isIMax, isJMin, isJMax, isKMin, isKMax>(src[readOffset + inputOffset[0]], 0);
-    //	float3(-1, 0, 0),
-    if (!isKMin)
-        res += IVPropagateDirAdvanced<isIMin, isIMax, isJMin, isJMax, isKMin, isKMax>(src[readOffset + inputOffset[1]], 1);
-    // float3( 0, 1, 0),
-    if (!isJMax)
-        res += IVPropagateDirAdvanced<isIMin, isIMax, isJMin, isJMax, isKMin, isKMax>(src[readOffset + inputOffset[2]], 2);
-    // float3( 0, -1, 0),
-    if (!isJMin)
-        res += IVPropagateDirAdvanced<isIMin, isIMax, isJMin, isJMax, isKMin, isKMax>(src[readOffset + inputOffset[3]], 3);
-    // float3( 0, 0, 1),
-    if (!isIMax)
-        res += IVPropagateDirAdvanced<isIMin, isIMax, isJMin, isJMax, isKMin, isKMax>(src[readOffset + inputOffset[4]], 4);
-    // float3( 0, 0, -1),
-    if (!isIMin)
-        res += IVPropagateDirAdvanced<isIMin, isIMax, isJMin, isJMax, isKMin, isKMax>(src[readOffset + inputOffset[5]], 5);
-#endif
-#if !defined(USE_VIRTUAL_DIRECTIONS)
-
-    // if (k<GridRes-1)
-    if (!isKMax)
-        res += IVPropagateDir(src[readOffset + inputOffset[0]], 0);
-    //	float3(-1, 0, 0),
-    // if (k>0)
-    if (!isKMin)
-        res += IVPropagateDir(src[readOffset + inputOffset[1]], 1);
-    // float3( 0, 1, 0),
-    // if (j<GridRes-1)
-    if (!isJMax)
-        res += IVPropagateDir(src[readOffset + inputOffset[2]], 2);
-    // float3( 0, -1, 0),
-    // if (j>0)
-    if (!isJMin)
-        res += IVPropagateDir(src[readOffset + inputOffset[3]], 3);
-    // float3( 0, 0, 1),
-    // if (i<GridRes-1)
-    if (!isIMax)
-        res += IVPropagateDir(src[readOffset + inputOffset[4]], 4);
-    // float3( 0, 0, -1),
-    // if (i>0)
-    if (!isIMin)
-        res += IVPropagateDir(src[readOffset + inputOffset[5]], 5);
-#endif
+    if (isAdvanced)
+    {
+        // VIRTUAL DIRECTIONS
+        if (!isKMax)
+            res += IVPropagateDirAdvanced<isIMin, isIMax, isJMin, isJMax, isKMin, isKMax>(src[readOffset + inputOffset[0]], 0);
+        //	float3(-1, 0, 0),
+        if (!isKMin)
+            res += IVPropagateDirAdvanced<isIMin, isIMax, isJMin, isJMax, isKMin, isKMax>(src[readOffset + inputOffset[1]], 1);
+        // float3( 0, 1, 0),
+        if (!isJMax)
+            res += IVPropagateDirAdvanced<isIMin, isIMax, isJMin, isJMax, isKMin, isKMax>(src[readOffset + inputOffset[2]], 2);
+        // float3( 0, -1, 0),
+        if (!isJMin)
+            res += IVPropagateDirAdvanced<isIMin, isIMax, isJMin, isJMax, isKMin, isKMax>(src[readOffset + inputOffset[3]], 3);
+        // float3( 0, 0, 1),
+        if (!isIMax)
+            res += IVPropagateDirAdvanced<isIMin, isIMax, isJMin, isJMax, isKMin, isKMax>(src[readOffset + inputOffset[4]], 4);
+        // float3( 0, 0, -1),
+        if (!isIMin)
+            res += IVPropagateDirAdvanced<isIMin, isIMax, isJMin, isJMax, isKMin, isKMax>(src[readOffset + inputOffset[5]], 5);
+    }
+    else
+    {
+        // if (k<GridRes-1)
+        if (!isKMax)
+            res += IVPropagateDir(src[readOffset + inputOffset[0]], 0);
+        //	float3(-1, 0, 0),
+        // if (k>0)
+        if (!isKMin)
+            res += IVPropagateDir(src[readOffset + inputOffset[1]], 1);
+        // float3( 0, 1, 0),
+        // if (j<GridRes-1)
+        if (!isJMax)
+            res += IVPropagateDir(src[readOffset + inputOffset[2]], 2);
+        // float3( 0, -1, 0),
+        // if (j>0)
+        if (!isJMin)
+            res += IVPropagateDir(src[readOffset + inputOffset[3]], 3);
+        // float3( 0, 0, 1),
+        // if (i<GridRes-1)
+        if (!isIMax)
+            res += IVPropagateDir(src[readOffset + inputOffset[4]], 4);
+        // float3( 0, 0, -1),
+        // if (i>0)
+        if (!isIMin)
+            res += IVPropagateDir(src[readOffset + inputOffset[5]], 5);
+    }
 
     targetStep[readOffset] = res;
 
@@ -788,38 +805,40 @@ void LightPropagationCPUContext::SyncToLastTask(ITaskManager* pTaskManager)
 /************************************************************************/
 // Templates
 /************************************************************************/
-template<bool bFirstStep, bool isIMin, bool isIMax, bool isJMin, bool isJMax>
+template<bool bFirstStep, bool isAdvanced, bool isIMin, bool isIMax, bool isJMin, bool isJMax>
 __declspec(noalias) __forceinline void propagateRow(vec4* __restrict src, vec4* __restrict targetStep, vec4* __restrict targetAccum,
                                                     const int i, const int j, int& readOffset)
 {
     //	Igor: partially unroll the loop. This unroll ifs too.
-    propagateCell<bFirstStep, isIMin, isIMax, isJMin, isJMax, true, false>(src, targetStep, targetAccum, i, j, 0, readOffset);
+    propagateCell<bFirstStep, isAdvanced, isIMin, isIMax, isJMin, isJMax, true, false>(src, targetStep, targetAccum, i, j, 0, readOffset);
     ++readOffset;
 
     for (int k = 1; k < static_cast<int>(GridRes - 1); ++k, ++readOffset)
     {
-        propagateCell<bFirstStep, isIMin, isIMax, isJMin, isJMax, false, false>(src, targetStep, targetAccum, i, j, k, readOffset);
+        propagateCell<bFirstStep, isAdvanced, isIMin, isIMax, isJMin, isJMax, false, false>(src, targetStep, targetAccum, i, j, k,
+                                                                                            readOffset);
     }
 
-    propagateCell<bFirstStep, isIMin, isIMax, isJMin, isJMax, false, true>(src, targetStep, targetAccum, i, j, GridRes - 1, readOffset);
+    propagateCell<bFirstStep, isAdvanced, isIMin, isIMax, isJMin, isJMax, false, true>(src, targetStep, targetAccum, i, j, GridRes - 1,
+                                                                                       readOffset);
     ++readOffset;
 }
 
-template<bool bFirstStep, bool isIMin, bool isIMax>
+template<bool bFirstStep, bool isAdvanced, bool isIMin, bool isIMax>
 __declspec(noalias) __forceinline void propagateSlice(vec4* __restrict src, vec4* __restrict targetStep, vec4* __restrict targetAccum,
                                                       const int i, int& readOffset)
 {
-    propagateRow<bFirstStep, isIMin, isIMax, true, false>(src, targetStep, targetAccum, i, 0, readOffset);
+    propagateRow<bFirstStep, isAdvanced, isIMin, isIMax, true, false>(src, targetStep, targetAccum, i, 0, readOffset);
 
     for (int j = 1; j < static_cast<int>(GridRes - 1); ++j)
     {
-        propagateRow<bFirstStep, isIMin, isIMax, false, false>(src, targetStep, targetAccum, i, j, readOffset);
+        propagateRow<bFirstStep, isAdvanced, isIMin, isIMax, false, false>(src, targetStep, targetAccum, i, j, readOffset);
     }
 
-    propagateRow<bFirstStep, isIMin, isIMax, false, true>(src, targetStep, targetAccum, i, GridRes - 1, readOffset);
+    propagateRow<bFirstStep, isAdvanced, isIMin, isIMax, false, true>(src, targetStep, targetAccum, i, GridRes - 1, readOffset);
 }
 
-template<bool bFirstStep>
+template<bool bFirstStep, bool isAdvanced>
 __declspec(noalias) void LightPropagationCPUContext::propagateStep(vec4* __restrict src, vec4* __restrict targetStep,
                                                                    vec4* __restrict targetAccum, int iMinSlice /*=0*/,
                                                                    int iMaxSlice /*=GridRes*/)
@@ -837,17 +856,17 @@ __declspec(noalias) void LightPropagationCPUContext::propagateStep(vec4* __restr
     if (iMinSlice == 0)
     {
         ++iMinSlice;
-        propagateSlice<bFirstStep, true, false>(src, targetStep, targetAccum, 0, readOffset);
+        propagateSlice<bFirstStep, isAdvanced, true, false>(src, targetStep, targetAccum, 0, readOffset);
     }
 
     for (int i = iMinSlice; i < iMaxSlice; ++i)
     {
-        propagateSlice<bFirstStep, false, false>(src, targetStep, targetAccum, i, readOffset);
+        propagateSlice<bFirstStep, isAdvanced, false, false>(src, targetStep, targetAccum, i, readOffset);
     }
 
     if (bLastSlice)
     {
-        propagateSlice<bFirstStep, false, true>(src, targetStep, targetAccum, GridRes - 1, readOffset);
+        propagateSlice<bFirstStep, isAdvanced, false, true>(src, targetStep, targetAccum, GridRes - 1, readOffset);
     }
 }
 
@@ -873,7 +892,14 @@ void LightPropagationCPUContext::TaskStep1(void* pvInfo, int32_t iContext, uint3
     int iMaxSlice = (uTaskId + 1) * GridRes / uTaskCount;
 
     StepContext* pContext = (StepContext*)pvInfo;
-    pContext->pContext->propagateStep<true>(pContext->src, pContext->targetStep, pContext->targetAccum, iMinSlice, iMaxSlice);
+    if (pContext->pContext->m_UseAdvancedDirections)
+    {
+        pContext->pContext->propagateStep<true, true>(pContext->src, pContext->targetStep, pContext->targetAccum, iMinSlice, iMaxSlice);
+    }
+    else
+    {
+        pContext->pContext->propagateStep<true, false>(pContext->src, pContext->targetStep, pContext->targetAccum, iMinSlice, iMaxSlice);
+    }
 #endif
 }
 
@@ -884,7 +910,15 @@ void LightPropagationCPUContext::TaskStepN(void* pvInfo, int32_t iContext, uint3
     int iMaxSlice = (uTaskId + 1) * GridRes / uTaskCount;
 
     StepContext* pContext = (StepContext*)pvInfo;
-    pContext->pContext->propagateStep<false>(pContext->src, pContext->targetStep, pContext->targetAccum, iMinSlice, iMaxSlice);
+    if (pContext->pContext->m_UseAdvancedDirections)
+    {
+        pContext->pContext->propagateStep<false, true>(pContext->src, pContext->targetStep, pContext->targetAccum, iMinSlice, iMaxSlice);
+    }
+    else
+    {
+        pContext->pContext->propagateStep<false, false>(pContext->src, pContext->targetStep, pContext->targetAccum, iMinSlice, iMaxSlice);
+    }
+
 #endif
 }
 

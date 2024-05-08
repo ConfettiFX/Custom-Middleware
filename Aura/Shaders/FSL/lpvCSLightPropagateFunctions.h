@@ -148,7 +148,7 @@ void IVPropagateDirAdvanced(inout(SHSpectralCoeffs) pixelCoeffs, const uint3 _in
 	}
 }
 
-#define USE_VIRTUAL_DIRECTIONS
+//#define USE_VIRTUAL_DIRECTIONS
 
 //////////////////////////////////////////////////////////
 //	Final gathering

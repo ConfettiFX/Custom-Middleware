@@ -93,22 +93,22 @@ typedef struct Aura
     Shader* pShaderLightCopy;
 
     Pipeline* pPipelineInjectRSMLight;
-    Pipeline* pPipelineLightPropagate1[2];
-    Pipeline* pPipelineLightPropagateN[2];
+    Pipeline* pPipelineLightPropagate1[2][2];
+    Pipeline* pPipelineLightPropagateN[2][2];
     Pipeline* pPipelineLightCopy;
     Pipeline* pPipelineVisualizeLPV;
 
     RootSignature* pRootSignatureInjectRSMLight;
-    RootSignature* pRootSignatureLightPropagate1;
-    RootSignature* pRootSignatureLightPropagateN;
+    RootSignature* pRootSignatureLightPropagate1[2];
+    RootSignature* pRootSignatureLightPropagateN[2];
     RootSignature* pRootSignatureLightCopy;
     RootSignature* pRootSignatureVisualizeLPV;
-    uint32_t       mPropagation1RootConstantIndex;
-    uint32_t       mPropagationNRootConstantIndex;
+    uint32_t       mPropagation1RootConstantIndex[2];
+    uint32_t       mPropagationNRootConstantIndex[2];
 
     DescriptorSet* pDescriptorSetInjectRSMLight;
-    DescriptorSet* pDescriptorSetLightPropagate1;
-    DescriptorSet* pDescriptorSetLightPropagateN;
+    DescriptorSet* pDescriptorSetLightPropagate1[2];
+    DescriptorSet* pDescriptorSetLightPropagateN[2];
     DescriptorSet* pDescriptorSetLightCopy;
     DescriptorSet* pDescriptorSetVisualizeLPV;
 

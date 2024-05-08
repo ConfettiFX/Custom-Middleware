@@ -40,6 +40,7 @@ struct LightPropagationVolumeParams
 {
     bool     bUseMultipleReflections;
     bool     bUseCPUPropagation;
+    bool     bUseAdvancedPropagation;
     bool     bAlternateGPUUpdates; //	TODO: Igor: remove this from the LPV library, since this is the client who is responcible for this.
     float    fPropagationScale;    //	TODO: Igor: remove this debug attribute
     bool     bDebugLight;
@@ -65,6 +66,7 @@ struct CPUPropagationParams
 {
     MTTypes eMTMode;
     bool    bDecoupled;
+    bool    bAdvancedDirections;
 };
 
 struct Params

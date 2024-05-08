@@ -380,7 +380,7 @@ float3 inscatter(inout(float3) x, inout(float) t, float3 v, float3 s, out(float)
 		x += d * v;
 		t -= d;
 		mu = (r * mu + d) / Rt;
-		r = Rt;
+		r = Rt - 0.5f;
 	}
 
 	if (r <= Rt) // if ray intersects atmosphere

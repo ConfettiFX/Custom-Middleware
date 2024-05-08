@@ -276,8 +276,6 @@ SHSpectralCoeffs IVPropagate(const float3 texCoord, const bool firstIteration, b
 	pixelCoeffs.c[1] = SHCoeffs(0.0f, 0.0f, 0.0f, 0.0f);
 	pixelCoeffs.c[2] = SHCoeffs(0.0f, 0.0f, 0.0f, 0.0f);
 
-	//	There switches are use to set up the way
-	//	propagation function behaves
 	const bool advanced = true;
 
 #ifdef ALLOW_OCCLUSION
@@ -289,8 +287,9 @@ SHSpectralCoeffs IVPropagate(const float3 texCoord, const bool firstIteration, b
 	const bool multipleReflections = false;
 	//const bool multipleReflections = reflections;
 
-	if (advanced)
-	{
+	//	There switches are use to set up the way
+    //	propagation function behaves
+#ifdef ADVANCED_PROPAGATE
 		// 6-point axial gathering stencil "cross" 
 		IVPropagateDirAdvanced1(pixelCoeffs, texCoord, float3( 1,  0,  0));
 		IVPropagateDirAdvanced1(pixelCoeffs, texCoord, float3(-1,  0,  0));
@@ -298,9 +297,7 @@ SHSpectralCoeffs IVPropagate(const float3 texCoord, const bool firstIteration, b
 		IVPropagateDirAdvanced1(pixelCoeffs, texCoord, float3( 0, -1,  0));
 		IVPropagateDirAdvanced1(pixelCoeffs, texCoord, float3( 0,  0,  1));
 		IVPropagateDirAdvanced1(pixelCoeffs, texCoord, float3( 0,  0, -1));
-	}
-	else
-	{
+#else
 		SHSpectralCoeffs selfCoeffs = SHSampleGrid(Get(pointBorder), texCoord, i3(0));
 
 		IVPropagateDirN(pixelCoeffs, texCoord, float3( 1,  0,  0), useOcclusion, multipleReflections, selfCoeffs);
@@ -309,7 +306,7 @@ SHSpectralCoeffs IVPropagate(const float3 texCoord, const bool firstIteration, b
 		IVPropagateDirN(pixelCoeffs, texCoord, float3( 0, -1,  0), useOcclusion, multipleReflections, selfCoeffs);
 		IVPropagateDirN(pixelCoeffs, texCoord, float3( 0,  0,  1), useOcclusion, multipleReflections, selfCoeffs);
 		IVPropagateDirN(pixelCoeffs, texCoord, float3( 0,  0, -1), useOcclusion, multipleReflections, selfCoeffs);
-	}
+#endif
 
 	for (int i = 0; i < 3; ++i)
 		pixelCoeffs.c[i] *= Get(fPropagationScale);

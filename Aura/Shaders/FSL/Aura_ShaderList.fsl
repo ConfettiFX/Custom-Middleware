@@ -38,15 +38,25 @@
 #include "lpvLightPropagate1.vert.fsl"
 #end
 
-#frag lpvLightPropagate1.frag
-#include "lpvLightPropagate1.frag.fsl"
-#end
-
 #vert lpvLightPropagateN.vert
 #include "lpvLightPropagateN.vert.fsl"
 #end
 
+#frag lpvLightPropagate1.frag
+#include "lpvLightPropagate1.frag.fsl"
+#end
+
 #frag lpvLightPropagateN.frag
+#include "lpvLightPropagateN.frag.fsl"
+#end
+
+#frag lpvLightPropagate1Advanced.frag
+#define ADVANCED_PROPAGATE
+#include "lpvLightPropagate1.frag.fsl"
+#end
+
+#frag lpvLightPropagateNAdvanced.frag
+#define ADVANCED_PROPAGATE
 #include "lpvLightPropagateN.frag.fsl"
 #end
 
