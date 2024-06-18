@@ -234,6 +234,7 @@ float3 ColorTemperatureToRGB(float temperatureInKelvins)
 // Generates an array of vertices and normals for a sphere
 void Sky::GenerateIcosahedron(float** ppPoints, VertexStbDsArray& vertices, IndexStbDsArray& indices, int numberOfDivisions, float radius)
 {
+    UNREF_PARAM(radius);
     CreateIcosphere(numberOfDivisions, &vertices, &indices);
 
     int numVertex = (int)arrlen(vertices);
@@ -665,7 +666,12 @@ void Sky::Exit()
     removeResource(pInscatterTexture);
 }
 
-bool Sky::Load(RenderTarget** rts, uint32_t count) { return false; }
+bool Sky::Load(RenderTarget** rts, uint32_t count)
+{
+    UNREF_PARAM(rts);
+    UNREF_PARAM(count);
+    return false;
+}
 
 void Sky::Unload() {}
 
@@ -839,6 +845,7 @@ void Sky::removeRenderTargets() { removeRenderTarget(pRenderer, pSkyRenderTarget
 
 void Sky::prepareDescriptorSets(RenderTarget** ppPreStageRenderTargets, uint32_t count)
 {
+    UNREF_PARAM(count);
     // Sky
     {
         DescriptorData ScParams[8] = {};

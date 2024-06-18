@@ -18,6 +18,12 @@
 #include "LightPropagationCascade.h"
 #include "LightPropagationRenderer.h"
 
+#ifdef _MSC_VER
+#define NOALIAS __declspec(noalias)
+#else
+#define NOALIAS
+#endif
+
 namespace aura
 {
 struct TextureFootprint
@@ -74,7 +80,10 @@ private:
     void SyncToLastTask(ITaskManager* pTaskManager);
 
     template<bool bFirstStep, bool isAdvanced>
-    void propagateStep(vec4* src, vec4* targetStep, vec4* targetAccum, int iMinSlice, int iMaxSlice);
+#ifdef _MSC_VER
+    __declspec(noalias)
+#endif
+        void propagateStep(vec4* src, vec4* targetStep, vec4* targetAccum, int iMinSlice, int iMaxSlice);
 
     //	Task handlers
     static void TaskDoPropagate(void* pvInfo, int32_t iContext, uint32_t uTaskId, uint32_t uTaskCount);
