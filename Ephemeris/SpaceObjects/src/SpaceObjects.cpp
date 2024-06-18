@@ -469,7 +469,12 @@ void SpaceObjects::Exit()
     removeResource(pGlobalTriangularVertexBuffer);
 }
 
-bool SpaceObjects::Load(RenderTarget** rts, uint32_t count) { return false; }
+bool SpaceObjects::Load(RenderTarget** rts, uint32_t count)
+{
+    UNREF_PARAM(rts);
+    UNREF_PARAM(count);
+    return false;
+}
 
 bool SpaceObjects::Load(int32_t width, int32_t height)
 {
@@ -1060,6 +1065,7 @@ void SpaceObjects::removePipelines()
 
 void SpaceObjects::prepareDescriptorSets(RenderTarget** ppPreStageRenderTargets, uint32_t count)
 {
+    UNREF_PARAM(count);
     pPreStageRenderTarget = ppPreStageRenderTargets[0];
 
     // Sky
@@ -1097,6 +1103,7 @@ void SpaceObjects::prepareDescriptorSets(RenderTarget** ppPreStageRenderTargets,
 
 void SpaceObjects::Initialize(ICameraController* InCameraController, ProfileToken InGraphicsGpuProfiler, Buffer* InTransmittanceBuffer)
 {
+    UNREF_PARAM(InTransmittanceBuffer);
     pCameraController = InCameraController;
     gGpuProfileToken = InGraphicsGpuProfiler;
 }

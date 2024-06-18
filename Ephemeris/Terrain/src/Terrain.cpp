@@ -398,7 +398,12 @@ bool Terrain::GenerateNormalMap(Cmd* cmd)
     return true;
 }
 
-bool Terrain::Load(RenderTarget** rts, uint32_t count) { return false; }
+bool Terrain::Load(RenderTarget** rts, uint32_t count)
+{
+    UNREF_PARAM(rts);
+    UNREF_PARAM(count);
+    return false;
+}
 
 void Terrain::Unload() {}
 
@@ -716,27 +721,27 @@ void Terrain::prepareDescriptorSets()
         ScParams[3].ppTextures = &pTerrainMaskTexture;
         updateDescriptorSet(pRenderer, 0, pTerrainDescriptorSet[0], 4, ScParams);
 
-        DescriptorData LtParams[4] = {};
-        LtParams[0].pName = "BasicTexture";
-        LtParams[0].ppTextures = &pGBuffer_BasicRT->pTexture;
-        LtParams[1].pName = "NormalTexture";
-        LtParams[1].ppTextures = &pGBuffer_NormalRT->pTexture;
-        LtParams[2].pName = "weatherTexture";
-        LtParams[2].ppTextures = &pWeatherMap;
-        LtParams[3].pName = "depthTexture";
-        LtParams[3].ppTextures = &pDepthBuffer->pTexture;
-        updateDescriptorSet(pRenderer, 1, pTerrainDescriptorSet[0], 4, LtParams);
+        DescriptorData params[4] = {};
+        params[0].pName = "BasicTexture";
+        params[0].ppTextures = &pGBuffer_BasicRT->pTexture;
+        params[1].pName = "NormalTexture";
+        params[1].ppTextures = &pGBuffer_NormalRT->pTexture;
+        params[2].pName = "weatherTexture";
+        params[2].ppTextures = &pWeatherMap;
+        params[3].pName = "depthTexture";
+        params[3].ppTextures = &pDepthBuffer->pTexture;
+        updateDescriptorSet(pRenderer, 1, pTerrainDescriptorSet[0], 4, params);
 
         for (uint32_t i = 0; i < gDataBufferCount; ++i)
         {
-            DescriptorData ScParams[3] = {};
-            ScParams[0].pName = "RenderTerrainUniformBuffer";
-            ScParams[0].ppBuffers = &pRenderTerrainUniformBuffer[i];
-            ScParams[1].pName = "LightingTerrainUniformBuffer";
-            ScParams[1].ppBuffers = &pLightingTerrainUniformBuffer[i];
-            ScParams[2].pName = "VolumetricCloudsShadowCB";
-            ScParams[2].ppBuffers = &pVolumetricCloudsShadowBuffer;
-            updateDescriptorSet(pRenderer, i, pTerrainDescriptorSet[1], 3, ScParams);
+            DescriptorData sParams[3] = {};
+            sParams[0].pName = "RenderTerrainUniformBuffer";
+            sParams[0].ppBuffers = &pRenderTerrainUniformBuffer[i];
+            sParams[1].pName = "LightingTerrainUniformBuffer";
+            sParams[1].ppBuffers = &pLightingTerrainUniformBuffer[i];
+            sParams[2].pName = "VolumetricCloudsShadowCB";
+            sParams[2].ppBuffers = &pVolumetricCloudsShadowBuffer;
+            updateDescriptorSet(pRenderer, i, pTerrainDescriptorSet[1], 3, sParams);
         }
     }
 }

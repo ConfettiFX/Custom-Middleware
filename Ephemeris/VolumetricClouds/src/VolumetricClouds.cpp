@@ -1329,7 +1329,12 @@ void VolumetricClouds::Exit()
 
 Texture* VolumetricClouds::GetWeatherMap() { return pWeatherTexture; };
 
-bool VolumetricClouds::Load(RenderTarget** rts, uint32_t count) { return false; }
+bool VolumetricClouds::Load(RenderTarget** rts, uint32_t count)
+{
+    UNREF_PARAM(rts);
+    UNREF_PARAM(count);
+    return false;
+}
 
 bool VolumetricClouds::Load(uint32_t width, uint32_t height)
 {
@@ -2237,6 +2242,7 @@ void VolumetricClouds::Update(uint frameIndex)
 
 bool VolumetricClouds::AfterSubmit(uint currentFrameIndex)
 {
+    UNREF_PARAM(currentFrameIndex);
     g_LowResFrameIndex = (g_LowResFrameIndex + 1) % (glowResBufferSize * glowResBufferSize);
 
     if (gAppSettings.prevDownSampling != gAppSettings.DownSampling)
@@ -3222,6 +3228,7 @@ void VolumetricClouds::removeRenderTargets()
 
 void VolumetricClouds::prepareDescriptorSets(RenderTarget** ppPreStageRenderTargets, uint32_t count)
 {
+    UNREF_PARAM(count);
     pFinalRT = ppPreStageRenderTargets[0];
     pSceneColorTexture = ppPreStageRenderTargets[1];
     // Hiz
@@ -3296,13 +3303,13 @@ void VolumetricClouds::prepareDescriptorSets(RenderTarget** ppPreStageRenderTarg
 #endif
         for (uint32_t i = 0; i < gDataBufferCount; ++i)
         {
-            DescriptorData VCParams[1] = {};
-            VCParams[0].pName = "VolumetricCloudsCBuffer";
-            VCParams[0].ppBuffers = &VolumetricCloudsCBuffer[i];
+            DescriptorData params[1] = {};
+            params[0].pName = "VolumetricCloudsCBuffer";
+            params[0].ppBuffers = &VolumetricCloudsCBuffer[i];
 #if !USE_VC_FRAGMENTSHADER
-            updateDescriptorSet(pRenderer, i, pVolumetricCloudsDescriptorSetCompute[1], 1, VCParams);
+            updateDescriptorSet(pRenderer, i, pVolumetricCloudsDescriptorSetCompute[1], 1, params);
 #endif
-            updateDescriptorSet(pRenderer, i, pVolumetricCloudsDescriptorSetGraphics[1], 1, VCParams);
+            updateDescriptorSet(pRenderer, i, pVolumetricCloudsDescriptorSetGraphics[1], 1, params);
         }
     }
     // Reprojection
@@ -3556,10 +3563,10 @@ void VolumetricClouds::GenerateCloudTextures()
         DescriptorData mipParams[2] = {};
         mipParams[0].pName = "SrcTexture";
         mipParams[0].ppTextures = &pHighFrequency3DTexture;
-        mipParams[0].mUAVMipSlice = i - 1;
+        mipParams[0].mUAVMipSlice = (uint16_t)(i - 1);
         mipParams[1].pName = "DstTexture";
         mipParams[1].ppTextures = &pHighFrequency3DTexture;
-        mipParams[1].mUAVMipSlice = i;
+        mipParams[1].mUAVMipSlice = (uint16_t)i;
         updateDescriptorSet(pRenderer, setIndex, pGenMipmapDescriptorSet, 2, mipParams);
         cmdBindDescriptorSet(cmd, setIndex, pGenMipmapDescriptorSet);
 
@@ -3579,10 +3586,10 @@ void VolumetricClouds::GenerateCloudTextures()
         DescriptorData mipParams[2] = {};
         mipParams[0].pName = "SrcTexture";
         mipParams[0].ppTextures = &pLowFrequency3DTexture;
-        mipParams[0].mUAVMipSlice = i - 1;
+        mipParams[0].mUAVMipSlice = (uint16_t)(i - 1);
         mipParams[1].pName = "DstTexture";
         mipParams[1].ppTextures = &pLowFrequency3DTexture;
-        mipParams[1].mUAVMipSlice = i;
+        mipParams[1].mUAVMipSlice = (uint16_t)i;
         updateDescriptorSet(pRenderer, setIndex, pGenMipmapDescriptorSet, 2, mipParams);
         cmdBindDescriptorSet(cmd, setIndex, pGenMipmapDescriptorSet);
 

@@ -60,6 +60,8 @@ const uint32_t lpvElementCount = GridRes * GridRes * GridRes * 4;
 
 void LightPropagationCPUContext::readData(Cmd* pCmd, Renderer* pRenderer, RenderTarget* m_LightGrids[3], uint32_t numGrids)
 {
+    UNREF_PARAM(pRenderer);
+    UNREF_PARAM(numGrids);
     // Transition textures into copyable resource states.
     const int           numBarriers = NUM_GRIDS_PER_CASCADE;
     RenderTargetBarrier rtBarriers[numBarriers] = {};
@@ -110,6 +112,7 @@ void LightPropagationCPUContext::processData(Renderer* pRenderer, ITaskManager* 
 
 void LightPropagationCPUContext::applyData(Cmd* pCmd, Renderer* pRenderer, RenderTarget* m_LightGrids[3])
 {
+    UNREF_PARAM(pRenderer);
     cmdBeginDebugMarker(pCmd, 1.0, 0.0, 0.0, "Copy Barriers");
     RenderTargetBarrier rtBarriers[NUM_GRIDS_PER_CASCADE] = {};
     for (uint32_t i = 0; i < 3; ++i)
@@ -351,7 +354,6 @@ void LightPropagationCPUContext::doPropagate()
                 propagateStep<false, false>(m_CPUGrids[3], m_CPUGrids[4], m_CPUGrids[iChan], 0, GridRes);
             }
 
-            vec4* pTmp;
             pTmp = m_CPUGrids[3];
             m_CPUGrids[3] = m_CPUGrids[4];
             m_CPUGrids[4] = pTmp;
@@ -566,6 +568,10 @@ template<bool bFirstStep, bool isAdvanced, bool isIMin, bool isIMax, bool isJMin
 __declspec(noalias) __forceinline void propagateCell(vec4* __restrict src, vec4* __restrict targetStep, vec4* __restrict targetAccum,
                                                      const int i, const int j, const int k, const int readOffset)
 {
+    UNREF_PARAM(i);
+    UNREF_PARAM(i);
+    UNREF_PARAM(j);
+    UNREF_PARAM(k);
     __m128 res = _mm_setzero_ps();
 
     if (isAdvanced)
@@ -875,6 +881,9 @@ __declspec(noalias) void LightPropagationCPUContext::propagateStep(vec4* __restr
 /************************************************************************/
 void LightPropagationCPUContext::TaskDoPropagate(void* pvInfo, int32_t iContext, uint32_t uTaskId, uint32_t uTaskCount)
 {
+    UNREF_PARAM(iContext);
+    UNREF_PARAM(uTaskId);
+    UNREF_PARAM(uTaskCount);
     ((LightPropagationCPUContext*)pvInfo)->doPropagate();
 }
 
@@ -887,6 +896,7 @@ void LightPropagationCPUContext::TaskDoPropagate(void* pvInfo, int32_t iContext,
 
 void LightPropagationCPUContext::TaskStep1(void* pvInfo, int32_t iContext, uint32_t uTaskId, uint32_t uTaskCount)
 {
+    UNREF_PARAM(iContext);
 #ifndef TEMP_DISABLE_CPU_PROPAGATION
     int iMinSlice = uTaskId * GridRes / uTaskCount;
     int iMaxSlice = (uTaskId + 1) * GridRes / uTaskCount;
@@ -905,6 +915,7 @@ void LightPropagationCPUContext::TaskStep1(void* pvInfo, int32_t iContext, uint3
 
 void LightPropagationCPUContext::TaskStepN(void* pvInfo, int32_t iContext, uint32_t uTaskId, uint32_t uTaskCount)
 {
+    UNREF_PARAM(iContext);
 #ifndef TEMP_DISABLE_CPU_PROPAGATION
     int iMinSlice = uTaskId * GridRes / uTaskCount;
     int iMaxSlice = (uTaskId + 1) * GridRes / uTaskCount;

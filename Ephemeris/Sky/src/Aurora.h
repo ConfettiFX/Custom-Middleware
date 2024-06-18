@@ -186,9 +186,9 @@ public:
     {
         for (uint32_t i = 0; i < CONSTRAINT_ITERATIONS; i++) // iterate over all constraints several times
         {
-            for (size_t i = 0; i < arrlenu(constraints); ++i)
+            for (size_t j = 0; j < arrlenu(constraints); ++j)
             {
-                constraints[i].satisfyConstraint(); // satisfy constraint.
+                constraints[j].satisfyConstraint(); // satisfy constraint.
             }
         }
 

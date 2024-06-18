@@ -559,6 +559,7 @@ public:
         actionDesc = { DefaultInputActions::UI_KEY_F2,
                        [](InputActionContext* ctx)
                        {
+                           UNREF_PARAM(ctx);
                            gAppSettings.gShowInterface = !gAppSettings.gShowInterface;
                            return true;
                        },
@@ -566,6 +567,7 @@ public:
         addInputAction(&actionDesc);
         actionDesc = { DefaultInputActions::EXIT, [](InputActionContext* ctx)
                        {
+                           UNREF_PARAM(ctx);
                            requestShutdown();
                            return true;
                        } };
@@ -603,6 +605,7 @@ public:
         addInputAction(&actionDesc);
         actionDesc = { DefaultInputActions::RESET_CAMERA, [](InputActionContext* ctx)
                        {
+                           UNREF_PARAM(ctx);
                            if (!uiWantTextInput())
                                pCameraController->resetView();
                            return true;
@@ -706,12 +709,14 @@ public:
         gLuaManager.SetFunction("StopCurrentScript",
                                 [](ILuaStateWrap* state) -> int
                                 {
+                                    UNREF_PARAM(state);
                                     gLuaUpdateScriptRunning = false;
                                     return 0;
                                 });
         gLuaManager.SetFunction("ResetFirstFrame",
                                 [](ILuaStateWrap* state) -> int
                                 {
+                                    UNREF_PARAM(state);
                                     gAppSettings.m_FirstFrame = true;
                                     return 0;
                                 });
@@ -925,7 +930,7 @@ public:
 
     void Draw()
     {
-        if (pSwapChain->mEnableVsync != mSettings.mVSyncEnabled)
+        if ((bool)pSwapChain->mEnableVsync != mSettings.mVSyncEnabled)
         {
             waitQueueIdle(pGraphicsQueue);
             ::toggleVSync(pRenderer, &pSwapChain);
@@ -1102,7 +1107,7 @@ public:
         submitDesc.pSignalFence = elem.pFence;
         queueSubmit(pGraphicsQueue, &submitDesc);
         QueuePresentDesc presentDesc = {};
-        presentDesc.mIndex = presentIndex;
+        presentDesc.mIndex = (uint8_t)presentIndex;
         presentDesc.mWaitSemaphoreCount = 1;
         presentDesc.ppWaitSemaphores = &elem.pSemaphore;
         presentDesc.pSwapChain = pSwapChain;
@@ -1449,6 +1454,7 @@ void setDefaultQualitySettings()
 
 void useLowQualitySettings(void* pUserData)
 {
+    UNREF_PARAM(pUserData);
     gAppSettings.DownSampling = 2;
     gAppSettings.m_MinSampleCount = 54;
     gAppSettings.m_MaxSampleCount = 148;
@@ -1476,6 +1482,7 @@ void useLowQualitySettings(void* pUserData)
 
 void useMediumQualitySettings(void* pUserData)
 {
+    UNREF_PARAM(pUserData);
     gAppSettings.DownSampling = 2;
     gAppSettings.m_MinSampleCount = 64;
     gAppSettings.m_MaxSampleCount = 256;
@@ -1503,6 +1510,7 @@ void useMediumQualitySettings(void* pUserData)
 
 void useHighQualitySettings(void* pUserData)
 {
+    UNREF_PARAM(pUserData);
     gAppSettings.DownSampling = 1;
     gAppSettings.m_MinSampleCount = 96;
     gAppSettings.m_MaxSampleCount = 384;
@@ -1530,6 +1538,7 @@ void useHighQualitySettings(void* pUserData)
 
 void useUltraQualitySettings(void* pUserData)
 {
+    UNREF_PARAM(pUserData);
     gAppSettings.DownSampling = 1;
     gAppSettings.m_MinSampleCount = 96;
     gAppSettings.m_MaxSampleCount = 384;
@@ -1557,6 +1566,7 @@ void useUltraQualitySettings(void* pUserData)
 
 void setGroundCamera(void* pUserData)
 {
+    UNREF_PARAM(pUserData);
     LuaScriptDesc runDesc = {};
     runDesc.pScriptFileName = "GroundCamera.lua";
     luaQueueScriptToRun(&runDesc);
@@ -1564,6 +1574,7 @@ void setGroundCamera(void* pUserData)
 
 void setSpaceCamera(void* pUserData)
 {
+    UNREF_PARAM(pUserData);
     LuaScriptDesc runDesc = {};
     runDesc.pScriptFileName = "SpaceCamera.lua";
     luaQueueScriptToRun(&runDesc);
@@ -1571,11 +1582,13 @@ void setSpaceCamera(void* pUserData)
 
 void runUpdateScript(void* pUserData)
 {
+    UNREF_PARAM(pUserData);
     gLuaUpdateScriptRunning = gLuaManager.SetUpdatableScript(gCameraScripts[gAppSettings.gCurrentScriptIndex], "Update", "Exit");
 }
 
 void toggleAdvancedUI(void* pUserData)
 {
+    UNREF_PARAM(pUserData);
     if (pGuiCloudWindow)
     {
         pGuiCloudWindow->mActive = gAppSettings.gShowAdvancedWindows;
